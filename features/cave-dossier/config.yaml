@@ -1,0 +1,30 @@
+# cave-dossier configuration (committed; per-machine values go in .env).
+#
+# SB column names seeded from crospeleo-automation profiles/estavela/profile.yaml
+# (the same society, the same workbook) — keeping the names identical means SB
+# behaves consistently across both tools.
+
+sb:
+  # Filename of the live workbook, resolved against LOCAL_DRIVE_ROOT (.env)
+  # when SB_WORKBOOK_PATH (sandbox override) is not set.
+  workbook_filename: "!Speleo_baza_SUE_v2.4.xlsm"
+  sheet_name: "Svi objekti"
+
+  # Column names as they appear in the workbook header row.
+  object_name_column: "Ime objekta"
+  archive_reference_column: "Katastarski broj SUE"   # the SUE number
+  filter_column: "CroSpeleo unos"
+  marker_column: "Katastarski broj RH"
+  plaque_column: "Broj pločice"
+  drawing_authors_column: "Autori nacrta"
+  exploration_period_column: "Godina ili period istraživanja"
+  x_htrs_column: "X HTRS"
+  y_htrs_column: "Y HTRS"
+
+# Society archive dirs on Drive (relative to LOCAL_DRIVE_ROOT) — used from M2 on
+# (dossier gathering) and M6 (delivery). Same dirs crospeleo-automation reads.
+archive:
+  osz_dir: "!!Osnovni zapisnici"
+  drawings_dir: "!!Nacrti"
+  statements_dir: "!!Izjave za katastar RH"
+  entry_photos_dir: "!!Fotografije ulaza"

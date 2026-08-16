@@ -11,11 +11,20 @@
 features/*/literature/
 features/*/example/
 
+# === Secrets / per-machine config =======================================
+.env
+
+# === Excel lock files + workbook backups ================================
+~$*
+*.backup.xlsm
+*.backup.xlsx
+
 # === Python =============================================================
 __pycache__/
 *.py[cod]
 .venv/
 venv/
+*.egg-info/
 
 # === OS / editor cruft ==================================================
 Thumbs.db

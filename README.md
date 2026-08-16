@@ -12,9 +12,12 @@ agents: [CLAUDE.md](CLAUDE.md).
 
 | Path | What it is |
 |---|---|
-| `features/csx-to-survey-pipeline/` | First feature: TopoDroid → finished-map pipeline (migrated from `cSurvey/dev`). |
-| `shared/` | Shared speleology domain material (specs/formats/fixtures), distilled out as it proves necessary. Stacks differ, so shared = domain, not code. |
-| `SurveyScraper4.code-workspace` | Multi-root workspace: this repo + the two read-only reference repos (created during setup). |
+| `ARCHITECTURE.md` | Canonical pipeline map + part numbering (1, 2.1a/b/c, 2.2). |
+| `STATUS.md` | Where the dev cycle stands (maintained by `/wrap-up`). |
+| `features/csx-to-survey-pipeline/` | Part 2.1a: TopoDroid → finished-map (Nacrt) pipeline (migrated from `cSurvey/dev`). |
+| `features/cave-dossier/` | Parts 2.1/2.1b/2.1c/2.2: SB communication, dossier builder, OSZ builder (CLI `cavedossier`). |
+| `shared/` | Shared speleology domain material — starts with the [glossary](shared/glossary.md). |
+| `SurveyScraper4.code-workspace` | Multi-root workspace: this repo + the two read-only reference repos. |
 
 ## Read-only reference repos (never edited / committed into)
 
