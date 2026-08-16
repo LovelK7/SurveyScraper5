@@ -1,0 +1,28 @@
+# === Cave-survey data (never commit user survey data) ==================
+# Survey snapshots anywhere (runs/, work files). Tracked ground truth is the
+# JSON inspector reports + RUNLOG.md / log.md / SESSIONS.md — keep those.
+*.csz
+*.CSZ
+*.csx
+*.CSX
+
+# Bulky gitignored reference material migrated from cSurvey/dev
+# (present locally, absent from a fresh clone; see feature README)
+features/*/literature/
+features/*/example/
+
+# === Python =============================================================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# === OS / editor cruft ==================================================
+Thumbs.db
+Desktop.ini
+desktop.ini
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

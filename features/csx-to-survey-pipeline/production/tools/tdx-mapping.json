@@ -1,0 +1,105 @@
+{
+  "points": {
+    "anchor": {
+      "label": "f"
+    },
+    "clay": {
+      "to": "sand"
+    },
+    "danger": {
+      "label": "!"
+    },
+    "debris": {
+      "to": "breakdownchoke"
+    },
+    "flowstone": {
+      "to": "clay"
+    },
+    "minus": {
+      "label": "-"
+    },
+    "mud": {
+      "to": "clay"
+    },
+    "plus": {
+      "label": "+"
+    },
+    "plus-minus": {
+      "label": "+/-"
+    },
+    "water-drip": {
+      "to": "water-flow",
+      "orientation": 180
+    },
+    "stalactites": {
+      "to": "stalactite"
+    },
+    "stalagmites": {
+      "to": "stalagmite"
+    },
+    "tree-trunk": {
+      "to": "vegetabledebris"
+    },
+    "water-flow:intermittent": {
+      "to": "waterflow"
+    }
+  },
+  "lines": {
+    "chimney": {
+      "to": "overhang",
+      "reverse": true
+    },
+    "pit": {
+      "to": "pit"
+    },
+    "wall:blocks": {
+      "to": "border"
+    },
+    "wall:clay": {
+      "to": "border"
+    },
+    "wall:debris": {
+      "to": "border"
+    },
+    "wall:ice": {
+      "to": "border"
+    },
+    "water-flow": {
+      "to": "presumed"
+    },
+    "abyss-entrance": {
+      "to": "overhang"
+    },
+    "ceiling-step": {
+      "to": "chimney"
+    },
+    "floor-step": {
+      "to": "pit"
+    },
+    "pit-chimney": {
+      "to": "overhang"
+    }
+  },
+  "areas": {
+    "clay-area": {
+      "to": "clay"
+    }
+  },
+  "generic": {
+    "strip_line_subtypes": true,
+    "strip_area_suffix": true
+  },
+  "postimport": {
+    "spline_linetypes": true,
+    "nonstandard_water": true,
+    "sign_sizes": {
+      "entrance": "large",
+      "air-draught": "medium",
+      "stalactite": "medium",
+      "stalagmite": "medium"
+    },
+    "label_sizes": {
+      "!": "large"
+    }
+  }
+}

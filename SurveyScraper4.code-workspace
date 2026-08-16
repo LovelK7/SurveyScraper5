@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "SurveyScraper4",
+			"path": "."
+		},
+		{
+			"name": "cSurvey (read-only reference)",
+			"path": "../cSurvey"
+		},
+		{
+			"name": "crospeleo-automation (read-only reference)",
+			"path": "../crospeleo-automation"
+		}
+	],
+	"settings": {}
+}
