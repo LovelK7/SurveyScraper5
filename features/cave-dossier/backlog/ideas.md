@@ -13,3 +13,7 @@ when an idea's time comes. Nothing here is a commitment.
   once the user confirms its semantics.
 - 2026-08-16 — `Link Nacrt` / `Link Zapisnik` columns carry SUE-keyed references;
   could drive archive-file resolution cross-checks in the M2 dossier gathering.
+- 2026-08-22 — after the SB restructure, SBReader gains a queue API: za-istražit
+  rows = Napomena starts with "za istražit" (case-insensitive); parse the embedded
+  old Broj (`za istražit, <broj>, <note>`) as a secondary handle. `cavedossier sb
+  za-istrazit` lists the queue for M2.

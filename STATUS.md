@@ -1,6 +1,6 @@
 # STATUS
 
-Updated: 2026-08-16 (maintained by `/wrap-up` at the end of each session)
+Updated: 2026-08-22 (maintained by `/wrap-up` at the end of each session)
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -24,14 +24,19 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 - [x] Sandbox copy of the live workbook in `example/sb-sandbox/` (taken 2026-08-16)
 - [x] One read-only run against the LIVE workbook; stats identical to sandbox
 - [ ] User eyeballs 2–3 known caves via `sb inspect` against Excel
-- [ ] Confirm the "caves to be explored" source — discovery: the workbook has a
-      **"Za istražit"** sheet (likely exactly this); also found `Duljina`/`Dubina`
-      dimension columns (recorded in docs/sb-write-back-design.md)
+- [x] "Caves to be explored" source confirmed: **"Za istražit"** table. Decision
+      2026-08-22: SB gets restructured — Za istražit rows merge into Svi objekti
+      (by year), flagged by a `za istražit, <old broj>, <note>` prefix in
+      **Napomena**; Za istražit becomes a Power Query view (like
+      Istraženi/Nesređeni). Prompt for Claude in Excel:
+      [features/cave-dossier/docs/sb-restructure-excel-prompt.md](features/cave-dossier/docs/sb-restructure-excel-prompt.md)
+- [ ] User executes the SB restructure in Excel; then refresh the sandbox copy and
+      update configs if the filename changed
 
 ## Waiting on user
 
+- Execute the SB restructure (prompt above), report back; then we refresh the sandbox
 - Eyeball check: `cavedossier sb inspect --cave "<a cave you know>"` vs Excel (2–3 caves)
-- Confirm "Za istražit" sheet is the to-explore queue (and whether M2 should read it)
 - Society's blank OSZ template DOCX (gates M4 / part 2.1b)
 - Field-data intake dir layout on Drive (needed at M2 start; proposal will be drafted then)
 - Mobile-app context material (parked with part 1)
