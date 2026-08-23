@@ -21,8 +21,9 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
   **pre-migration** `cSurvey\dev\production\tools` — the 2026-08-16 migration
   updated the repo's canonical bats but nobody re-synced the deployed copies.
   Deployed-copy sync deserves a standing check whenever `production/tools/` changes.
-- **Next:** user performs the folder rename; then venv recreation + a full
-  `pytest` + `sb stats` smoke run under the new path.
+- **Next:** ~~user performs the folder rename~~ → done same day: folder + Claude
+  project-key folder renamed by user, venv recreated, 7/7 tests + `sb stats` +
+  `sb inspect` green under `Programming\SurveyScraper5`. Rename closed.
 
 ### 2026-08-23 — OSZ v10 template finalised + osz-template workbench (agent) ✅
 

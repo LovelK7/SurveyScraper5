@@ -2,10 +2,6 @@
 
 Updated: 2026-08-23 (maintained by `/wrap-up` at the end of each session)
 
-> **Rename in progress:** the project is now **SurveyScraper5** (SurveyScraper was
-> already at v4 — this superapp is v5). All tracked content is renamed; the disk
-> folder rename is on the user (steps under "Waiting on user"). After it: agent
-> recreates the cave-dossier venv (2 min).
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -40,10 +36,6 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Waiting on user
 
-- **Folder rename to SurveyScraper5** (with VS Code closed):
-  1. `Rename-Item "C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper4" "SurveyScraper5"`
-  2. `Rename-Item "C:\Users\Lovel.IZRK-LK-NB\.claude\projects\c--Users-Lovel-IZRK-LK-NB-Programming-SurveyScraper4" "c--Users-Lovel-IZRK-LK-NB-Programming-SurveyScraper5"` (carries Claude's project memory/history over)
-  3. Reopen via `SurveyScraper5.code-workspace`; next agent session recreates the venv
 - Execute the SB restructure (prompt above), report back; then we refresh the sandbox
 - Eyeball check: `cavedossier sb inspect --cave "<a cave you know>"` vs Excel (2–3 caves)
 - ~~Society's blank OSZ template DOCX~~ → delivered 2026-08-23:
@@ -55,6 +47,6 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Recent sessions
 
-- 2026-08-23 — project renamed SurveyScraper4 → SurveyScraper5 (tracked content done; folder rename on user) → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
+- 2026-08-23 — project renamed SurveyScraper4 → SurveyScraper5 (complete: folder, Claude key, venv re-verified) → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-23 — OSZ v10 template finalised: placeholders, checkbox vocabularies, workbench + conformance tooling → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-22 — SB restructure decision: single master table, Za istražit as PQ view → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
