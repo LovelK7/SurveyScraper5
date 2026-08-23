@@ -6,6 +6,24 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-08-23 — project renamed SurveyScraper4 → SurveyScraper5 (agent) ✅
+
+- **Did:** repo-wide rename (SurveyScraper was already at v4; the superapp is v5).
+  36 occurrences in 14 tracked files (`CLAUDE/README/ARCHITECTURE/STATUS`, glossary,
+  wrap-up skill, SETUP_PROMPT, cave-dossier docstrings/pyproject, csx `.bat` TOOLS
+  paths); `git mv` of the workspace file; `.env` sandbox path made **relative to the
+  feature root** (config.py resolves it — rename-proof from now on); TDX-folder bat
+  copies re-synced; Claude memory files updated. 7 tests + `sb stats` re-verified.
+- **Result:** all tracked content says SurveyScraper5. Disk folder rename left to
+  the user (steps in STATUS): close VS Code, rename the repo folder + the
+  `.claude/projects` key folder, reopen; venv recreation next session.
+- **Learned:** the TDX-folder bat copies on G: were still pointing at the
+  **pre-migration** `cSurvey\dev\production\tools` — the 2026-08-16 migration
+  updated the repo's canonical bats but nobody re-synced the deployed copies.
+  Deployed-copy sync deserves a standing check whenever `production/tools/` changes.
+- **Next:** user performs the folder rename; then venv recreation + a full
+  `pytest` + `sb stats` smoke run under the new path.
+
 ### 2026-08-23 — OSZ v10 template finalised + osz-template workbench (agent) ✅
 
 - **Did:** answered "what did I want changed in the next OSZ" from

@@ -50,7 +50,7 @@ git diff --no-index projects\0002-tdx-symbol-mapping\runs\2026-07-19-ponor-impor
 
 ```powershell
 Copy-Item "example\ponor_rupa_babi_pod_kucu-1p.csx" "projects\0002-tdx-symbol-mapping\runs\2026-07-19-ponor-import\work.csx"
-& C:\csurvey64\cSurveyPC.exe "C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper4\features\csx-to-survey-pipeline\projects\0002-tdx-symbol-mapping\runs\2026-07-19-ponor-import\work.csx"
+& C:\csurvey64\cSurveyPC.exe "C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper5\features\csx-to-survey-pipeline\projects\0002-tdx-symbol-mapping\runs\2026-07-19-ponor-import\work.csx"
 ```
 
 Opening is enough: `creatid="topodroid"` without `creat_postprocessed` auto-triggers the fix-up chain (FixTopodroidCSX → ConvertDesign/ConvertItem → FixTopodroidSurvey), and `calculatemode=1` should auto-run the therion calculation. Then, **touching nothing else**: File → Save As → `step-01-after-import.csz` in the run dir (keep the app open for step-02/03). Report + diff per §3.

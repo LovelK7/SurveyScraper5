@@ -85,7 +85,11 @@ def load_settings() -> Settings:
 
     sandbox_raw = get_env("SB_WORKBOOK_PATH")
     if sandbox_raw:
+        # Relative paths resolve against the feature root, so the sandbox
+        # copy under example/ survives renames/moves of the repo folder.
         workbook_path = Path(sandbox_raw)
+        if not workbook_path.is_absolute():
+            workbook_path = FEATURE_ROOT / workbook_path
         mode = "SANDBOX"
     else:
         workbook_filename = sb.get("workbook_filename")

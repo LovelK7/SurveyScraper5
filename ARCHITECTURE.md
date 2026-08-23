@@ -1,4 +1,4 @@
-# SurveyScraper4 — pipeline architecture
+# SurveyScraper5 — pipeline architecture
 
 The canonical map of the app. Part numbers below are **the** reference vocabulary —
 use them in docs, STATUS.md, session logs, and conversation ("2.1b" always means
@@ -16,7 +16,7 @@ From raw cave-exploration data to two final products per cave:
 
 Delivered (with entrance photos) into dedicated Google Drive archive dirs — the same
 dirs the separate crospeleo-automation tool later consumes to submit the cave to the
-national CroSpeleo cadastre. **SurveyScraper4 is the upstream producer; crospeleo-
+national CroSpeleo cadastre. **SurveyScraper5 is the upstream producer; crospeleo-
 automation is the downstream submitter.** Design every delivery format for that
 continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 

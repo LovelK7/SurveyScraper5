@@ -18,5 +18,5 @@ conversation; the codebase around them is English. Pipeline part numbers refer t
 | **georef.hr** | External Croatian georeferencing web tool; mints the georef record + map excerpt | Automated via headed Playwright (2.1c) |
 | **TopoDroid** | Android cave-survey app used on the survey phone | Source of `.csx`; part 1 receives its exports via bluetooth |
 | **cSurvey** | Windows desktop cave-survey app (VB.NET) processing the survey into the finished map | Engine of 2.1a; read-only reference clone at `../cSurvey` |
-| **CroSpeleo** | The national cave cadastre web system (`crospeleo.mingor.hr`) | Downstream only — crospeleo-automation submits there; SurveyScraper4 stops at the archive dirs |
+| **CroSpeleo** | The national cave cadastre web system (`crospeleo.mingor.hr`) | Downstream only — crospeleo-automation submits there; SurveyScraper5 stops at the archive dirs |
 | **Queue dirs** | Drive folders where part 1 (or the manual workflow) drops field data awaiting stage-2 processing | Part 1 → 2.1 handoff (intake contract settled at M2) |

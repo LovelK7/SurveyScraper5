@@ -17,7 +17,7 @@ rem  been imported into cSurvey yet - read what it tells you to do.
 rem
 rem  Canonical copy: production\tools\fix_tdx.bat (this is a copy).
 rem ------------------------------------------------------------------
-set "TOOLS=C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper4\features\csx-to-survey-pipeline\production\tools"
+set "TOOLS=C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper5\features\csx-to-survey-pipeline\production\tools"
 
 echo ==================================================================
 echo  STEP 4 - finishing the import (making decorations show)

@@ -16,7 +16,7 @@ rem  Normal case (csx is fine): you do NOT need this - use preprocess_tdx.bat.
 rem
 rem  Canonical copy: production\tools\recover_tdx.bat (this is a copy).
 rem ------------------------------------------------------------------
-set "TOOLS=C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper4\features\csx-to-survey-pipeline\production\tools"
+set "TOOLS=C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper5\features\csx-to-survey-pipeline\production\tools"
 
 echo ==================================================================
 echo  STEP 1b - rebuilding csx from the project zip (recovery)

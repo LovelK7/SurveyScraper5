@@ -1,4 +1,4 @@
-# SurveyScraper4
+# SurveyScraper5
 
 Umbrella "superapp" unifying several cave-survey / Croatian-speleology tools.
 This repo is where **all your work is committed**; the source projects that feed
@@ -17,7 +17,7 @@ agents: [CLAUDE.md](CLAUDE.md).
 | `features/csx-to-survey-pipeline/` | Part 2.1a: TopoDroid → finished-map (Nacrt) pipeline (migrated from `cSurvey/dev`). |
 | `features/cave-dossier/` | Parts 2.1/2.1b/2.1c/2.2: SB communication, dossier builder, OSZ builder (CLI `cavedossier`). |
 | `shared/` | Shared speleology domain material — starts with the [glossary](shared/glossary.md). |
-| `SurveyScraper4.code-workspace` | Multi-root workspace: this repo + the two read-only reference repos. |
+| `SurveyScraper5.code-workspace` | Multi-root workspace: this repo + the two read-only reference repos. |
 
 ## Read-only reference repos (never edited / committed into)
 

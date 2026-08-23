@@ -5,14 +5,14 @@ description: End-of-session ritual — update STATUS.md, append the session bloc
 
 # /wrap-up [session_label]
 
-End-of-session ritual for SurveyScraper4. Unlike crospeleo-automation's wrap-up
+End-of-session ritual for SurveyScraper5. Unlike crospeleo-automation's wrap-up
 (reflection only, never commits), this one **owns the commit** — the user is the
 sole developer, works on a single `main` branch, and wants automated commits with
 a single clean history.
 
 ## Guards (check before anything else)
 
-- Working directory must be `C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper4`
+- Working directory must be `C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper5`
   and `git rev-parse --show-toplevel` must resolve to it. **Never** run git in
   `../cSurvey` or `../crospeleo-automation` (read-only reference repos).
 - Branch must be `main`. If not, stop and ask the user.

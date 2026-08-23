@@ -1,4 +1,4 @@
-"""``cavedossier`` — CLI for SurveyScraper4 stage 2.
+"""``cavedossier`` — CLI for SurveyScraper5 stage 2.
 
 M1 scope: read-only SB inspection (`sb columns` / `sb inspect` / `sb stats`).
 Every command starts with a mode banner so it is always obvious whether the
@@ -99,7 +99,7 @@ def cmd_sb_stats(settings: Settings) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="cavedossier",
-        description="SurveyScraper4 stage 2: SB communication + cave dossier builder.",
+        description="SurveyScraper5 stage 2: SB communication + cave dossier builder.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

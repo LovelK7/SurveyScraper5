@@ -1,6 +1,6 @@
-# CLAUDE.md — SurveyScraper4 orientation for AI agents
+# CLAUDE.md — SurveyScraper5 orientation for AI agents
 
-SurveyScraper4 is an **umbrella "superapp"** that unifies several cave-survey /
+SurveyScraper5 is an **umbrella "superapp"** that unifies several cave-survey /
 Croatian-speleology tools: it conveys raw cave-exploration data into the two final
 products, the **OSZ** cave file and the **Nacrt** survey map. It is the repo where
 **all work is committed**; the source projects that feed it stay outside as
@@ -33,14 +33,14 @@ Features integrate via **artifacts** (files), never cross-feature imports.
 
 Two sibling repos are **reference material only. NEVER edit files in them, NEVER
 run git write commands (commit/push/checkout/reset/...) in them.** All work —
-code, docs, logs — lands in SurveyScraper4.
+code, docs, logs — lands in SurveyScraper5.
 
 | Repo | Role |
 |---|---|
 | `../cSurvey` | VB.NET / .NET Framework 4.8 desktop cave-survey app (~320k LOC). **Upstream GitHub clone the user does not own** — kept clean so upstream can be pulled freely. The `csx-to-survey-pipeline` feature's `path:line` citations resolve here. Its own `CLAUDE.md` is the one-page orientation to that codebase. (Its `dev/` folder is the pre-migration original of our first feature; treat it as frozen history.) |
-| `../crospeleo-automation` | Python automation for Croatian cave-catalog (CroSpeleo / SpeleoFlow) submissions. Own repo, own workspace. It is the **downstream consumer** of SurveyScraper4's delivery dirs (it submits finished dossiers to the national cadastre). **Porting rule:** code may be COPIED from it into this repo and adapted freely — log every copy in `features/cave-dossier/docs/PORTING.md`; never edit the source repo. |
+| `../crospeleo-automation` | Python automation for Croatian cave-catalog (CroSpeleo / SpeleoFlow) submissions. Own repo, own workspace. It is the **downstream consumer** of SurveyScraper5's delivery dirs (it submits finished dossiers to the national cadastre). **Porting rule:** code may be COPIED from it into this repo and adapted freely — log every copy in `features/cave-dossier/docs/PORTING.md`; never edit the source repo. |
 
-Open [SurveyScraper4.code-workspace](SurveyScraper4.code-workspace) to get all
+Open [SurveyScraper5.code-workspace](SurveyScraper5.code-workspace) to get all
 three folders in one VS Code window (reference repos labeled read-only).
 
 ## Shared domain, not shared code
