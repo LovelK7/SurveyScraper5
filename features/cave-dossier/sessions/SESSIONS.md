@@ -6,6 +6,50 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-08-23 — OSZ v10 template finalised + osz-template workbench (agent) ✅
+
+- **Did:** answered "what did I want changed in the next OSZ" from
+  `crospeleo-automation/TODO` (§"OSZ template overhaul", §"replace sa with s"), then
+  wrote Croatian placeholder texts for the 11 narrative fields
+  ([osz-template/docs/placeholders.md](../osz-template/docs/placeholders.md)),
+  grounded in `osz_parser.py` field specs, `RULES.md`, the CroSpeleo UI inventories
+  and the three archived OSZ samples (502/795/811). Created
+  `features/cave-dossier/osz-template/` (templates + archive, docs, tools, mockups)
+  with three tools: `inspect_osz.py` (layout/index/controls dump), `check_conformance.py`
+  (checkbox vocab diff vs CroSpeleo + `OSZParser._canonical_key` alias check + control
+  hygiene), `make_mockup.py` (fills the template with SUE 811 data). Audited three
+  template iterations across the session (v10.0 → v10.1 → final v10) and generated a
+  filled mockup for each.
+- **Result:** template finalised. Six checkbox groups now match CroSpeleo exactly —
+  Podrijetlo imena (6), Stanje ulaza (10), Hidrološka (8), Hidrogeološka (10),
+  **Perspektiva daljnjeg istraživanja (12/12)**, Vrsta objekta (8, forms confirmed
+  against the live dropdown). Prirodne opasnosti 8 of 13 (anthropogenic labels split
+  into their own group), Antropogene deliberately trimmed to `onečišćenje otpadom` +
+  `minsko-eksplozivna sredstva`, snow/ice reduced to two presence checkboxes. Three
+  defects found and fixed by the user: no `multiLine` on any narrative control (Enter
+  was blocked), a signature-row cell squashed 1851→250 twips (date wrapped vertically,
+  pushed the form to 5 pages), and `Povijesni podaci` printing at 11 pt. Final mockup
+  is 4 pages, all 15 controls filled, 9 boxes ticked.
+- **Learned:** (1) **python-docx cannot see content-control text at all** — verified on
+  1.2.0: `paragraph.text`, `cell.text` and `document.paragraphs` all skip `w:sdt`, and a
+  cell-level control hides its whole `w:tc` from `row.cells`. Every field the new
+  template puts in a control reads as empty for today's parser; it must read
+  `w:sdtContent//w:t` and treat `w:showingPlcHdr` as empty, else untouched placeholders
+  get ingested as real text (measured: the Mikroklimatski placeholder alone would fire
+  `led - stalno`, `snijeg - stalno`, 6,7 °C, 95 %, strujanje `povremeno`). (2) A
+  plain-text control may not contain a second `w:p` — Word calls the file corrupted even
+  with `multiLine="1"`; use `<w:br/>`. Duplicated `w14:paraId` breaks it the same way.
+  (3) Ticking a checkbox needs `w14:checked val="1"` **and** the run's `w:sym` swapped to
+  the checkedState char, else it looks empty. (4) CroSpeleo's Vrsta objekta vocabulary is
+  asymmetric: `jama sa špiljskim ulazom` but `špilja s jamskim ulazom`. (5) `RULES.md` §2
+  lists a stale Izvor-koordinata option set; `_COORD_SOURCE_OPTIONS` in the parser is
+  authoritative.
+- **Next:** teach the fetcher content controls (`w:sdt` + `w14:checkbox`), then the
+  mapping rules in [audit-v10.2.md](../osz-template/docs/audit-v10.2.md) §"Pravila
+  preslikavanja" — notably `onečišćenje otpadom` → also Opasnosti `otpad u objektu`,
+  MES → two CroSpeleo controls, and the snow/ice presence rule that can retire
+  `infer_snow_ice_negative`.
+
 ### 2026-08-22 — SB restructure designed: single master table + Za istražit as PQ view (agent) ✅
 
 - **Did:** settled the SB queue question with the user. Confirmed via sandbox

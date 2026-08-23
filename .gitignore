@@ -35,3 +35,13 @@ desktop.ini
 *~
 .idea/
 .vscode/
+
+# === OSZ template workbench (features/cave-dossier/osz-template) =========
+# Word autosave leftovers (~$ lock files are covered above)
+~WRL*.tmp
+# Same-day template iterations: heavy, near-identical .docx; the current
+# template in templates/ is the tracked one
+features/cave-dossier/osz-template/templates/archive/
+# Generated mockups: regenerate with tools/make_mockup.py — only the PDFs
+# (small, reviewable without Word) stay tracked
+features/cave-dossier/osz-template/mockups/*.docx

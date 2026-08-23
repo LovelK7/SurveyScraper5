@@ -1,6 +1,6 @@
 # STATUS
 
-Updated: 2026-08-22 (maintained by `/wrap-up` at the end of each session)
+Updated: 2026-08-23 (maintained by `/wrap-up` at the end of each session)
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -10,7 +10,7 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 |---|---|
 | 1 — field mobile app | PARKED (manual workflow; revisit after stage 2 works) |
 | 2.1a — csx-to-survey | OPERATIONAL (own feature, semi-manual 4-step pipeline) |
-| 2.1b — OSZ builder | NOT STARTED (waiting on template) |
+| 2.1b — OSZ builder | NOT STARTED — **OSZ v10 template finalised 2026-08-23** (content controls + 9 checkbox groups); reading it needs a `w:sdt`-aware parser |
 | 2.1c — isječak karte | NOT STARTED (port planned, M3) |
 | 2.1 — dossier builder | NOT STARTED (M2) |
 | 2.2 — SB communication | **M1 IN PROGRESS** |
@@ -37,11 +37,15 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 
 - Execute the SB restructure (prompt above), report back; then we refresh the sandbox
 - Eyeball check: `cavedossier sb inspect --cave "<a cave you know>"` vs Excel (2–3 caves)
-- Society's blank OSZ template DOCX (gates M4 / part 2.1b)
+- ~~Society's blank OSZ template DOCX~~ → delivered 2026-08-23:
+  [features/cave-dossier/osz-template/templates/Zapisnik_OSZ_v10.docx](features/cave-dossier/osz-template/templates/Zapisnik_OSZ_v10.docx)
+- Distribute the finalised OSZ v10 to recorders (template-side work is done;
+  two cosmetic leftovers noted in [audit-v10.2.md](features/cave-dossier/osz-template/docs/audit-v10.2.md) §"Sitnice")
 - Field-data intake dir layout on Drive (needed at M2 start; proposal will be drafted then)
 - Mobile-app context material (parked with part 1)
 
 ## Recent sessions
 
+- 2026-08-23 — OSZ v10 template finalised: placeholders, checkbox vocabularies, workbench + conformance tooling → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
+- 2026-08-22 — SB restructure decision: single master table, Za istražit as PQ view → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-16 — M0+M1: docs scaffold, cave-dossier feature, SB reader + CLI → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-08-16 — repo setup: csx-to-survey-pipeline migrated from cSurvey/dev → [features/csx-to-survey-pipeline/sessions/SESSIONS.md](features/csx-to-survey-pipeline/sessions/SESSIONS.md)

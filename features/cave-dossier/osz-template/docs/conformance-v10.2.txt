@@ -1,0 +1,85 @@
+Template: templates/Zapisnik_OSZ_v10.docx
+
+== 1. CHECKBOX VOCABULARIES ==
+  OK Podrijetlo imena                 all 6 labels present
+  OK Stanje ulaza                     all 10 labels present
+  OK Hidrološka karakteristika        all 8 labels present
+  OK Hidrogeološka funkcija           all 10 labels present
+  OK Perspektiva daljnjeg istraživanja all 12 labels present
+  !! Opasnosti                        9/13 labels
+       missing: 'električni vodovi'                                  <-- gap
+       missing: 'minski sumnjivo područje u kojem je objekt'         <-- gap
+       missing: 'opasni otpad'                                       <-- gap
+       missing: 'otpad u objektu'                                    (covered by Antropogene "onečišćenje otpadom")
+  ~  Antropogene aktivnosti           1/15 labels — only onečišćenje otpadom kept (decision 2026-08-23: 15 labels too many for the form)
+  -- Prisutnost snijega i leda        absent from template
+  OK Vrsta objekta                    8 labels, all confirmed against CroSpeleo (list not exhaustive)
+
+  labels mapped by rule (no verbatim CroSpeleo label):
+     prisutnost snijega     Prisutnost snijega i leda → "snijeg - da" (or "- stalno"/"- privremeno" from the prose); unticked + filled section → "snijeg - ne"
+     prisutnost leda        Prisutnost snijega i leda → "led - da" (same rule as snijeg)
+
+== 2. HEADINGS vs OSZParser ALIASES ==
+  recognised: 27
+     IME OBJEKTA                                -> object_name
+     Sinonimi                                   -> synonyms
+     Podrijetlo imena                           -> origin_of_name
+     Najbliže mjesto                            -> nearest_place
+     Lokalitet                                  -> locality
+     Kota ulaza (m.n.v.)                        -> entrance_elevation_m
+     Izvor koordinata                           -> coordinate_source
+     Položaj i pristup objektu                  -> location_access_text
+     Vrsta objekta                              -> object_type
+     Horizontalna duljina (m)                   -> horizontal_length_m
+     Dubina (m)                                 -> depth_m
+     Visinska razlika (m)                       -> vertical_difference_m
+     Hidrološka karakteristika                  -> hydrological_characteristic
+     Hidrogeološka funkcija                     -> hydrogeological_function
+     Osnovni opis s tehničkim podacima          -> technical_description
+     Perspektiva daljnjeg istraživanja          -> future_exploration_perspective
+     Speleomorfološki, geološki i hidrogeološki -> expert_geology_hydrogeology
+     Mikroklimatski                             -> expert_meteorology
+     Biospeleološki                             -> expert_biology
+     Arheološki i paleontološki                 -> expert_archaeology_paleontology
+     Povijesni podaci                           -> historical_data
+     Literatura                                 -> literature
+     Članovi ekipe                              -> team_members
+     Fotografirali                              -> photographed_by
+     Autor fotografije ulaza                    -> entrance_photo_author
+     Napomene                                   -> object_note
+     Zapisničar                                 -> recorder
+  NOT recognised: 23
+     Katastarski broj
+     Broj pločice
+     Županija
+     Grad/općina
+     Isječak karte s lokacijom ulaza
+     Koordinate ulaza (HTRS96/TM)
+     Izvor kote ulaza
+     Broj ulaza
+     Širina ulaza
+     Visina/duljina ulaza
+     Stanje ulaza
+     Sporedni ulazi
+     Karakteristike objekta
+     Duljina (m)
+     Stručni podaci i opažanja
+     Prirodne opasnosti
+     Antropogene opasnosti i utjecaj
+     Datum ili razdoblje istraživanja
+     Istražile udruge
+     Crtali
+     Mjerili
+     Nacrt uredio
+     , dne
+
+== 3. CONTROL HYGIENE ==
+  text controls: 15
+  without multiLine (Enter blocked): 3
+     '32'
+     '50'
+     'Detaljni opis u Napomena ili „/“.'
+  without explicit font size (falls back to 11 pt): 2
+     'Svaki izvor u zasebnom retku, po obrascu'
+     'Ovdje upiši sve ostale napomene ili kome'
+  without w:tag (fetcher must match on heading text): 15
