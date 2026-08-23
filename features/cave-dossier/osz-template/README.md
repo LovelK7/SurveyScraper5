@@ -6,14 +6,18 @@ ispunjeni primjerci. Dio featurea [cave-dossier](../README.md) (dio 2.2
 cjevovoda — OSZ builder), ali odvojen jer je ovo rad na dokumentu, a ne na kodu.
 
 ```
-templates/   Zapisnik_OSZ_v10.docx      ← radna verzija (verzija predloška ostaje v10)
+templates/   Zapisnik_OSZ_v10.docx      ← PREPORUČENA inačica (Word, prava polja)
+             Zapisnik_OSZ_v10_gdocs.docx ← inačica za one koji rade u Google Docsu
              archive/                   ← snimke ranijih iteracija istog dana
 docs/        placeholders.md            ← tekstovi placeholdera + zašto
              audit-v10.2.md             ← zadnja provjera (završna varijanta v10)
              audit-v10.1.md, audit-v10.0.md ← ranije varijante (povijesno)
              conformance-v10.2.txt      ← izlaz check_conformance.py
+             google-docs-compatibility.md ← što puca u Google Docsu i zašto
 tools/       inspect_osz.py             ← struktura dokumenta
              check_conformance.py       ← provjera prema CroSpeleo/SpeleoFlow
+             flatten_for_gdocs.py       ← Word verzija → verzija za Google Docs
+             check_gdocs_roundtrip.py   ← usporedba prije/poslije Google Docsa
              make_mockup.py             ← generira ispunjeni ogledni zapisnik
 mockups/     v10.2_primjer_811.*        ← kako izgleda popunjen (ranije: v10.0, v10.1)
 ```
@@ -33,7 +37,19 @@ python tools/check_conformance.py templates/Zapisnik_OSZ_v10.docx | tee docs/con
 
 # 3. kako izgleda popunjen
 python tools/make_mockup.py templates/Zapisnik_OSZ_v10.docx mockups/v10.2_primjer_811.docx
+
+# 4. verzija koja radi i u Google Docsu — to je ono što se dijeli recorderima
+python tools/flatten_for_gdocs.py templates/Zapisnik_OSZ_v10.docx templates/Zapisnik_OSZ_v10_gdocs.docx
 ```
+
+**Obje inačice ostaju u upotrebi.** Recorderima se preporučuje **izvorna Word
+inačica** — kvačice se klikću, uputa nestane čim se počne tipkati, ništa ne
+zaostaje u tekstu. Inačica `_gdocs` je za one koji zapisnik otvaraju s Drivea u
+Google Docsu, jer Docs Wordove kontrole baca. Detalji i pravila:
+[docs/google-docs-compatibility.md](docs/google-docs-compatibility.md).
+
+Alat je idempotentan i smije se pokrenuti nad samom `_gdocs` datotekom (isti
+put kao ulaz i izlaz) — tako se popravi inačica koja je ručno dorađena u Wordu.
 
 `inspect_osz.py --mode index` ispisuje adrese `table[t].row[r].cell[c]` — to su
 koordinate koje `make_mockup.py` koristi. Kad se preraspored redaka promijeni,

@@ -14,9 +14,15 @@ here works on ``word/document.xml`` through lxml.
 """
 import argparse
 import io
+import sys
 import zipfile
 
 from lxml import etree
+
+try:                                  # Croatian diacritics on a cp1250 console
+    sys.stdout.reconfigure(encoding='utf-8')
+except AttributeError:                # pragma: no cover — Python < 3.7
+    pass
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 W14 = '{http://schemas.microsoft.com/office/word/2010/wordml}'
