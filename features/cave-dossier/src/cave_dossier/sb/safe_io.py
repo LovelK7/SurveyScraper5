@@ -1,4 +1,4 @@
-"""Safe I/O for the live ``!Speleo_baza_SUE_v2.4.xlsm`` workbook.
+"""Safe I/O for the live ``!Speleo_baza_SUE_v3.0.xlsm`` workbook.
 
 Ported near-verbatim from crospeleo-automation (see docs/PORTING.md).
 Architectural lessons distilled from

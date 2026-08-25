@@ -1,6 +1,6 @@
 # STATUS
 
-Updated: 2026-08-23 (maintained by `/wrap-up` at the end of each session)
+Updated: 2026-08-25 (maintained by `/wrap-up` at the end of each session)
 
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -22,7 +22,7 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 - [x] Port normalization + sb_safe_io + trimmed SB reader (see docs/PORTING.md)
 - [x] CLI: `cavedossier sb columns` / `sb inspect --cave` / `sb stats` with SANDBOX/LIVE banner
 - [x] Unit tests on synthetic fixture (header autodetect, find_cave)
-- [x] Sandbox copy of the live workbook in `example/sb-sandbox/` (taken 2026-08-16)
+- [x] Sandbox copy of the live workbook in `example/sb-sandbox/` (refreshed 2026-08-25 → v3.0)
 - [x] One read-only run against the LIVE workbook; stats identical to sandbox
 - [ ] User eyeballs 2–3 known caves via `sb inspect` against Excel
 - [x] "Caves to be explored" source confirmed: **"Za istražit"** table. Decision
@@ -31,12 +31,21 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
       **Napomena**; Za istražit becomes a Power Query view (like
       Istraženi/Nesređeni). Prompt for Claude in Excel:
       [features/cave-dossier/docs/sb-restructure-excel-prompt.md](features/cave-dossier/docs/sb-restructure-excel-prompt.md)
-- [ ] User executes the SB restructure in Excel; then refresh the sandbox copy and
-      update configs if the filename changed
+- [x] User executed the SB restructure in Excel → **`!Speleo_baza_SUE_v3.0.xlsm`**
+      (2026-08-25). Single master `Svi objekti` (table `SO_v2_1`, header row 2,
+      1301 rows, 24 cols — GK columns dropped); Istraženi / Nesređeni / **Za
+      istražit** are all Power Query views now (`IO_v2_1`, `NO_v2_1`, `ZI_v2_1`);
+      old sheet kept as `Za istražit ARHIVA v2.4`. 185 rows carry the
+      `za istražit, …` flag in Napomena. Config + sandbox + `safe_io` repointed;
+      7 tests green.
 
 ## Waiting on user
 
-- Execute the SB restructure (prompt above), report back; then we refresh the sandbox
+- Refresh the **Za istražit** Power Query view (Data → Refresh All): the view has 184
+  rows but 185 are flagged in the master — `Ponor Gotovž` (Redni broj 1294) is missing.
+  Its Napomena is `za istražit, detalji u literaturi`, i.e. no old-Broj number in the
+  second field; if a refresh doesn't fix it, the query filters on that number and new
+  queue rows will keep vanishing from the view.
 - Eyeball check: `cavedossier sb inspect --cave "<a cave you know>"` vs Excel (2–3 caves)
 - ~~Society's blank OSZ template DOCX~~ → delivered 2026-08-23:
   [features/cave-dossier/osz-template/templates/Zapisnik_OSZ_v10.docx](features/cave-dossier/osz-template/templates/Zapisnik_OSZ_v10.docx)

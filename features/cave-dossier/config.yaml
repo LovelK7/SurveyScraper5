@@ -7,8 +7,9 @@
 sb:
   # Filename of the live workbook, resolved against LOCAL_DRIVE_ROOT (.env)
   # when SB_WORKBOOK_PATH (sandbox override) is not set.
-  workbook_filename: "!Speleo_baza_SUE_v2.4.xlsm"
-  sheet_name: "Svi objekti"
+  workbook_filename: "!Speleo_baza_SUE_v3.0.xlsm"
+  sheet_name: "Svi objekti"        # single master table since v3.0 (SO_v2_1, header row 2);
+                                   # Istraženi / Nesređeni / Za istražit are Power Query views
 
   # Column names as they appear in the workbook header row.
   object_name_column: "Ime objekta"
