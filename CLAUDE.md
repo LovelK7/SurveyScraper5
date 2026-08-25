@@ -80,6 +80,12 @@ This file deliberately does **not** duplicate cSurvey's architecture notes — s
 
 ## Logging discipline
 
+Commits are automated: [`.claude/hooks/auto-commit.sh`](.claude/hooks/README.md)
+commits and pushes everything to GitHub on a throttled checkpoint during long
+sessions and again at session end. Those commits are tagged `chore(auto):` — they
+are a backup safety net, not the record. The record is still `/wrap-up`'s curated
+commit, so nothing below changes.
+
 The repo runs a logging discipline — keep it up. **End every working session with
 `/wrap-up`** (`.claude/skills/wrap-up/SKILL.md`): it updates [STATUS.md](STATUS.md),
 appends a session block to the touched feature's `sessions/SESSIONS.md`, captures

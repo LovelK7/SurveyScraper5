@@ -65,13 +65,23 @@ finding new ideas — don't lose them in chat history.
 ```powershell
 git add -A
 git commit -m "<one-line summary of the session>" -m "<2-4 line body: key changes, milestone progress>"
+git push origin main
 ```
 
 - One commit per wrap-up (no splitting), message in imperative mood, mention the
   milestone (e.g. "M1:") when applicable.
 - End the message body with: `Co-Authored-By: Claude <noreply@anthropic.com>` when
   an agent did the work.
-- Never push (no remote configured yet); never amend previous commits.
+- Push to `origin` (GitHub) — it is the off-machine backup. Never amend previous
+  commits.
+
+**Relationship to the auto-commit hook.** `.claude/hooks/auto-commit.sh` also
+commits and pushes — on a throttled checkpoint during long sessions and again at
+session end (see [../../hooks/README.md](../../hooks/README.md)). That hook is the
+safety net; this wrap-up commit is the curated, narrative one. Doing the wrap-up
+commit here means the session-end hook finds a clean tree and does nothing, which
+is the intended outcome. If `chore(auto):` commits from this session already exist,
+leave them — do not squash or rewrite history to absorb them.
 
 ### 6 — Report
 
