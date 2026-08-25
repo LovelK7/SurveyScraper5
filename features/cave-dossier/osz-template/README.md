@@ -6,7 +6,8 @@ ispunjeni primjerci. Dio featurea [cave-dossier](../README.md) (dio 2.2
 cjevovoda — OSZ builder), ali odvojen jer je ovo rad na dokumentu, a ne na kodu.
 
 ```
-templates/   Zapisnik_OSZ_v10.docx      ← PREPORUČENA inačica (Word, prava polja)
+templates/   Zapisnik_OSZ_v10.docx      ← izvornik na kojem se radi (nezaključan)
+             Zapisnik_OSZ_v10.dotx      ← PREPORUČENO za recordere: dvoklik = novi dokument
              Zapisnik_OSZ_v10_gdocs.docx ← inačica za one koji rade u Google Docsu
              archive/                   ← snimke ranijih iteracija istog dana
 docs/        placeholders.md            ← tekstovi placeholdera + zašto
@@ -14,7 +15,9 @@ docs/        placeholders.md            ← tekstovi placeholdera + zašto
              audit-v10.1.md, audit-v10.0.md ← ranije varijante (povijesno)
              conformance-v10.2.txt      ← izlaz check_conformance.py
              google-docs-compatibility.md ← što puca u Google Docsu i zašto
+             zastita-predloska.md       ← kako spriječiti prepisivanje predloška
 tools/       inspect_osz.py             ← struktura dokumenta
+             lock_template.py           ← zaključana .dotx inačica za dijeljenje
              check_conformance.py       ← provjera prema CroSpeleo/SpeleoFlow
              flatten_for_gdocs.py       ← Word verzija → verzija za Google Docs
              check_gdocs_roundtrip.py   ← usporedba prije/poslije Google Docsa
@@ -38,8 +41,11 @@ python tools/check_conformance.py templates/Zapisnik_OSZ_v10.docx | tee docs/con
 # 3. kako izgleda popunjen
 python tools/make_mockup.py templates/Zapisnik_OSZ_v10.docx mockups/v10.2_primjer_811.docx
 
-# 4. verzija koja radi i u Google Docsu — to je ono što se dijeli recorderima
+# 4. verzija koja radi i u Google Docsu
 python tools/flatten_for_gdocs.py templates/Zapisnik_OSZ_v10.docx templates/Zapisnik_OSZ_v10_gdocs.docx
+
+# 5. zaključana .dotx inačica za dijeljenje (dvoklik otvara novi dokument)
+python tools/lock_template.py templates/Zapisnik_OSZ_v10.docx templates/Zapisnik_OSZ_v10.dotx        --lock-controls --read-only-rec --dotx --strip-fonts
 ```
 
 **Obje inačice ostaju u upotrebi.** Recorderima se preporučuje **izvorna Word

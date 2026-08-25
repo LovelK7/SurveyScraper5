@@ -45,3 +45,7 @@ features/cave-dossier/osz-template/templates/archive/
 # Generated mockups: regenerate with tools/make_mockup.py — only the PDFs
 # (small, reviewable without Word) stay tracked
 features/cave-dossier/osz-template/mockups/*.docx
+
+# === Auto-commit hook (.claude/hooks/auto-commit.sh) =====================
+# Per-machine run log; the commits themselves are the tracked record
+.claude/auto-commit.log

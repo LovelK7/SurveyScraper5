@@ -27,8 +27,12 @@ Obje inačice se održavaju i dijele:
 | `Zapisnik_OSZ_v10.docx` (**preporučena**) | svima koji ispunjavaju u Wordu | prave kvačice na klik, placeholder nestane čim se počne tipkati, nikakav trag upute ne ostaje u podacima |
 | `Zapisnik_OSZ_v10_gdocs.docx` | onima koji otvaraju s Drivea u Google Docsu | Docs Wordove kontrole baca, pa ova inačica nema nijednu |
 
-U zaglavlju/podnožju `_gdocs` inačice stoji linija koja upućuje na izvornu
-Word inačicu, da nitko ne završi u slabijoj varijanti bez potrebe.
+U podnožju `_gdocs` inačice stoji linija koja upućuje na izvornu Word inačicu,
+da nitko ne završi u slabijoj varijanti bez potrebe.
+
+Predložak se dijeli kao **`Zapisnik_OSZ_v10.dotx`** (dvoklik otvara novi
+dokument, polja zaključana) — kako se to generira i zašto Wordove brave ne
+vrijede u Docsu: [zastita-predloska.md](zastita-predloska.md).
 
 ### Kako se radi `_gdocs` inačica
 
