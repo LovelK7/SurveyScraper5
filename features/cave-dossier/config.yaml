@@ -22,6 +22,26 @@ sb:
   x_htrs_column: "X HTRS"
   y_htrs_column: "Y HTRS"
 
+  # Additional columns the DOSSIER reads (M2 on): canonical dossier field ->
+  # column header, mirroring crospeleo-automation's profile.sb.field_columns.
+  # The nine names above stay separate because SBReader itself needs them
+  # (header autodetect + cave lookup). Lookup is diacritic-insensitive.
+  field_columns:
+    synonyms: "Sinonimi"
+    locality: "Lokalitet"
+    nearest_place: "Najbliže mjesto"
+    length_m: "Duljina"
+    depth_m: "Dubina"
+    entrance_elevation_m: "Z"
+    last_exploration_year: "Godina zadnjeg istraživanja"
+    note: "Napomena"                       # also carries the "za istražit" queue flag
+    entrance_photo_flag: "Fotografija ulaza"
+    pollution_flag: "Zagađenost"
+    ice_cave_flag: "Ledenica"
+    supplementary_record_flag: "Dopunski zapisnik?"
+    nacrt_link: "Link Nacrt"
+    zapisnik_link: "Link Zapisnik"
+
 # Society archive dirs on Drive (relative to LOCAL_DRIVE_ROOT) — used from M2 on
 # (dossier gathering) and M6 (delivery). Same dirs crospeleo-automation reads.
 archive:

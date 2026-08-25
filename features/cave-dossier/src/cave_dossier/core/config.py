@@ -46,6 +46,9 @@ class Settings:
     sb_x_htrs_column: str | None
     sb_y_htrs_column: str | None
     local_drive_root: Path | None
+    # Extra SB columns the dossier reads: canonical field -> column header
+    # (config.yaml `sb.field_columns`); see dossier/sb_mapper.py.
+    sb_field_columns: dict[str, str] = field(default_factory=dict)
     archive_dirs: dict[str, str] = field(default_factory=dict)
 
 
@@ -118,5 +121,10 @@ def load_settings() -> Settings:
         sb_x_htrs_column=sb.get("x_htrs_column"),
         sb_y_htrs_column=sb.get("y_htrs_column"),
         local_drive_root=local_drive_root,
+        sb_field_columns={
+            str(key): str(value)
+            for key, value in (sb.get("field_columns") or {}).items()
+            if value
+        },
         archive_dirs=dict(archive),
     )

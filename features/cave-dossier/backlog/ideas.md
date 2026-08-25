@@ -58,4 +58,13 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-25 — `flatten_for_gdocs.py` must be re-run after every Word save of the
   `_gdocs` variant: Word re-embeds ~3 MB of fonts unless *Embed fonts in the file* is
   off in the source document.
-
+- 2026-08-25 — SB v3.0 has **7 trailing blank rows** inside the `SO_v2_1` table (Excel
+  rows 1297-1303): `sb stats` counts 1301 data rows where only 1294 are caves. A
+  "drop rows with neither name nor SUE" filter in `SBReader._read_sheet` would fix the
+  count everywhere at once (touches the M1 numbers recorded in STATUS/SESSIONS).
+- 2026-08-25 — `cavedossier report` currently resolves one cave at a time; a
+  `--queue` / `report --all` sweep over the 185 `za istražit` rows would turn the
+  gating table into a worklist ("what is missing across the whole society archive").
+- 2026-08-25 — 416 rows have no SUE number and 152 no `Autori nacrta`; the gating run
+  over the whole sandbox (see the M2 session) is a cheap data-quality report for the
+  user, independent of any single cave's dossier.

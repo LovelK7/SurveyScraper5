@@ -1,8 +1,9 @@
 """``cavedossier`` — CLI for SurveyScraper5 stage 2.
 
-M1 scope: read-only SB inspection (`sb columns` / `sb inspect` / `sb stats`).
-Every command starts with a mode banner so it is always obvious whether the
-SANDBOX copy or the LIVE workbook is being read.
+Commands: read-only SB inspection (`sb columns` / `sb inspect` / `sb stats`,
+M1) and the per-cave dossier report (`report`, M2).  Every command starts with
+a mode banner so it is always obvious whether the SANDBOX copy or the LIVE
+workbook is being read.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ import argparse
 import sys
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
+from cave_dossier.dossier import build_from_sb, evaluate, render
 from cave_dossier.sb.loader import SBReader
 from cave_dossier.sb.safe_io import SBWorkbookUnreachable
 
@@ -93,6 +95,32 @@ def cmd_sb_stats(settings: Settings) -> int:
     return 0
 
 
+def cmd_report(settings: Settings, query: str, as_json: bool) -> int:
+    """Per-cave dossier report (M2).
+
+    Only SB is gathered so far, so most Tablica 2 rules come back as
+    "not checked yet" rather than as blockers — see dossier/gating.py.
+    """
+    reader = SBReader(settings)
+    matches = reader.find_caves(query)
+    if not matches:
+        print(f"No SB row matches {query!r} (tried object name, SUE number, plaque).")
+        return 2
+    if len(matches) > 1:
+        print(f"{len(matches)} rows match {query!r} — refine the query:")
+        for cave in matches:
+            print(f"  row {cave.row_number}: {cave.object_name} (SUE {cave.sue_number or '—'})")
+        return 2
+
+    dossier = build_from_sb(matches[0], settings)
+    evaluate(dossier)
+    if as_json:
+        print(dossier.model_dump_json(indent=2, exclude={"sb_record"}))
+    else:
+        print(render(dossier))
+    return 0 if dossier.readiness.ready else 1
+
+
 # ── Entry point ────────────────────────────────────────────────────
 
 
@@ -117,6 +145,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     sb_sub.add_parser("stats", help="Sheet inventory + row/fill counts")
 
+    report = subparsers.add_parser(
+        "report",
+        help="Per-cave dossier: what is present, what is missing, what blocks",
+    )
+    report.add_argument(
+        "--cave",
+        required=True,
+        help="Object name, SUE number, or plaque number (must resolve to ONE row)",
+    )
+    report.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help="Emit the dossier as JSON (raw SB row omitted) instead of the text report",
+    )
+
     return parser
 
 
@@ -139,6 +183,8 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_sb_inspect(settings, args.cave)
             if args.sb_command == "stats":
                 return cmd_sb_stats(settings)
+        if args.command == "report":
+            return cmd_report(settings, args.cave, args.as_json)
         return 2
     except (ConfigError, SBWorkbookUnreachable) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

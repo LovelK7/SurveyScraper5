@@ -3,42 +3,12 @@
 The fixture (tests/fixtures/mini_sb.xlsx, regenerable via make_mini_sb.py)
 replicates the live workbook's traps: metadata row above the header, header
 spellings differing in case/whitespace from config, Croatian diacritics.
+The ``settings`` / ``reader`` fixtures live in conftest.py.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
-
-from cave_dossier.core.config import Settings
 from cave_dossier.sb.loader import SBReader
-
-FIXTURE = Path(__file__).resolve().parent / "fixtures" / "mini_sb.xlsx"
-
-
-@pytest.fixture()
-def settings() -> Settings:
-    return Settings(
-        sb_workbook_path=FIXTURE,
-        sb_mode="SANDBOX",
-        sb_sheet_name="Svi objekti",
-        sb_object_name_column="Ime objekta",
-        sb_archive_reference_column="Katastarski broj SUE",
-        sb_filter_column="CroSpeleo unos",
-        sb_marker_column="Katastarski broj RH",
-        sb_plaque_column="Broj pločice",
-        sb_drawing_authors_column="Autori nacrta",
-        sb_exploration_period_column="Godina ili period istraživanja",
-        sb_x_htrs_column="X HTRS",
-        sb_y_htrs_column="Y HTRS",
-        local_drive_root=None,
-    )
-
-
-@pytest.fixture()
-def reader(settings: Settings) -> SBReader:
-    return SBReader(settings)
 
 
 def test_header_row_detected_below_metadata(reader: SBReader) -> None:

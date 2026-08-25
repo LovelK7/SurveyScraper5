@@ -13,7 +13,7 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2.1a — csx-to-survey | OPERATIONAL (own feature, semi-manual 4-step pipeline) |
 | 2.1b — OSZ builder | NOT STARTED — **OSZ v10 template distributed to recorders 2026-08-25** (Word `.dotx` + Google-Docs `.docx`); M4 ungated. Reading filled zapisnici needs a `w:sdt`-aware parser for the Word form and a `[ ]`/`⟨ ⟩` text parser for the Docs form |
 | 2.1c — isječak karte | NOT STARTED (port planned, M3) |
-| 2.1 — dossier builder | NOT STARTED (M2) |
+| 2.1 — dossier builder | **M2 in progress** — dossier model + gating + `report` (SB-only) done; archive intake next |
 | 2.2 — SB communication | **M1 ✅ DONE** (read-only, live SB v3.0); M2 next |
 
 ## M1 — SB read-only communication ✅ complete (2026-08-25)
@@ -43,11 +43,20 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm at kickoff.**
 
-- [ ] Dossier model (`dossier/`): fields the OSZ + SB + archive supply, warning/blocker gating
+- [x] Dossier model (`dossier/`): fields the OSZ + SB + archive supply, warning/blocker gating
+      — `model.py` (`CaveDossier` + `Source` provenance), `sb_mapper.py` (SB row -> dossier,
+      queue-flag parsing), `gating.py` (Protokol v6 Tablica 2 / §5.1 rules, each declaring the
+      source that feeds it), `report.py`. 26 tests green; gating smoke-run over all 1301
+      sandbox rows without a crash.
 - [ ] Intake: resolve a cave's archive files from Drive (nacrt, izjave, fotografije ulaza)
-- [ ] `cavedossier report --cave <n>`: what is present / missing / blocking, per Protocol v6 Tablica 2
-- [ ] Queue reader over the v3.0 Napomena flag (`za istražit, [<old broj>,] <note>` — the
-      old Broj is optional, see `Ponor Gotovž`)
+      — needs the `drive_resolver` + `name_resolver` ports; until then `Source.ARCHIVE`
+      rules report as *not checked yet*
+- [~] `cavedossier report --cave <n>`: what is present / missing / blocking, per Protocol v6
+      Tablica 2 — **shipped SB-only** (`--json` too); fills out as intake / 2.1a / OSZ land
+- [~] Queue reader over the v3.0 Napomena flag (`za istražit, [<old broj>,] <note>` — the
+      old Broj is optional, see `Ponor Gotovž`) — **parser done** (`parse_queue_flag`,
+      185/185 rows flagged, surfaced as a context warning in `report`); the listing
+      command (`sb za-istrazit`) is still open
 - [ ] Field-data intake dir layout on Drive agreed with the user (blocks the 2.1a handoff)
 
 **M4 (OSZ builder) is no longer gated** — the template shipped 2026-08-25; picking it up
