@@ -49,3 +49,7 @@ features/cave-dossier/osz-template/mockups/*.docx
 # === Auto-commit hook (.claude/hooks/auto-commit.sh) =====================
 # Per-machine run log; the commits themselves are the tracked record
 .claude/auto-commit.log
+
+# Distribution copies are byte-identical to templates/ — the tracked pair there
+# (Zapisnik_OSZ_v10.dotx + _gdocs.docx) is the record of what was handed out
+features/cave-dossier/osz-template/distribution/

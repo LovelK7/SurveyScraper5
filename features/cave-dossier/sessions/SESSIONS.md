@@ -6,6 +6,53 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-08-25 — OSZ v10 shipped to recorders + SB v3.0 adopted, M1 closed (agent) ✅
+
+- **Did:** (1) *Google Docs compatibility* — traced the reported corruption to
+  Word content controls: Docs drops every `w:sdt`, leaving the raw `Wingdings 2`
+  glyph where a checkbox was and turning placeholders into real grey text, plus a
+  floating table (`w:tblpPr`) that shifted page breaks. Wrote
+  `tools/flatten_for_gdocs.py` (66 checkboxes → `[ ]`, 15 controls → `⟨ … ⟩` hints,
+  table un-anchored, embedded fonts dropped, footer line pointing at the Word
+  original) and `tools/check_gdocs_roundtrip.py` (diffs checkbox/hint counts, table
+  geometry, all 48 labels, run fragmentation). Result: 4.5 MB → 30 KB, 4 pages.
+  (2) *Hints de-styled* after user feedback — no grey, no italic, because without a
+  control nothing resets formatting and the answer inherits whatever the hint wears;
+  the flattener became idempotent so the hand-edited variant is fixed in place.
+  (3) *Template locking* — `tools/lock_template.py` produces
+  `templates/Zapisnik_OSZ_v10.dotx` (48 KB): Word-template part type, all 81 controls
+  `sdtLocked`, read-only-recommended, fonts stripped. (4) *SB v3.0* — found
+  `!Speleo_baza_SUE_v3.0.xlsm` on Drive, verified the restructure, repointed
+  `config.yaml` / `.env` / `safe_io`, refreshed the sandbox. (5) STATUS: M1 closed,
+  M2 drafted. (6) Distribution package assembled; user distributed it.
+- **Result:** template shipped in both variants. SB v3.0 parses unchanged — header
+  autodetect still lands on row 2, 1301 data rows (was 1117), 24 columns (GK pair
+  dropped), every column `config.yaml` names still present, 7 tests green. Shipped
+  one wrong lock first: `documentProtection edit="forms"` looked right but makes 27 of
+  31 fillable cells read-only (only 4 are content controls) — user caught it while
+  filling, removed. Never verified: Drive's handling of `.dotx` (expected to skip
+  Office-editing mode), and the Google-Docs round-trip itself — the upload path
+  through the MCP corrupts a 45 KB base64 payload, so the checker script exists but
+  has not been run against a real Google export.
+- **Learned:** (1) Google Docs edits `.docx` **in place** from Drive, so the only
+  real lock on a shared template is a Viewer permission — `documentProtection`,
+  `writeProtection` and Mark-as-Final are all silently ignored on import; a `/copy`
+  link on a native Google Doc is the clean pattern for Docs users. (2) A plain-text
+  content control may not contain a second `w:p` — Word rejects the file as corrupt
+  even with `multiLine="1"`; use `<w:br/>`. Duplicated `w14:paraId` breaks it the same
+  way. (3) `wdFormatXMLTemplate` is **14**, not 13 (13 = macro-enabled document) —
+  saving with 13 under a `.dotx` name produces a file Word refuses to open. (4) Word's
+  own *Save As → Word Template* reproduces the distributed `.dotx` exactly (52 KB,
+  81 controls, all field types fillable), so the whole deploy loop can be script-free
+  once *Embed fonts in the file* is unticked in the master — 4453 KB → 52 KB. (5) SB
+  v3.0 flags 185 queue rows as `za istražit, …` but the old Broj is **optional** in
+  that string (`Ponor Gotovž`: `za istražit, detalji u literaturi`), so the queue
+  reader must not require it.
+- **Next:** M2 — dossier model + `report` command, and a queue reader over the v3.0
+  Napomena flag. Collect 2–3 filled zapisnici (one Word, one Docs) as parser fixtures
+  before M4; run `check_gdocs_roundtrip.py` against a real Google export when the
+  first Docs-filled zapisnik arrives.
+
 ### 2026-08-23 — project renamed SurveyScraper4 → SurveyScraper5 (agent) ✅
 
 - **Did:** repo-wide rename (SurveyScraper was already at v4; the superapp is v5).

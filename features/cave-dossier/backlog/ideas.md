@@ -40,4 +40,22 @@ when an idea's time comes. Nothing here is a commitment.
   part 2.1b instead of starting from scratch.
 - 2026-08-23 — run `check_conformance.py` as a pre-commit hook or CI step so a template
   edit that breaks a CroSpeleo vocabulary is caught the moment it lands.
+- 2026-08-25 — the OSZ fetcher needs TWO readers: `w:sdt` + `w14:checkbox` for
+  zapisnici filled in Word, and a text reader for the Google-Docs variant (`[x]` vs
+  `[ ]`, values wrapped in `⟨ ⟩` treated as empty). Join a paragraph's `w:t` runs
+  before matching either — Word and Docs split runs differently.
+- 2026-08-25 — queue reader: the old Broj in `za istražit, [<broj>,] <note>` is
+  optional (`Ponor Gotovž`), so parse it as a hint, never as a required key.
+- 2026-08-25 — wrapping the 27 plain value cells (IME OBJEKTA, koordinate, dimenzije,
+  ekipa…) in plain-text controls would unlock two things at once: `w:tag` keys for the
+  fetcher and `documentProtection edit="forms"` for the distributed template.
+- 2026-08-25 — trim the fixed row heights on Biospeleološki / Arheološki: the filled
+  form runs to 5 pages purely on white space, and the un-floated table costs the rest.
+- 2026-08-25 — set Literatura and Napomene controls to Arial 10 pt; they still fall
+  back to the 11 pt document default.
+- 2026-08-25 — run `check_gdocs_roundtrip.py` against a real Google Docs export once
+  the first Docs-filled zapisnik comes back, and keep that file as a parser fixture.
+- 2026-08-25 — `flatten_for_gdocs.py` must be re-run after every Word save of the
+  `_gdocs` variant: Word re-embeds ~3 MB of fonts unless *Embed fonts in the file* is
+  off in the source document.
 
