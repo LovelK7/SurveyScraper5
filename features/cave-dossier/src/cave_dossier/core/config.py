@@ -49,7 +49,11 @@ class Settings:
     # Extra SB columns the dossier reads: canonical field -> column header
     # (config.yaml `sb.field_columns`); see dossier/sb_mapper.py.
     sb_field_columns: dict[str, str] = field(default_factory=dict)
+    # Older column spellings -> the canonical name they are renamed to on load,
+    # so one config reads both the live workbook and an older copy of it.
+    sb_column_aliases: dict[str, str] = field(default_factory=dict)
     archive_dirs: dict[str, str] = field(default_factory=dict)
+    photo_targets: dict[str, int] = field(default_factory=dict)
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -126,5 +130,15 @@ def load_settings() -> Settings:
             for key, value in (sb.get("field_columns") or {}).items()
             if value
         },
+        sb_column_aliases={
+            str(key): str(value)
+            for key, value in (sb.get("column_aliases") or {}).items()
+            if value
+        },
         archive_dirs=dict(archive),
+        photo_targets={
+            str(key): int(value)
+            for key, value in (raw.get("photos") or {}).items()
+            if value is not None
+        },
     )

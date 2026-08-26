@@ -136,10 +136,12 @@ def _georef_record(dossier: CaveDossier) -> str | None:
     return None
 
 
-#: Part 2.1d budget for an archived entrance photo. Field photos arrive at full
-#: camera resolution (5–10 MB is normal); anything above this should be
-#: downsized before it is filed. **Confirm the number with the user.**
-MAX_ENTRANCE_PHOTO_BYTES = 3_000_000
+#: Part 2.1d warn threshold for an archived entrance photo. Field photos arrive
+#: at 7 MB+; the manual workflow (FastStone "resize to screen size") lands them
+#: around 1 MB, so anything still above 2 MB has not been processed. The
+#: *processing targets* — long edge and output size — live in config.yaml under
+#: `photos:`; this is only the number the gate warns above (user, 2026-08-26).
+MAX_ENTRANCE_PHOTO_BYTES = 2_000_000
 
 
 def _entrance_photos_processed(dossier: CaveDossier) -> str | None:
@@ -216,8 +218,11 @@ RULES: tuple[Rule, ...] = (
          _text("Najbliže mjesto", "nearest_place")),
     Rule("Razdoblje istraživanja", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
          _text("Razdoblje istraživanja", "exploration_period")),
-    Rule("Autori nacrta", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
-         _items("Autori nacrta", "drawing_authors")),
+    # Renamed live 2026-08-26 to "Autori nacrta ili izvor": for a finished cave
+    # it is the survey authors, for a queued one the source/finder (often a
+    # literature citation). Both satisfy the rule; only the former needs izjave.
+    Rule("Autori nacrta ili izvor", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
+         _items("Autori nacrta ili izvor", "drawing_authors")),
     Rule("Dubina", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
          _number("Dubina", CaveDossier.effective_depth_m)),
     # Gate 2 only: the SUE number is what gate 1 *produces*, so requiring it

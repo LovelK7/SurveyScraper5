@@ -42,6 +42,8 @@ def test_sb_mapping_fills_every_configured_column(reader: SBReader, settings: Se
     dossier = _dossier(reader, settings, "Špilja Testovka")
 
     assert dossier.sb_row_number == 3
+    assert dossier.serial_number == 1          # "Redni broj" — the pre-SUE ID
+    assert dossier.working_id == "001"         # once a SUE number exists, it wins
     assert dossier.object_name == "Špilja Testovka"
     assert dossier.sue_number == "001"
     assert dossier.plaque_number == "T-01"
@@ -102,6 +104,8 @@ def test_lifecycle_queue_flag_means_za_istrazit(reader: SBReader, settings: Sett
     dossier = _dossier(reader, settings, "Đulin ponor mali")
     assert dossier.lifecycle is LifecycleState.ZA_ISTRAZIT
     assert dossier.is_queued is True
+    # No SUE number yet, so the Redni broj is the working ID.
+    assert dossier.working_id == "4"
     assert dossier.queue_flag.old_number == "268"
     # "ponoviti" also matches the Nesređeni keyword list; SUE-then-queue order
     # decides, and the keyword hit is still recorded.
@@ -186,7 +190,7 @@ def test_missing_sb_mandatories_block_gate_1(reader: SBReader, settings: Setting
     report = evaluate(_dossier(reader, settings, "Đulin ponor mali"))
     labels = {issue.label for issue in report.blockers_for(GateLevel.SUE)}
     assert "Dubina" in labels
-    assert "Autori nacrta" in labels
+    assert "Autori nacrta ili izvor" in labels  # renamed in the live workbook 2026-08-26
     assert "Lokalitet" in labels
 
 

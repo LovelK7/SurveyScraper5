@@ -13,6 +13,8 @@ import sys
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
 from cave_dossier.dossier import GateLevel, build_from_sb, evaluate, render
+from cave_dossier.photos import build_candidates, list_photos, match_photos, staged_photo_dir
+from cave_dossier.sb.audit import AUTHOR_FLAG_HELP, audit_authors, audit_unclassified
 from cave_dossier.sb.loader import SBReader
 from cave_dossier.sb.safe_io import SBWorkbookUnreachable
 
@@ -131,6 +133,96 @@ def cmd_report(settings: Settings, query: str, as_json: bool, gate: str) -> int:
     return EXIT_READY if report.ready_for(level) else EXIT_NOT_READY
 
 
+def cmd_sb_audit_authors(settings: Settings, limit: int) -> int:
+    """Data-quality sweep over `Autori nacrta ili izvor` (M2, user request A5/4)."""
+    findings = audit_authors(SBReader(settings), settings)
+    if not findings:
+        print("No suspicious author cells found.")
+        return EXIT_READY
+
+    counts: dict[str, int] = {}
+    for finding in findings:
+        for flag in finding.flags:
+            counts[flag] = counts.get(flag, 0) + 1
+
+    print(f"{len(findings)} rows worth a look (of the whole workbook).")
+    print()
+    print("By flag:")
+    for flag, count in sorted(counts.items(), key=lambda item: -item[1]):
+        print(f"  {flag:<14} {count:5d}   {AUTHOR_FLAG_HELP.get(flag, '')}")
+    print()
+    print(f"First {min(limit, len(findings))} rows (Excel row · Redni broj · cave · cell → parsed):")
+    for finding in findings[:limit]:
+        serial = finding.serial_number if finding.serial_number is not None else "—"
+        print(f"  r{finding.row_number:<5} #{str(serial):<5} {(finding.object_name or '')[:28]:<28}"
+              f" [{','.join(finding.flags)}]")
+        print(f"        cell: {finding.raw!r}")
+        if finding.parsed:
+            print(f"        → {finding.parsed}"
+                  + (f"   societies={finding.societies}" if finding.societies else ""))
+    if len(findings) > limit:
+        print(f"  … {len(findings) - limit} more (raise --limit to see them)")
+    return EXIT_NOT_READY
+
+
+def cmd_sb_unclassified(settings: Settings, limit: int) -> int:
+    """Rows that appear in none of SB's three views (user request 5)."""
+    rows = audit_unclassified(SBReader(settings), settings)
+    if not rows:
+        print("Every named row lands in one of Istraženi / Nesređeni / Za istražit.")
+        return EXIT_READY
+
+    print(f"{len(rows)} named rows have no SUE number and no Napomena flag,")
+    print("so they show up in none of SB's three Power Query views:")
+    print()
+    for row in rows[:limit]:
+        serial = row.serial_number if row.serial_number is not None else "—"
+        print(f"  r{row.row_number:<5} #{str(serial):<5} {(row.object_name or '')[:32]:<32}"
+              f" {(row.locality or '—')[:18]:<18} {row.exploration_period or '—'}")
+        if row.note:
+            print(f"        Napomena: {row.note}")
+    if len(rows) > limit:
+        print(f"  … {len(rows) - limit} more (raise --limit to see them)")
+    return EXIT_NOT_READY
+
+
+def cmd_photos_match_queued(settings: Settings, limit: int) -> int:
+    """Propose a Redni broj prefix for each staged entrance photo (2.1d)."""
+    directory = staged_photo_dir(settings)
+    if directory is None:
+        print("No staged-photo dir configured: set LOCAL_DRIVE_ROOT in .env and")
+        print("`archive.queued_photos_dir` in config.yaml.", file=sys.stderr)
+        return EXIT_ERROR
+    photos = list_photos(directory)
+    print(f"Staged photos: {len(photos)} in {directory}")
+    if not photos:
+        return EXIT_NOT_READY
+
+    matches = match_photos(photos, build_candidates(SBReader(settings), settings))
+    matched = [m for m in matches if m.cave is not None and m.confidence != "conflict"]
+    conflicts = [m for m in matches if m.confidence == "conflict"]
+    renames = [m for m in matches if m.proposed_name]
+    print(f"Matched to an SB row: {len(matched)} / {len(matches)}"
+          + (f"   ({len(conflicts)} conflicting)" if conflicts else ""))
+    print(f"Rename proposals: {len(renames)}")
+    print("READ-ONLY — nothing is renamed or moved; this is a proposal.")
+    print()
+    for match in matches[:limit]:
+        if match.cave is None:
+            print(f"  ?    {match.path.name}")
+            continue
+        print(f"  {match.confidence[:4]:<4} {match.path.name}")
+        if match.proposed_name:
+            print(f"       → {match.proposed_name}")
+        elif match.already_correct:
+            print("       → (already carries its Redni broj)")
+        print(f"       {match.cave.object_name} · Redni broj "
+              f"{match.cave.serial_number} · {match.evidence}")
+    if len(matches) > limit:
+        print(f"  … {len(matches) - limit} more (raise --limit to see them)")
+    return EXIT_NOT_READY if len(matched) < len(matches) else EXIT_READY
+
+
 # ── Entry point ────────────────────────────────────────────────────
 
 
@@ -155,6 +247,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     sb_sub.add_parser("stats", help="Sheet inventory + row/fill counts")
 
+    audit = sb_sub.add_parser(
+        "audit-authors",
+        help="List 'Autori nacrta ili izvor' cells the name splitter cannot read confidently",
+    )
+    audit.add_argument("--limit", type=int, default=40, help="How many rows to print (default 40)")
+
+    unclassified = sb_sub.add_parser(
+        "unclassified",
+        help="Named rows with no SUE number and no Napomena flag (in none of SB's views)",
+    )
+    unclassified.add_argument("--limit", type=int, default=60, help="How many rows to print")
+
     report = subparsers.add_parser(
         "report",
         help="Per-cave dossier: what is present, what is missing, what blocks",
@@ -178,6 +282,17 @@ def build_parser() -> argparse.ArgumentParser:
              "sue = society katastarski broj (default), crospeleo = national cadastre",
     )
 
+    photos = subparsers.add_parser(
+        "photos",
+        help="Part 2.1d — entrance-photo processing (read-only for now)",
+    )
+    photos_sub = photos.add_subparsers(dest="photos_command", required=True)
+    match_queued = photos_sub.add_parser(
+        "match-queued",
+        help="Propose a 'Redni broj' prefix for each photo in the za-istražit staging folder",
+    )
+    match_queued.add_argument("--limit", type=int, default=80, help="How many files to print")
+
     return parser
 
 
@@ -200,6 +315,13 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_sb_inspect(settings, args.cave)
             if args.sb_command == "stats":
                 return cmd_sb_stats(settings)
+            if args.sb_command == "audit-authors":
+                return cmd_sb_audit_authors(settings, args.limit)
+            if args.sb_command == "unclassified":
+                return cmd_sb_unclassified(settings, args.limit)
+        if args.command == "photos":
+            if args.photos_command == "match-queued":
+                return cmd_photos_match_queued(settings, args.limit)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR

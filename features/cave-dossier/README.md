@@ -231,40 +231,88 @@ Recorded so the next session — human or agent — does not have to re-ask.
 | C1 | The SUE number is the filename key across nacrt / OSZ / photos; `_A` was *dopunski zapisnik*, now superseded by updating the OSZ in place | Intake will resolve by `Link Nacrt` / `Link Zapisnik` first, then padded SUE; `_A` files count as the same cave and get flagged as legacy |
 | C2 | `Izjava_<Initial><Prezime>[_<Lokalitet>].pdf`; a locality-scoped izjava does **not** cover caves outside that locality; the `!!!` text files are the missing-izjava lists | Locality scope becomes a gate-1 rule at intake; the person registry comes from the crospeleo port |
 | C3 | One photo suffices; the *za istražit* photo folder is a **staging queue**, not a repo — photos move into `!!Fotografije ulaza` and take the SUE prefix when the cave earns its number | Modelled as part 2.1d; the mover becomes a delivery action at M6 |
-| C4 | Before a SUE number exists, the cave's ID is its SB row number, and processing folders should be keyed by it | Intake will key pre-SUE work on that number — see open question 1 |
-| — | **2.1d entrance-photo processing** is a missing pipeline part | Added to [ARCHITECTURE.md](../../ARCHITECTURE.md) as part 2.1d, plus `Source.PHOTOS` and a gate-1 warning for oversized / unrenamed photos |
+| C4 / 1 | Before a SUE number exists the cave's ID is its **Redni broj** | `dossier.serial_number` + `working_id`; the staged-photo matcher proposes `<Redni broj>_…` |
+| 2 | Photo budget: cut 7 MB down to 1–2 MB, "resize to screen size" (FastStone) | Gate warns above **2 MB**; the processing targets (1920 px long edge, 1.5 MB) are in `config.yaml` under `photos:` |
+| 4 | The column is now **`Autori nacrta ili izvor`** — for queued caves it holds the finder/source, not a survey author | Config renamed, with `sb.column_aliases` so the old spelling still reads; the gating label follows; `sb audit-authors` flags citation-shaped values |
+| 5 | List the unclassified rows | `cavedossier sb unclassified` |
+| 6 | Staged photos keep free names but gain a Redni broj prefix; needs a name-matching exercise | `cavedossier photos match-queued` — 44 of 53 matched |
+| — | **2.1d entrance-photo processing** is a missing pipeline part | Added to [ARCHITECTURE.md](../../ARCHITECTURE.md) as part 2.1d, plus `Source.PHOTOS`, a gate-1 warning for oversized / unrenamed photos, and the `photos/` module |
+
+## Identity: which number names a cave
+
+Settled 2026-08-26. A cave has **two** identifiers over its life, and the
+handover between them is the last step of gate 1:
+
+| | Before gate 1 | After gate 1 |
+|---|---|---|
+| Identifier | **Redni broj** (SB column) | **Katastarski broj SUE** |
+| In the dossier | `serial_number` | `sue_number` |
+| Used for | intake folders, staged photo prefixes, any processing | archive filenames (`954.pdf`, `954.docx`, `954_…jpg`) |
+
+`dossier.working_id` resolves the pair: the SUE number when it exists, the Redni
+broj otherwise. Note the third number that is **not** an identifier: the Excel
+row (`sb_row_number`) is only the write-back handle for M6 — it shifts whenever
+a row is inserted above.
+
+> The Redni broj is stable only going forward: the v3.0 restructure renumbered
+> the column wholesale, which is why files still named after the *old*
+> Za-istražit broj (`478_…`) need re-prefixing. `cavedossier photos match-queued`
+> does that mapping.
+
+## Workbook-wide audits
+
+Some problems are only visible as a column-wide sweep, and are only fixable in
+Excel. These commands are read-only worklists for exactly that.
+
+```powershell
+cavedossier sb audit-authors      # cells the name splitter cannot read confidently
+cavedossier sb unclassified       # rows in none of SB's three views
+cavedossier photos match-queued   # 2.1d: propose a Redni broj prefix per staged photo
+```
+
+`sb audit-authors` currently reports **483 rows** across six flags:
+`single_name` 172 (a bare first name like "Renata"), `society` 108,
+`placeholder` 96 (a "/" meaning nobody), `conjunction` 93 (split on "i" — verify
+the halves are two people), `empty` 49, `citation` 2 (a literature source such
+as `Malez, M. (1960)`, not a survey author).
+
+`photos match-queued` matches the 53 free-form files in the staging folder
+against SB using three independent kinds of evidence — plaque number, cave name,
+and the old Za-istražit broj — and proposes `<Redni broj>_<rest>`, replacing a
+stale old-number prefix where there is one. Currently **44 of 53 matched**; it
+renames nothing, it prints proposals.
 
 ## Still open
 
-**1. Which number is the pre-SUE ID?** You said "CaveRow number or Redni broj" —
-those are two different things, and intake needs exactly one:
+**1. Izjava suffix — three meanings, one shape.** From your answer the suffix
+after the surname can be any of:
 
-| Candidate | What it is | Risk |
+| Example | Meaning | Effect on gating |
 |---|---|---|
-| **Redni broj** (SB column) | stored data, 1…N (789 for Konglomeratača) | the v3.0 restructure renumbered it wholesale, so folders named under the old numbering are stale |
-| **Excel row number** | the physical row (`CaveRow.row_number`, 791 for the same cave) | shifts whenever a row is inserted or deleted above it |
+| `Izjava_ABahović.pdf` | no suffix → **universal** | covers every cave |
+| `Izjava_ACiceran_Šverda.pdf` | **locality** scope | covers caves whose `Lokalitet` is Šverda; a cave elsewhere needs a new izjava |
+| `Izjava_Kaverna-Učka.pdf` | **single-object** scope | covers that one cave |
+| `Izjava_SKapidžić_Antolič.pdf` | **part of a double surname** (marriage) | not a scope at all |
 
-My recommendation is **Redni broj**, precisely because you already decided not
-to reshuffle SB again. Confirm and I will make it the intake key.
+The tool cannot tell case 2/3 from case 4 by shape alone — it needs the person
+registry (the crospeleo port) to decide whether `SKapidžić_Antolič` resolves to a
+known person. My plan: try the person registry first, and treat the suffix as a
+scope only when it does not. Does that hold, or do you know a cleaner marker?
 
-**2. The entrance-photo size budget.** 2.1d currently warns above **3 MB** per
-photo — a placeholder. What is the real target: a max file size, a max long edge
-in pixels, or both?
+**2. 2.1d rename, once you accept the proposals.** `photos match-queued` is
+read-only today. Do you want a `--apply` that performs the renames (with a
+dry-run diff first), or would you rather do them by hand from the printed list?
 
-**3. Izjava locality scope.** `Izjava_ACiceran_Šverda.pdf` covers Šverda only.
-Does the suffix always match the SB `Lokalitet` cell exactly, and is an izjava
-with **no** suffix universal?
+**3. Nine unmatched staged photos** (`ak 47.jpg`, `Jama GB 1.jpg`, `Jamica smeća
+kod Knezgrada_…`, `kostrčani_ulaz.jpg`, …) carry no name, plaque or number I can
+resolve. They need you.
 
-**4. The `Autori nacrta` cleanup.** You said the column needs cleaning. Shall I
-add `cavedossier sb audit-authors`, listing every cell the splitter finds
-suspicious (placeholders, one-word entries, brackets that are not societies,
-unparseable forms) so you can fix them in Excel in one pass?
+**4. One conflicting photo**: `051-550_Goli breg 4.jpg` carries the plaque of
+**Sik Šits** (Redni broj 1035), but the filename says *Goli breg* — and SB has a
+`Goli breg 1`. Mislabelled photo, or a reused plaque number?
 
-**5. The 47 unclassified rows** appear in none of SB's three views. Want them
-listed so they can be flagged in Napomena?
-
-**6. Field-data intake dir layout** — still yours (C4). The Drive folder you
-linked has free-form naming; once question 1 is settled I can propose a layout.
+**5. Field-data intake dir layout** (C4) — now unblocked by the Redni broj
+decision. I will propose a layout keyed on it when you want it.
 
 ### Quick check commands
 
@@ -329,6 +377,13 @@ cavedossier sb stats                       # sheets, row counts, fill counts of 
 cavedossier report --cave "Konglomeratača"      # both gates, text
 cavedossier report --cave 570 --json            # the dossier as data
 cavedossier report --cave 570 --gate crospeleo  # exit code follows gate 2 instead
+
+# Workbook-wide audits (read-only worklists for an Excel cleanup pass)
+cavedossier sb audit-authors --limit 40    # author cells the splitter cannot read
+cavedossier sb unclassified                # rows in none of SB's three views
+
+# Part 2.1d — staged entrance photos
+cavedossier photos match-queued            # propose <Redni broj>_… per staged photo
 ```
 
 Exit codes (your convention): **1** = ready, **0** = not ready, **99** = error.
@@ -347,7 +402,9 @@ also self-reconfigures its output streams, so this is rarely needed).
 | `src/cave_dossier/core/normalization.py` | diacritic-insensitive matching keys (ported) | column + name matching |
 | `src/cave_dossier/core/people.py` | split an author cell into people; peel off the society bracket | SB mapping |
 | `src/cave_dossier/sb/safe_io.py` | workbook preflight/backup/COM-write safety (ported) | reads: preflight only; writes: M6 |
-| `src/cave_dossier/sb/loader.py` | `SBReader`: header autodetect, canonicalized columns, `find_caves` | `sb *`, `report` |
+| `src/cave_dossier/sb/loader.py` | `SBReader`: header autodetect, column aliases, `find_caves` | `sb *`, `report` |
+| `src/cave_dossier/sb/audit.py` | workbook-wide data-quality sweeps (authors, unclassified rows) | `sb audit-authors`, `sb unclassified` |
+| `src/cave_dossier/photos/matcher.py` | 2.1d: match staged photos to SB rows, propose `<Redni broj>_…` | `photos match-queued` |
 | `src/cave_dossier/dossier/model.py` | `CaveDossier`, `Source`, `GateLevel`, `LifecycleState`, files, issues, readiness | the shared object |
 | `src/cave_dossier/dossier/sb_mapper.py` | SB row → dossier; queue flag + lifecycle derivation | `report` |
 | `src/cave_dossier/dossier/gating.py` | the rule table → blockers / warnings / unchecked, per gate | `report` |
@@ -358,8 +415,9 @@ also self-reconfigures its output streams, so this is rarely needed).
 | `tests/` | pytest on tiny synthetic fixtures | `python -m pytest` |
 
 Planned modules: `dossier/intake.py` (rest of M2 — resolve a cave's files on
-Drive), `georef/` (M3 — isječak karte), `osz/` (M4 — OSZ builder), `photos/`
-(2.1d — downsize + rename entrance photos).
+Drive), `georef/` (M3 — isječak karte), `osz/` (M4 — OSZ builder), and the
+downsize/rename half of `photos/` (2.1d — the matcher is done, the processor is
+not).
 
 ## Testing
 

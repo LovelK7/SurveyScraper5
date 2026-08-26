@@ -281,6 +281,11 @@ class CaveDossier(BaseModel):
 
     # ── Identity (SB) ─────────────────────────────────────────────────
     sb_row_number: int | None = None       # 1-based Excel row — the M6 write-back handle
+    # "Redni broj" — the cave's identity BEFORE it earns a SUE number (user,
+    # 2026-08-26). Distinct from sb_row_number: this is stored data that
+    # survives edits above it, which is why intake folders and staged photo
+    # filenames key on it. It stops being the working ID once sue_number exists.
+    serial_number: int | None = None
     object_name: str | None = None
     sue_number: str | None = None          # "Katastarski broj SUE" — empty on queue rows
     plaque_number: str | None = None       # "Broj pločice"
@@ -374,6 +379,18 @@ class CaveDossier(BaseModel):
     def display_name(self) -> str:
         name = self.object_name or "<bez imena>"
         return f"{name} (SUE {self.sue_number})" if self.sue_number else name
+
+    @property
+    def working_id(self) -> str | None:
+        """The identifier every processing step should file this cave under.
+
+        The SUE number once it exists, the Redni broj before that (user,
+        2026-08-26). Delivery renames pre-SUE artefacts to the SUE number as
+        the last step, which is exactly when the SUE number appears.
+        """
+        if self.sue_number:
+            return self.sue_number
+        return str(self.serial_number) if self.serial_number is not None else None
 
     def effective_length_m(self) -> float | None:
         """A processed survey outranks the SB cell (SB is what M6 updates)."""

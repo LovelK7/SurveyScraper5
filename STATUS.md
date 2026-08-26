@@ -67,7 +67,15 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       old Broj is optional, see `Ponor Gotovž`) — **parser done** (`parse_queue_flag`,
       185/185 rows flagged, surfaced as a context warning in `report`); the listing
       command (`sb za-istrazit`) is still open
+- [x] Workbook-wide audits added on the user's request (2026-08-26):
+      `cavedossier sb audit-authors` (483 rows flagged across 6 categories) and
+      `cavedossier sb unclassified` (the 47 rows in no SB view). Both read-only.
+- [x] **2.1d staged-photo matcher**: `cavedossier photos match-queued` maps the free-form
+      files in `!!Fotografije ulaza za istražit` back to SB rows by plaque / cave name / old
+      Za-istražit broj and proposes `<Redni broj>_…`, replacing stale old-number prefixes.
+      44 of 53 matched; read-only, renames nothing.
 - [ ] Field-data intake dir layout on Drive agreed with the user (blocks the 2.1a handoff)
+      — unblocked by the Redni-broj decision; proposal still to be drafted
 
 **M4 (OSZ builder) is no longer gated** — the template shipped 2026-08-25; picking it up
 before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
@@ -84,16 +92,27 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
   Word, one from Google Docs) as parser fixtures before M4 starts.
 - Mobile-app context material (parked with part 1)
 
-### Open questions from the 2026-08-26 answers (full text in the feature README §"Still open")
+### Settled 2026-08-26 (details in the feature README)
 
-1. **Pre-SUE ID**: `Redni broj` (SB column) or the Excel row number? Recommendation:
-   `Redni broj` — blocks the intake dir layout and the 2.1a handoff.
-2. **Entrance-photo budget** for 2.1d: max file size, max long edge, or both? (3 MB placeholder)
-3. **Izjava locality scope**: does the `_<Lokalitet>` suffix always match the SB `Lokalitet`
-   cell, and is a suffix-less izjava universal?
-4. **`Autori nacrta` cleanup**: add `cavedossier sb audit-authors` to list suspicious cells?
-5. **47 unclassified rows** (no SUE, no Napomena flag) — list them for flagging?
-6. **Field-data intake dir layout on Drive** — still open (was already listed); unblocks after 1.
+- **Pre-SUE ID = `Redni broj`** (SB column). `sue_number` takes over at gate 1;
+  the Excel row number is only the M6 write-back handle, never an identifier.
+- **Photo budget**: gate warns above 2 MB; processing target 1920 px long edge / ~1.5 MB
+  ("FastStone resize to screen size"), in `config.yaml` under `photos:`.
+- **Column renamed live**: `Autori nacrta` → **`Autori nacrta ili izvor`** (for queued caves
+  the cell holds the finder/source, not a survey author). `sb.column_aliases` keeps older
+  copies of the workbook readable — without it the tool would have found no authors at all.
+- **Staged photos** keep free names + a `Redni broj` prefix; `photos match-queued` matches
+  44 of 53 by plaque / name / old queue broj.
+
+### Still open
+
+1. **Izjava suffix is ambiguous**: locality scope (`_Šverda`), single-object scope
+   (`_Kaverna-Učka`) and a double surname (`_Antolič`) share one shape — plan is to resolve
+   via the crospeleo person registry first, scope second. Confirm.
+2. **`photos match-queued --apply`**: should the tool perform the renames, or only propose?
+3. **9 unmatched staged photos** + **1 conflict** (`051-550_Goli breg 4.jpg` carries Sik Šits's
+   plaque) need the user.
+4. **Field-data intake dir layout on Drive** — unblocked now; proposal to be drafted.
 
 ## Recent sessions
 

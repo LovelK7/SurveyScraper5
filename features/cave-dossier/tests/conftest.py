@@ -17,6 +17,7 @@ from cave_dossier.sb.loader import SBReader
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "mini_sb.xlsx"
 
 FIELD_COLUMNS = {
+    "serial_number": "Redni broj",
     "synonyms": "Sinonimi",
     "locality": "Lokalitet",
     "nearest_place": "Najbliže mjesto",
@@ -45,12 +46,17 @@ def settings() -> Settings:
         sb_filter_column="CroSpeleo unos",
         sb_marker_column="Katastarski broj RH",
         sb_plaque_column="Broj pločice",
-        sb_drawing_authors_column="Autori nacrta",
+        # Canonical name as in the LIVE workbook; the fixture header carries the
+        # old spelling, so this pair exercises the alias path.
+        sb_drawing_authors_column="Autori nacrta ili izvor",
         sb_exploration_period_column="Godina ili period istraživanja",
         sb_x_htrs_column="X HTRS",
         sb_y_htrs_column="Y HTRS",
         local_drive_root=None,
         sb_field_columns=dict(FIELD_COLUMNS),
+        # The fixture still carries the pre-2026-08-26 header, so the alias is
+        # what makes it readable — exactly as for an older copy of the workbook.
+        sb_column_aliases={"Autori nacrta": "Autori nacrta ili izvor"},
     )
 
 

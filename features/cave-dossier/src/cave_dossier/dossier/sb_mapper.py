@@ -149,8 +149,10 @@ def build_from_sb(cave_row: CaveRow, settings: Settings) -> CaveDossier:
         z_m=cells.number(columns.get("entrance_elevation_m")),
     )
 
+    serial = cells.number(columns.get("serial_number"))
     dossier = CaveDossier(
         sb_row_number=cave_row.row_number if cave_row.row_number > 0 else None,
+        serial_number=int(serial) if serial is not None else None,
         object_name=cave_row.object_name,
         sue_number=cave_row.sue_number,
         plaque_number=cells.text(settings.sb_plaque_column),

@@ -292,6 +292,12 @@ class SBReader:
             for name in expected_names
             if name
         }
+        # Older spellings fold onto the canonical name (config `sb.column_aliases`),
+        # so one config reads the live workbook and any older copy of it alike.
+        # 2026-08-26: "Autori nacrta" was renamed to "Autori nacrta ili izvor"
+        # live, while the sandbox copy still carries the old header.
+        for old_name, canonical_name in self.settings.sb_column_aliases.items():
+            alias_map.setdefault(normalize_lookup_key(old_name), canonical_name)
         rename_map: dict[str, str] = {}
         for column in frame.columns:
             if column in _INTERNAL_COLUMNS:

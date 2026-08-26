@@ -17,16 +17,29 @@ sb:
   filter_column: "CroSpeleo unos"
   marker_column: "Katastarski broj RH"
   plaque_column: "Broj pločice"
-  drawing_authors_column: "Autori nacrta"
+  # Renamed in the live workbook 2026-08-26: the cell holds the survey authors
+  # for finished caves, but for queued ones it holds the *source* (who found or
+  # reported the cave, often a literature citation) — see column_aliases below.
+  drawing_authors_column: "Autori nacrta ili izvor"
   exploration_period_column: "Godina ili period istraživanja"
   x_htrs_column: "X HTRS"
   y_htrs_column: "Y HTRS"
+
+  # Older spellings of the columns above, so one config reads both the live
+  # workbook and any older copy (the sandbox, archived exports). Alias -> the
+  # canonical name it is renamed to on load; matching is diacritic-insensitive.
+  column_aliases:
+    "Autori nacrta": "Autori nacrta ili izvor"
+    "Autor nacrta": "Autori nacrta ili izvor"
 
   # Additional columns the DOSSIER reads (M2 on): canonical dossier field ->
   # column header, mirroring crospeleo-automation's profile.sb.field_columns.
   # The nine names above stay separate because SBReader itself needs them
   # (header autodetect + cave lookup). Lookup is diacritic-insensitive.
   field_columns:
+    # The cave's identity BEFORE it earns a SUE number (user, 2026-08-26): the
+    # pre-SUE ID for intake folders, photo prefixes and any processing step.
+    serial_number: "Redni broj"
     synonyms: "Sinonimi"
     locality: "Lokalitet"
     nearest_place: "Najbliže mjesto"
@@ -49,3 +62,17 @@ archive:
   drawings_dir: "!!Nacrti"
   statements_dir: "!!Izjave za katastar RH"
   entry_photos_dir: "!!Fotografije ulaza"
+  # Staging queue for caves that have no SUE number yet — free-form filenames,
+  # to be prefixed with Redni broj (2.1d). NOT a permanent photo repository:
+  # photos move up into entry_photos_dir, renamed to the SUE number, once the
+  # cave earns one.
+  queued_photos_dir: "!!Fotografije ulaza/!!Fotografije ulaza za istražit"
+
+# Part 2.1d — entrance-photo processing spec (user, 2026-08-26).
+# Field photos arrive at 7 MB+; the manual workflow is FastStone Image Viewer
+# "resize to screen size", which lands around 1 MB. These are the targets the
+# 2.1d processor will aim for; the gate only WARNS above
+# gating.MAX_ENTRANCE_PHOTO_BYTES (2 MB), it never blocks on photo size.
+photos:
+  target_long_edge_px: 1920
+  target_max_bytes: 1500000

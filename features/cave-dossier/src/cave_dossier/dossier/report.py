@@ -55,7 +55,10 @@ def render(dossier: CaveDossier) -> str:
 
     if dossier.has(Source.SB):
         add("")
-        add(f"  SB row {dossier.sb_row_number}")
+        # Redni broj is the working ID until a SUE number exists; the Excel row
+        # is bookkeeping (the M6 write-back handle), not an identifier.
+        add(f"  SB — Redni broj {dossier.serial_number or '—'}  ·  working ID "
+            f"{dossier.working_id or '—'}  ·  Excel row {dossier.sb_row_number}")
         for label, value in _sb_pairs(dossier):
             add(f"    {label:<22} {value}")
 
