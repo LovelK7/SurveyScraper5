@@ -30,6 +30,7 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 │ TopoDroid .csx (via BT from  │ ─queue→ │  │ 2.1a csx-to-survey ─→ Nacrt PDF + dims  │  │
 │   the survey phone)          │  dirs   │  │ 2.1b OSZ builder   ─→ OSZ DOCX          │  │
 └──────────────────────────────┘         │  │ 2.1c isječak karte ─→ map excerpt PNG   │  │
+                                         │  │ 2.1d foto ulaza    ─→ resized + renamed │  │
         (manual for now: user            │  └───────────┬────────────────▲────────────┘  │
          copies files by hand)           │              │ dims           │ coords, year   │
                                          │              ▼                │                │
@@ -52,6 +53,7 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 | **2.1a** | csx-to-survey: TopoDroid TDX/CSX → processed survey → Nacrt (PDF/vector). Also yields cave dimensions → SB | [features/csx-to-survey-pipeline/](features/csx-to-survey-pipeline/README.md) — its own feature; integration via artifacts (Nacrt PDF + dimensions), never imports | operational (semi-manual pipeline) |
 | **2.1b** | OSZ builder: fills the society's blank OSZ template (SB primary data + 2.1a results + part-1 field data + 2.1c excerpt) | `features/cave-dossier/` (module `osz/`) | waiting on template DOCX |
 | **2.1c** | Isječak karte: map excerpt from georef.hr (HTRS96 coords → marker-centered PNG + record text) | `features/cave-dossier/` (module `georef/`, to be ported from crospeleo-automation) | not started |
+| **2.1d** | Entrance-photo processing: field photos come off the camera at full resolution, so they are downsized and renamed to the archive convention (`<padded SUE>_<ime>_…_<autor>.jpg`) before being filed into `!!Fotografije ulaza`. Queued caves' photos live in the `!!Fotografije ulaza za istražit` staging folder under their pre-SUE number and move across when the cave earns its SUE number | `features/cave-dossier/` (module `photos/`) | not started (added 2026-08-26) |
 | **2.2** | SB (Speleo baza) communication: the registry of all caves (discovered + to-be-explored). Source of coordinates/year/etc. for the OSZ; updated with new data (dimensions) once a survey is finished | `features/cave-dossier/` (module `sb/`) | **M1 in progress** |
 
 ## Key facts that shape the design
@@ -65,6 +67,13 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
   (advisory) vs *blockers* (hard gate on the final action). Statements ("Izjava za
   katastar") are checked **per author**, drawing and photo authors separately;
   statements live in their own Drive dir.
+- **Two gates, not one** (user, 2026-08-26). Gate 1 is the society's own step:
+  Nacrt + OSZ + fotografije ulaza + pločica + izjave earn the cave its
+  **katastarski broj SUE**, which is what moves its SB row into *Istraženi*.
+  Gate 2 is the stricter CroSpeleo bar (Protokol v6) — a superset, and holding a
+  SUE number makes it "almost a certain go". A cave's SB lifecycle is therefore
+  *Za istražit* → *Nesređeni* → *Istraženi*, and everything short of Istraženi is
+  a queue item.
 - **Croatian terms are domain identity** (OSZ, Nacrt, SB, SUE, izjava, isječak karte) —
   see [shared/glossary.md](shared/glossary.md). The codebase itself is English.
 - **Real data from day one**: development and testing run against real dirs (photos,
@@ -75,7 +84,9 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 
 ## Milestones (stage 2)
 
-M0 docs scaffold ✅ → **M1 SB read-only (sandbox → live)** → M2 dossier skeleton +
+M0 docs scaffold ✅ → **M1 SB read-only (sandbox → live)** ✅ → M2 dossier skeleton +
 `report` command → M3 isječak karte port / M4 OSZ builder (order flexible; M4 gated on
-template) → M5 2.1a artifact handoff → M6 SB write-back + delivery to archive dirs.
+template) → M5 2.1a artifact handoff → M6 SB write-back + delivery to archive dirs
+(2.1d entrance-photo processing rides along with M6: resizing + renaming is a
+delivery action, and the SUE number it renames to only exists at that point).
 Current state: [STATUS.md](STATUS.md).

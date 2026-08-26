@@ -48,6 +48,36 @@ def split_person_names(raw: str | None) -> list[str]:
     return names
 
 
+# "A.Lipovac (SOV)" — the bracket is not part of the name. In SB it flags that
+# the sketch was drawn by someone from a society other than SUE (user, 2026-08-26).
+_SOCIETY_SUFFIX_RE = re.compile(r"\s*\(([^()]{1,40})\)\s*$")
+
+
+def split_authors(raw: str | None) -> tuple[list[str], dict[str, str]]:
+    """Split an author cell into ``(names, {name: society})``.
+
+    The society bracket is stripped off the name so that izjava matching and
+    any future person registry see the bare person, while the flag itself
+    survives — an outside-society author still needs an izjava, and knowing the
+    sketch came from outside SUE is worth showing.
+    """
+    names: list[str] = []
+    societies: dict[str, str] = {}
+    for entry in split_person_names(raw):
+        match = _SOCIETY_SUFFIX_RE.search(entry)
+        if match:
+            bracket = match.group(1).strip()
+            name = entry[: match.start()].strip()
+            # A bracket that swallowed the whole entry is not a society, and
+            # neither is a bare year — legacy rows write "Malez, M. (1960)",
+            # where the year belongs to the citation, not to a society.
+            if name and not bracket.isdigit():
+                societies[name] = bracket
+                entry = name
+        names.append(entry)
+    return names, societies
+
+
 def is_placeholder(value: str | None) -> bool:
     """True for cells that are formally non-empty but mean "nothing"."""
     if value is None:

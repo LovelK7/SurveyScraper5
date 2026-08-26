@@ -17,6 +17,7 @@ Source map (part numbers per repo-root ARCHITECTURE.md):
 | ``Source.SURVEY``  | 2.1a | processed survey: Nacrt PDF + measured dimensions        |
 | ``Source.OSZ``     | 2.1b | fields read back out of a filled zapisnik                |
 | ``Source.MAP``     | 2.1c | isječak karte PNG + georef record                        |
+| ``Source.PHOTOS``  | 2.1d | entrance photos downsized + renamed for the archive      |
 
 Only ``Source.SB`` is implemented at M2; the remaining fields are declared (so
 the gating table can already name them) and stay empty until their milestone.
@@ -39,6 +40,60 @@ class Source(StrEnum):
     SURVEY = "survey"
     OSZ = "osz"
     MAP = "map"
+    PHOTOS = "photos"
+
+
+class GateLevel(StrEnum):
+    """The two gates a cave passes, in order (confirmed by the user 2026-08-26).
+
+    ``SUE`` — the society's own acceptance step: a readable Nacrt, an OSZ with
+    its mandatory fields filled, entrance photos, a pločica, and an izjava per
+    author. Passing it is what earns the cave its **katastarski broj SUE**,
+    which is what moves it into the *Istraženi* view of SB.
+
+    ``CROSPELEO`` — the stricter national-cadastre bar (Protokol v6), a
+    superset of ``SUE``. A cave holding a SUE number is "almost a certain go";
+    the submission itself stays crospeleo-automation's job downstream.
+    """
+
+    SUE = "sue"
+    CROSPELEO = "crospeleo"
+
+
+GATE_LABELS: dict[GateLevel, str] = {
+    GateLevel.SUE: "katastarski broj (SUE)",
+    GateLevel.CROSPELEO: "CroSpeleo",
+}
+
+
+def applies_at(rule_level: GateLevel, gate: GateLevel) -> bool:
+    """CroSpeleo includes every SUE rule; the SUE gate ignores CroSpeleo-only ones."""
+    return gate is GateLevel.CROSPELEO or rule_level is GateLevel.SUE
+
+
+class LifecycleState(StrEnum):
+    """Where the cave sits in SB — derived exactly as SB's own Power Query does.
+
+    Extracted from the workbook's ``Formulas/Section1.m`` (2026-08-26):
+
+    * ``IO_v2_1`` **Istraženi** — ``Katastarski broj SUE`` is not empty. That is
+      the whole filter: holding a SUE number *is* the definition.
+    * ``ZI_v2_1`` **Za istražit** — Napomena contains ``za istražit``.
+    * ``NO_v2_1`` **Nesređeni** — Napomena contains any of ``neistraženo``,
+      ``fali nacrt``, ``fali zapisnik``, ``<5 m``, ``puhalica``, ``ponor``,
+      ``ponoviti``, ``nastaviti``, ``umjetan objekt``.
+
+    SB's views overlap (29 caves have a SUE number *and* say "ponoviti"); this
+    enum resolves to a single state, SUE number first, because holding one
+    means gate 1 is already passed. ``UNCLASSIFIED`` is a real state, not a
+    bug: 47 named rows carry neither a SUE number nor any flag, so they show up
+    in none of SB's three views.
+    """
+
+    ISTRAZENI = "istraženi"
+    ZA_ISTRAZIT = "za istražit"
+    NESREDENI = "nesređeni"
+    UNCLASSIFIED = "nesvrstano"
 
 
 class Severity(StrEnum):
@@ -83,11 +138,18 @@ class FileRole(StrEnum):
 
 
 class ArchiveFile(BaseModel):
-    """One file resolved on the local Drive mount."""
+    """One file resolved on the local Drive mount.
+
+    ``size_bytes`` feeds part 2.1d (entrance-photo processing): field photos
+    routinely land in the archive at full camera resolution, and they are meant
+    to be downsized and renamed to the ``<SUE>_…`` convention before they are
+    filed into ``!!Fotografije ulaza``.
+    """
 
     path: Path
     role: FileRole
     exists: bool = True
+    size_bytes: int | None = None
     source: str = "local_drive"
 
 
@@ -147,6 +209,7 @@ class DossierIssue(BaseModel):
     code: IssueCode
     severity: Severity
     message: str
+    level: GateLevel = GateLevel.SUE
     label: str | None = None
     source: Source | None = None
 
@@ -166,26 +229,48 @@ class UncheckedRule(BaseModel):
     label: str
     source: Source
     severity: Severity
+    level: GateLevel = GateLevel.SUE
 
 
 class ReadinessReport(BaseModel):
-    """Verdict of ``cave_dossier.dossier.gating.evaluate``."""
+    """Verdict of ``cave_dossier.dossier.gating.evaluate`` — one verdict per gate.
 
-    ready: bool = False
+    Findings live in one flat list, each tagged with the gate it belongs to;
+    the ``*_for`` helpers slice it. ``ready_sue`` / ``ready_crospeleo`` are
+    stored rather than computed so they survive ``model_dump_json``.
+    """
+
+    ready_sue: bool = False
+    ready_crospeleo: bool = False
     issues: list[DossierIssue] = Field(default_factory=list)
     unchecked: list[UncheckedRule] = Field(default_factory=list)
 
+    def issues_for(self, gate: GateLevel) -> list[DossierIssue]:
+        return [issue for issue in self.issues if applies_at(issue.level, gate)]
+
+    def blockers_for(self, gate: GateLevel) -> list[DossierIssue]:
+        return [i for i in self.issues_for(gate) if i.severity is Severity.BLOCKER]
+
+    def warnings_for(self, gate: GateLevel) -> list[DossierIssue]:
+        return [i for i in self.issues_for(gate) if i.severity is Severity.WARNING]
+
+    def unchecked_for(self, gate: GateLevel) -> list[UncheckedRule]:
+        return [rule for rule in self.unchecked if applies_at(rule.level, gate)]
+
+    def ready_for(self, gate: GateLevel) -> bool:
+        """No blockers at this gate, and nothing left unchecked that could block."""
+        return not self.blockers_for(gate) and not [
+            rule for rule in self.unchecked_for(gate) if rule.severity is Severity.BLOCKER
+        ]
+
     @property
     def blockers(self) -> list[DossierIssue]:
+        """Every blocker, both gates — for callers that do not care which."""
         return [issue for issue in self.issues if issue.severity is Severity.BLOCKER]
 
     @property
     def warnings(self) -> list[DossierIssue]:
         return [issue for issue in self.issues if issue.severity is Severity.WARNING]
-
-    @property
-    def unchecked_blocking(self) -> list[UncheckedRule]:
-        return [rule for rule in self.unchecked if rule.severity is Severity.BLOCKER]
 
 
 class CaveDossier(BaseModel):
@@ -217,11 +302,17 @@ class CaveDossier(BaseModel):
     # ── Exploration history (SB) ──────────────────────────────────────
     exploration_period: str | None = None     # "Godina ili period istraživanja"
     last_exploration_year: str | None = None  # "Godina zadnjeg istraživanja"
-    drawing_authors: list[str] = Field(default_factory=list)  # "Autori nacrta"
+    drawing_authors: list[str] = Field(default_factory=list)  # "Autori nacrta", names only
+    # Author -> the society written in brackets after the name ("A.Lipovac (SOV)").
+    # In SB that bracket is a FLAG: the sketch was drawn by someone from outside
+    # SUE. It is not part of the person's name, so it is kept separately.
+    drawing_author_societies: dict[str, str] = Field(default_factory=dict)
     photo_author_candidates: list[str] = Field(default_factory=list)
 
     # ── SB bookkeeping cells (DA/NE flags + free text) ────────────────
     note: str | None = None                # "Napomena"
+    lifecycle: LifecycleState = LifecycleState.UNCLASSIFIED
+    nesredeni_keywords: list[str] = Field(default_factory=list)  # which NO_v2_1 words hit
     queue_flag: QueueFlag = Field(default_factory=QueueFlag)
     entrance_photo_flag: str | None = None        # "Fotografija ulaza"
     pollution_flag: str | None = None             # "Zagađenost"
@@ -266,6 +357,15 @@ class CaveDossier(BaseModel):
 
     def has(self, source: Source) -> bool:
         return source in self.gathered
+
+    @property
+    def is_queued(self) -> bool:
+        """Anything that has not passed gate 1 is work still waiting to be done.
+
+        Per the user (2026-08-26) the worklist is "everything not in Istraženi" —
+        za istražit, nesređeni and the unclassified rows alike.
+        """
+        return self.lifecycle is not LifecycleState.ISTRAZENI
 
     def mark_gathered(self, source: Source) -> None:
         self.gathered.add(source)

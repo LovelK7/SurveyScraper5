@@ -13,7 +13,8 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2.1a — csx-to-survey | OPERATIONAL (own feature, semi-manual 4-step pipeline) |
 | 2.1b — OSZ builder | NOT STARTED — **OSZ v10 template distributed to recorders 2026-08-25** (Word `.dotx` + Google-Docs `.docx`); M4 ungated. Reading filled zapisnici needs a `w:sdt`-aware parser for the Word form and a `[ ]`/`⟨ ⟩` text parser for the Docs form |
 | 2.1c — isječak karte | NOT STARTED (port planned, M3) |
-| 2.1 — dossier builder | **M2 in progress** — dossier model + gating + `report` (SB-only) done; archive intake next |
+| 2.1d — fotografije ulaza | NOT STARTED — **new part, added 2026-08-26**: downsize field photos + rename to `<padded SUE>_…` before filing into `!!Fotografije ulaza`; the `…za istražit` folder is a staging queue, not a repo. Rides along with M6 (the SUE number it renames to only exists at delivery) |
+| 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` (SB-only) done; archive intake next |
 | 2.2 — SB communication | **M1 ✅ DONE** (read-only, live SB v3.0); M2 next |
 
 ## M1 — SB read-only communication ✅ complete (2026-08-25)
@@ -46,8 +47,17 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
 - [x] Dossier model (`dossier/`): fields the OSZ + SB + archive supply, warning/blocker gating
       — `model.py` (`CaveDossier` + `Source` provenance), `sb_mapper.py` (SB row -> dossier,
       queue-flag parsing), `gating.py` (Protokol v6 Tablica 2 / §5.1 rules, each declaring the
-      source that feeds it), `report.py`. 26 tests green; gating smoke-run over all 1301
-      sandbox rows without a crash.
+      source that feeds it), `report.py`. 33 tests green; gating smoke-run over all 1294
+      named sandbox rows without a crash.
+- [x] **Workflow model corrected to the society's real two gates** (user answers 2026-08-26):
+      gate 1 = katastarski broj SUE (Nacrt + OSZ + foto + pločica + izjave), gate 2 = CroSpeleo
+      (Protokol v6 superset). The SUE number moved OUT of gate 1 — it is what gate 1 *produces*.
+      `LifecycleState` (Istraženi / Za istražit / Nesređeni / nesvrstano) is derived from the
+      **workbook's own Power Query** (`Formulas/Section1.m`, extracted 2026-08-26), so the tool
+      and the Excel views cannot drift. Exit codes are now 1 ready / 0 not ready / 99 error,
+      with `--gate {sue,crospeleo}`. Author cells: the `(SOV)` bracket is parsed as an
+      outside-society flag, not part of the name.
+      Live counts: 885 Istraženi · 185 Za istražit · 177 Nesređeni · **47 in no view at all**.
 - [ ] Intake: resolve a cave's archive files from Drive (nacrt, izjave, fotografije ulaza)
       — needs the `drive_resolver` + `name_resolver` ports; until then `Source.ARCHIVE`
       rules report as *not checked yet*
@@ -72,8 +82,18 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
   neither blocks use, both fold into the next template revision.
 - First filled zapisnici coming back from recorders — collect 2–3 (ideally one from
   Word, one from Google Docs) as parser fixtures before M4 starts.
-- Field-data intake dir layout on Drive (needed at M2 start; proposal will be drafted then)
 - Mobile-app context material (parked with part 1)
+
+### Open questions from the 2026-08-26 answers (full text in the feature README §"Still open")
+
+1. **Pre-SUE ID**: `Redni broj` (SB column) or the Excel row number? Recommendation:
+   `Redni broj` — blocks the intake dir layout and the 2.1a handoff.
+2. **Entrance-photo budget** for 2.1d: max file size, max long edge, or both? (3 MB placeholder)
+3. **Izjava locality scope**: does the `_<Lokalitet>` suffix always match the SB `Lokalitet`
+   cell, and is a suffix-less izjava universal?
+4. **`Autori nacrta` cleanup**: add `cavedossier sb audit-authors` to list suspicious cells?
+5. **47 unclassified rows** (no SUE, no Napomena flag) — list them for flagging?
+6. **Field-data intake dir layout on Drive** — still open (was already listed); unblocks after 1.
 
 ## Recent sessions
 

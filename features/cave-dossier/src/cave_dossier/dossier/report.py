@@ -1,13 +1,21 @@
 """Render a dossier for a human — what is present, what is missing, what blocks.
 
-Deliberately plain text on stdout (no GUI yet, function over form).  The layout
+Deliberately plain text on stdout (no GUI yet, function over form). The layout
 follows crospeleo-automation's ``cli/dossier_report.py``: identity first, then
-the data by source, then the verdict last so it reads as the conclusion.
+the data by source, then the two gate verdicts last so they read as the
+conclusion.
 """
 
 from __future__ import annotations
 
-from cave_dossier.dossier.model import CaveDossier, Severity, Source
+from cave_dossier.dossier.model import (
+    GATE_LABELS,
+    CaveDossier,
+    GateLevel,
+    LifecycleState,
+    Severity,
+    Source,
+)
 
 _WIDTH = 74
 
@@ -17,6 +25,14 @@ _SOURCE_LABELS: dict[Source, str] = {
     Source.SURVEY: "survey (2.1a)",
     Source.OSZ: "zapisnik (2.1b)",
     Source.MAP: "isječak karte (2.1c)",
+    Source.PHOTOS: "obrada fotografija (2.1d)",
+}
+
+_LIFECYCLE_HINT: dict[LifecycleState, str] = {
+    LifecycleState.ISTRAZENI: "has a SUE number — gate 1 already passed",
+    LifecycleState.ZA_ISTRAZIT: "queue: not explored yet",
+    LifecycleState.NESREDENI: "queue: explored, not finished",
+    LifecycleState.UNCLASSIFIED: "queue: in none of SB's three views",
 }
 
 
@@ -26,6 +42,7 @@ def render(dossier: CaveDossier) -> str:
 
     add("─" * _WIDTH)
     add(f"  {dossier.display_name}")
+    add(f"  SB status: {dossier.lifecycle.value}  —  {_LIFECYCLE_HINT[dossier.lifecycle]}")
     add("─" * _WIDTH)
 
     add("")
@@ -34,7 +51,7 @@ def render(dossier: CaveDossier) -> str:
         gathered = dossier.has(source)
         mark = "✓" if gathered else "·"
         state = "" if gathered else "(not gathered yet)"
-        add(f"    {mark} {_SOURCE_LABELS[source]:<24} {state}".rstrip())
+        add(f"    {mark} {_SOURCE_LABELS[source]:<26} {state}".rstrip())
 
     if dossier.has(Source.SB):
         add("")
@@ -57,25 +74,42 @@ def render(dossier: CaveDossier) -> str:
         for line in files:
             add(f"    {line}")
 
-    report = dossier.readiness
-    status = "READY" if report.ready else "NOT READY"
-    add("")
-    add(f"  Readiness — {status}")
-    for issue in report.blockers:
-        add(f"    BLOCKER  {issue.message}")
-    for issue in report.warnings:
-        add(f"    warning  {issue.message}")
-    if not report.issues:
-        add("    (no issues among the checks that could run)")
-    if report.unchecked:
+    for gate in (GateLevel.SUE, GateLevel.CROSPELEO):
         add("")
-        add(f"    Not checked yet ({len(report.unchecked)} rules — source not gathered):")
-        for rule in report.unchecked:
-            tier = "blocker" if rule.severity is Severity.BLOCKER else "warning"
-            add(f"      · {rule.label:<38} needs {_SOURCE_LABELS[rule.source]}  [{tier}]")
+        _render_gate(dossier, gate, add)
 
     add("")
     return "\n".join(lines)
+
+
+def _render_gate(dossier: CaveDossier, gate: GateLevel, add) -> None:
+    report = dossier.readiness
+    ready = report.ready_for(gate)
+    ordinal = "1" if gate is GateLevel.SUE else "2"
+    add(f"  Gate {ordinal} — {GATE_LABELS[gate]}: {'READY' if ready else 'NOT READY'}")
+
+    blockers = report.blockers_for(gate)
+    warnings = report.warnings_for(gate)
+    unchecked = report.unchecked_for(gate)
+
+    if gate is GateLevel.CROSPELEO:
+        # Gate 2 repeats every gate-1 finding; show only what it adds on top.
+        blockers = [i for i in blockers if i.level is GateLevel.CROSPELEO]
+        warnings = [i for i in warnings if i.level is GateLevel.CROSPELEO]
+        unchecked = [u for u in unchecked if u.level is GateLevel.CROSPELEO]
+        add("    (everything gate 1 needs, plus:)")
+
+    for issue in blockers:
+        add(f"    BLOCKER  {issue.message}")
+    for issue in warnings:
+        add(f"    warning  {issue.message}")
+    if not blockers and not warnings:
+        add("    (no issues among the checks that could run)")
+    if unchecked:
+        add(f"    Not checked yet ({len(unchecked)} rules — source not gathered):")
+        for rule in unchecked:
+            tier = "blocker" if rule.severity is Severity.BLOCKER else "warning"
+            add(f"      · {rule.label:<38} needs {_SOURCE_LABELS[rule.source]}  [{tier}]")
 
 
 def _sb_pairs(dossier: CaveDossier) -> list[tuple[str, str]]:
@@ -92,7 +126,7 @@ def _sb_pairs(dossier: CaveDossier) -> list[tuple[str, str]]:
         ),
         ("Duljina / Dubina", f"{_num(dossier.length_m)} / {_num(dossier.depth_m)} m"),
         ("Razdoblje istraž.", dossier.exploration_period or "—"),
-        ("Autori nacrta", ", ".join(dossier.drawing_authors) or "—"),
+        ("Autori nacrta", _authors(dossier) or "—"),
     ]
     if dossier.synonyms:
         pairs.append(("Sinonimi", ", ".join(dossier.synonyms)))
@@ -111,6 +145,15 @@ def _sb_pairs(dossier: CaveDossier) -> list[tuple[str, str]]:
     if dossier.note:
         pairs.append(("Napomena", dossier.note))
     return pairs
+
+
+def _authors(dossier: CaveDossier) -> str:
+    """Author names, each with its outside-society flag restored for display."""
+    parts = []
+    for author in dossier.drawing_authors:
+        society = dossier.drawing_author_societies.get(author)
+        parts.append(f"{author} [{society}]" if society else author)
+    return ", ".join(parts)
 
 
 def _file_lines(dossier: CaveDossier) -> list[str]:

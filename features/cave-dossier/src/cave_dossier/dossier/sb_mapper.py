@@ -22,14 +22,35 @@ from cave_dossier.core.normalization import (
     parse_optional_float,
     split_semicolon_values,
 )
-from cave_dossier.core.people import is_placeholder, split_person_names
-from cave_dossier.dossier.model import CaveDossier, Georeference, QueueFlag, Source
+from cave_dossier.core.people import is_placeholder, split_authors
+from cave_dossier.dossier.model import (
+    CaveDossier,
+    Georeference,
+    LifecycleState,
+    QueueFlag,
+    Source,
+)
 from cave_dossier.sb.loader import CaveRow
 
 # Marker that flags a row as "still to be explored" (SB v3.0 restructure,
 # decision 2026-08-22).  Matched on the normalized key so "Za istražit",
 # "za istrazit," and "ZA ISTRAŽIT" all hit.
 _QUEUE_PREFIX_KEY = normalize_lookup_key("za istražit")
+
+# Napomena keywords that put a row in SB's **Nesređeni** view — copied verbatim
+# from the workbook's own Power Query (`NO_v2_1` in Formulas/Section1.m), so
+# this tool and the Excel view can never drift apart.
+NESREDENI_KEYWORDS: tuple[str, ...] = (
+    "neistraženo",
+    "fali nacrt",
+    "fali zapisnik",
+    "<5 m",
+    "puhalica",
+    "ponor",
+    "ponoviti",
+    "nastaviti",
+    "umjetan objekt",
+)
 
 
 class _Cells:
@@ -87,6 +108,27 @@ def parse_queue_flag(note: str | None) -> QueueFlag:
     )
 
 
+def nesredeni_keywords(note: str | None) -> list[str]:
+    """Which ``NO_v2_1`` keywords a Napomena hits (SB's Nesređeni view)."""
+    text = (note or "").casefold()
+    return [keyword for keyword in NESREDENI_KEYWORDS if keyword.casefold() in text]
+
+
+def derive_lifecycle(sue_number: str | None, queued: bool, nesredeni: bool) -> LifecycleState:
+    """Resolve SB's three (overlapping) views into one state.
+
+    SUE number wins: 29 caves in v3.0 hold one *and* carry a Nesređeni keyword,
+    and holding the number means gate 1 is already behind them.
+    """
+    if sue_number and not is_placeholder(sue_number):
+        return LifecycleState.ISTRAZENI
+    if queued:
+        return LifecycleState.ZA_ISTRAZIT
+    if nesredeni:
+        return LifecycleState.NESREDENI
+    return LifecycleState.UNCLASSIFIED
+
+
 def build_from_sb(cave_row: CaveRow, settings: Settings) -> CaveDossier:
     """Seed a dossier from one SB row. Marks ``Source.SB`` as gathered."""
     cells = _Cells(cave_row.values)
@@ -96,6 +138,11 @@ def build_from_sb(cave_row: CaveRow, settings: Settings) -> CaveDossier:
         return cells.text(columns.get(field))
 
     note = mapped("note")
+    queue_flag = parse_queue_flag(note)
+    hits = nesredeni_keywords(note)
+    drawing_authors, author_societies = split_authors(
+        cells.text(settings.sb_drawing_authors_column)
+    )
     georeference = Georeference(
         x_htrs=cells.number(settings.sb_x_htrs_column),
         y_htrs=cells.number(settings.sb_y_htrs_column),
@@ -121,9 +168,12 @@ def build_from_sb(cave_row: CaveRow, settings: Settings) -> CaveDossier:
         depth_m=cells.number(columns.get("depth_m")),
         exploration_period=cells.text(settings.sb_exploration_period_column),
         last_exploration_year=mapped("last_exploration_year"),
-        drawing_authors=split_person_names(cells.text(settings.sb_drawing_authors_column)),
+        drawing_authors=drawing_authors,
+        drawing_author_societies=author_societies,
         note=note,
-        queue_flag=parse_queue_flag(note),
+        lifecycle=derive_lifecycle(cave_row.sue_number, queue_flag.queued, bool(hits)),
+        nesredeni_keywords=hits,
+        queue_flag=queue_flag,
         entrance_photo_flag=_flag(mapped("entrance_photo_flag")),
         pollution_flag=_flag(mapped("pollution_flag")),
         ice_cave_flag=_flag(mapped("ice_cave_flag")),

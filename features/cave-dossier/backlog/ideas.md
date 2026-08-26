@@ -68,3 +68,15 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-25 — 416 rows have no SUE number and 152 no `Autori nacrta`; the gating run
   over the whole sandbox (see the M2 session) is a cheap data-quality report for the
   user, independent of any single cave's dossier.
+- 2026-08-26 — SB's Nesređeni view (NO_v2_1) matches the bare substring "ponor", so 8 rows
+  land in it only because their Napomena mentions a ponor. Tightening the keyword to a
+  word-boundary match would clean the view up (an Excel-side PQ edit, not a code change).
+- 2026-08-26 — `cavedossier sb audit-authors`: list every `Autori nacrta` cell the splitter
+  finds suspicious (placeholders, single-word entries, brackets that are not societies) so the
+  column can be cleaned in one Excel pass. 108 rows carry an outside-society bracket today.
+- 2026-08-26 — 47 named rows have neither a SUE number nor a Napomena flag, so they appear in
+  none of SB's three views. A `report --unclassified` listing would let the user flag them.
+- 2026-08-26 — 2.1d mover: at SUE assignment, propose renaming the cave's photos in
+  `!!Fotografije ulaza za istražit` to `<padded SUE>_…` and moving them into the main folder.
+  The staging folder is free-form named (59 files, cave-name based), so the match has to be by
+  cave name, not by number.

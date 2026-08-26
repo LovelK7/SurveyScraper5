@@ -1,4 +1,4 @@
-"""M2 dossier skeleton: SB mapping, gating, and the report renderer.
+"""M2 dossier skeleton: SB mapping, lifecycle, two-gate gating, report renderer.
 
 Everything runs against the synthetic mini workbook (tests/fixtures) — the
 real-data checks stay manual, via `cavedossier report` against the sandbox.
@@ -9,13 +9,15 @@ from __future__ import annotations
 import pytest
 
 from cave_dossier.core.config import Settings
-from cave_dossier.core.people import split_person_names
+from cave_dossier.core.people import split_authors, split_person_names
 from cave_dossier.dossier import (
     ArchiveFile,
     CaveDossier,
     FileRole,
+    GateLevel,
     Georeference,
     IssueCode,
+    LifecycleState,
     Severity,
     Source,
     SurveyResult,
@@ -72,10 +74,47 @@ def test_sb_mapping_splits_authors_and_drops_placeholders(
     assert _dossier(reader, settings, "Pećina žedna").drawing_authors == ["Malez M. (1960)"]
 
 
+def test_society_bracket_is_a_flag_not_part_of_the_name() -> None:
+    names, societies = split_authors("A.Lipovac (SOV), D.Reš")
+    assert names == ["A.Lipovac", "D.Reš"]
+    assert societies == {"A.Lipovac": "SOV"}
+    # A year in brackets is a different animal — it stays glued to the name by
+    # the initials rule, so it must not be mistaken for a society.
+    assert split_person_names("Malez, M. (1960)") == ["Malez M. (1960)"]
+
+
 def test_missing_coordinates_leave_georeference_none(
     reader: SBReader, settings: Settings
 ) -> None:
     assert _dossier(reader, settings, "Đulin ponor mali").georeference is None
+
+
+# ── Lifecycle (mirrors SB's own Power Query views) ────────────────────
+
+
+def test_lifecycle_sue_number_means_istrazeni(reader: SBReader, settings: Settings) -> None:
+    dossier = _dossier(reader, settings, "Špilja Testovka")
+    assert dossier.lifecycle is LifecycleState.ISTRAZENI
+    assert dossier.is_queued is False
+
+
+def test_lifecycle_queue_flag_means_za_istrazit(reader: SBReader, settings: Settings) -> None:
+    dossier = _dossier(reader, settings, "Đulin ponor mali")
+    assert dossier.lifecycle is LifecycleState.ZA_ISTRAZIT
+    assert dossier.is_queued is True
+    assert dossier.queue_flag.old_number == "268"
+    # "ponoviti" also matches the Nesređeni keyword list; SUE-then-queue order
+    # decides, and the keyword hit is still recorded.
+    assert "ponoviti" in dossier.nesredeni_keywords
+
+
+def test_lifecycle_precedence_sue_beats_nesredeni_keyword() -> None:
+    from cave_dossier.dossier import derive_lifecycle
+
+    assert derive_lifecycle("570", False, True) is LifecycleState.ISTRAZENI
+    assert derive_lifecycle(None, True, True) is LifecycleState.ZA_ISTRAZIT
+    assert derive_lifecycle(None, False, True) is LifecycleState.NESREDENI
+    assert derive_lifecycle(None, False, False) is LifecycleState.UNCLASSIFIED
 
 
 # ── Queue flag (SB v3.0 Napomena) ─────────────────────────────────────
@@ -103,11 +142,7 @@ def test_parse_queue_flag(
 
 
 def test_queue_row_reports_a_context_warning(reader: SBReader, settings: Settings) -> None:
-    dossier = _dossier(reader, settings, "Đulin ponor mali")
-    assert dossier.queue_flag.queued is True
-    assert dossier.queue_flag.old_number == "268"
-
-    report = evaluate(dossier)
+    report = evaluate(_dossier(reader, settings, "Đulin ponor mali"))
     queue_notes = [i for i in report.issues if i.code is IssueCode.QUEUE_ITEM]
     assert len(queue_notes) == 1
     assert queue_notes[0].severity is Severity.WARNING
@@ -122,26 +157,37 @@ def test_ungathered_sources_are_unchecked_not_failed(
     dossier = _dossier(reader, settings, "Špilja Testovka")
     report = evaluate(dossier)
 
-    # SB-fed rules all pass for this row; nothing SB-related may fail.
-    assert [i.message for i in report.blockers] == []
-    # …but the dossier is not ready: rules for the four ungathered sources
-    # are pending, and several of them can block.
-    assert report.ready is False
+    # SB-fed gate-1 rules all pass for this row; nothing SB-related may fail.
+    assert [i.message for i in report.blockers_for(GateLevel.SUE)] == []
+    # …but it is not ready: rules for the ungathered sources are pending.
+    assert report.ready_sue is False
+    # A rule reports the FIRST source it is missing, so the 2.1d photo rule
+    # (ARCHIVE + PHOTOS) shows up under ARCHIVE — fix the archive first and it
+    # re-reports as PHOTOS.
     assert {rule.source for rule in report.unchecked} == {
         Source.ARCHIVE,
         Source.SURVEY,
         Source.OSZ,
         Source.MAP,
     }
-    assert report.unchecked_blocking
 
 
-def test_missing_sb_mandatories_block(reader: SBReader, settings: Settings) -> None:
+def test_sue_number_is_gate_2_only_never_gate_1(reader: SBReader, settings: Settings) -> None:
+    """Gate 1 PRODUCES the SUE number, so requiring it there would be circular."""
+    report = evaluate(_dossier(reader, settings, "Đulin ponor mali"))  # queue row, no SUE
+
+    gate1 = {issue.label for issue in report.blockers_for(GateLevel.SUE)}
+    gate2 = {issue.label for issue in report.blockers_for(GateLevel.CROSPELEO)}
+    assert "Interni katastarski broj (SUE)" not in gate1
+    assert "Interni katastarski broj (SUE)" in gate2
+
+
+def test_missing_sb_mandatories_block_gate_1(reader: SBReader, settings: Settings) -> None:
     report = evaluate(_dossier(reader, settings, "Đulin ponor mali"))
-    labels = {issue.label for issue in report.blockers}
-    assert "Interni katastarski broj objekta u udruzi" in labels  # no SUE on queue rows
+    labels = {issue.label for issue in report.blockers_for(GateLevel.SUE)}
     assert "Dubina" in labels
     assert "Autori nacrta" in labels
+    assert "Lokalitet" in labels
 
 
 def test_plaque_rule_is_year_conditional(reader: SBReader, settings: Settings) -> None:
@@ -150,8 +196,8 @@ def test_plaque_rule_is_year_conditional(reader: SBReader, settings: Settings) -
     plaque = [i for i in modern.issues if i.code is IssueCode.MISSING_PLAQUE]
     assert [i.severity for i in plaque] == [Severity.BLOCKER]
 
-    # 1960 exploration has a plaque, so no issue at all; the queue row has
-    # neither plaque nor a modern year → warning, never a blocker.
+    # Unknown year and no plaque → warning: an old cave can still earn a SUE
+    # number without one.
     old = evaluate(_dossier(reader, settings, "Đulin ponor mali"))
     plaque = [i for i in old.issues if i.code is IssueCode.MISSING_PLAQUE]
     assert [i.severity for i in plaque] == [Severity.WARNING]
@@ -166,13 +212,27 @@ def test_coordinates_rule_is_year_conditional(reader: SBReader, settings: Settin
     assert [i.severity for i in coordinates] == [Severity.WARNING]  # unknown year
 
 
-def test_a_fully_gathered_dossier_can_be_ready() -> None:
+def test_a_fully_gathered_dossier_passes_both_gates() -> None:
     """The rule table must be satisfiable — otherwise nothing ever ships."""
-    dossier = _complete_dossier()
-    report = evaluate(dossier)
+    report = evaluate(_complete_dossier())
     assert report.unchecked == []
     assert [i.message for i in report.blockers] == []
-    assert report.ready is True
+    assert report.ready_sue is True
+    assert report.ready_crospeleo is True
+
+
+def test_gate_1_can_pass_while_gate_2_still_fails() -> None:
+    """The everyday case: society-ready, not yet CroSpeleo-ready."""
+    dossier = _complete_dossier()
+    dossier.map_excerpt = None                      # isječak karte is CroSpeleo-only
+    dossier.georeference.georef_record = None
+    report = evaluate(dossier)
+    assert report.ready_sue is True
+    assert report.ready_crospeleo is False
+    assert {i.label for i in report.blockers_for(GateLevel.CROSPELEO)} == {
+        "Isječak karte",
+        "Georef zapis",
+    }
 
 
 def test_missing_izjava_blocks_per_author() -> None:
@@ -182,7 +242,25 @@ def test_missing_izjava_blocks_per_author() -> None:
     statements = [i for i in report.issues if i.code is IssueCode.MISSING_STATEMENT]
     assert len(statements) == 1
     assert "Ivo Ivić" in statements[0].message
-    assert report.ready is False
+    assert report.ready_sue is False
+
+
+def test_unprocessed_entrance_photos_are_flagged_for_2_1d() -> None:
+    dossier = _complete_dossier()
+    dossier.entrance_photos = [
+        ArchiveFile(
+            path=_p("IMG_5498.JPG"),  # camera name, never renamed
+            role=FileRole.ENTRANCE_PHOTO,
+            size_bytes=8_000_000,     # never downsized
+        )
+    ]
+    report = evaluate(dossier)
+    photo_notes = [i for i in report.issues if "2.1d" in (i.label or "")]
+    assert len(photo_notes) == 1
+    assert "budget" in photo_notes[0].message
+    assert "not renamed" in photo_notes[0].message
+    assert photo_notes[0].severity is Severity.WARNING  # hygiene, not a gate
+    assert report.ready_sue is True
 
 
 def test_survey_dimensions_win_over_sb() -> None:
@@ -206,7 +284,7 @@ def test_negative_dimension_is_treated_as_invalid() -> None:
 # ── Report renderer ───────────────────────────────────────────────────
 
 
-def test_render_shows_identity_sources_and_verdict(
+def test_render_shows_identity_lifecycle_and_both_gates(
     reader: SBReader, settings: Settings
 ) -> None:
     dossier = _dossier(reader, settings, "Špilja Testovka")
@@ -214,7 +292,9 @@ def test_render_shows_identity_sources_and_verdict(
     text = render(dossier)
 
     assert "Špilja Testovka (SUE 001)" in text
-    assert "NOT READY" in text
+    assert "SB status: istraženi" in text
+    assert "Gate 1 — katastarski broj (SUE): NOT READY" in text
+    assert "Gate 2 — CroSpeleo: NOT READY" in text
     assert "not gathered yet" in text
     # 7-digit HTRS96 northings must not degrade to scientific notation.
     assert "5023456" in text
@@ -224,10 +304,11 @@ def _complete_dossier() -> CaveDossier:
     """A dossier with every source gathered and every mandatory field filled."""
     izjava = ArchiveFile(path=_p("Izjava_Ana Anić.pdf"), role=FileRole.STATEMENT_DRAWING_AUTHOR)
     return CaveDossier(
-        gathered={Source.SB, Source.ARCHIVE, Source.SURVEY, Source.OSZ, Source.MAP},
+        gathered=set(Source),
         sb_row_number=3,
         object_name="Špilja Testovka",
         sue_number="001",
+        lifecycle=LifecycleState.ISTRAZENI,
         plaque_number="T-01",
         locality="Testni kras",
         nearest_place="Testno Selo",
@@ -253,9 +334,15 @@ def _complete_dossier() -> CaveDossier:
         organizations=["SU Testni"],
         entrance_width_m=1.2,
         entrance_height_or_length_m=0.8,
-        osz_document=ArchiveFile(path=_p("001_Zapisnik.docx"), role=FileRole.OSZ_DOCX),
-        nacrt_pdfs=[ArchiveFile(path=_p("001_Nacrt.pdf"), role=FileRole.NACRT_PDF)],
-        entrance_photos=[ArchiveFile(path=_p("001_ulaz.jpg"), role=FileRole.ENTRANCE_PHOTO)],
+        osz_document=ArchiveFile(path=_p("001.docx"), role=FileRole.OSZ_DOCX),
+        nacrt_pdfs=[ArchiveFile(path=_p("001.pdf"), role=FileRole.NACRT_PDF)],
+        entrance_photos=[
+            ArchiveFile(
+                path=_p("001_Testovka_ulaz_AAnić.jpg"),
+                role=FileRole.ENTRANCE_PHOTO,
+                size_bytes=900_000,
+            )
+        ],
         entrance_photo_flag="DA",
         statement_files=[izjava],
         drawing_author_statement_files=[izjava],

@@ -12,9 +12,16 @@ import argparse
 import sys
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
-from cave_dossier.dossier import build_from_sb, evaluate, render
+from cave_dossier.dossier import GateLevel, build_from_sb, evaluate, render
 from cave_dossier.sb.loader import SBReader
 from cave_dossier.sb.safe_io import SBWorkbookUnreachable
+
+# Exit-code convention (user, 2026-08-26): ready is the exceptional, actionable
+# outcome, so it gets the non-zero code; errors are far away at 99 so a crashed
+# run can never be mistaken for a verdict.
+EXIT_NOT_READY = 0
+EXIT_READY = 1
+EXIT_ERROR = 99
 
 
 def _print_banner(settings: Settings) -> None:
@@ -56,7 +63,7 @@ def cmd_sb_inspect(settings: Settings, query: str) -> int:
     if not matches:
         print(f"No SB row matches {query!r} (tried object name, SUE number, plaque;")
         print("diacritic- and case-insensitive; then name substring).")
-        return 1
+        return EXIT_ERROR
     if len(matches) > 1:
         print(f"{len(matches)} rows match {query!r} — showing all (refine with the exact name or SUE):")
         print()
@@ -95,30 +102,33 @@ def cmd_sb_stats(settings: Settings) -> int:
     return 0
 
 
-def cmd_report(settings: Settings, query: str, as_json: bool) -> int:
+def cmd_report(settings: Settings, query: str, as_json: bool, gate: str) -> int:
     """Per-cave dossier report (M2).
 
-    Only SB is gathered so far, so most Tablica 2 rules come back as
-    "not checked yet" rather than as blockers — see dossier/gating.py.
+    Both gates are always printed; ``--gate`` only picks which one the exit
+    code reports on. Exit codes are the user's convention (2026-08-26):
+    ``1`` ready, ``0`` not ready, ``99`` error.
     """
     reader = SBReader(settings)
     matches = reader.find_caves(query)
     if not matches:
         print(f"No SB row matches {query!r} (tried object name, SUE number, plaque).")
-        return 2
+        return EXIT_ERROR
     if len(matches) > 1:
         print(f"{len(matches)} rows match {query!r} — refine the query:")
         for cave in matches:
             print(f"  row {cave.row_number}: {cave.object_name} (SUE {cave.sue_number or '—'})")
-        return 2
+        return EXIT_ERROR
 
     dossier = build_from_sb(matches[0], settings)
-    evaluate(dossier)
+    report = evaluate(dossier)
     if as_json:
         print(dossier.model_dump_json(indent=2, exclude={"sb_record"}))
     else:
         print(render(dossier))
-    return 0 if dossier.readiness.ready else 1
+
+    level = GateLevel.CROSPELEO if gate == "crospeleo" else GateLevel.SUE
+    return EXIT_READY if report.ready_for(level) else EXIT_NOT_READY
 
 
 # ── Entry point ────────────────────────────────────────────────────
@@ -160,6 +170,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest="as_json",
         help="Emit the dossier as JSON (raw SB row omitted) instead of the text report",
     )
+    report.add_argument(
+        "--gate",
+        choices=["sue", "crospeleo"],
+        default="sue",
+        help="Which gate the EXIT CODE reports on (both are always printed): "
+             "sue = society katastarski broj (default), crospeleo = national cadastre",
+    )
 
     return parser
 
@@ -184,11 +201,11 @@ def main(argv: list[str] | None = None) -> int:
             if args.sb_command == "stats":
                 return cmd_sb_stats(settings)
         if args.command == "report":
-            return cmd_report(settings, args.cave, args.as_json)
-        return 2
+            return cmd_report(settings, args.cave, args.as_json, args.gate)
+        return EXIT_ERROR
     except (ConfigError, SBWorkbookUnreachable) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
-        return 2
+        return EXIT_ERROR
 
 
 if __name__ == "__main__":

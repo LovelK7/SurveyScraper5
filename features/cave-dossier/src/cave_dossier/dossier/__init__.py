@@ -7,12 +7,15 @@ and isječak karte (2.1c) fill the remaining sources in later milestones.
 
 from cave_dossier.dossier.gating import RULES, evaluate, start_year
 from cave_dossier.dossier.model import (
+    GATE_LABELS,
     ArchiveFile,
     CaveDossier,
     DossierIssue,
     FileRole,
+    GateLevel,
     Georeference,
     IssueCode,
+    LifecycleState,
     QueueFlag,
     ReadinessReport,
     Severity,
@@ -21,15 +24,24 @@ from cave_dossier.dossier.model import (
     UncheckedRule,
 )
 from cave_dossier.dossier.report import render
-from cave_dossier.dossier.sb_mapper import build_from_sb, parse_queue_flag
+from cave_dossier.dossier.sb_mapper import (
+    NESREDENI_KEYWORDS,
+    build_from_sb,
+    derive_lifecycle,
+    parse_queue_flag,
+)
 
 __all__ = [
     "ArchiveFile",
     "CaveDossier",
     "DossierIssue",
     "FileRole",
+    "GATE_LABELS",
+    "GateLevel",
     "Georeference",
     "IssueCode",
+    "LifecycleState",
+    "NESREDENI_KEYWORDS",
     "QueueFlag",
     "RULES",
     "ReadinessReport",
@@ -38,6 +50,7 @@ __all__ = [
     "SurveyResult",
     "UncheckedRule",
     "build_from_sb",
+    "derive_lifecycle",
     "evaluate",
     "parse_queue_flag",
     "render",

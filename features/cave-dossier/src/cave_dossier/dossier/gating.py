@@ -1,26 +1,38 @@
-"""Warning / blocker gating for a cave dossier.
+"""Warning / blocker gating for a cave dossier — two gates, in order.
 
-Ported in substance from crospeleo-automation's
-``services/readiness_validator.py`` (see docs/PORTING.md), which encodes the
-MZOZT **Protokol v6** mandatory-field matrix:
+The society's workflow (confirmed by the user 2026-08-26) has **two** levels of
+acceptance, and this module encodes both:
 
-* §6.1 **Tablica 2** — fields marked ``*`` are hard blockers, ``**`` are
-  advisory warnings.
-* §5.1 — year-conditional rules: GPS coordinates, an entrance photograph and
-  the entrance plaque are mandatory iff exploration started in **2015 or
-  later**.
-* §5 caverns clause — the plaque rule does not apply to ``kaverna`` objects.
+**Gate 1 — katastarski broj (`GateLevel.SUE`).** The society's own step. A cave
+needs a readable Nacrt, an OSZ with its mandatory fields filled, entrance
+photo(s), a pločica, and an *Izjava za katastar* for every author (sketch and
+photo). Passing it is what earns the cave its SUE number — which is why the SUE
+number is **not** a requirement here: it is the *output* of this gate, and the
+thing that moves the row into SB's *Istraženi* view.
 
-Two things are deliberately different from the crospeleo original:
+**Gate 2 — CroSpeleo (`GateLevel.CROSPELEO`).** The national cadastre bar, a
+strict superset: everything above plus the Protokol v6 extras (isječak karte,
+georef zapis, izvor koordinata, vertikalna razlika, and the SUE number itself).
+Submission stays crospeleo-automation's job downstream; we only pre-check it,
+so a cave never reaches that tool with a known-missing field.
 
-1. **Rules declare which source feeds them.**  crospeleo validates a dossier
+The Protokol v6 substance is ported from crospeleo-automation's
+`services/readiness_validator.py` (see docs/PORTING.md):
+
+* §6.1 **Tablica 2** — fields marked ``*`` are mandatory, ``**`` advisory.
+* §5.1 — GPS coordinates, an entrance photograph and the entrance pločica are
+  mandatory **iff exploration started in 2015 or later**. Older caves are
+  exempt (they can still earn a SUE number without a pločica), so for them the
+  same three checks drop to warnings.
+* §5 — caverns (``kaverna``) are exempt from the pločica rule entirely.
+
+Two things differ from the crospeleo original:
+
+1. **Rules declare which source feeds them.** crospeleo validates a dossier
    that is already fully assembled; here the dossier is assembled milestone by
    milestone, so a rule whose source has not been gathered is reported as
-   ``unchecked`` — never as a failure.  ``ready`` therefore requires both "no
-   blockers" and "nothing left unchecked that could block".
-2. **The gate sits before production, not before submission.**  A blocker here
-   means the OSZ / Nacrt should not be produced or delivered yet; the national
-   cadastre submission stays crospeleo-automation's gate downstream.
+   ``unchecked`` — never as a failure.
+2. **Rules declare which gate they belong to**, per the two-level workflow above.
 """
 
 from __future__ import annotations
@@ -33,7 +45,9 @@ from cave_dossier.core.people import is_placeholder
 from cave_dossier.dossier.model import (
     CaveDossier,
     DossierIssue,
+    GateLevel,
     IssueCode,
+    LifecycleState,
     ReadinessReport,
     Severity,
     Source,
@@ -42,7 +56,7 @@ from cave_dossier.dossier.model import (
 
 _YEAR_PATTERN = re.compile(r"(?:19|20)\d{2}")
 
-#: §5.1 — from this exploration year on, GPS + entrance photo + plaque are mandatory.
+#: §5.1 — from this exploration year on, GPS + entrance photo + pločica are mandatory.
 PHOTO_REQUIRED_FROM_YEAR = 2015
 
 
@@ -51,13 +65,15 @@ class Rule:
     """One gating rule.
 
     ``check`` returns ``None`` when the rule is satisfied, or an explanatory
-    message when it is not.  ``sources`` lists every gathering step the rule
+    message when it is not. ``sources`` lists every gathering step the rule
     needs; if any is missing the rule is reported as unchecked instead of run.
+    ``level`` says which gate the rule belongs to.
     """
 
     label: str          # the Croatian field name the operator knows
     code: IssueCode
     severity: Severity
+    level: GateLevel
     sources: tuple[Source, ...]
     check: Callable[[CaveDossier], str | None]
 
@@ -66,7 +82,7 @@ class Rule:
 
 
 def _missing(label: str) -> str:
-    return f"Missing '{label}' (Tablica 2 → {label})."
+    return f"Missing '{label}'."
 
 
 def _text(label: str, attribute: str) -> Callable[[CaveDossier], str | None]:
@@ -86,7 +102,9 @@ def _items(label: str, attribute: str) -> Callable[[CaveDossier], str | None]:
     return check
 
 
-def _number(label: str, resolver: Callable[[CaveDossier], float | None]) -> Callable[[CaveDossier], str | None]:
+def _number(
+    label: str, resolver: Callable[[CaveDossier], float | None]
+) -> Callable[[CaveDossier], str | None]:
     """Mandatory dimensions must be present *and* non-negative.
 
     A negative dimension is as good as missing: CroSpeleo rejects the value
@@ -118,13 +136,54 @@ def _georef_record(dossier: CaveDossier) -> str | None:
     return None
 
 
+#: Part 2.1d budget for an archived entrance photo. Field photos arrive at full
+#: camera resolution (5–10 MB is normal); anything above this should be
+#: downsized before it is filed. **Confirm the number with the user.**
+MAX_ENTRANCE_PHOTO_BYTES = 3_000_000
+
+
+def _entrance_photos_processed(dossier: CaveDossier) -> str | None:
+    """Part 2.1d — are the archived entrance photos downsized and renamed?
+
+    The archive convention is ``<zero-padded SUE>_<ime>_…_<autor>.jpg``; photos
+    that still carry a camera filename, or that were never downsized, are the
+    ones 2.1d exists to fix.
+    """
+    if not dossier.entrance_photos:
+        return None
+    prefix = dossier.sue_number.zfill(3) if dossier.sue_number else None
+    oversized = [
+        photo.path.name
+        for photo in dossier.entrance_photos
+        if photo.size_bytes is not None and photo.size_bytes > MAX_ENTRANCE_PHOTO_BYTES
+    ]
+    misnamed = (
+        [
+            photo.path.name
+            for photo in dossier.entrance_photos
+            if not photo.path.name.startswith(prefix)
+        ]
+        if prefix
+        else []
+    )
+    parts = []
+    if oversized:
+        budget = MAX_ENTRANCE_PHOTO_BYTES // 1_000_000
+        parts.append(f"{len(oversized)} over the {budget} MB budget ({', '.join(oversized[:3])})")
+    if misnamed:
+        parts.append(f"{len(misnamed)} not renamed to '{prefix}_…' ({', '.join(misnamed[:3])})")
+    if not parts:
+        return None
+    return "Entrance photos need 2.1d processing: " + "; ".join(parts) + "."
+
+
 def _entrance_photo_flag_matches_archive(dossier: CaveDossier) -> str | None:
     """Cross-check the SB bookkeeping cell against what is actually on Drive.
 
     SB's "Fotografija ulaza = DA" is a human-maintained claim; the archive is
-    the ground truth.  Disagreement in either direction is worth surfacing —
-    it usually means the photo landed in the wrong folder, or the cell was
-    never updated after the photo was filed.
+    the ground truth. Disagreement in either direction is worth surfacing — it
+    usually means the photo landed in the wrong folder, or the cell was never
+    updated after the photo was filed.
     """
     claimed = (dossier.entrance_photo_flag or "").strip().casefold() in {"da", "yes", "1"}
     present = bool(dossier.entrance_photos)
@@ -141,72 +200,83 @@ def _entrance_photo_flag_matches_archive(dossier: CaveDossier) -> str | None:
     return None
 
 
-# ── The rule table (Protokol v6, Tablica 2) ───────────────────────────
-# Grouped by source so it stays readable as milestones fill the dossier in.
+# ── The rule table ────────────────────────────────────────────────────
+# Grouped by source; the `level` column is the gate each rule belongs to.
+
+_SUE = GateLevel.SUE
+_CRO = GateLevel.CROSPELEO
 
 RULES: tuple[Rule, ...] = (
     # ── From SB (2.2) — available now ─────────────────────────────────
-    Rule("Ime objekta", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SB,),
+    Rule("Ime objekta", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
          _text("Ime objekta", "object_name")),
-    Rule("Interni katastarski broj objekta u udruzi", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SB,),
-         _text("Interni katastarski broj objekta u udruzi", "sue_number")),
-    Rule("Najbliže mjesto", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SB,),
-         _text("Najbliže mjesto", "nearest_place")),
-    Rule("Lokalitet", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SB,),
+    Rule("Lokalitet", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
          _text("Lokalitet", "locality")),
-    Rule("Razdoblje istraživanja", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SB,),
+    Rule("Najbliže mjesto", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
+         _text("Najbliže mjesto", "nearest_place")),
+    Rule("Razdoblje istraživanja", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
          _text("Razdoblje istraživanja", "exploration_period")),
-    Rule("Autori nacrta", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SB,),
+    Rule("Autori nacrta", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
          _items("Autori nacrta", "drawing_authors")),
-    Rule("Dubina", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SB,),
+    Rule("Dubina", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SB,),
          _number("Dubina", CaveDossier.effective_depth_m)),
+    # Gate 2 only: the SUE number is what gate 1 *produces*, so requiring it
+    # there would be circular. CroSpeleo does need it (Tablica 2 → Interni
+    # katastarski broj objekta u udruzi).
+    Rule("Interni katastarski broj (SUE)", IssueCode.MISSING_FIELD, Severity.BLOCKER, _CRO,
+         (Source.SB,), _text("Interni katastarski broj (SUE)", "sue_number")),
 
     # ── From the survey (2.1a, M5) ────────────────────────────────────
-    Rule("Horizontalna duljina", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SURVEY,),
+    Rule("Horizontalna duljina", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.SURVEY,),
          _number("Horizontalna duljina", CaveDossier.effective_horizontal_length_m)),
-    Rule("Vertikalna razlika", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.SURVEY,),
+    Rule("Vertikalna razlika", IssueCode.MISSING_FIELD, Severity.BLOCKER, _CRO, (Source.SURVEY,),
          _number("Vertikalna razlika", CaveDossier.effective_vertical_difference_m)),
 
     # ── From the OSZ (2.1b, M4) ───────────────────────────────────────
-    Rule("Podrijetlo imena", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Podrijetlo imena", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _text("Podrijetlo imena", "origin_of_name")),
-    Rule("Položaj i pristup objektu", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Položaj i pristup objektu", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _text("Položaj i pristup objektu", "location_access_text")),
-    Rule("Vrsta objekta", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Vrsta objekta", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _text("Vrsta objekta", "object_type")),
-    Rule("Hidrogeološka funkcija", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Hidrogeološka funkcija", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _text("Hidrogeološka funkcija", "hydrogeological_function")),
-    Rule("Hidrološka karakteristika", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Hidrološka karakteristika", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _text("Hidrološka karakteristika", "hydrological_characteristic")),
-    Rule("Osnovni opis s tehničkim podacima", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
-         _text("Osnovni opis s tehničkim podacima", "technical_description")),
-    Rule("Perspektiva daljnjeg istraživanja", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
-         _text("Perspektiva daljnjeg istraživanja", "future_exploration_perspective")),
-    Rule("Zapisničar", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Osnovni opis s tehničkim podacima", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE,
+         (Source.OSZ,), _text("Osnovni opis s tehničkim podacima", "technical_description")),
+    Rule("Perspektiva daljnjeg istraživanja", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE,
+         (Source.OSZ,), _text("Perspektiva daljnjeg istraživanja", "future_exploration_perspective")),
+    Rule("Zapisničar", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _text("Zapisničar", "recorder")),
-    Rule("Članovi ekipe", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Članovi ekipe", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _items("Članovi ekipe", "team_members")),
-    Rule("Istražile udruge", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
-         _items("Istražile udruge", "organizations")),
-    Rule("Širina ulaza", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Širina ulaza", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _number("Širina ulaza", lambda d: d.entrance_width_m)),
-    Rule("Visina/duljina ulaza", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Visina/duljina ulaza", IssueCode.MISSING_FIELD, Severity.BLOCKER, _SUE, (Source.OSZ,),
          _number("Visina/duljina ulaza", lambda d: d.entrance_height_or_length_m)),
-    Rule("Izvor koordinata", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.OSZ,),
+    Rule("Istražile udruge", IssueCode.MISSING_FIELD, Severity.BLOCKER, _CRO, (Source.OSZ,),
+         _items("Istražile udruge", "organizations")),
+    Rule("Izvor koordinata", IssueCode.MISSING_FIELD, Severity.BLOCKER, _CRO, (Source.OSZ,),
          _coordinate_source),
 
     # ── Files on Drive (M2 intake) ────────────────────────────────────
-    Rule("Zapisnik (OSZ DOCX)", IssueCode.MISSING_OSZ, Severity.BLOCKER, (Source.ARCHIVE,),
-         lambda d: None if d.osz_document else "Missing the filled OSZ (Tablica 2 Prilozi → Zapisnik)."),
-    Rule("Nacrt", IssueCode.MISSING_NACRT, Severity.BLOCKER, (Source.ARCHIVE,),
-         lambda d: None if d.nacrt_pdfs else "Missing the Nacrt PDF (Tablica 2 Prilozi → Nacrt)."),
+    Rule("Zapisnik (OSZ DOCX)", IssueCode.MISSING_OSZ, Severity.BLOCKER, _SUE, (Source.ARCHIVE,),
+         lambda d: None if d.osz_document else "Missing the filled OSZ (zapisnik)."),
+    Rule("Nacrt", IssueCode.MISSING_NACRT, Severity.BLOCKER, _SUE, (Source.ARCHIVE,),
+         lambda d: None if d.nacrt_pdfs else "Missing the Nacrt PDF."),
     Rule("Fotografija ulaza (SB ↔ arhiva)", IssueCode.MISSING_ENTRANCE_PHOTO, Severity.WARNING,
-         (Source.SB, Source.ARCHIVE), _entrance_photo_flag_matches_archive),
+         _SUE, (Source.SB, Source.ARCHIVE), _entrance_photo_flag_matches_archive),
 
-    # ── Isječak karte (2.1c, M3) ──────────────────────────────────────
-    Rule("Isječak karte", IssueCode.MISSING_MAP_EXCERPT, Severity.BLOCKER, (Source.MAP,),
-         lambda d: None if d.map_excerpt else "Missing 'Isječak karte' (Tablica 2 Prilozi → Isječak karte)."),
-    Rule("Georef zapis", IssueCode.MISSING_FIELD, Severity.BLOCKER, (Source.MAP,), _georef_record),
+    # ── Entrance-photo processing (2.1d) ──────────────────────────────
+    Rule("Fotografije ulaza — obrada (2.1d)", IssueCode.MISSING_ENTRANCE_PHOTO, Severity.WARNING,
+         _SUE, (Source.ARCHIVE, Source.PHOTOS), _entrance_photos_processed),
+
+    # ── Isječak karte (2.1c, M3) — CroSpeleo only ─────────────────────
+    Rule("Isječak karte", IssueCode.MISSING_MAP_EXCERPT, Severity.BLOCKER, _CRO, (Source.MAP,),
+         lambda d: None if d.map_excerpt else "Missing 'Isječak karte' (Tablica 2 Prilozi)."),
+    Rule("Georef zapis", IssueCode.MISSING_FIELD, Severity.BLOCKER, _CRO, (Source.MAP,),
+         _georef_record),
 )
 
 
@@ -222,7 +292,12 @@ def evaluate(dossier: CaveDossier) -> ReadinessReport:
         missing_source = next((s for s in rule.sources if not dossier.has(s)), None)
         if missing_source is not None:
             unchecked.append(
-                UncheckedRule(label=rule.label, source=missing_source, severity=rule.severity)
+                UncheckedRule(
+                    label=rule.label,
+                    source=missing_source,
+                    severity=rule.severity,
+                    level=rule.level,
+                )
             )
             continue
         message = rule.check(dossier)
@@ -232,6 +307,7 @@ def evaluate(dossier: CaveDossier) -> ReadinessReport:
                     code=rule.code,
                     severity=rule.severity,
                     message=message,
+                    level=rule.level,
                     label=rule.label,
                     source=rule.sources[0],
                 )
@@ -241,18 +317,21 @@ def evaluate(dossier: CaveDossier) -> ReadinessReport:
     issues.extend(_statement_issues(dossier, unchecked))
     issues.extend(_context_notes(dossier))
 
-    report = ReadinessReport(
-        ready=not any(i.severity is Severity.BLOCKER for i in issues)
-        and not any(u.severity is Severity.BLOCKER for u in unchecked),
-        issues=issues,
-        unchecked=unchecked,
-    )
+    report = ReadinessReport(issues=issues, unchecked=unchecked)
+    report.ready_sue = report.ready_for(GateLevel.SUE)
+    report.ready_crospeleo = report.ready_for(GateLevel.CROSPELEO)
     dossier.readiness = report
     return report
 
 
 def start_year(dossier: CaveDossier) -> int | None:
-    """Earliest 19xx/20xx year mentioned in the exploration period."""
+    """Earliest 19xx/20xx year mentioned in the exploration period.
+
+    ``Godina ili period istraživanja`` is read first, ``Godina zadnjeg
+    istraživanja`` only as a fallback; for a span like ``2018-2019`` the
+    **earliest** year decides, which is the conservative reading of §5.1
+    (the obligation starts when the exploration started).
+    """
     for candidate in (dossier.exploration_period, dossier.last_exploration_year):
         if not candidate:
             continue
@@ -265,10 +344,11 @@ def start_year(dossier: CaveDossier) -> int | None:
 def _year_conditional_issues(
     dossier: CaveDossier, unchecked: list[UncheckedRule]
 ) -> list[DossierIssue]:
-    """Protokol §5.1 — GPS / entrance photo / plaque, mandatory from 2015 on.
+    """Protokol §5.1 — GPS / entrance photo / pločica, mandatory from 2015 on.
 
-    Below 2015 (or when no year can be read) the same three are warnings: the
-    data is still worth having, but an old exploration cannot be gated on it.
+    Below 2015 (or when no year can be read) the same three drop to warnings:
+    a cave explored in 1960 has no pločica and never will, and it can still
+    earn a katastarski broj (user, 2026-08-26).
     """
     issues: list[DossierIssue] = []
     if not dossier.has(Source.SB):
@@ -288,6 +368,7 @@ def _year_conditional_issues(
             DossierIssue(
                 code=IssueCode.INVALID_FIELD,
                 severity=Severity.WARNING,
+                level=GateLevel.SUE,
                 label="Razdoblje istraživanja",
                 source=Source.SB,
                 message=(
@@ -303,6 +384,7 @@ def _year_conditional_issues(
             DossierIssue(
                 code=IssueCode.MISSING_COORDINATES,
                 severity=severity,
+                level=GateLevel.SUE,
                 label="Koordinate ulaza",
                 source=Source.SB,
                 message=f"No entrance coordinates in SB ({qualifier}).",
@@ -314,6 +396,7 @@ def _year_conditional_issues(
             DossierIssue(
                 code=IssueCode.MISSING_PLAQUE,
                 severity=severity,
+                level=GateLevel.SUE,
                 label="Broj pločice",
                 source=Source.SB,
                 message=f"No 'Broj pločice' in SB ({qualifier}).",
@@ -327,6 +410,7 @@ def _year_conditional_issues(
                 DossierIssue(
                     code=IssueCode.MISSING_ENTRANCE_PHOTO,
                     severity=severity,
+                    level=GateLevel.SUE,
                     label="Fotografija ulaza",
                     source=Source.ARCHIVE,
                     message=f"No entrance photo in the photo archive ({qualifier}).",
@@ -334,7 +418,12 @@ def _year_conditional_issues(
             )
     else:
         unchecked.append(
-            UncheckedRule(label="Fotografija ulaza", source=Source.ARCHIVE, severity=severity)
+            UncheckedRule(
+                label="Fotografija ulaza",
+                source=Source.ARCHIVE,
+                severity=severity,
+                level=GateLevel.SUE,
+            )
         )
 
     return issues
@@ -343,12 +432,12 @@ def _year_conditional_issues(
 def _statement_issues(
     dossier: CaveDossier, unchecked: list[UncheckedRule]
 ) -> list[DossierIssue]:
-    """Per-author "Izjava za katastar" gating.
+    """Per-author "Izjava za katastar" gating — a gate-1 requirement.
 
     Checked **per author**, never "are there any statement files at all": the
     2026-05-27 Konglomeratača case slipped through exactly that way — the photo
-    author's izjava was present, so a non-empty list hid a missing drawing-author
-    izjava.  Requires the statements dir, hence ``Source.ARCHIVE``.
+    author's izjava was present, so a non-empty list hid a missing
+    drawing-author izjava. Requires the statements dir, hence ``Source.ARCHIVE``.
     """
     if not dossier.has(Source.ARCHIVE):
         unchecked.append(
@@ -356,14 +445,16 @@ def _statement_issues(
                 label="Izjava za katastar (po autoru)",
                 source=Source.ARCHIVE,
                 severity=Severity.BLOCKER,
+                level=GateLevel.SUE,
             )
         )
         return []
 
-    # Provisional matcher: substring on the filename stem.  crospeleo's
+    # Provisional matcher: substring on the filename stem. crospeleo's
     # `services/name_resolver.py` (initials, surname-only, diacritic folding)
-    # is the planned port — it lands together with the M2 archive intake, at
-    # which point this path stops being dead code.
+    # is the planned port — it lands together with the M2 archive intake, and
+    # with it the locality-scoped izjava rule (`Izjava_ACiceran_Šverda.pdf`
+    # only covers caves in Šverda).
     issues: list[DossierIssue] = []
     buckets = (
         ("nacrta", dossier.drawing_authors, dossier.drawing_author_statement_files),
@@ -381,6 +472,7 @@ def _statement_issues(
                 DossierIssue(
                     code=IssueCode.MISSING_STATEMENT,
                     severity=Severity.BLOCKER,
+                    level=GateLevel.SUE,
                     label=f"Izjava za katastar (autori {role})",
                     source=Source.ARCHIVE,
                     message=(
@@ -396,18 +488,46 @@ def _statement_issues(
 def _context_notes(dossier: CaveDossier) -> list[DossierIssue]:
     """Non-gating context the operator should see before working the cave."""
     notes: list[DossierIssue] = []
-    if dossier.queue_flag.queued:
-        detail = dossier.queue_flag.note or "no note"
-        old = f", old Za-istražit broj {dossier.queue_flag.old_number}" if dossier.queue_flag.old_number else ""
+
+    if dossier.is_queued:
+        detail = {
+            LifecycleState.ZA_ISTRAZIT: "not explored yet — SB data is provisional",
+            LifecycleState.NESREDENI: (
+                "explored but unfinished: "
+                + ", ".join(dossier.nesredeni_keywords or ["flagged in Napomena"])
+            ),
+            LifecycleState.UNCLASSIFIED: (
+                "no SUE number and no Napomena flag — this row appears in none of "
+                "SB's three views (Istraženi / Nesređeni / Za istražit)"
+            ),
+        }[dossier.lifecycle]
+        old = (
+            f" (old Za-istražit broj {dossier.queue_flag.old_number})"
+            if dossier.queue_flag.old_number
+            else ""
+        )
         notes.append(
             DossierIssue(
                 code=IssueCode.QUEUE_ITEM,
                 severity=Severity.WARNING,
-                label="Za istražit",
+                level=GateLevel.SUE,
+                label=f"SB: {dossier.lifecycle.value}",
+                source=Source.SB,
+                message=f"Queue item{old} — {detail}.",
+            )
+        )
+
+    for author, society in dossier.drawing_author_societies.items():
+        notes.append(
+            DossierIssue(
+                code=IssueCode.PARSE_NOTE,
+                severity=Severity.WARNING,
+                level=GateLevel.SUE,
+                label="Autori nacrta",
                 source=Source.SB,
                 message=(
-                    f"Still in the 'Za istražit' queue{old}: {detail}. SB data for "
-                    f"queued objects is provisional (often no SUE number yet)."
+                    f"'{author}' is flagged as drawing for {society} — an author from "
+                    f"outside SUE. The izjava requirement applies to them all the same."
                 ),
             )
         )
@@ -415,5 +535,5 @@ def _context_notes(dossier: CaveDossier) -> list[DossierIssue]:
 
 
 def _is_cavern(dossier: CaveDossier) -> bool:
-    """Caverns are exempt from the plaque rule (Protokol §5)."""
+    """Caverns are exempt from the pločica rule (Protokol §5)."""
     return "kavern" in (dossier.object_type or "").casefold()
