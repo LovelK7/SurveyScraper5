@@ -14,7 +14,12 @@ from typing import Any
 from cave_dossier.core.config import Settings
 from cave_dossier.core.people import is_placeholder, split_authors
 from cave_dossier.dossier.model import LifecycleState
-from cave_dossier.dossier.sb_mapper import derive_lifecycle, nesredeni_keywords, parse_queue_flag
+from cave_dossier.dossier.sb_mapper import (
+    derive_lifecycle,
+    is_participation,
+    nesredeni_keywords,
+    parse_queue_flag,
+)
 from cave_dossier.sb.loader import CaveRow, SBReader
 
 # "Malez, M. (1960)" / "Božić (1985)" — a year in brackets marks a literature
@@ -64,7 +69,10 @@ def audit_authors(reader: SBReader, settings: Settings) -> list[AuthorFinding]:
         names, societies = split_authors(raw)
         note = _cell(cave.values, settings.sb_field_columns.get("note", "Napomena"))
         lifecycle = derive_lifecycle(
-            cave.sue_number, parse_queue_flag(note).queued, bool(nesredeni_keywords(note))
+            cave.sue_number,
+            parse_queue_flag(note).queued,
+            bool(nesredeni_keywords(note)),
+            is_participation(note),
         )
 
         flags: list[str] = []
@@ -118,17 +126,21 @@ class UnclassifiedRow:
 
 
 def audit_unclassified(reader: SBReader, settings: Settings) -> list[UnclassifiedRow]:
-    """Rows with no SUE number and no Napomena flag.
+    """Rows with no SUE number and no Napomena flag of any kind.
 
-    They are invisible in Istraženi, Nesređeni and Za istražit alike, so nobody
-    is looking at them — 47 of them in v3.0.
+    Invisible in Istraženi, Nesređeni and Za istražit alike, so nobody is
+    looking at them. 47 in v3.0 before *sudjelovanje* was recognised as its own
+    state, 19 after — the rest were other societies' caves SUE took part in.
     """
     columns = settings.sb_field_columns
     rows: list[UnclassifiedRow] = []
     for cave in _iter_caves(reader, settings):
         note = _cell(cave.values, columns.get("note", "Napomena"))
         lifecycle = derive_lifecycle(
-            cave.sue_number, parse_queue_flag(note).queued, bool(nesredeni_keywords(note))
+            cave.sue_number,
+            parse_queue_flag(note).queued,
+            bool(nesredeni_keywords(note)),
+            is_participation(note),
         )
         if lifecycle is not LifecycleState.UNCLASSIFIED:
             continue

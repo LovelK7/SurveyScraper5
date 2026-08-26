@@ -104,15 +104,22 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 - **Staged photos** keep free names + a `Redni broj` prefix; `photos match-queued` matches
   44 of 53 by plaque / name / old queue broj.
 
+- **Izjava filenames**: `Izjava_<Osoba>[_<Opseg>]`; no suffix = universal, a suffix is a
+  scope (locality or a single cave), and a **double surname is hyphen-joined** so the
+  underscore always means scope. Encoded in `archive/izjave.py` with the one legacy
+  exception listed explicitly. Becomes a gate-1 rule at intake.
+- **`sudjelovanje` is its own lifecycle state** (78 rows) — another society's cave that
+  SUE took part in. Recognising it shrank the unclassified list from 47 rows to 19.
+- **`photos match-queued --apply`** performs the renames; dry run is the default.
+
 ### Still open
 
-1. **Izjava suffix is ambiguous**: locality scope (`_Šverda`), single-object scope
-   (`_Kaverna-Učka`) and a double surname (`_Antolič`) share one shape — plan is to resolve
-   via the crospeleo person registry first, scope second. Confirm.
-2. **`photos match-queued --apply`**: should the tool perform the renames, or only propose?
-3. **9 unmatched staged photos** + **1 conflict** (`051-550_Goli breg 4.jpg` carries Sik Šits's
-   plaque) need the user.
-4. **Field-data intake dir layout on Drive** — unblocked now; proposal to be drafted.
+1. **Two staged photos** (`606_rubinija_ulaz.jpg`, `kostrčani_ulaz.jpg`) match no SB row
+   under any spelling — need the user.
+2. **Excel-side (optional)**: a Power Query view for *sudjelovanje*; and a word-boundary
+   match on "ponor" in the Nesređeni filter, which today drags in 8 unrelated rows.
+3. **Field-data intake dir layout on Drive** — unblocked by the Redni-broj decision;
+   proposal to be drafted. This is what gates the 2.1a handoff.
 
 ## Recent sessions
 

@@ -85,14 +85,23 @@ class LifecycleState(StrEnum):
 
     SB's views overlap (29 caves have a SUE number *and* say "ponoviti"); this
     enum resolves to a single state, SUE number first, because holding one
-    means gate 1 is already passed. ``UNCLASSIFIED`` is a real state, not a
-    bug: 47 named rows carry neither a SUE number nor any flag, so they show up
-    in none of SB's three views.
+    means gate 1 is already passed.
+
+    ``SUDJELOVANJE`` has no SB view yet: 78 rows say *sudjelovanje* in Napomena
+    — caves another society explored and SUE only took part in. The user
+    confirmed (2026-08-26) this is a category of its own and a candidate for its
+    own Power Query view; recognising it explains 28 of the rows that otherwise
+    look unclassified. Outstanding work outranks provenance, so a *sudjelovanje*
+    row that also says "fali nacrt" is still reported as Nesređeni.
+
+    ``UNCLASSIFIED`` is what remains: no SUE number, no flag of any kind, so the
+    row appears in none of SB's views.
     """
 
     ISTRAZENI = "istraženi"
     ZA_ISTRAZIT = "za istražit"
     NESREDENI = "nesređeni"
+    SUDJELOVANJE = "sudjelovanje"
     UNCLASSIFIED = "nesvrstano"
 
 

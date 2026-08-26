@@ -8,6 +8,8 @@ photo into the ~1 MB archive copy named after the cave's SUE number.
 from cave_dossier.photos.matcher import (
     CaveCandidate,
     PhotoMatch,
+    RenameOutcome,
+    apply_renames,
     build_candidates,
     list_photos,
     match_photos,
@@ -17,6 +19,8 @@ from cave_dossier.photos.matcher import (
 __all__ = [
     "CaveCandidate",
     "PhotoMatch",
+    "RenameOutcome",
+    "apply_renames",
     "build_candidates",
     "list_photos",
     "match_photos",

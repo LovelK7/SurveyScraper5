@@ -40,6 +40,10 @@ _QUEUE_PREFIX_KEY = normalize_lookup_key("za istražit")
 # Napomena keywords that put a row in SB's **Nesređeni** view — copied verbatim
 # from the workbook's own Power Query (`NO_v2_1` in Formulas/Section1.m), so
 # this tool and the Excel view can never drift apart.
+#: Napomena marker for "another society explored it, SUE took part" — no SB
+#: view of its own yet (user, 2026-08-26).
+PARTICIPATION_KEYWORD = "sudjelovanje"
+
 NESREDENI_KEYWORDS: tuple[str, ...] = (
     "neistraženo",
     "fali nacrt",
@@ -114,11 +118,26 @@ def nesredeni_keywords(note: str | None) -> list[str]:
     return [keyword for keyword in NESREDENI_KEYWORDS if keyword.casefold() in text]
 
 
-def derive_lifecycle(sue_number: str | None, queued: bool, nesredeni: bool) -> LifecycleState:
-    """Resolve SB's three (overlapping) views into one state.
+def is_participation(note: str | None) -> bool:
+    """Napomena marks the cave as another society's, with SUE only taking part.
 
-    SUE number wins: 29 caves in v3.0 hold one *and* carry a Nesređeni keyword,
-    and holding the number means gate 1 is already behind them.
+    78 rows in v3.0; the user confirmed this is a category of its own
+    (2026-08-26) and may become a fourth Power Query view.
+    """
+    return PARTICIPATION_KEYWORD in (note or "").casefold()
+
+
+def derive_lifecycle(
+    sue_number: str | None,
+    queued: bool,
+    nesredeni: bool,
+    participation: bool = False,
+) -> LifecycleState:
+    """Resolve SB's overlapping views into one state.
+
+    Precedence: SUE number (gate 1 already passed) → queue flag → outstanding
+    work → provenance. Nesređeni deliberately outranks sudjelovanje: a cave we
+    only took part in that still says "fali nacrt" belongs on the worklist.
     """
     if sue_number and not is_placeholder(sue_number):
         return LifecycleState.ISTRAZENI
@@ -126,6 +145,8 @@ def derive_lifecycle(sue_number: str | None, queued: bool, nesredeni: bool) -> L
         return LifecycleState.ZA_ISTRAZIT
     if nesredeni:
         return LifecycleState.NESREDENI
+    if participation:
+        return LifecycleState.SUDJELOVANJE
     return LifecycleState.UNCLASSIFIED
 
 
@@ -173,7 +194,9 @@ def build_from_sb(cave_row: CaveRow, settings: Settings) -> CaveDossier:
         drawing_authors=drawing_authors,
         drawing_author_societies=author_societies,
         note=note,
-        lifecycle=derive_lifecycle(cave_row.sue_number, queue_flag.queued, bool(hits)),
+        lifecycle=derive_lifecycle(
+            cave_row.sue_number, queue_flag.queued, bool(hits), is_participation(note)
+        ),
         nesredeni_keywords=hits,
         queue_flag=queue_flag,
         entrance_photo_flag=_flag(mapped("entrance_photo_flag")),

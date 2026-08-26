@@ -132,3 +132,54 @@ def test_build_candidates_reads_redni_broj(reader: SBReader, settings: Settings)
     candidates = {c.object_name: c for c in build_candidates(reader, settings)}
     assert candidates["Špilja Testovka"].plaque_number == "T-01"
     assert candidates["Đulin ponor mali"].old_queue_number == "268"
+
+
+def test_synonym_matches_as_readily_as_the_name() -> None:
+    """`051-550_Goli breg 4.jpg` is Sik Šits — "Goli breg 4" is its synonym."""
+    from cave_dossier.core.normalization import normalize_lookup_key
+
+    sik = CaveCandidate(
+        1035, "Sik Šits", None, "051-550", None,
+        normalize_lookup_key("Sik Šits"),
+        (normalize_lookup_key("Goli breg 4"),),
+    )
+    match = match_photos([Path("Goli breg 4_ulaz.jpg")], [sik])[0]
+    assert match.cave.serial_number == 1035
+    assert "sinonim" in match.evidence
+
+
+def test_exact_short_key_matches_where_a_substring_would_be_too_generic() -> None:
+    """"ak 47.jpg" → AK-47: too short to hunt for inside a name, exact is safe."""
+    from cave_dossier.core.normalization import normalize_lookup_key
+
+    ak = CaveCandidate(770, "AK-47", None, None, None, normalize_lookup_key("AK-47"))
+    assert match_photos([Path("ak 47.jpg")], [ak])[0].cave.serial_number == 770
+    # The same key inside a longer filename stays unmatched — that is the point.
+    assert match_photos([Path("neka jama ak 47 blizu.jpg")], [ak])[0].cave is None
+
+
+def test_manual_mapping_wins_over_everything() -> None:
+    """"Jama GB 1" is Goli breg 1 — an abbreviation no evidence can reach."""
+    from cave_dossier.core.normalization import normalize_lookup_key
+
+    goli = CaveCandidate(812, "Goli breg 1", None, None, None, normalize_lookup_key("Goli breg 1"))
+    match = match_photos([Path("Jama GB 1.jpg")], [goli], {"Jama GB 1": 812})[0]
+    assert match.cave.serial_number == 812
+    assert match.confidence == "high"
+    assert match.proposed_name == "812_Jama GB 1.jpg"
+
+
+# ── Lifecycle: sudjelovanje ───────────────────────────────────────────
+
+
+def test_participation_is_its_own_state() -> None:
+    from cave_dossier.dossier import LifecycleState, derive_lifecycle
+    from cave_dossier.dossier.sb_mapper import is_participation
+
+    assert is_participation("ok, sudjelovanje") is True
+    assert is_participation("ok") is False
+    assert derive_lifecycle(None, False, False, True) is LifecycleState.SUDJELOVANJE
+    # Outstanding work outranks provenance.
+    assert derive_lifecycle(None, False, True, True) is LifecycleState.NESREDENI
+    # A SUE number still wins over everything.
+    assert derive_lifecycle("570", False, True, True) is LifecycleState.ISTRAZENI

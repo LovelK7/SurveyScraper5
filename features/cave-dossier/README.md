@@ -35,7 +35,7 @@ whole gating design hangs on it.
 
 ## The workflow this encodes
 
-A cave moves through SB in three states, and there are **two gates**, not one.
+A cave moves through SB in a handful of states, and there are **two gates**, not one.
 
 ```text
    Za istražit ──explored──► Nesređeni ──Nacrt + OSZ + foto + pločica + izjave──► Istraženi
@@ -67,8 +67,8 @@ istražile udruge, and the SUE number itself. The submission stays
 crospeleo-automation's job downstream; this tool only pre-checks, so nothing
 reaches that tool with a known-missing field.
 
-**The queue is everything that is not Istraženi** — za istražit, nesređeni, and
-the rows carrying neither a SUE number nor a flag.
+**The queue is everything that is not Istraženi** — za istražit, nesređeni,
+sudjelovanje, and the rows carrying neither a SUE number nor a flag.
 
 ### How the states are decided
 
@@ -81,13 +81,19 @@ cannot drift apart.
 | **Istraženi** | `IO_v2_1` | `Katastarski broj SUE` is not empty — that is the entire filter | 885 |
 | **Za istražit** | `ZI_v2_1` | Napomena contains `za istražit` | 185 |
 | **Nesređeni** | `NO_v2_1` | Napomena contains `neistraženo`, `fali nacrt`, `fali zapisnik`, `<5 m`, `puhalica`, `ponor`, `ponoviti`, `nastaviti` or `umjetan objekt` | 177 |
-| **Nesvrstano** | *(none)* | no SUE number and no flag — shows up in none of the three views | 47 |
+| **Sudjelovanje** | *(none yet)* | Napomena contains `sudjelovanje` — another society's cave that SUE took part in | 78 total, 28 otherwise unclassified |
+| **Nesvrstano** | *(none)* | no SUE number and no flag of any kind | 19 |
 
-The views overlap in SB (29 caves hold a SUE number *and* say "ponoviti"); the
-dossier resolves to one state, SUE number first, and still records which
-Nesređeni keywords hit. Two things worth knowing: 8 rows land in Nesređeni only
-because their Napomena happens to contain the word "ponor", and those 47
-unclassified rows are invisible in every SB view today.
+Precedence when they overlap (29 caves hold a SUE number *and* say "ponoviti"):
+SUE number → queue flag → outstanding work → provenance. Nesređeni deliberately
+outranks sudjelovanje — a cave we only took part in that still says "fali nacrt"
+belongs on the worklist. The dossier keeps the Nesređeni keywords that hit even
+when another state wins.
+
+Two things worth knowing: 8 rows land in Nesređeni only because their Napomena
+happens to contain the word "ponor" (a word-boundary match in the Power Query
+would fix that, Excel-side), and *sudjelovanje* has no view of its own yet —
+recognising it here is what shrank the unclassified list from 47 rows to 19.
 
 ## Data flow
 
@@ -277,42 +283,59 @@ the halves are two people), `empty` 49, `citation` 2 (a literature source such
 as `Malez, M. (1960)`, not a survey author).
 
 `photos match-queued` matches the 53 free-form files in the staging folder
-against SB using three independent kinds of evidence — plaque number, cave name,
-and the old Za-istražit broj — and proposes `<Redni broj>_<rest>`, replacing a
-stale old-number prefix where there is one. Currently **44 of 53 matched**; it
-renames nothing, it prints proposals.
+against SB and proposes `<Redni broj>_<rest>`, replacing a stale old-number
+prefix where there is one. **51 of 53 matched.** Evidence, weighed rather than
+ranked — two independent signals agreeing is the strongest result:
+
+| Evidence | Example | Note |
+|---|---|---|
+| plaque number | `051-550_…`, `… 051 418 …` | strongest single signal |
+| cave name or **synonym** | `Poljička Kosa_…`, `Goli breg 4` → *Sik Šits* | longest match wins; an exact whole-stem match is accepted at any length, which is what resolves `ak 47.jpg` → *AK-47* |
+| old Za-istražit broj | `478_…`, `479 (1)` | the number the file already carries — stale since the v3.0 renumbering, so it is *replaced*, not kept |
+| manual mapping | `Jama GB 1` → 812 | `photos.manual_matches` in config.yaml, for abbreviations no rule can reach |
+
+Two signals that disagree are reported as a **conflict** and propose nothing.
+`--apply` performs the renames (dry run is the default); it never touches
+conflicts, unmatched files or already-correct names, and never overwrites an
+existing target.
+
+## Izjava za katastar — who signed, and what it covers
+
+Settled 2026-08-26. Filenames in `!!Izjave za katastar RH` read as
+`Izjava_<Osoba>[_<Opseg>].<ext>`:
+
+| Example | Meaning | Covers |
+|---|---|---|
+| `Izjava_ABahović.pdf` | no suffix → **universal** | every cave |
+| `Izjava_ACiceran_Šverda.pdf` | **locality** scope | caves whose `Lokalitet` is Šverda — the same author elsewhere needs a new izjava |
+| `Izjava_MMarić_Kaverna-Učka.pdf` | **single-cave** scope (also `Kotluša`) | that one cave; both are exceptions, not the rule |
+| `Izjava_SKapidžić-Antolič.pdf` | a **double surname**, hyphen-joined | not a scope at all |
+
+The hyphen is what makes this parseable: it keeps a married double surname
+together, so an underscore always means scope. The one legacy underscore form is
+listed explicitly in `archive/izjave.py` until the file is renamed. Files
+starting with `!` are templates and the society's own missing-izjave lists
+(`!!!Fale_Brane.txt`), never izjave.
+
+Scope resolution compares the suffix against the cave's `Lokalitet`, then its
+name and synonyms — diacritic-insensitively. It becomes a gate-1 rule when
+intake lands.
 
 ## Still open
 
-**1. Izjava suffix — three meanings, one shape.** From your answer the suffix
-after the surname can be any of:
+**1. Two unmatched staged photos.** `606_rubinija_ulaz.jpg` and
+`kostrčani_ulaz.jpg` — neither *rubinija* nor *kostrčani* appears anywhere in SB
+under any spelling, so they need you. (`605_Ponor Prijeboj_*` turned out to be
+*Ponor kraj Prijeboja*, Redni broj 1185 — its Napomena even says "fotke br 605";
+it is in `photos.manual_matches` now.)
 
-| Example | Meaning | Effect on gating |
-|---|---|---|
-| `Izjava_ABahović.pdf` | no suffix → **universal** | covers every cave |
-| `Izjava_ACiceran_Šverda.pdf` | **locality** scope | covers caves whose `Lokalitet` is Šverda; a cave elsewhere needs a new izjava |
-| `Izjava_Kaverna-Učka.pdf` | **single-object** scope | covers that one cave |
-| `Izjava_SKapidžić_Antolič.pdf` | **part of a double surname** (marriage) | not a scope at all |
+**2. A Power Query view for *sudjelovanje*** is yours to add in Excel if you
+want it — 78 rows carry the keyword. The tool already treats it as a state, so
+nothing here depends on it.
 
-The tool cannot tell case 2/3 from case 4 by shape alone — it needs the person
-registry (the crospeleo port) to decide whether `SKapidžić_Antolič` resolves to a
-known person. My plan: try the person registry first, and treat the suffix as a
-scope only when it does not. Does that hold, or do you know a cleaner marker?
-
-**2. 2.1d rename, once you accept the proposals.** `photos match-queued` is
-read-only today. Do you want a `--apply` that performs the renames (with a
-dry-run diff first), or would you rather do them by hand from the printed list?
-
-**3. Nine unmatched staged photos** (`ak 47.jpg`, `Jama GB 1.jpg`, `Jamica smeća
-kod Knezgrada_…`, `kostrčani_ulaz.jpg`, …) carry no name, plaque or number I can
-resolve. They need you.
-
-**4. One conflicting photo**: `051-550_Goli breg 4.jpg` carries the plaque of
-**Sik Šits** (Redni broj 1035), but the filename says *Goli breg* — and SB has a
-`Goli breg 1`. Mislabelled photo, or a reused plaque number?
-
-**5. Field-data intake dir layout** (C4) — now unblocked by the Redni broj
-decision. I will propose a layout keyed on it when you want it.
+**3. Field-data intake dir layout** (C4) — unblocked by the Redni broj decision.
+I will propose a layout keyed on it when you want it; that is the next thing
+that gates the 2.1a handoff.
 
 ### Quick check commands
 
@@ -383,7 +406,8 @@ cavedossier sb audit-authors --limit 40    # author cells the splitter cannot re
 cavedossier sb unclassified                # rows in none of SB's three views
 
 # Part 2.1d — staged entrance photos
-cavedossier photos match-queued            # propose <Redni broj>_… per staged photo
+cavedossier photos match-queued            # DRY RUN: propose <Redni broj>_… per staged photo
+cavedossier photos match-queued --apply    # perform the proposed renames in place
 ```
 
 Exit codes (your convention): **1** = ready, **0** = not ready, **99** = error.
@@ -404,7 +428,8 @@ also self-reconfigures its output streams, so this is rarely needed).
 | `src/cave_dossier/sb/safe_io.py` | workbook preflight/backup/COM-write safety (ported) | reads: preflight only; writes: M6 |
 | `src/cave_dossier/sb/loader.py` | `SBReader`: header autodetect, column aliases, `find_caves` | `sb *`, `report` |
 | `src/cave_dossier/sb/audit.py` | workbook-wide data-quality sweeps (authors, unclassified rows) | `sb audit-authors`, `sb unclassified` |
-| `src/cave_dossier/photos/matcher.py` | 2.1d: match staged photos to SB rows, propose `<Redni broj>_…` | `photos match-queued` |
+| `src/cave_dossier/photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `<Redni broj>_…` | `photos match-queued` |
+| `src/cave_dossier/archive/izjave.py` | izjava filenames: person, scope, and what a scope covers | intake (next) |
 | `src/cave_dossier/dossier/model.py` | `CaveDossier`, `Source`, `GateLevel`, `LifecycleState`, files, issues, readiness | the shared object |
 | `src/cave_dossier/dossier/sb_mapper.py` | SB row → dossier; queue flag + lifecycle derivation | `report` |
 | `src/cave_dossier/dossier/gating.py` | the rule table → blockers / warnings / unchecked, per gate | `report` |

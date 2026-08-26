@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from cave_dossier.core.config import Settings
-from cave_dossier.core.normalization import normalize_lookup_key
+from cave_dossier.core.normalization import normalize_lookup_key, split_semicolon_values
 from cave_dossier.dossier.sb_mapper import parse_queue_flag
 from cave_dossier.sb.loader import SBReader
 
@@ -51,6 +51,14 @@ class CaveCandidate:
     plaque_number: str | None
     old_queue_number: str | None
     name_key: str
+    #: `Sinonimi`, normalised. A staged photo often carries a synonym rather
+    #: than the main name — `051-550_Goli breg 4.jpg` is Sik Šits, whose synonym
+    #: is exactly "Goli breg 4" (user, 2026-08-26).
+    synonym_keys: tuple[str, ...] = ()
+
+    @property
+    def all_keys(self) -> tuple[str, ...]:
+        return (self.name_key, *self.synonym_keys)
 
 
 @dataclass
@@ -118,6 +126,7 @@ def build_candidates(reader: SBReader, settings: Settings) -> list[CaveCandidate
         if not cave.object_name:
             continue
         note = _text(record.get(columns.get("note", "Napomena")))
+        synonyms = split_semicolon_values(_text(record.get(columns.get("synonyms"))))
         candidates.append(
             CaveCandidate(
                 serial_number=_int(_text(record.get(columns.get("serial_number")))),
@@ -126,30 +135,49 @@ def build_candidates(reader: SBReader, settings: Settings) -> list[CaveCandidate
                 plaque_number=_text(record.get(settings.sb_plaque_column)),
                 old_queue_number=parse_queue_flag(note).old_number,
                 name_key=normalize_lookup_key(cave.object_name),
+                synonym_keys=tuple(
+                    key for key in (normalize_lookup_key(s) for s in synonyms) if key
+                ),
             )
         )
     return candidates
 
 
-def match_photos(paths: list[Path], candidates: list[CaveCandidate]) -> list[PhotoMatch]:
-    """Propose a cave for each staged photo. Order of evidence is documented above."""
+def match_photos(
+    paths: list[Path],
+    candidates: list[CaveCandidate],
+    manual: dict[str, int] | None = None,
+) -> list[PhotoMatch]:
+    """Propose a cave for each staged photo. Order of evidence is documented above.
+
+    ``manual`` maps a filename substring to a Redni broj (config
+    ``photos.manual_matches``) for the handful the automatic evidence can never
+    reach — abbreviations like "Jama GB 1" for *Goli breg 1*, or a name spelled
+    differently from SB. A manual entry wins over everything else.
+    """
     by_plaque = {
         normalize_lookup_key(c.plaque_number): c for c in candidates if c.plaque_number
     }
     by_old_number = {
         c.old_queue_number: c for c in candidates if c.old_queue_number
     }
-    # Longest name first so a specific name wins over a prefix of itself.
-    by_name = sorted(
-        (c for c in candidates if len(c.name_key) >= _MIN_NAME_KEY_CHARS),
-        key=lambda c: len(c.name_key),
-        reverse=True,
-    )
+    by_serial = {c.serial_number: c for c in candidates if c.serial_number is not None}
+    # (key, cave) pairs, longest key first so a specific name wins over a prefix
+    # of itself; synonyms match as readily as the main name.
+    keyed: list[tuple[str, CaveCandidate]] = [
+        (key, cave) for cave in candidates for key in cave.all_keys if key
+    ]
+    keyed.sort(key=lambda item: len(item[0]), reverse=True)
 
     matches: list[PhotoMatch] = []
     for path in paths:
         stem = path.stem
         key = normalize_lookup_key(stem)
+
+        manual_hit = _manual_match(path.name, manual or {}, by_serial)
+        if manual_hit:
+            matches.append(PhotoMatch(path, manual_hit, "ručno mapiranje", "high"))
+            continue
 
         # Gather every independent piece of evidence, then weigh them: two that
         # agree is the strongest signal available, and two that disagree is a
@@ -163,9 +191,21 @@ def match_photos(paths: list[Path], candidates: list[CaveCandidate]) -> list[Pho
             if candidate:
                 evidence.append((f"pločica {plaque.group(0)}", candidate))
 
-        named = next((c for c in by_name if c.name_key in key), None)
-        if named:
-            evidence.append((f"ime '{named.object_name}'", named))
+        # A short key ("ak47") is too generic to hunt for inside a longer
+        # filename, but an EXACT match of the whole stem is unambiguous — which
+        # is what rescues "ak 47.jpg" → AK-47.
+        named_key, named = next(
+            ((k, c) for k, c in keyed if k == key),
+            (None, None),
+        )
+        if named is None:
+            named_key, named = next(
+                ((k, c) for k, c in keyed if len(k) >= _MIN_NAME_KEY_CHARS and k in key),
+                (None, None),
+            )
+        if named is not None:
+            label = "ime" if named_key == named.name_key else "sinonim"
+            evidence.append((f"{label} '{named.object_name}'", named))
 
         leading = _LEADING_NUMBER_RE.match(stem)
         if leading:
@@ -196,6 +236,54 @@ def match_photos(paths: list[Path], candidates: list[CaveCandidate]) -> list[Pho
         confidence = "high" if len(evidence) > 1 or evidence[0][0].startswith("pločica") else "medium"
         matches.append(PhotoMatch(path, cave, reasons, confidence))
     return matches
+
+
+@dataclass
+class RenameOutcome:
+    """What actually happened to one file when ``apply_renames`` ran."""
+
+    source: Path
+    target: Path | None
+    status: str  # renamed | skipped_exists | failed
+    detail: str | None = None
+
+
+def apply_renames(matches: list[PhotoMatch]) -> list[RenameOutcome]:
+    """Perform the proposed renames, in place, in the staging folder.
+
+    Only files with a proposal are touched, so conflicts, unmatched files and
+    already-correct names are skipped by construction. A target that already
+    exists is never overwritten — the pair is reported for a human to resolve.
+    """
+    outcomes: list[RenameOutcome] = []
+    for match in matches:
+        proposal = match.proposed_name
+        if not proposal:
+            continue
+        target = match.path.with_name(proposal)
+        if target.exists():
+            outcomes.append(
+                RenameOutcome(match.path, target, "skipped_exists", "target already exists")
+            )
+            continue
+        try:
+            match.path.rename(target)
+        except OSError as exc:  # Drive sync can hold a lock
+            outcomes.append(RenameOutcome(match.path, target, "failed", str(exc)))
+            continue
+        outcomes.append(RenameOutcome(match.path, target, "renamed"))
+    return outcomes
+
+
+def _manual_match(
+    filename: str, manual: dict[str, int], by_serial: dict[int, CaveCandidate]
+) -> CaveCandidate | None:
+    """First configured substring that occurs in the filename, case-insensitively."""
+    lowered = filename.casefold()
+    for fragment, serial in manual.items():
+        if fragment.casefold() in lowered:
+            return by_serial.get(serial)
+    return None
 
 
 def staged_photo_dir(settings: Settings) -> Path | None:

@@ -13,7 +13,13 @@ import sys
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
 from cave_dossier.dossier import GateLevel, build_from_sb, evaluate, render
-from cave_dossier.photos import build_candidates, list_photos, match_photos, staged_photo_dir
+from cave_dossier.photos import (
+    apply_renames,
+    build_candidates,
+    list_photos,
+    match_photos,
+    staged_photo_dir,
+)
 from cave_dossier.sb.audit import AUTHOR_FLAG_HELP, audit_authors, audit_unclassified
 from cave_dossier.sb.loader import SBReader
 from cave_dossier.sb.safe_io import SBWorkbookUnreachable
@@ -172,8 +178,8 @@ def cmd_sb_unclassified(settings: Settings, limit: int) -> int:
         print("Every named row lands in one of Istraženi / Nesređeni / Za istražit.")
         return EXIT_READY
 
-    print(f"{len(rows)} named rows have no SUE number and no Napomena flag,")
-    print("so they show up in none of SB's three Power Query views:")
+    print(f"{len(rows)} named rows have no SUE number and no Napomena flag of any kind,")
+    print("so they show up in none of SB's views (and are not 'sudjelovanje' either):")
     print()
     for row in rows[:limit]:
         serial = row.serial_number if row.serial_number is not None else "—"
@@ -186,8 +192,8 @@ def cmd_sb_unclassified(settings: Settings, limit: int) -> int:
     return EXIT_NOT_READY
 
 
-def cmd_photos_match_queued(settings: Settings, limit: int) -> int:
-    """Propose a Redni broj prefix for each staged entrance photo (2.1d)."""
+def cmd_photos_match_queued(settings: Settings, limit: int, apply: bool) -> int:
+    """Propose (and with --apply, perform) a Redni broj prefix for staged photos (2.1d)."""
     directory = staged_photo_dir(settings)
     if directory is None:
         print("No staged-photo dir configured: set LOCAL_DRIVE_ROOT in .env and")
@@ -198,14 +204,22 @@ def cmd_photos_match_queued(settings: Settings, limit: int) -> int:
     if not photos:
         return EXIT_NOT_READY
 
-    matches = match_photos(photos, build_candidates(SBReader(settings), settings))
+    matches = match_photos(
+        photos,
+        build_candidates(SBReader(settings), settings),
+        settings.photo_manual_matches,
+    )
     matched = [m for m in matches if m.cave is not None and m.confidence != "conflict"]
     conflicts = [m for m in matches if m.confidence == "conflict"]
     renames = [m for m in matches if m.proposed_name]
     print(f"Matched to an SB row: {len(matched)} / {len(matches)}"
           + (f"   ({len(conflicts)} conflicting)" if conflicts else ""))
     print(f"Rename proposals: {len(renames)}")
-    print("READ-ONLY — nothing is renamed or moved; this is a proposal.")
+    print(
+        "APPLYING — files will be renamed in place."
+        if apply
+        else "DRY RUN — nothing is renamed or moved; re-run with --apply to perform these."
+    )
     print()
     for match in matches[:limit]:
         if match.cave is None:
@@ -220,6 +234,20 @@ def cmd_photos_match_queued(settings: Settings, limit: int) -> int:
               f"{match.cave.serial_number} · {match.evidence}")
     if len(matches) > limit:
         print(f"  … {len(matches) - limit} more (raise --limit to see them)")
+
+    if apply:
+        outcomes = apply_renames(matches)
+        renamed = [o for o in outcomes if o.status == "renamed"]
+        problems = [o for o in outcomes if o.status != "renamed"]
+        print()
+        print(f"Renamed {len(renamed)} file(s).")
+        for outcome in problems:
+            print(f"  {outcome.status}: {outcome.source.name} → "
+                  f"{outcome.target.name if outcome.target else '?'}"
+                  + (f"  ({outcome.detail})" if outcome.detail else ""))
+        if problems:
+            return EXIT_ERROR
+
     return EXIT_NOT_READY if len(matched) < len(matches) else EXIT_READY
 
 
@@ -292,6 +320,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Propose a 'Redni broj' prefix for each photo in the za-istražit staging folder",
     )
     match_queued.add_argument("--limit", type=int, default=80, help="How many files to print")
+    match_queued.add_argument(
+        "--apply",
+        action="store_true",
+        help="Perform the proposed renames in place (default is a dry run). "
+             "Conflicts, unmatched files and already-correct names are never touched, "
+             "and an existing target is never overwritten.",
+    )
 
     return parser
 
@@ -321,7 +356,7 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_sb_unclassified(settings, args.limit)
         if args.command == "photos":
             if args.photos_command == "match-queued":
-                return cmd_photos_match_queued(settings, args.limit)
+                return cmd_photos_match_queued(settings, args.limit, args.apply)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR

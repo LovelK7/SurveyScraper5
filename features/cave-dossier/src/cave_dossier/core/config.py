@@ -53,7 +53,10 @@ class Settings:
     # so one config reads both the live workbook and an older copy of it.
     sb_column_aliases: dict[str, str] = field(default_factory=dict)
     archive_dirs: dict[str, str] = field(default_factory=dict)
+    # Part 2.1d: processing targets (long edge, output size) and the hand-made
+    # filename-fragment -> Redni broj map for photos automatic evidence cannot reach.
     photo_targets: dict[str, int] = field(default_factory=dict)
+    photo_manual_matches: dict[str, int] = field(default_factory=dict)
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -139,6 +142,11 @@ def load_settings() -> Settings:
         photo_targets={
             str(key): int(value)
             for key, value in (raw.get("photos") or {}).items()
+            if isinstance(value, int)
+        },
+        photo_manual_matches={
+            str(key): int(value)
+            for key, value in ((raw.get("photos") or {}).get("manual_matches") or {}).items()
             if value is not None
         },
     )

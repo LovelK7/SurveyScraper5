@@ -32,6 +32,7 @@ _LIFECYCLE_HINT: dict[LifecycleState, str] = {
     LifecycleState.ISTRAZENI: "has a SUE number — gate 1 already passed",
     LifecycleState.ZA_ISTRAZIT: "queue: not explored yet",
     LifecycleState.NESREDENI: "queue: explored, not finished",
+    LifecycleState.SUDJELOVANJE: "another society's cave, SUE took part",
     LifecycleState.UNCLASSIFIED: "queue: in none of SB's three views",
 }
 

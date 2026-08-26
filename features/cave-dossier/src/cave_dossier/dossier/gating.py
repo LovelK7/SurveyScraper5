@@ -501,6 +501,9 @@ def _context_notes(dossier: CaveDossier) -> list[DossierIssue]:
                 "explored but unfinished: "
                 + ", ".join(dossier.nesredeni_keywords or ["flagged in Napomena"])
             ),
+            LifecycleState.SUDJELOVANJE: (
+                "another society explored it and SUE took part — not ours to finish"
+            ),
             LifecycleState.UNCLASSIFIED: (
                 "no SUE number and no Napomena flag — this row appears in none of "
                 "SB's three views (Istraženi / Nesređeni / Za istražit)"

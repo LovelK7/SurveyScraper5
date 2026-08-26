@@ -76,3 +76,10 @@ archive:
 photos:
   target_long_edge_px: 1920
   target_max_bytes: 1500000
+
+  # Staged photos the automatic evidence (plaque / name / old queue broj) cannot
+  # reach: filename fragment -> Redni broj. Supplied by the user 2026-08-26.
+  manual_matches:
+    "Jama GB 1": 812              # GB = Goli breg; SB name is "Goli breg 1"
+    "Jamica smeća kod Knezgrada": 884   # SB spells it "Jamica sa smećem kod Knezgrada"
+    "Ponor Prijeboj": 1185          # SB name is "Ponor kraj Prijeboja"; its Napomena even says "fotke br 605"
