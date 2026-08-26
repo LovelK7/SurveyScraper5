@@ -254,6 +254,25 @@ copy .env.example .env     # then fill in (see below)
 Every command prints `SB mode: SANDBOX (...)` or `SB mode: LIVE (...)` first —
 always check the banner.
 
+### Two venvs exist — know which one you are in
+
+| Venv | What it holds | Use it for |
+|---|---|---|
+| `SurveyScraper5/.venv` (repo root) | this package **plus every optional extra** (playwright, python-docx, xlwings, pymupdf, pywin32) + pytest | day-to-day work across features |
+| `features/cave-dossier/.venv` | this package + `[dev]` only | isolated feature work / the setup above |
+
+Both provide the `cavedossier` command, so either is fine — just don't expect
+`playwright` or `xlwings` in the feature-local one.
+
+> **If a command dies with `uv trampoline failed to canonicalize script path`**
+> (or pip/pytest suddenly "vanish"), the venv was created under an older
+> absolute path — moving or renaming the repo folder breaks every `.exe` shim
+> and every editable install inside it. Fix: recreate the venv
+> (`uv venv .venv --python "C:/Program Files/Python311/python.exe"`, reinstall
+> from a `pip freeze` taken beforehand) and re-run
+> `uv pip install -e features/cave-dossier`. This happened once already, after
+> the SurveyScraper4 → SurveyScraper5 rename.
+
 ## Commands
 
 ```powershell
