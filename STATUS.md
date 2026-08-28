@@ -13,7 +13,7 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2.1a — csx-to-survey | OPERATIONAL (own feature, semi-manual 4-step pipeline) |
 | 2.1b — OSZ builder | NOT STARTED — **OSZ v10 template distributed to recorders 2026-08-25** (Word `.dotx` + Google-Docs `.docx`); M4 ungated. Reading filled zapisnici needs a `w:sdt`-aware parser for the Word form and a `[ ]`/`⟨ ⟩` text parser for the Docs form |
 | 2.1c — isječak karte | NOT STARTED (port planned, M3) |
-| 2.1d — fotografije ulaza | NOT STARTED — **new part, added 2026-08-26**: downsize field photos + rename to `<padded SUE>_…` before filing into `!!Fotografije ulaza`; the `…za istražit` folder is a staging queue, not a repo. Rides along with M6 (the SUE number it renames to only exists at delivery) |
+| 2.1d — fotografije ulaza | **new part, added 2026-08-26**. Matcher + staleness guard DONE (2026-08-28); downsizing not started. Staged photos are keyed by Redni broj in `…za istražit` (a queue, not a repo) and move to `!!Fotografije ulaza` as `<padded SUE>_…` when the cave is explored. Downsizing rides along with M6 |
 | 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` (SB-only) done; archive intake next |
 | 2.2 — SB communication | **M1 ✅ DONE** (read-only, live SB v3.0); M2 next |
 
@@ -52,12 +52,12 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
 - [x] **Workflow model corrected to the society's real two gates** (user answers 2026-08-26):
       gate 1 = katastarski broj SUE (Nacrt + OSZ + foto + pločica + izjave), gate 2 = CroSpeleo
       (Protokol v6 superset). The SUE number moved OUT of gate 1 — it is what gate 1 *produces*.
-      `LifecycleState` (Istraženi / Za istražit / Nesređeni / nesvrstano) is derived from the
+      `LifecycleState` (Istraženi / Za istražit / Nesređeni / sudjelovanje / nesvrstano) is derived from the
       **workbook's own Power Query** (`Formulas/Section1.m`, extracted 2026-08-26), so the tool
       and the Excel views cannot drift. Exit codes are now 1 ready / 0 not ready / 99 error,
       with `--gate {sue,crospeleo}`. Author cells: the `(SOV)` bracket is parsed as an
       outside-society flag, not part of the name.
-      Live counts: 885 Istraženi · 185 Za istražit · 177 Nesređeni · **47 in no view at all**.
+      Live counts: 885 Istraženi · 185 Za istražit · 177 Nesređeni · 77 sudjelovanje · **19 in no view at all**.
 - [ ] Intake: resolve a cave's archive files from Drive (nacrt, izjave, fotografije ulaza)
       — needs the `drive_resolver` + `name_resolver` ports; until then `Source.ARCHIVE`
       rules report as *not checked yet*
@@ -73,7 +73,7 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
 - [x] **2.1d staged-photo matcher**: `cavedossier photos match-queued` maps the free-form
       files in `!!Fotografije ulaza za istražit` back to SB rows by plaque / cave name / old
       Za-istražit broj and proposes `<Redni broj>_…`, replacing stale old-number prefixes.
-      44 of 53 matched; read-only, renames nothing.
+      **52 of 52 matched**; dry run by default, `--apply` performs the renames.
 - [ ] Field-data intake dir layout on Drive agreed with the user (blocks the 2.1a handoff)
       — unblocked by the Redni-broj decision; proposal still to be drafted
 
@@ -102,24 +102,31 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
   the cell holds the finder/source, not a survey author). `sb.column_aliases` keeps older
   copies of the workbook readable — without it the tool would have found no authors at all.
 - **Staged photos** keep free names + a `Redni broj` prefix; `photos match-queued` matches
-  44 of 53 by plaque / name / old queue broj.
+  them by plaque / name / synonym / old queue broj / a manual map.
 
 - **Izjava filenames**: `Izjava_<Osoba>[_<Opseg>]`; no suffix = universal, a suffix is a
   scope (locality or a single cave), and a **double surname is hyphen-joined** so the
   underscore always means scope. Encoded in `archive/izjave.py` with the one legacy
   exception listed explicitly. Becomes a gate-1 rule at intake.
-- **`sudjelovanje` is its own lifecycle state** (78 rows) — another society's cave that
+- **`sudjelovanje` is its own lifecycle state** (77 rows) — another society's cave that
   SUE took part in. Recognising it shrank the unclassified list from 47 rows to 19.
 - **`photos match-queued --apply`** performs the renames; dry run is the default.
 
+- **Staged photos now match 52 of 52** (2026-08-28): `rubinija` was a transposition of
+  *Rubijina jama* (Redni broj 1214), `kostrčani` was removed by the user as unidentifiable.
+- **Staleness guard added**: promoting a queued cave's photos to the SUE number is manual
+  and gets forgotten, so `photos match-queued` flags any staged photo whose cave already
+  holds a SUE number as PROMOTE-or-DELETE and excludes it from the Redni-broj rename.
+  Currently 0 such photos — the guard is preventive.
+- **User added the Sudjelovanje Power Query** to SB (`S_v2_1`, sheet *Sudjelovanje*);
+  its filter is the same keyword this tool matches, verified against the live workbook.
+
 ### Still open
 
-1. **Two staged photos** (`606_rubinija_ulaz.jpg`, `kostrčani_ulaz.jpg`) match no SB row
-   under any spelling — need the user.
-2. **Excel-side (optional)**: a Power Query view for *sudjelovanje*; and a word-boundary
-   match on "ponor" in the Nesređeni filter, which today drags in 8 unrelated rows.
-3. **Field-data intake dir layout on Drive** — unblocked by the Redni-broj decision;
+1. **Field-data intake dir layout on Drive** — unblocked by the Redni-broj decision;
    proposal to be drafted. This is what gates the 2.1a handoff.
+2. **Excel-side (optional)**: a word-boundary match on "ponor" in the Nesređeni filter,
+   which today drags in 8 unrelated rows.
 
 ## Recent sessions
 

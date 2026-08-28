@@ -80,12 +80,14 @@ when an idea's time comes. Nothing here is a commitment.
   `!!Fotografije ulaza za istražit` to `<padded SUE>_…` and moving them into the main folder.
   The staging folder is free-form named (59 files, cave-name based), so the match has to be by
   cave name, not by number.
-- 2026-08-26 — Excel-side: give **sudjelovanje** its own Power Query view (78 rows carry the
-  keyword; the tool already treats it as a state). Same pass could tighten the Nesređeni
-  filter to a word-boundary match on "ponor", which today drags in 8 unrelated rows.
+- 2026-08-26 — ~~give **sudjelovanje** its own Power Query view~~ → done by the user
+  2026-08-28 (`S_v2_1`, sheet *Sudjelovanje*, same keyword the tool matches). Still open from
+  that idea: tighten the Nesređeni filter to a word-boundary match on "ponor", which today
+  drags in 8 unrelated rows.
 - 2026-08-26 — the 2.1d processor itself (downsize to ~1920 px / ~1.5 MB) is still to be
   written; `photos match-queued --apply` only renames. Pillow is already an optional extra.
 - 2026-08-26 — once intake lands, wire `archive/izjave.py` scope rules into gating: a
   locality-scoped izjava must not satisfy a cave outside that Lokalitet.
-- 2026-08-26 — two staged photos (`606_rubinija_ulaz.jpg`, `kostrčani_ulaz.jpg`) match no SB
-  row under any spelling; park them until the user identifies the caves.
+- 2026-08-26 — ~~two staged photos match no SB row~~ → resolved 2026-08-28: `rubinija` is a
+  transposition of *Rubijina jama* (1214, now in `photos.manual_matches`), `kostrčani` was
+  removed by the user as unidentifiable. The folder now matches 52 of 52.

@@ -212,9 +212,16 @@ def cmd_photos_match_queued(settings: Settings, limit: int, apply: bool) -> int:
     matched = [m for m in matches if m.cave is not None and m.confidence != "conflict"]
     conflicts = [m for m in matches if m.confidence == "conflict"]
     renames = [m for m in matches if m.proposed_name]
+    promotions = [m for m in matches if m.needs_promotion]
     print(f"Matched to an SB row: {len(matched)} / {len(matches)}"
           + (f"   ({len(conflicts)} conflicting)" if conflicts else ""))
     print(f"Rename proposals: {len(renames)}")
+    if promotions:
+        print(f"⚠ {len(promotions)} staged photo(s) belong to caves that ALREADY have a SUE "
+              f"number — they should have been promoted into the main photo archive (or "
+              f"deleted once newer photos replaced them). Listed below; never renamed here.")
+    else:
+        print("No staged photo belongs to an already-explored cave — nothing left behind.")
     print(
         "APPLYING — files will be renamed in place."
         if apply
@@ -228,6 +235,9 @@ def cmd_photos_match_queued(settings: Settings, limit: int, apply: bool) -> int:
         print(f"  {match.confidence[:4]:<4} {match.path.name}")
         if match.proposed_name:
             print(f"       → {match.proposed_name}")
+        elif match.needs_promotion:
+            print(f"       → PROMOTE or DELETE: cave now has SUE {match.cave.sue_number} — "
+                  f"belongs in the main photo archive as {match.promoted_name}")
         elif match.already_correct:
             print("       → (already carries its Redni broj)")
         print(f"       {match.cave.object_name} · Redni broj "

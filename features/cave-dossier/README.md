@@ -81,7 +81,7 @@ cannot drift apart.
 | **Istraženi** | `IO_v2_1` | `Katastarski broj SUE` is not empty — that is the entire filter | 885 |
 | **Za istražit** | `ZI_v2_1` | Napomena contains `za istražit` | 185 |
 | **Nesređeni** | `NO_v2_1` | Napomena contains `neistraženo`, `fali nacrt`, `fali zapisnik`, `<5 m`, `puhalica`, `ponor`, `ponoviti`, `nastaviti` or `umjetan objekt` | 177 |
-| **Sudjelovanje** | *(none yet)* | Napomena contains `sudjelovanje` — another society's cave that SUE took part in | 78 total, 28 otherwise unclassified |
+| **Sudjelovanje** | `S_v2_1` | Napomena contains `sudjelovanje` — another society's cave that SUE took part in | 77 total, 28 otherwise unclassified |
 | **Nesvrstano** | *(none)* | no SUE number and no flag of any kind | 19 |
 
 Precedence when they overlap (29 caves hold a SUE number *and* say "ponoviti"):
@@ -90,10 +90,14 @@ outranks sudjelovanje — a cave we only took part in that still says "fali nacr
 belongs on the worklist. The dossier keeps the Nesređeni keywords that hit even
 when another state wins.
 
-Two things worth knowing: 8 rows land in Nesređeni only because their Napomena
-happens to contain the word "ponor" (a word-boundary match in the Power Query
-would fix that, Excel-side), and *sudjelovanje* has no view of its own yet —
-recognising it here is what shrank the unclassified list from 47 rows to 19.
+The **Sudjelovanje** view was added to the workbook by the user on 2026-08-28
+(`S_v2_1`, `Text.Contains([Napomena], "sudjelovanje")`) — the same keyword this
+tool matches on, verified against the live file, so the two agree row for row.
+Recognising the state is what shrank the unclassified list from 47 rows to 19.
+
+One wrinkle left: 8 rows land in Nesređeni only because their Napomena happens
+to contain the word "ponor". A word-boundary match in that Power Query would
+clean it up — an Excel-side edit, nothing here depends on it.
 
 ## Data flow
 
@@ -282,10 +286,10 @@ cavedossier photos match-queued   # 2.1d: propose a Redni broj prefix per staged
 the halves are two people), `empty` 49, `citation` 2 (a literature source such
 as `Malez, M. (1960)`, not a survey author).
 
-`photos match-queued` matches the 53 free-form files in the staging folder
-against SB and proposes `<Redni broj>_<rest>`, replacing a stale old-number
-prefix where there is one. **51 of 53 matched.** Evidence, weighed rather than
-ranked — two independent signals agreeing is the strongest result:
+`photos match-queued` matches the free-form files in the staging folder against
+SB and proposes `<Redni broj>_<rest>`, replacing a stale old-number prefix where
+there is one. **52 of 52 matched.** Evidence, weighed rather than ranked — two
+independent signals agreeing is the strongest result:
 
 | Evidence | Example | Note |
 |---|---|---|
@@ -298,6 +302,22 @@ Two signals that disagree are reported as a **conflict** and propose nothing.
 `--apply` performs the renames (dry run is the default); it never touches
 conflicts, unmatched files or already-correct names, and never overwrites an
 existing target.
+
+### The staleness guard
+
+Promoting a queued cave's photos into `!!Fotografije ulaza` under its new SUE
+number is a manual step, and it gets forgotten — especially when newer photos
+arrive and nobody goes back for the old ones. The result is photos of long-since
+explored caves sitting in the staging queue forever.
+
+So every run checks it: a staged photo whose cave **already has a SUE number**
+is flagged *PROMOTE or DELETE*, shown with the name it would carry in the main
+archive (`<padded SUE>_…`), and deliberately excluded from the Redni-broj
+rename — stamping the pre-SUE id on it would only bury the problem. `--apply`
+never touches those files; promoting or deleting is your call.
+
+Right now the folder is clean: **0 of 52** staged photos belong to an explored
+cave. The check is a standing guard, not a cleanup — it will catch the next one.
 
 ## Izjava za katastar — who signed, and what it covers
 
@@ -323,19 +343,14 @@ intake lands.
 
 ## Still open
 
-**1. Two unmatched staged photos.** `606_rubinija_ulaz.jpg` and
-`kostrčani_ulaz.jpg` — neither *rubinija* nor *kostrčani* appears anywhere in SB
-under any spelling, so they need you. (`605_Ponor Prijeboj_*` turned out to be
-*Ponor kraj Prijeboja*, Redni broj 1185 — its Napomena even says "fotke br 605";
-it is in `photos.manual_matches` now.)
+**Field-data intake dir layout** (C4) — unblocked by the Redni broj decision. I
+will propose a layout keyed on it when you want it; it is the next thing gating
+the 2.1a handoff.
 
-**2. A Power Query view for *sudjelovanje*** is yours to add in Excel if you
-want it — 78 rows carry the keyword. The tool already treats it as a state, so
-nothing here depends on it.
-
-**3. Field-data intake dir layout** (C4) — unblocked by the Redni broj decision.
-I will propose a layout keyed on it when you want it; that is the next thing
-that gates the 2.1a handoff.
+Everything else from the 2026-08-26/28 rounds is closed: the staged-photo folder
+matches 52 of 52 (`rubinija` was a transposition of *Rubijina jama*, and
+`kostrčani` was removed as unidentifiable), and the Sudjelovanje view now exists
+in the workbook.
 
 ### Quick check commands
 

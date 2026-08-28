@@ -98,21 +98,46 @@ class PhotoMatch:
         )
 
     @property
+    def needs_promotion(self) -> bool:
+        """The cave earned a SUE number while its photos stayed in the queue.
+
+        The standing leak the user described (2026-08-28): promoting a queued
+        cave's photos into `!!Fotografije ulaza` under the SUE number is manual,
+        and it is routinely forgotten once newer photos arrive — so stale copies
+        linger in the staging folder for caves that are long since explored.
+        Surfacing them is the whole point; each is then either promoted or
+        deleted, and that is the user's call, never this tool's.
+        """
+        return self.cave is not None and bool(self.cave.sue_number)
+
+    @property
+    def _rest(self) -> str:
+        """The filename minus a stale leading number."""
+        rest = self.path.name
+        stale = self.stale_prefix
+        return rest[len(stale) :].lstrip("_ -.") if stale else rest
+
+    @property
+    def promoted_name(self) -> str | None:
+        """What the file would be called in the main archive: ``<padded SUE>_<rest>``."""
+        if not self.needs_promotion or self.cave is None or not self.cave.sue_number:
+            return None
+        return f"{self.cave.sue_number.zfill(3)}_{self._rest}"
+
+    @property
     def proposed_name(self) -> str | None:
         """``<Redni broj>_<rest>`` — replacing a stale old-queue-broj prefix if present.
 
         None when there is nothing to propose: no match, no Redni broj on the
-        row, the name is already right, or the evidence conflicts.
+        row, the name is already right, the evidence conflicts, or the cave has
+        a SUE number — stamping the pre-SUE id on an explored cave's photo would
+        only bury the fact that it belongs in the main archive instead.
         """
         if self.cave is None or self.cave.serial_number is None:
             return None
-        if self.confidence == "conflict" or self.already_correct:
+        if self.confidence == "conflict" or self.already_correct or self.needs_promotion:
             return None
-        rest = self.path.name
-        stale = self.stale_prefix
-        if stale:
-            rest = rest[len(stale) :].lstrip("_ -.")
-        return f"{self.cave.serial_number}_{rest}"
+        return f"{self.cave.serial_number}_{self._rest}"
 
 
 def build_candidates(reader: SBReader, settings: Settings) -> list[CaveCandidate]:

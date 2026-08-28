@@ -183,3 +183,39 @@ def test_participation_is_its_own_state() -> None:
     assert derive_lifecycle(None, False, True, True) is LifecycleState.NESREDENI
     # A SUE number still wins over everything.
     assert derive_lifecycle("570", False, True, True) is LifecycleState.ISTRAZENI
+
+
+# ── The staleness guard: photos left behind after a cave is explored ──
+
+
+def _explored() -> CaveCandidate:
+    from cave_dossier.core.normalization import normalize_lookup_key
+
+    # A cave that has since earned SUE 428 but whose photos never left the queue.
+    return CaveCandidate(
+        553, "Spitača", "428", None, "540", normalize_lookup_key("Spitača")
+    )
+
+
+def test_photo_of_an_already_explored_cave_is_flagged_not_renamed() -> None:
+    match = match_photos([Path("540_Spitača_ulaz.jpg")], [_explored()])[0]
+    assert match.needs_promotion is True
+    # Stamping the pre-SUE id on it would bury the real problem.
+    assert match.proposed_name is None
+    # The SUE number is zero-padded to match the main archive's convention.
+    assert match.promoted_name == "428_Spitača_ulaz.jpg"
+
+
+def test_queued_cave_photo_is_not_flagged_for_promotion() -> None:
+    match = match_photos([Path("478_Podbudišinac_SKnaus.jpg")], _candidates())[0]
+    assert match.needs_promotion is False
+    assert match.promoted_name is None
+    assert match.proposed_name == "954_Podbudišinac_SKnaus.jpg"
+
+
+def test_apply_skips_photos_awaiting_promotion() -> None:
+    """--apply must never touch a file the user still has to decide about."""
+    from cave_dossier.photos import apply_renames
+
+    matches = match_photos([Path("540_Spitača_ulaz.jpg")], [_explored()])
+    assert apply_renames(matches) == []
