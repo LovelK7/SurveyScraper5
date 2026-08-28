@@ -16,10 +16,12 @@ from cave_dossier.dossier import GateLevel, build_from_sb, evaluate, render
 from cave_dossier.photos import (
     apply_renames,
     build_candidates,
+    list_other_files,
     list_photos,
     match_photos,
     staged_photo_dir,
 )
+from cave_dossier.intake import find_leaf_folders, intake_root, match_leaves, suggest
 from cave_dossier.sb.audit import AUTHOR_FLAG_HELP, audit_authors, audit_unclassified
 from cave_dossier.sb.loader import SBReader
 from cave_dossier.sb.safe_io import SBWorkbookUnreachable
@@ -261,6 +263,148 @@ def cmd_photos_match_queued(settings: Settings, limit: int, apply: bool) -> int:
     return EXIT_NOT_READY if len(matched) < len(matches) else EXIT_READY
 
 
+def cmd_photos_check_flag(settings: Settings, limit: int) -> int:
+    """Every staged photo's cave should say `Fotografija ulaza = DA` in SB (2.1d).
+
+    The photo folder is the ground truth; the SB cell is a human-maintained
+    claim about it. This reports the caves where the two disagree, which is the
+    list to fix in Excel.
+    """
+    directory = staged_photo_dir(settings)
+    if directory is None:
+        print("No staged-photo dir configured (see config.yaml).", file=sys.stderr)
+        return EXIT_ERROR
+
+    photos = list_photos(directory)
+    others = list_other_files(directory)
+    matches = match_photos(
+        photos, build_candidates(SBReader(settings), settings), settings.photo_manual_matches
+    )
+
+    by_cave: dict[int | None, list] = {}
+    unmatched = []
+    for match in matches:
+        if match.cave is None:
+            unmatched.append(match.path.name)
+            continue
+        by_cave.setdefault(match.cave.serial_number, []).append(match)
+
+    missing = {
+        serial: group
+        for serial, group in by_cave.items()
+        if (group[0].cave.entrance_photo_flag or "").strip().casefold() != "da"
+    }
+
+    print(f"Folder: {directory}")
+    print(f"  {len(photos)} photo(s) covering {len(by_cave)} cave(s)"
+          + (f", {len(unmatched)} unmatched" if unmatched else ""))
+    if others:
+        print(f"  {len(others)} non-photo file(s) in the same folder:")
+        for path in others:
+            print(f"      {path.name}")
+    print()
+    print(f"'Fotografija ulaza' = DA : {len(by_cave) - len(missing)} of {len(by_cave)} caves")
+
+    if not missing:
+        print("Every cave with a staged photo is flagged DA in SB. Nothing to fix.")
+        return EXIT_READY
+
+    print(f"NOT flagged DA          : {len(missing)} cave(s) — SB says no photo exists,")
+    print("                          but these files are sitting in the folder:")
+    print()
+    for serial in sorted(missing, key=lambda value: (value is None, value)):
+        group = missing[serial]
+        cave = group[0].cave
+        flag = cave.entrance_photo_flag or "(empty)"
+        print(f"  Redni broj {str(serial):<5} {cave.object_name[:44]:<44} flag = {flag}")
+        for match in group[:limit]:
+            print(f"        {match.path.name}")
+    for name in unmatched:
+        print(f"  ?     unmatched file: {name}")
+    return EXIT_NOT_READY
+
+
+def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: bool) -> int:
+    """Map each field-data leaf folder to its SB row (M2, field-data intake).
+
+    Read-only unless --apply. Leading numbers in these folders are local ids
+    (LIDAR point, expedition sequence), so they are deliberately not read as SB
+    numbers — see cave_dossier/intake/scanner.py.
+    """
+    root = intake_root(settings)
+    if root is None:
+        print("No intake dir configured: set LOCAL_DRIVE_ROOT in .env and")
+        print("`archive.intake_dir` in config.yaml.", file=sys.stderr)
+        return EXIT_ERROR
+
+    leaves = find_leaf_folders(root)
+    if not leaves:
+        print(f"No leaf folders under {root}")
+        return EXIT_NOT_READY
+    candidates = build_candidates(SBReader(settings), settings)
+    matches = match_leaves(leaves, candidates, settings.intake_manual_matches)
+    by_path = {leaf.path: leaf for leaf in leaves}
+
+    matched = [m for m in matches if m.cave is not None and m.confidence != "conflict"]
+    conflicts = [m for m in matches if m.confidence == "conflict"]
+    unmatched = [m for m in matches if m.cave is None]
+
+    print(f"Intake root: {root}")
+    print(f"  {len(leaves)} leaf folder(s) — matched {len(matched)}, "
+          f"unmatched {len(unmatched)}" + (f", conflicting {len(conflicts)}" if conflicts else ""))
+    print(
+        "APPLYING — folders will be renamed in place."
+        if apply
+        else "DRY RUN — nothing is renamed; re-run with --apply once the mapping looks right."
+    )
+
+    group = None
+    shown = 0
+    for match in matches:
+        if unmatched_only and match.cave is not None:
+            continue
+        if shown >= limit:
+            break
+        shown += 1
+        leaf = by_path[match.path]
+        if leaf.group != group:
+            group = leaf.group
+            print()
+            print(f"  [{group or '(top level)'}]")
+        mark = "?" if match.cave is None else match.confidence[:4]
+        print(f"    {mark:<4} {leaf.relative.name}   ({leaf.file_count} files)")
+        if match.cave is None:
+            for cave, score in suggest(leaf.relative.name, candidates):
+                if score < 0.45:
+                    break
+                print(f"         ~ {score:.2f}  {cave.object_name} (Redni broj {cave.serial_number})")
+            continue
+        if match.proposed_name:
+            print(f"         → {match.proposed_name}")
+        elif match.already_correct:
+            print("         → (already prefixed with its Redni broj)")
+        print(f"         {match.cave.object_name} · Redni broj {match.cave.serial_number}"
+              f" · SUE {match.cave.sue_number or '—'} · {match.evidence}")
+
+    remaining = (len(unmatched) if unmatched_only else len(matches)) - shown
+    if remaining > 0:
+        print(f"\n  … {remaining} more (raise --limit)")
+
+    if apply:
+        outcomes = apply_renames(matches)
+        renamed = [o for o in outcomes if o.status == "renamed"]
+        problems = [o for o in outcomes if o.status != "renamed"]
+        print()
+        print(f"Renamed {len(renamed)} folder(s).")
+        for outcome in problems:
+            print(f"  {outcome.status}: {outcome.source.name}"
+                  + (f"  ({outcome.detail})" if outcome.detail else ""))
+        if problems:
+            return EXIT_ERROR
+
+    return EXIT_READY if not unmatched and not conflicts else EXIT_NOT_READY
+
+
 # ── Entry point ────────────────────────────────────────────────────
 
 
@@ -320,6 +464,25 @@ def build_parser() -> argparse.ArgumentParser:
              "sue = society katastarski broj (default), crospeleo = national cadastre",
     )
 
+    intake = subparsers.add_parser(
+        "intake",
+        help="Field-data intake folders (!!!Digitalizacija/!Za digitalizirat)",
+    )
+    intake_sub = intake.add_subparsers(dest="intake_command", required=True)
+    intake_map = intake_sub.add_parser(
+        "map",
+        help="Map each leaf folder to its SB row and propose a Redni broj prefix",
+    )
+    intake_map.add_argument("--limit", type=int, default=80, help="How many folders to print")
+    intake_map.add_argument(
+        "--unmatched-only", action="store_true", dest="unmatched_only",
+        help="Print only the folders that could not be resolved",
+    )
+    intake_map.add_argument(
+        "--apply", action="store_true",
+        help="Rename the folders in place (default is a dry run)",
+    )
+
     photos = subparsers.add_parser(
         "photos",
         help="Part 2.1d — entrance-photo processing (read-only for now)",
@@ -330,6 +493,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Propose a 'Redni broj' prefix for each photo in the za-istražit staging folder",
     )
     match_queued.add_argument("--limit", type=int, default=80, help="How many files to print")
+    check_flag = photos_sub.add_parser(
+        "check-flag",
+        help="Confirm every cave with a staged photo says 'Fotografija ulaza = DA' in SB",
+    )
+    check_flag.add_argument("--limit", type=int, default=20, help="Files listed per cave")
+
     match_queued.add_argument(
         "--apply",
         action="store_true",
@@ -367,6 +536,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "photos":
             if args.photos_command == "match-queued":
                 return cmd_photos_match_queued(settings, args.limit, args.apply)
+            if args.photos_command == "check-flag":
+                return cmd_photos_check_flag(settings, args.limit)
+        if args.command == "intake":
+            if args.intake_command == "map":
+                return cmd_intake_map(settings, args.limit, args.apply, args.unmatched_only)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR

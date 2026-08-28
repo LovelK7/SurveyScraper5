@@ -68,6 +68,10 @@ archive:
   # cave earns one.
   queued_photos_dir: "!!Fotografije ulaza/!!Fotografije ulaza za istražit"
 
+  # Field-data intake (M2): raw material per cave before anything is filed.
+  # Leaf folders here get a Redni broj prefix — see cave_dossier/intake/.
+  intake_dir: "!!!Digitalizacija/!Za digitalizirat"
+
 # Part 2.1d — entrance-photo processing spec (user, 2026-08-26).
 # Field photos arrive at 7 MB+; the manual workflow is FastStone Image Viewer
 # "resize to screen size", which lands around 1 MB. These are the targets the

@@ -84,7 +84,7 @@ def test_old_number_alone_still_resolves() -> None:
     match = match_photos([Path("479 (1).jpg")], _candidates())[0]
     assert match.cave.serial_number == 955
     assert match.stale_prefix == "479"
-    assert match.proposed_name == "955_(1).jpg"
+    assert match.proposed_name == "955_Puhalica kod Breškog dola_(1).jpg"
 
 
 def test_plaque_number_is_not_mistaken_for_a_stale_prefix() -> None:
@@ -92,7 +92,7 @@ def test_plaque_number_is_not_mistaken_for_a_stale_prefix() -> None:
     match = match_photos([Path("051-550_Goli breg 4.jpg")], _candidates())[0]
     assert match.cave.object_name == "Sik Šits"
     assert match.stale_prefix is None
-    assert match.proposed_name == "1035_051-550_Goli breg 4.jpg"
+    assert match.proposed_name == "1035_Sik Šits_051-550_Goli breg 4.jpg"
 
 
 def test_plaque_with_a_space_matches_and_corroborates_the_name() -> None:
@@ -141,7 +141,7 @@ def test_synonym_matches_as_readily_as_the_name() -> None:
     sik = CaveCandidate(
         1035, "Sik Šits", None, "051-550", None,
         normalize_lookup_key("Sik Šits"),
-        (normalize_lookup_key("Goli breg 4"),),
+        synonym_keys=(normalize_lookup_key("Goli breg 4"),),
     )
     match = match_photos([Path("Goli breg 4_ulaz.jpg")], [sik])[0]
     assert match.cave.serial_number == 1035
@@ -166,7 +166,7 @@ def test_manual_mapping_wins_over_everything() -> None:
     match = match_photos([Path("Jama GB 1.jpg")], [goli], {"Jama GB 1": 812})[0]
     assert match.cave.serial_number == 812
     assert match.confidence == "high"
-    assert match.proposed_name == "812_Jama GB 1.jpg"
+    assert match.proposed_name == "812_Goli breg 1_Jama GB 1.jpg"
 
 
 # ── Lifecycle: sudjelovanje ───────────────────────────────────────────
@@ -219,3 +219,60 @@ def test_apply_skips_photos_awaiting_promotion() -> None:
 
     matches = match_photos([Path("540_Spitača_ulaz.jpg")], [_explored()])
     assert apply_renames(matches) == []
+
+
+# ── Proposed filename shape: <broj>_<Ime objekta>_<sve ostalo> ────────
+
+
+def test_cave_name_is_inserted_after_the_number() -> None:
+    match = match_photos([Path("479 (1).jpg")], _candidates())[0]
+    assert match.proposed_name == "955_Puhalica kod Breškog dola_(1).jpg"
+
+
+def test_cave_name_is_not_duplicated_when_the_file_already_has_it() -> None:
+    match = match_photos([Path("478_Podbudišinac_SKnaus.jpg")], _candidates())[0]
+    assert match.proposed_name == "954_Podbudišinac_SKnaus.jpg"
+
+
+def test_promoted_name_carries_the_cave_name_too() -> None:
+    match = match_photos([Path("540_ulaz.jpg")], [_explored()])[0]
+    assert match.promoted_name == "428_Spitača_ulaz.jpg"
+
+
+def test_illegal_filename_characters_in_a_cave_name_are_replaced() -> None:
+    from cave_dossier.core.normalization import normalize_lookup_key
+
+    awkward = CaveCandidate(
+        700, "Jama pod/nad cestom: gornja", None, None, None,
+        normalize_lookup_key("Jama pod/nad cestom: gornja"),
+    )
+    proposed = match_photos([Path("neka slika.jpg")], [awkward], {"neka slika": 700})[0].proposed_name
+    assert proposed == "700_Jama pod-nad cestom- gornja_neka slika.jpg"
+    assert not set(proposed) & set(r'\/:*?"<>|')
+
+
+def test_already_renamed_file_still_matches_its_cave() -> None:
+    """After --apply, a re-run must not report renamed files as unmatched.
+
+    `770_ak 47.jpg` carries a Redni broj, not an old queue broj, and its name key
+    is too short to hunt for inside the longer stem — without the Redni-broj rule
+    the operation would stop being idempotent.
+    """
+    from cave_dossier.core.normalization import normalize_lookup_key
+
+    ak = CaveCandidate(770, "AK-47", None, None, None, normalize_lookup_key("AK-47"))
+    match = match_photos([Path("770_ak 47.jpg")], [ak])[0]
+    assert match.cave is not None
+    assert match.already_correct is True
+    assert match.proposed_name is None
+
+
+def test_jfif_counts_as_a_photo(tmp_path: Path) -> None:
+    """`.jfif` is a JPEG; four staged entrance photos use that extension."""
+    from cave_dossier.photos import list_other_files, list_photos
+
+    for name in ("a.jfif", "b.jpg", "clip.mp4", "desktop.ini"):
+        (tmp_path / name).write_bytes(b"x")
+    assert {p.name for p in list_photos(tmp_path)} == {"a.jfif", "b.jpg"}
+    # Video is surfaced rather than silently skipped; system files are not.
+    assert [p.name for p in list_other_files(tmp_path)] == ["clip.mp4"]

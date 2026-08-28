@@ -74,8 +74,13 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       files in `!!Fotografije ulaza za istražit` back to SB rows by plaque / cave name / old
       Za-istražit broj and proposes `<Redni broj>_…`, replacing stale old-number prefixes.
       **52 of 52 matched**; dry run by default, `--apply` performs the renames.
-- [ ] Field-data intake dir layout on Drive agreed with the user (blocks the 2.1a handoff)
-      — unblocked by the Redni-broj decision; proposal still to be drafted
+- [~] Field-data intake dir layout on Drive (blocks the 2.1a handoff) — **layout settled
+      2026-08-28**: the leaf folders under `!!!Digitalizacija/!Za digitalizirat` get a
+      `<Redni broj>_<Ime objekta>_<original>` prefix. `cavedossier intake map` proposes the
+      mapping (dry run; `--apply` renames). **12 of 55 leaves resolve automatically**;
+      the rest await the user because most of those caves are not in SB at all.
+      Leading numbers there are LIDAR/expedition ids, verified NOT to be SB numbers,
+      so the number signal is off for intake.
 
 **M4 (OSZ builder) is no longer gated** — the template shipped 2026-08-25; picking it up
 before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
@@ -125,8 +130,11 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 1. **Field-data intake dir layout on Drive** — unblocked by the Redni-broj decision;
    proposal to be drafted. This is what gates the 2.1a handoff.
-2. **Excel-side (optional)**: a word-boundary match on "ponor" in the Nesređeni filter,
-   which today drags in 8 unrelated rows.
+2. **Excel-side**: exclude `za istražit` rows from the Nesređeni Power Query — 13 rows
+   carry both markers today (221 → 208). M code in
+   [features/cave-dossier/docs/sb-powerquery.md](features/cave-dossier/docs/sb-powerquery.md).
+   (The earlier "ponor over-matches" note was **wrong** — checked against live, all 5
+   ponor-only rows tag it deliberately: "ponor, možda kopati". No change needed there.)
 
 ## Recent sessions
 

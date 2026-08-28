@@ -1,101 +1,40 @@
-"""Part 2.1d — match the free-form staged entrance photos back to SB rows.
+"""Part 2.1d — the staged entrance photos in `!!Fotografije ulaza za istražit`.
 
-`!!Fotografije ulaza/!!Fotografije ulaza za istražit` is a staging queue for
-caves that have no SUE number yet, and its 59 filenames are free-form: a cave
-name, sometimes a plaque number, sometimes an old queue number, sometimes just
-``ak 47.jpg``. The user's plan (2026-08-26) is to keep the free naming but
-prefix each file with its **Redni broj**, turning the folder into a single
-collection point that a later step can rename to ``<SUE>_…`` and move up.
+That folder is a staging queue for caves with no SUE number yet, and its names
+are free-form: a cave name, sometimes a plaque number, sometimes an old queue
+number, sometimes just ``ak 47.jpg``. The plan (user, 2026-08-26) is to keep the
+free naming but prefix each file with its **Redni broj**, turning the folder
+into one collection point that a later step renames to ``<SUE>_…`` and moves up.
 
-Doing that by hand means reading 59 names against 1294 rows, so this module
-proposes the mapping. It is **read-only**: it never renames or moves anything,
-it prints proposals for the user to accept.
-
-Matching, strongest evidence first:
-
-1. **plaque number** in the filename (``051-550``, ``051 418``) — unambiguous
-2. **cave name** appearing in the filename, longest match wins, so
-   "Vela jama na Krku" beats "Vela jama"
-3. **old Za-istražit broj** (``478_…``, ``479 (1)``) against the number parsed
-   out of the Napomena queue flag — a hint, hence lowest confidence
+The matching itself lives in `core/matching.py` — shared with the field-data
+intake scan. This module adds what is specific to photos: which extensions
+count, and the promotion check for photos left behind after their cave was
+explored.
 """
 
 from __future__ import annotations
 
-import re
-from dataclasses import dataclass
 from pathlib import Path
 
 from cave_dossier.core.config import Settings
-from cave_dossier.core.normalization import normalize_lookup_key, split_semicolon_values
-from cave_dossier.dossier.sb_mapper import parse_queue_flag
-from cave_dossier.sb.loader import SBReader
+from cave_dossier.core.matching import (
+    CaveCandidate,
+    PathMatch,
+    RenameOutcome,
+    apply_renames,
+    build_candidates,
+    match_paths,
+)
 
-_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".heic", ".tif", ".tiff", ".webp"}
-#: Leading "123_" / "123 " — verified against the cave's Redni broj below, because
-#: most staged files already start with the *old Za-istražit broj*, which the v3.0
-#: renumbering made stale.
-_LEADING_NUMBER_RE = re.compile(r"^(\d{1,4})(?=[_\s.-])")
-#: Plaque numbers appear as "051-550" or "051 418". Underscore is a word
-#: character, so \b would not fire in "051-550_Goli breg" — use digit lookarounds.
-_PLAQUE_RE = re.compile(r"(?<!\d)(\d{3})[\s-](\d{3})(?!\d)")
-#: Names shorter than this match too much ("ak", "GB") to trust as a hit.
-_MIN_NAME_KEY_CHARS = 5
-
-
-@dataclass(frozen=True)
-class CaveCandidate:
-    serial_number: int | None
-    object_name: str
-    sue_number: str | None
-    plaque_number: str | None
-    old_queue_number: str | None
-    name_key: str
-    #: `Sinonimi`, normalised. A staged photo often carries a synonym rather
-    #: than the main name — `051-550_Goli breg 4.jpg` is Sik Šits, whose synonym
-    #: is exactly "Goli breg 4" (user, 2026-08-26).
-    synonym_keys: tuple[str, ...] = ()
-
-    @property
-    def all_keys(self) -> tuple[str, ...]:
-        return (self.name_key, *self.synonym_keys)
+#: ``.jfif`` is a plain JPEG under an older extension — Windows and some phone
+#: exports still write it, and four staged entrance photos use it.
+_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".jfif", ".png", ".heic", ".tif", ".tiff", ".webp"}
+#: Windows writes these into synced folders; never a cave artefact.
+_SYSTEM_FILENAMES = {"desktop.ini", "thumbs.db", ".ds_store"}
 
 
-@dataclass
-class PhotoMatch:
-    path: Path
-    cave: CaveCandidate | None
-    evidence: str | None = None
-    confidence: str = "none"  # high | medium | conflict | none
-    conflict_with: CaveCandidate | None = None
-
-    @property
-    def stale_prefix(self) -> str | None:
-        """A leading number that is NOT this cave's Redni broj — the old queue broj.
-
-        A leading number that is really the first half of a plaque
-        (``051-550_Goli breg``) is left alone: stripping it would leave a
-        dangling ``550_``, and the plaque is worth keeping in the name.
-        """
-        leading = _LEADING_NUMBER_RE.match(self.path.name)
-        if not leading or self.cave is None:
-            return None
-        plaque = _PLAQUE_RE.search(self.path.name)
-        if plaque and plaque.start() == 0:
-            return None
-        if self.cave.serial_number is not None and leading.group(1) == str(self.cave.serial_number):
-            return None
-        return leading.group(1)
-
-    @property
-    def already_correct(self) -> bool:
-        leading = _LEADING_NUMBER_RE.match(self.path.name)
-        return bool(
-            leading
-            and self.cave is not None
-            and self.cave.serial_number is not None
-            and leading.group(1) == str(self.cave.serial_number)
-        )
+class PhotoMatch(PathMatch):
+    """A staged photo, plus the question of whether it should still be there."""
 
     @property
     def needs_promotion(self) -> bool:
@@ -104,68 +43,28 @@ class PhotoMatch:
         The standing leak the user described (2026-08-28): promoting a queued
         cave's photos into `!!Fotografije ulaza` under the SUE number is manual,
         and it is routinely forgotten once newer photos arrive — so stale copies
-        linger in the staging folder for caves that are long since explored.
-        Surfacing them is the whole point; each is then either promoted or
-        deleted, and that is the user's call, never this tool's.
+        linger for caves that are long since explored. Surfacing them is the
+        whole point; promoting or deleting is the user's call, never this tool's.
         """
         return self.cave is not None and bool(self.cave.sue_number)
-
-    @property
-    def _rest(self) -> str:
-        """The filename minus a stale leading number."""
-        rest = self.path.name
-        stale = self.stale_prefix
-        return rest[len(stale) :].lstrip("_ -.") if stale else rest
 
     @property
     def promoted_name(self) -> str | None:
         """What the file would be called in the main archive: ``<padded SUE>_<rest>``."""
         if not self.needs_promotion or self.cave is None or not self.cave.sue_number:
             return None
-        return f"{self.cave.sue_number.zfill(3)}_{self._rest}"
+        return f"{self.cave.sue_number.zfill(3)}_{self.rest()}"
 
     @property
     def proposed_name(self) -> str | None:
-        """``<Redni broj>_<rest>`` — replacing a stale old-queue-broj prefix if present.
+        """As the base class, except a photo awaiting promotion proposes nothing.
 
-        None when there is nothing to propose: no match, no Redni broj on the
-        row, the name is already right, the evidence conflicts, or the cave has
-        a SUE number — stamping the pre-SUE id on an explored cave's photo would
-        only bury the fact that it belongs in the main archive instead.
+        Stamping the pre-SUE id on an explored cave's photo would only bury the
+        fact that it belongs in the main archive instead.
         """
-        if self.cave is None or self.cave.serial_number is None:
+        if self.needs_promotion:
             return None
-        if self.confidence == "conflict" or self.already_correct or self.needs_promotion:
-            return None
-        return f"{self.cave.serial_number}_{self._rest}"
-
-
-def build_candidates(reader: SBReader, settings: Settings) -> list[CaveCandidate]:
-    """Every named SB row, keyed for matching."""
-    columns = settings.sb_field_columns
-    frame = reader.load_rows()
-    candidates: list[CaveCandidate] = []
-    for _index, row in frame.iterrows():
-        record = {str(key).strip(): value for key, value in row.to_dict().items()}
-        cave = reader._to_cave_row(record)  # noqa: SLF001 — same package, deliberate
-        if not cave.object_name:
-            continue
-        note = _text(record.get(columns.get("note", "Napomena")))
-        synonyms = split_semicolon_values(_text(record.get(columns.get("synonyms"))))
-        candidates.append(
-            CaveCandidate(
-                serial_number=_int(_text(record.get(columns.get("serial_number")))),
-                object_name=cave.object_name,
-                sue_number=cave.sue_number,
-                plaque_number=_text(record.get(settings.sb_plaque_column)),
-                old_queue_number=parse_queue_flag(note).old_number,
-                name_key=normalize_lookup_key(cave.object_name),
-                synonym_keys=tuple(
-                    key for key in (normalize_lookup_key(s) for s in synonyms) if key
-                ),
-            )
-        )
-    return candidates
+        return super().proposed_name
 
 
 def match_photos(
@@ -173,142 +72,8 @@ def match_photos(
     candidates: list[CaveCandidate],
     manual: dict[str, int] | None = None,
 ) -> list[PhotoMatch]:
-    """Propose a cave for each staged photo. Order of evidence is documented above.
-
-    ``manual`` maps a filename substring to a Redni broj (config
-    ``photos.manual_matches``) for the handful the automatic evidence can never
-    reach — abbreviations like "Jama GB 1" for *Goli breg 1*, or a name spelled
-    differently from SB. A manual entry wins over everything else.
-    """
-    by_plaque = {
-        normalize_lookup_key(c.plaque_number): c for c in candidates if c.plaque_number
-    }
-    by_old_number = {
-        c.old_queue_number: c for c in candidates if c.old_queue_number
-    }
-    by_serial = {c.serial_number: c for c in candidates if c.serial_number is not None}
-    # (key, cave) pairs, longest key first so a specific name wins over a prefix
-    # of itself; synonyms match as readily as the main name.
-    keyed: list[tuple[str, CaveCandidate]] = [
-        (key, cave) for cave in candidates for key in cave.all_keys if key
-    ]
-    keyed.sort(key=lambda item: len(item[0]), reverse=True)
-
-    matches: list[PhotoMatch] = []
-    for path in paths:
-        stem = path.stem
-        key = normalize_lookup_key(stem)
-
-        manual_hit = _manual_match(path.name, manual or {}, by_serial)
-        if manual_hit:
-            matches.append(PhotoMatch(path, manual_hit, "ručno mapiranje", "high"))
-            continue
-
-        # Gather every independent piece of evidence, then weigh them: two that
-        # agree is the strongest signal available, and two that disagree is a
-        # data-quality finding in its own right (a mislabelled photo, or a
-        # reused plaque number).
-        evidence: list[tuple[str, CaveCandidate]] = []
-
-        plaque = _PLAQUE_RE.search(stem)
-        if plaque:
-            candidate = by_plaque.get(normalize_lookup_key(f"{plaque.group(1)}-{plaque.group(2)}"))
-            if candidate:
-                evidence.append((f"pločica {plaque.group(0)}", candidate))
-
-        # A short key ("ak47") is too generic to hunt for inside a longer
-        # filename, but an EXACT match of the whole stem is unambiguous — which
-        # is what rescues "ak 47.jpg" → AK-47.
-        named_key, named = next(
-            ((k, c) for k, c in keyed if k == key),
-            (None, None),
-        )
-        if named is None:
-            named_key, named = next(
-                ((k, c) for k, c in keyed if len(k) >= _MIN_NAME_KEY_CHARS and k in key),
-                (None, None),
-            )
-        if named is not None:
-            label = "ime" if named_key == named.name_key else "sinonim"
-            evidence.append((f"{label} '{named.object_name}'", named))
-
-        leading = _LEADING_NUMBER_RE.match(stem)
-        if leading:
-            candidate = by_old_number.get(leading.group(1))
-            if candidate:
-                evidence.append((f"stari broj {leading.group(1)}", candidate))
-
-        if not evidence:
-            matches.append(PhotoMatch(path, None))
-            continue
-
-        caves = {id(item[1]): item[1] for item in evidence}
-        if len(caves) > 1:
-            first, second = evidence[0], evidence[1]
-            matches.append(
-                PhotoMatch(
-                    path,
-                    first[1],
-                    f"{first[0]} vs {second[0]} ({second[1].object_name})",
-                    "conflict",
-                    conflict_with=second[1],
-                )
-            )
-            continue
-
-        cave = evidence[0][1]
-        reasons = " + ".join(item[0] for item in evidence)
-        confidence = "high" if len(evidence) > 1 or evidence[0][0].startswith("pločica") else "medium"
-        matches.append(PhotoMatch(path, cave, reasons, confidence))
-    return matches
-
-
-@dataclass
-class RenameOutcome:
-    """What actually happened to one file when ``apply_renames`` ran."""
-
-    source: Path
-    target: Path | None
-    status: str  # renamed | skipped_exists | failed
-    detail: str | None = None
-
-
-def apply_renames(matches: list[PhotoMatch]) -> list[RenameOutcome]:
-    """Perform the proposed renames, in place, in the staging folder.
-
-    Only files with a proposal are touched, so conflicts, unmatched files and
-    already-correct names are skipped by construction. A target that already
-    exists is never overwritten — the pair is reported for a human to resolve.
-    """
-    outcomes: list[RenameOutcome] = []
-    for match in matches:
-        proposal = match.proposed_name
-        if not proposal:
-            continue
-        target = match.path.with_name(proposal)
-        if target.exists():
-            outcomes.append(
-                RenameOutcome(match.path, target, "skipped_exists", "target already exists")
-            )
-            continue
-        try:
-            match.path.rename(target)
-        except OSError as exc:  # Drive sync can hold a lock
-            outcomes.append(RenameOutcome(match.path, target, "failed", str(exc)))
-            continue
-        outcomes.append(RenameOutcome(match.path, target, "renamed"))
-    return outcomes
-
-
-def _manual_match(
-    filename: str, manual: dict[str, int], by_serial: dict[int, CaveCandidate]
-) -> CaveCandidate | None:
-    """First configured substring that occurs in the filename, case-insensitively."""
-    lowered = filename.casefold()
-    for fragment, serial in manual.items():
-        if fragment.casefold() in lowered:
-            return by_serial.get(serial)
-    return None
+    """Resolve staged photos to SB rows. Leading numbers are meaningful here."""
+    return match_paths(paths, candidates, manual, use_numbers=True, match_class=PhotoMatch)
 
 
 def staged_photo_dir(settings: Settings) -> Path | None:
@@ -328,28 +93,33 @@ def list_photos(directory: Path) -> list[Path]:
     )
 
 
-def _text(value: object) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    if not text or text.lower() in {"nan", "nat", "none"}:
-        return None
-    if text.endswith(".0") and text[:-2].lstrip("-").isdigit():
-        text = text[:-2]
-    return text
+def list_other_files(directory: Path) -> list[Path]:
+    """Everything in the folder that is not an entrance photo, system files aside.
 
-
-def _int(text: str | None) -> int | None:
-    try:
-        return int(float(text)) if text else None
-    except ValueError:
-        return None
+    Video mostly. Surfaced rather than skipped: a folder inventory that silently
+    drops files is how the ``.jfif`` photos went unnoticed in the first place.
+    """
+    if not directory.is_dir():
+        return []
+    return sorted(
+        (
+            p
+            for p in directory.iterdir()
+            if p.is_file()
+            and p.suffix.lower() not in _IMAGE_SUFFIXES
+            and p.name.lower() not in _SYSTEM_FILENAMES
+        ),
+        key=lambda p: p.name.lower(),
+    )
 
 
 __all__ = [
     "CaveCandidate",
     "PhotoMatch",
+    "RenameOutcome",
+    "apply_renames",
     "build_candidates",
+    "list_other_files",
     "list_photos",
     "match_photos",
     "staged_photo_dir",

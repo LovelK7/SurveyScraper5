@@ -1,0 +1,24 @@
+"""Field-data intake — the raw material folders on Drive before a cave is filed.
+
+Today: mapping each leaf folder under `!!!Digitalizacija/!Za digitalizirat` to
+its SB row so it can be prefixed with the Redni broj. Next (rest of M2):
+resolving a cave's finished files out of the archive dirs into the dossier.
+"""
+
+from cave_dossier.intake.scanner import (
+    IntakeMatch,
+    LeafFolder,
+    find_leaf_folders,
+    intake_root,
+    match_leaves,
+    suggest,
+)
+
+__all__ = [
+    "IntakeMatch",
+    "LeafFolder",
+    "find_leaf_folders",
+    "intake_root",
+    "match_leaves",
+    "suggest",
+]

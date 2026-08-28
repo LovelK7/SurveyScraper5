@@ -57,6 +57,9 @@ class Settings:
     # filename-fragment -> Redni broj map for photos automatic evidence cannot reach.
     photo_targets: dict[str, int] = field(default_factory=dict)
     photo_manual_matches: dict[str, int] = field(default_factory=dict)
+    # Field-data intake: folder-name fragment -> Redni broj, for leaves whose
+    # name carries no cave name at all (a LIDAR id, a surveyor first name).
+    intake_manual_matches: dict[str, int] = field(default_factory=dict)
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -147,6 +150,11 @@ def load_settings() -> Settings:
         photo_manual_matches={
             str(key): int(value)
             for key, value in ((raw.get("photos") or {}).get("manual_matches") or {}).items()
+            if value is not None
+        },
+        intake_manual_matches={
+            str(key): int(value)
+            for key, value in ((raw.get("intake") or {}).get("manual_matches") or {}).items()
             if value is not None
         },
     )

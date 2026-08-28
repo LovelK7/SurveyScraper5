@@ -76,28 +76,34 @@ Not by guesswork: the definitions are lifted from SB's **own Power Query**
 (`Formulas/Section1.m` inside the workbook), so the tool and the Excel views
 cannot drift apart.
 
-| State | SB view | Filter | Rows (v3.0) |
-|---|---|---|---|
-| **Istraženi** | `IO_v2_1` | `Katastarski broj SUE` is not empty — that is the entire filter | 885 |
-| **Za istražit** | `ZI_v2_1` | Napomena contains `za istražit` | 185 |
-| **Nesređeni** | `NO_v2_1` | Napomena contains `neistraženo`, `fali nacrt`, `fali zapisnik`, `<5 m`, `puhalica`, `ponor`, `ponoviti`, `nastaviti` or `umjetan objekt` | 177 |
-| **Sudjelovanje** | `S_v2_1` | Napomena contains `sudjelovanje` — another society's cave that SUE took part in | 77 total, 28 otherwise unclassified |
-| **Nesvrstano** | *(none)* | no SUE number and no flag of any kind | 19 |
+| State | SB view | Filter | In the view | Assigned by the tool |
+|---|---|---|---|---|
+| **Istraženi** | `IO_v2_1` | `Katastarski broj SUE` is not empty — that is the entire filter | 885 | 885 |
+| **Za istražit** | `ZI_v2_1` | Napomena contains `za istražit` | 199 | 199 |
+| **Nesređeni** | `NO_v2_1` | Napomena contains `neistraženo`, `fali nacrt`, `fali zapisnik`, `<5 m`, `puhalica`, `ponor`, `ponoviti`, `nastaviti` or `umjetan objekt` | 221 | 179 |
+| **Sudjelovanje** | `S_v2_1` | Napomena contains `sudjelovanje` — another society's cave that SUE took part in | 77 | 28 |
+| **Nesvrstano** | *(none)* | no SUE number and no flag of any kind | — | 19 |
 
-Precedence when they overlap (29 caves hold a SUE number *and* say "ponoviti"):
-SUE number → queue flag → outstanding work → provenance. Nesređeni deliberately
-outranks sudjelovanje — a cave we only took part in that still says "fali nacrt"
-belongs on the worklist. The dossier keeps the Nesređeni keywords that hit even
-when another state wins.
+Live workbook, 2026-08-28; 1310 named rows. The two count columns differ
+because **SB's views overlap and the tool's states do not**: a row shows up in
+every view whose filter it matches, while the dossier assigns exactly one state
+by precedence — SUE number → queue flag → outstanding work → provenance. So the
+42 Nesređeni rows the tool "loses" are 29 that already hold a SUE number and 13
+that are really still *za istražit*; the 49 sudjelovanje rows are ones where
+outstanding work or a SUE number outranks the provenance note.
+
+Nesređeni deliberately outranks sudjelovanje — a cave we only took part in that
+still says "fali nacrt" belongs on the worklist. The dossier keeps the Nesređeni
+keywords that hit even when another state wins.
 
 The **Sudjelovanje** view was added to the workbook by the user on 2026-08-28
 (`S_v2_1`, `Text.Contains([Napomena], "sudjelovanje")`) — the same keyword this
 tool matches on, verified against the live file, so the two agree row for row.
 Recognising the state is what shrank the unclassified list from 47 rows to 19.
 
-One wrinkle left: 8 rows land in Nesređeni only because their Napomena happens
-to contain the word "ponor". A word-boundary match in that Power Query would
-clean it up — an Excel-side edit, nothing here depends on it.
+The filters themselves, an M snippet to re-extract them from the workbook, and
+the proposed *exclude za-istražit from Nesređeni* edit are in
+[docs/sb-powerquery.md](docs/sb-powerquery.md).
 
 ## Data flow
 
@@ -298,10 +304,26 @@ independent signals agreeing is the strongest result:
 | old Za-istražit broj | `478_…`, `479 (1)` | the number the file already carries — stale since the v3.0 renumbering, so it is *replaced*, not kept |
 | manual mapping | `Jama GB 1` → 812 | `photos.manual_matches` in config.yaml, for abbreviations no rule can reach |
 
+The proposed name is **`<Redni broj>_<Ime objekta>_<sve ostalo>`** — the number
+alone is unreadable in a folder listing, and most of these filenames already
+carry an author or a description worth keeping after it. The cave name is only
+inserted when the filename does not already contain it, illegal filename
+characters in a name are replaced, and the longest resulting path is 224 chars
+(Windows allows 260).
+
 Two signals that disagree are reported as a **conflict** and propose nothing.
 `--apply` performs the renames (dry run is the default); it never touches
 conflicts, unmatched files or already-correct names, and never overwrites an
 existing target.
+
+### Cross-check against SB's `Fotografija ulaza`
+
+The photo folder is ground truth; the SB cell is a human-maintained claim about
+it. `photos check-flag` reports every cave that has a staged photo but is not
+flagged `DA` — the list to fix in Excel. It also prints any non-photo file in
+the folder (a stray `.mp4`, say) rather than skipping it silently: quietly
+ignoring unknown extensions is exactly how four `.jfif` entrance photos went
+uncounted until 2026-08-28.
 
 ### The staleness guard
 
@@ -341,11 +363,31 @@ Scope resolution compares the suffix against the cave's `Lokalitet`, then its
 name and synonyms — diacritic-insensitively. It becomes a gate-1 rule when
 intake lands.
 
+## Field-data intake
+
+`!!!Digitalizacija/!Za digitalizirat` holds the raw material per cave. Its
+**leaf** folders (any depth — the tree runs 1–3 levels) each get a **Redni broj**
+prefix: `<Redni broj>_<Ime objekta>_<original name>`. Nothing is ever stripped,
+because the original name carries the collector and the local id.
+
+The one rule that matters: **a leading number in these folders is not an SB
+number.** `!!Lidarke Veprinac/43_Jasna` and `Venio/Jasnina jam lidar 43` are the
+same object under LIDAR point 43; `108_Renata`, `295_Dino`, `Kraj 309_Sara` use
+the Veprinac expedition sequence. Checked against SB: row 762 is *Devetstokunka*
+at Plitvice while the folder `Munina_762_Renata` is a Mune cave, row 837 is *Žaba
+krastača* against `Nikad više_Venio_837` — the numbers do not line up. So the
+number signal is switched **off** for intake, and an unmatched folder is the
+honest answer.
+
+Matching therefore leans on names, in four passes (see `core/matching.py`):
+exact stem → SB name inside the folder name → folder name inside the SB name
+(unique hits only) → same words in any order (`Grotta possibile` → *Possibile
+Grotta*). For anything left over, `--unmatched-only` prints the closest SB rows
+by string similarity as prompts for a human — never as evidence.
+
 ## Still open
 
-**Field-data intake dir layout** (C4) — unblocked by the Redni broj decision. I
-will propose a layout keyed on it when you want it; it is the next thing gating
-the 2.1a handoff.
+Confirming the intake mapping before it is applied — see the session summary.
 
 Everything else from the 2026-08-26/28 rounds is closed: the staged-photo folder
 matches 52 of 52 (`rubinija` was a transposition of *Rubijina jama*, and
@@ -420,9 +462,15 @@ cavedossier report --cave 570 --gate crospeleo  # exit code follows gate 2 inste
 cavedossier sb audit-authors --limit 40    # author cells the splitter cannot read
 cavedossier sb unclassified                # rows in none of SB's three views
 
+# Field-data intake — folders under !!!Digitalizacija/!Za digitalizirat
+cavedossier intake map                     # DRY RUN: map each leaf folder to its SB row
+cavedossier intake map --unmatched-only    # just the ones that need a human
+cavedossier intake map --apply             # rename the folders in place
+
 # Part 2.1d — staged entrance photos
 cavedossier photos match-queued            # DRY RUN: propose <Redni broj>_… per staged photo
 cavedossier photos match-queued --apply    # perform the proposed renames in place
+cavedossier photos check-flag              # every staged photo's cave should say Fotografija ulaza = DA
 ```
 
 Exit codes (your convention): **1** = ready, **0** = not ready, **99** = error.
@@ -443,7 +491,9 @@ also self-reconfigures its output streams, so this is rarely needed).
 | `src/cave_dossier/sb/safe_io.py` | workbook preflight/backup/COM-write safety (ported) | reads: preflight only; writes: M6 |
 | `src/cave_dossier/sb/loader.py` | `SBReader`: header autodetect, column aliases, `find_caves` | `sb *`, `report` |
 | `src/cave_dossier/sb/audit.py` | workbook-wide data-quality sweeps (authors, unclassified rows) | `sb audit-authors`, `sb unclassified` |
-| `src/cave_dossier/photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `<Redni broj>_…` | `photos match-queued` |
+| `src/cave_dossier/core/matching.py` | the shared name/plaque/number matcher behind both photo and folder mapping | `photos *`, `intake *` |
+| `src/cave_dossier/intake/scanner.py` | field-data leaf folders → SB rows, `<Redni broj>_<Ime>_…` proposals | `intake map` |
+| `src/cave_dossier/photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `<Redni broj>_…`, cross-check the SB flag | `photos match-queued`, `photos check-flag` |
 | `src/cave_dossier/archive/izjave.py` | izjava filenames: person, scope, and what a scope covers | intake (next) |
 | `src/cave_dossier/dossier/model.py` | `CaveDossier`, `Source`, `GateLevel`, `LifecycleState`, files, issues, readiness | the shared object |
 | `src/cave_dossier/dossier/sb_mapper.py` | SB row → dossier; queue flag + lifecycle derivation | `report` |
