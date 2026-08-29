@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
 from cave_dossier.dossier import GateLevel, build_from_sb, evaluate, render
@@ -29,6 +30,8 @@ from cave_dossier.intake import (
     old_queue_candidates,
     suggest,
 )
+from cave_dossier.satellites import liburnija as sheet, resolver, sync
+from cave_dossier.satellites.model import LinkStatus
 from cave_dossier.sb.audit import AUTHOR_FLAG_HELP, audit_authors, audit_unclassified
 from cave_dossier.sb.loader import SBReader
 from cave_dossier.sb.safe_io import SBWorkbookUnreachable
@@ -427,6 +430,90 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
     return EXIT_READY if not unmatched and not conflicts else EXIT_NOT_READY
 
 
+def cmd_sat_sync(
+    settings: Settings,
+    limit: int,
+    use_coordinates: bool,
+    tsv_path: str | None,
+) -> int:
+    """Compare the Liburnija sheet against SB and print the three review lists.
+
+    Read-only against both sides — the sheet is a live Google Sheet people type
+    into, and nothing here writes to it or to SB. `--tsv` only saves list 1 to a
+    file so the new rows can be pasted into `Svi objekti` in one motion.
+    """
+    rows, path = sheet.load_from_settings(settings)
+    if not rows:
+        print("No Liburnija export cached. Set `intake.sheet_csv` in config.yaml and")
+        print("re-export the sheet (Drive MCP) to that path.", file=sys.stderr)
+        return EXIT_ERROR
+
+    reader = SBReader(settings)
+    records = resolver.build_sb_index(reader, settings)
+    next_serial = resolver.next_serial_number(reader, settings)
+
+    resolutions = resolver.resolve_rows(rows, records, use_coordinates=use_coordinates)
+    result = sync.build(resolutions, next_serial=next_serial)
+    counts = result.counts
+
+    print(f"Liburnija: {len(rows)} row(s) from {path.name}")
+    print(f"SB: {len(records)} named row(s), next Redni broj {next_serial}")
+    print(
+        f"  linked {counts[LinkStatus.LINKED.value]}"
+        f" · za SB {counts[LinkStatus.CANDIDATE.value]}"
+        f" · nije objekt {counts[LinkStatus.NOT_A_CAVE.value]}"
+        f" · neprovjereno {counts[LinkStatus.UNCHECKED.value]}"
+        f" · druga udruga {counts[LinkStatus.OUT_OF_SCOPE.value]}"
+        f" · sporno {counts[LinkStatus.CONFLICT.value]}"
+    )
+    if not use_coordinates:
+        print("  (coordinate key off — add --coords to propose links by proximity)")
+    print("READ ONLY — every change below is carried out by hand.")
+
+    print()
+    print(f"1 · ZA SB — {len(result.to_sb)} potvrđen(a) objekt(a) bez retka u SB")
+    if result.to_sb:
+        print(f"     Redni broj {result.to_sb[0].values['Redni broj']}"
+              f" – {result.to_sb[-1].values['Redni broj']}")
+    for new_row in result.to_sb[:limit]:
+        values = new_row.values
+        print(f"    {values['Redni broj']:>5}  {values['Ime objekta']}"
+              + (f"   [sinonim: {values['Sinonimi']}]" if values["Sinonimi"] else ""))
+        print(f"           red {new_row.row_id} · {values['X HTRS']}/{values['Y HTRS']}"
+              f" · {values['Napomena'] or '—'}")
+        if new_row.warning:
+            print(f"           ! {new_row.warning}")
+    if len(result.to_sb) > limit:
+        print(f"    … {len(result.to_sb) - limit} more (raise --limit)")
+
+    print()
+    print(f"2 · ZA TABLICU — {len(result.to_sheet)} ćelij(a) koje SB zna bolje")
+    for difference in result.to_sheet[:limit]:
+        print(f"    red {difference.row_id:<6} {difference.column:<12}"
+              f" {difference.current} → {difference.proposed}")
+        print(f"           ({difference.reason})")
+    if len(result.to_sheet) > limit:
+        print(f"    … {len(result.to_sheet) - limit} more (raise --limit)")
+
+    print()
+    print(f"3 · ZA ODLUKU — {len(result.to_decide)}")
+    for decision in result.to_decide[:limit]:
+        print(f"    red {decision.row_id:<6} {decision.issue}")
+        if decision.detail:
+            print(f"           {decision.detail}")
+    if len(result.to_decide) > limit:
+        print(f"    … {len(result.to_decide) - limit} more (raise --limit)")
+
+    if tsv_path:
+        target = Path(tsv_path)
+        target.write_text(sync.to_tsv(result.to_sb), encoding="utf-8")
+        print()
+        print(f"List 1 written to {target} — select the block, copy, and paste it")
+        print("below the last row of `Svi objekti`. Check the Redni broj column first.")
+
+    return EXIT_READY if (result.to_sb or result.to_sheet) else EXIT_NOT_READY
+
+
 # ── Entry point ────────────────────────────────────────────────────
 
 
@@ -505,6 +592,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="Rename the folders in place (default is a dry run)",
     )
 
+    sat = subparsers.add_parser(
+        "sat",
+        help="Satellite tables around SB (Liburnija / LiDAR Kristal sheet, …)",
+    )
+    sat_sub = sat.add_subparsers(dest="sat_command", required=True)
+    sat_sync = sat_sub.add_parser(
+        "sync",
+        help="Difference lists between a satellite table and SB (read-only)",
+    )
+    sat_sync.add_argument(
+        "satellite",
+        nargs="?",
+        default="liburnija",
+        choices=["liburnija"],
+        help="Which satellite to compare (default: liburnija)",
+    )
+    sat_sync.add_argument("--limit", type=int, default=40, help="Rows printed per list")
+    sat_sync.add_argument(
+        "--coords",
+        action="store_true",
+        dest="use_coordinates",
+        help="Also propose links by coordinate proximity (auto only under "
+             f"{resolver.AUTO_LINK_M:.0f} m and unambiguous; everything else is "
+             "listed for a decision)",
+    )
+    sat_sync.add_argument(
+        "--tsv",
+        dest="tsv_path",
+        help="Write list 1 (new SB rows) to this file, tab-separated for pasting "
+             "into Excel",
+    )
+
     photos = subparsers.add_parser(
         "photos",
         help="Part 2.1d — entrance-photo processing (read-only for now)",
@@ -560,6 +679,11 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_photos_match_queued(settings, args.limit, args.apply)
             if args.photos_command == "check-flag":
                 return cmd_photos_check_flag(settings, args.limit)
+        if args.command == "sat":
+            if args.sat_command == "sync":
+                return cmd_sat_sync(
+                    settings, args.limit, args.use_coordinates, args.tsv_path
+                )
         if args.command == "intake":
             if args.intake_command == "map":
                 return cmd_intake_map(settings, args.limit, args.apply, args.unmatched_only)

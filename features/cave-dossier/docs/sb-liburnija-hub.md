@@ -153,6 +153,15 @@ Why a crosswalk rather than importing the sheet into SB:
 The crosswalk is the hub. Everything else is an adapter reading into it or a
 report reading out of it.
 
+> **Not built yet, deliberately.** Decision 2 turned *out of scope* into a rule
+> (`Istražili` names another society) and the sheet's own flags settle
+> `not_a_cave` / `unchecked`, so after increment 1 there was nothing left for a
+> crosswalk file to remember: every status is derived on each run. The handful
+> of cases a rule cannot reach are the `manual` and `out_of_scope` arguments of
+> `resolve_rows`, fed from `config.yaml` like every other override in this tool.
+> Promote to the file above the moment human decisions outgrow that — the types
+> are already shaped for it.
+
 ## 5. Resolving a row: ranked keys, with measured strength
 
 Applied in order; the first hit wins, later keys **corroborate rather than
@@ -329,50 +338,52 @@ whatever someone typed in the field that morning.
 
 ## 8. Shape of the implementation
 
-```text
-cave_dossier/
-  satellites/                 ← new; the hub
-    __init__.py
-    model.py                  ObjectLink, LinkStatus, SatelliteRow protocol
-    crosswalk.py              load / save / merge the committed YAML, diff runs
-    resolver.py               ranked keys §5 + eligibility filter + bands
-    liburnija.py              ← moves here from intake/, gains the state machine
-    (literatura.py, katastar_rh.py — same protocol, later)
-  intake/liburnija.py         ← becomes a thin re-export; intake keeps using it
-crosswalk/
-  liburnija.yaml              committed; ~410 entries, one per sheet row
-```
+Built 2026-08-29 (steps 1–2 of the sequence below):
 
-CLI, matching the existing verb style (dry-run by default, `--apply` to act):
+```text
+cave_dossier/satellites/
+  model.py       CandidateState · LinkStatus · Difference · NewRow · Decision · SyncResult
+  liburnija.py   the full sheet reader: 18 columns, the four-state lifecycle
+  resolver.py    SBRecord index · ranked keys · eligibility filter · coordinate bands
+  sync.py        the three review lists + the paste-able TSV block
+cave_dossier/intake/liburnija.py   the narrow number→plaque→SB slice, now over the
+                                   same reader (one CSV parser, two callers)
+```
 
 | Command | Does |
 |---|---|
-| `cavedossier sat sync liburnija` | resolve every sheet row, update the crosswalk, print the diff: new links, new conflicts, newly confirmed candidates |
-| `cavedossier sat gaps liburnija` | the two-way gap report — confirmed caves with no SB row (with the proposed `Ime objekta`/synonym), and SB rows the sheet could enrich |
-| `cavedossier sat push liburnija` | list 2 — the 32 cells the sheet has wrong, as `red N · stupac · staro → novo (razlog)`, for a human to correct in the browser |
-| `cavedossier sat add liburnija [<N>]` | list 1 — the SB rows to create, in SB column order with `LiDAR Kristal N` in the right cell. `--tsv` writes the paste-able block for all 117; a bare `<N>` scaffolds one |
+| `cavedossier sat sync [liburnija]` | **built** — resolves every sheet row against SB and prints the three lists. Read-only on both sides |
+| `… --coords` | adds the coordinate key, auto-linking only under 5 m and unambiguous; everything else lands in list 3 |
+| `… --tsv <file>` | writes list 1 as a paste-able block for `Svi objekti` |
+| `… --limit N` | rows printed per list |
 
 Sequencing (each step useful on its own):
 
-1. **crosswalk + resolver + `sat sync`** over the existing plaque and Kristal
-   keys. Materialises the 68 links; costs nothing new.
-2. **`sat gaps`** — the report that surfaces the 117 missing rows. Read-only, and
-   the highest-value single output here.
-3. **`sat add --tsv`** — the 117 rows as a paste-able block for `Svi objekti`.
-   The one-off that clears the backlog; pasted by hand into Excel, no write code.
-4. **`sat push`** — list 2. Two-way begins; 32 cells of drift get corrected in
-   the browser by hand.
-5. **Coordinate key**, with the §5 bands, behind a flag until it has been run
-   once and eyeballed.
+1. ✅ **resolver + `sat sync`** over the plaque and Kristal keys.
+2. ✅ **the gap report** — list 1 surfaces the rows SB is missing.
+3. **Paste the block** into `Svi objekti`. The one-off that clears the backlog;
+   no write code involved.
+4. **List 2 by hand** in the browser. Two-way begins.
+5. **Coordinate key** promoted from `--coords` to default, once a run has been
+   eyeballed.
 6. **Automated SB write** for subsequent (small) batches, on the M6 machinery —
    `safe_io`, backups, sandbox rehearsal. Nothing new to build, only to rehearse.
 7. **Second satellite** (`Literatura`, 45 rows — the cheap one) to prove the
    protocol generalises before touching `Katastar RH`'s 4595.
 
 Where this sits in the pipeline: the hub is part **2.2** (SB communication), and
-it feeds 2.1 the same way SB does. `intake/` becomes a *consumer* of the
-crosswalk instead of carrying its own bridge — folder `108_Renata` resolves via
-a recorded link rather than by re-deriving the chain every run.
+it feeds 2.1 the same way SB does. `intake/` is a consumer of the same reader,
+so folder `108_Renata` and the sync agree on what row 108 is by construction.
+
+### Two things the live run caught that the analysis had not
+
+- **SB carries a blank pre-numbered row** (`Redni broj` 1313, no name). Numbering
+  new caves from the highest *named* row would have handed out 1313 twice, so
+  `next_serial_number` spans every row, named or not.
+- **Scope must be checked after the keys, not before.** *Akupunktura* (sheet 381,
+  `Istražili = "Karsterra, SUE"`) is already SB 823. Rejecting other societies'
+  rows up front dropped that link and stopped syncing a row that exists. Scope
+  decides whether a row may be **added**, never whether it may be **linked**.
 
 ## 9. Measured baseline (2026-08-29)
 
@@ -430,8 +441,10 @@ Measured against the same baseline, after decision 2 removes the other societies
 
 ### Still open
 
-- Whether the 49 explored-by-others rows should exist in SB as *sudjelovanje*
-  where SUE took part — decision 2 keeps them out entirely, which is right for
-  caves SUE had nothing to do with.
+- ~~Whether the explored-by-others rows should exist in SB as *sudjelovanje*~~ —
+  **no** (user, 2026-08-29): SUS explored them years ago, separately. There was
+  no participation, so they stay out of SB entirely. The one row where the sheet
+  *does* name a joint trip (*Akupunktura*, `Karsterra, SUE`) is already in SB and
+  keeps its link.
 - Per-table coordinate tolerances for `Literatura` and `Katastar RH` (§5), to be
   calibrated when those are picked up.

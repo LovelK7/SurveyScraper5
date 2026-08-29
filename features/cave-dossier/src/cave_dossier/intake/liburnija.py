@@ -1,31 +1,25 @@
-"""The *Liburnija_pot_speleo_2024* sheet — a third source, read for one job.
+"""Intake's view of the Liburnija sheet: number → row → plaque → SB.
 
-A Google Sheet (`grozicdino@gmail.com`, 396 numbered rows) listing LIDAR-derived
-cave candidates on Liburnija: coordinates, whether someone checked the point,
-whether it turned out to be a cave, and — for the ones that did — a name and a
-**plaque number**.
+The sheet itself — all 18 columns, the candidate lifecycle, the two-way sync —
+lives in `cave_dossier.satellites.liburnija`. This module is the narrow slice
+**intake** needs: the Veprinac folders are named after sheet row numbers
+(`!!!Ekspedicija Veprinac_2025/108_Renata` is sheet row 108), and the row's
+plaque number is what turns `108_Renata` into *LiDAR Kristal 108* (Redni broj
+1248).
 
-Its `name` column is a plain row number, and that number is what the Veprinac
-intake folders are named after: `!!!Ekspedicija Veprinac_2025/108_Renata` is
-sheet row 108. The row's `Br.pl` then resolves into SB, which is how a folder
-called `108_Renata` becomes *LiDAR Kristal 108* (Redni broj 1248).
-
-**This is a read-only bridge, not an integration.** Wiring the sheet in as a
-proper source — people do enter data there — is a later architecture decision
-(user, 2026-08-29); for now it exists to give the folders correct prefixes. The
-sheet is cached as CSV under `example/` (gitignored, it is society data);
-refresh it with the Drive MCP export when the numbers stop resolving.
+Kept as its own surface because the two callers want different things: intake
+resolves a folder name and stops, while the hub compares every row against SB.
 """
 
 from __future__ import annotations
 
-import csv
 from dataclasses import dataclass
 from pathlib import Path
 
 from cave_dossier.core.config import Settings
 from cave_dossier.core.matching import CaveCandidate
 from cave_dossier.core.normalization import normalize_lookup_key
+from cave_dossier.satellites import liburnija as sheet
 
 
 @dataclass(frozen=True)
@@ -42,35 +36,23 @@ class LiburnijaRow:
 
 def sheet_path(settings: Settings) -> Path | None:
     """Cached CSV export, resolved against the feature root."""
-    from cave_dossier.core.config import FEATURE_ROOT
-
-    relative = settings.intake_sheet_csv
-    if not relative:
-        return None
-    path = Path(relative)
-    return path if path.is_absolute() else FEATURE_ROOT / path
+    return sheet.sheet_path(settings)
 
 
 def load_rows(path: Path) -> dict[str, LiburnijaRow]:
     """Row number → row, for the rows that carry a numeric `name`."""
-    if not path.is_file():
-        return {}
-    rows: dict[str, LiburnijaRow] = {}
-    with path.open(encoding="utf-8", newline="") as handle:
-        for record in csv.DictReader(handle):
-            number = (record.get("name") or "").strip()
-            if not number.isdigit():
-                continue
-            plaque = (record.get("Br.pl") or "").strip()
-            rows[number] = LiburnijaRow(
-                number=number,
-                plaque=plaque if plaque and plaque != "/" else None,
-                name=(record.get("Naziv_novi") or record.get("Naziv_stari") or "").strip() or None,
-                is_cave=(record.get("speleo_obj (1/0)") or "").strip() == "1",
-                explored=(record.get("istrazeno (1/0)") or "").strip() == "1",
-                comment=(record.get("Komentar") or "").strip() or None,
-            )
-    return rows
+    return {
+        row.row_id: LiburnijaRow(
+            number=row.row_id,
+            plaque=row.plaque,
+            name=row.field_name,
+            is_cave=row.is_cave,
+            explored=row.explored,
+            comment=row.comment,
+        )
+        for row in sheet.load(path)
+        if row.row_id.isdigit()
+    }
 
 
 def resolve(
