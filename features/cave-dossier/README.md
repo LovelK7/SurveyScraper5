@@ -409,8 +409,9 @@ there — is a later architecture decision.
 
 **An unresolved folder means a new cave.** Confirmed by the user: the caves in
 these folders were mostly never entered into SB. So the tool reports them as
-"no SB row — create one, then re-run", not as a matching failure. Current state: **30 of 53 mapped, 23 awaiting an SB row** (2026-08-29, after the
-user added *Jamorinke* as row 1311 and removed two duplicate folders).
+"no SB row — create one, then re-run", not as a matching failure. **End state (2026-08-29): 53 leaves = 34 mapped + 19 new entries, nothing
+unresolved.** Every folder now either carries a proposal or is on record as a
+cave SB does not have yet.
 
 Three findings the mapping surfaced, all now settled: two folders held the same
 cave twice (`43_Jasna` / `Jasnina jam lidar 43`, `366_Nina` / `lisina L366` —
@@ -458,6 +459,13 @@ copy .env.example .env     # then fill in (see below)
 
 Every command prints `SB mode: SANDBOX (...)` or `SB mode: LIVE (...)` first —
 always check the banner.
+
+> **The sandbox goes stale the moment SB is edited.** On 2026-08-29 a run against
+> it reported a cave as missing that had just been added live (row 1311), because
+> the copy still ended at 1301. Refresh it after any SB edit —
+> `copy "<LOCAL_DRIVE_ROOT>\!Speleo_baza_SUE_v3.0.xlsm" example\sb-sandbox\` —
+> or clear `SB_WORKBOOK_PATH` for a one-off LIVE run. Anything that compares SB
+> against Drive (intake mapping, photo checks) wants LIVE or a fresh copy.
 
 ### Two venvs exist — know which one you are in
 

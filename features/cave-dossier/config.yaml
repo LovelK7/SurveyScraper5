@@ -89,14 +89,38 @@ intake:
     "Krater_CL": 1226              # SB: "Jama Krater u dolcima"
     "Eugenov Dalekovod": 1174      # SB: "Jama pod dalekovodom"
     "M.Dol Pećina": 1272           # SB: "Pećina u Mudnoj doli"
+    "kripanj_ivana": 1215          # SB: "Paraglajderska"
+    "Solareva draga": 1312         # SB: "Jama u Solarevoj dragi"
+    # Both Tingen-BP leaves hold the same object; SB 1122 is "BP".
+    "Penj": 1122
+    "Venio+Ličko": 1122
 
   # Confirmed NOT in SB. Every unresolved leaf is a new entry by default (user,
   # 2026-08-29), so this list is only needed to OVERRIDE a wrong automatic match:
   # Božur_Frustuck resembles "Božur" (1087) but is a different, new cave.
   new_entries:
-    - "Božur_Frustuck"
+    # Overrides a lookalike automatic match:
+    - "Božur_Frustuck"           # resembles "Božur" (1087) but is a different cave
+    # Confirmed by the user 2026-08-29 — every remaining leaf is a cave SB does
+    # not have yet. They can only be numbered once their rows exist.
     - "Ona je glonđa"
     - "Špilja M.Dol"
+    - "Ona mala špilja_Mileni"
+    - "Ciciklama_Flavio"
+    - "Mune_14_Flavio"
+    - "Mune_Nat4_Natalija"
+    - "Munina_762_Renata"
+    - "Dario8_Ivana"
+    - "Dario9_Ivana"
+    - "kurvica_na_putu_ivana"
+    - "Logor"
+    - "Mune24"
+    - "Flaviator"
+    - "Monte Putin & Novak_Tin"
+    - "Jama 9m_Venio"
+    - "Jama na gradilištu (110)_Venio"
+    - "Nikad više_Venio_837"
+    - "vrazji prolaz 2kom"
 
 # Part 2.1d — entrance-photo processing spec (user, 2026-08-26).
 # Field photos arrive at 7 MB+; the manual workflow is FastStone Image Viewer

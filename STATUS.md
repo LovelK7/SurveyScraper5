@@ -85,7 +85,13 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       Mapping **agreed 2026-08-29**: user added *Jamorinke* (row 1311, pločica 051-814),
       deleted two duplicate folders, confirmed five empty leaves are placeholders and
       that sheet row 89 (*Jama na Patuhovcu*, another society's cave) stays out of SB.
-      **30 of 53 leaves map; renames approved in principle, awaiting `intake map --apply`.**
+      **End state: 53 leaves = 34 mapped + 19 new entries, nothing unresolved.**
+      User supplied the last mappings (kripanj_ivana -> 1215 Paraglajderska, Solareva
+      draga -> 1312, both Tingen-BP leaves -> 1122 BP) and confirmed every remaining
+      leaf is a cave to be entered into SB. Renames approved in principle, awaiting
+      `intake map --apply`.
+      Sandbox copy refreshed from live the same day (1301 -> 1313 rows): a stale sandbox
+      had reported the freshly added Jamorinke row as missing.
 
 **M4 (OSZ builder) is no longer gated** — the template shipped 2026-08-25; picking it up
 before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
