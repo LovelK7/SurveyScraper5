@@ -31,6 +31,7 @@ from cave_dossier.intake import (
     old_queue_candidates,
     suggest,
 )
+from cave_dossier import georef
 from cave_dossier.satellites import liburnija as sheet, resolver, sync
 from cave_dossier.satellites.model import LinkStatus
 from cave_dossier.sb.audit import AUTHOR_FLAG_HELP, audit_authors, audit_unclassified
@@ -564,6 +565,67 @@ def cmd_sat_sync(
     return EXIT_READY if actionable else EXIT_NOT_READY
 
 
+def cmd_karta(settings: Settings, serial: int, debug: bool, force: bool) -> int:
+    """Part 2.1c: fetch the georef.hr map excerpt for ONE cave by Redni broj.
+
+    Delivers ``<padded Redni broj>.png`` into the shared ``!!Isječci karte``
+    Drive folder and upserts the cave's row in ``georef_zapisi.csv`` there.
+    NOTE this WRITES to georef.hr (creates/validates the point server-side)
+    — same operation crospeleo-automation performs, one cave per run.
+    """
+    paths = georef.delivery_paths(settings, serial)
+    if paths is None:
+        print("No delivery dir configured: set LOCAL_DRIVE_ROOT in .env and", file=sys.stderr)
+        print("`archive.map_excerpts_dir` in config.yaml.", file=sys.stderr)
+        return EXIT_ERROR
+
+    if settings.sb_mode == "SANDBOX":
+        print("⚠ SANDBOX workbook: Redni broj and coordinates come from the local copy,")
+        print("  which may lag the live SB. Verify before trusting the excerpt.")
+        print()
+
+    cave = georef.find_by_serial(SBReader(settings), settings, serial)
+    if cave is None:
+        print(f"No SB row carries Redni broj {serial}.", file=sys.stderr)
+        return EXIT_ERROR
+    print(f"Redni broj {serial}: {cave.object_name or '<no name>'}"
+          + (f" (SUE {cave.sue_number})" if cave.sue_number else ""))
+
+    if paths.png.exists() and not force:
+        print(f"Already collected: {paths.png}")
+        print("Re-run with --force to refresh it (e.g. after a coordinate fix).")
+        return 0
+
+    georef_input = georef.build_input(cave, settings)
+    if georef_input.x_htrs is None or georef_input.y_htrs is None:
+        print("SB row has no usable X HTRS / Y HTRS — nothing to georeference.", file=sys.stderr)
+        return EXIT_ERROR
+    print(f"HTRS96: X {georef_input.x_htrs} · Y {georef_input.y_htrs}")
+    print("Opening georef.hr" + (" (headed, --debug)" if debug else " (headless; --debug shows the browser)")
+          + " — this creates/validates the point server-side …")
+
+    result = georef.run_for_cave(settings, georef_input, debug=debug)
+    if not result.success:
+        print()
+        print(f"Georef flow FAILED ({result.georef_status})"
+              + (f": {result.error_message}" if result.error_message else ""), file=sys.stderr)
+        for warning in result.warnings:
+            print(f"  ! {warning}", file=sys.stderr)
+        if result.trace_path:
+            print(f"  Playwright trace: {result.trace_path}", file=sys.stderr)
+        return EXIT_ERROR
+
+    delivered = georef.deliver(settings, cave.object_name or "", serial, result)
+    print()
+    print(f"Georef zapis: {result.georef_record}")
+    print(f"Delivered:")
+    print(f"  {delivered.png}")
+    print(f"  {delivered.records_csv}  (row {georef.padded_serial(serial)} upserted)")
+    for warning in result.warnings:
+        print(f"  ! {warning}")
+    return 0
+
+
 # ── Entry point ────────────────────────────────────────────────────
 
 
@@ -678,6 +740,26 @@ def build_parser() -> argparse.ArgumentParser:
              "sb-sync/<satellite>/<today>/; pass DIR to put them elsewhere",
     )
 
+    karta = subparsers.add_parser(
+        "karta",
+        help="Part 2.1c — isječak karte: fetch the georef.hr map excerpt for one cave",
+    )
+    karta.add_argument(
+        "redni_broj",
+        type=int,
+        help="SB Redni broj of the cave (the only input; coordinates come from its SB row)",
+    )
+    karta.add_argument(
+        "--debug",
+        action="store_true",
+        help="Run the browser headed with step screenshots (default is headless)",
+    )
+    karta.add_argument(
+        "--force",
+        action="store_true",
+        help="Refresh an excerpt that is already in !!Isječci karte (default skips it)",
+    )
+
     photos = subparsers.add_parser(
         "photos",
         help="Part 2.1d — entrance-photo processing (read-only for now)",
@@ -745,6 +827,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "intake":
             if args.intake_command == "map":
                 return cmd_intake_map(settings, args.limit, args.apply, args.unmatched_only)
+        if args.command == "karta":
+            return cmd_karta(settings, args.redni_broj, args.debug, args.force)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR

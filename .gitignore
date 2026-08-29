@@ -19,6 +19,12 @@ features/*/example/
 features/*/sb-sync/*
 !features/*/sb-sync/README.md
 
+# === Georef run artifacts (features/*/runs/georef) ======================
+# One folder per cave, overwritten on re-run: Playwright traces, browser
+# logs, screenshots, result JSON. The delivered products live on Drive
+# (!!Isječci karte); nothing here is the record.
+features/*/runs/
+
 # === Secrets / per-machine config =======================================
 .env
 

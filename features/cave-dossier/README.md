@@ -512,6 +512,11 @@ cavedossier intake map --apply             # rename the folders in place
 cavedossier photos match-queued            # DRY RUN: propose <Redni broj>_… per staged photo
 cavedossier photos match-queued --apply    # perform the proposed renames in place
 cavedossier photos check-flag              # every staged photo's cave should say Fotografija ulaza = DA
+
+# Part 2.1c — isječak karte (WRITES to georef.hr: creates/validates the point)
+cavedossier karta 1234                     # fetch the map excerpt for Redni broj 1234
+cavedossier karta 1234 --debug             # watch the browser do it (headed + screenshots)
+cavedossier karta 1234 --force             # refresh an excerpt already collected
 ```
 
 Exit codes (your convention): **1** = ready, **0** = not ready, **99** = error.
@@ -540,15 +545,17 @@ also self-reconfigures its output streams, so this is rarely needed).
 | `src/cave_dossier/dossier/sb_mapper.py` | SB row → dossier; queue flag + lifecycle derivation | `report` |
 | `src/cave_dossier/dossier/gating.py` | the rule table → blockers / warnings / unchecked, per gate | `report` |
 | `src/cave_dossier/dossier/report.py` | the text rendering behind `cavedossier report` | `report` |
+| `src/cave_dossier/georef/` | 2.1c: georef.hr Playwright flow (ported), delivery to `!!Isječci karte` + `georef_zapisi.csv` | `karta` |
 | `sessions/SESSIONS.md` | session journal (appended by `/wrap-up`) | — |
 | `backlog/ideas.md` | dated idea capture | — |
 | `example/` | **gitignored** — sandbox workbook + real cave data (PII, never committed) | — |
 | `tests/` | pytest on tiny synthetic fixtures | `python -m pytest` |
 
 Planned modules: `dossier/intake.py` (rest of M2 — resolve a cave's files on
-Drive), `georef/` (M3 — isječak karte), `osz/` (M4 — OSZ builder), and the
-downsize/rename half of `photos/` (2.1d — the matcher is done, the processor is
-not).
+Drive), `osz/` (M4 — OSZ builder), and the downsize/rename half of `photos/`
+(2.1d — the matcher is done, the processor is not). `georef/` (M3) landed
+2026-08-29; the `[karta]` extra (playwright + Pillow) must be installed and
+`playwright install chromium` run once.
 
 ## Testing
 

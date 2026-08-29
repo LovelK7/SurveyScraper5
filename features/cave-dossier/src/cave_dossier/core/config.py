@@ -67,6 +67,18 @@ class Settings:
     # Per-satellite overrides (config.yaml `satellites`): satellite name ->
     # {confirmed_new, manual_matches, out_of_scope}. See satellites/resolver.py.
     satellites: dict[str, dict] = field(default_factory=dict)
+    # Part 2.1c — georef.hr (isječak karte). Credentials come from .env
+    # (GEOREF_BASE_URL / GEOREF_USERNAME / GEOREF_PASSWORD); the field names
+    # mirror crospeleo-automation's Settings so the ported georef/ modules
+    # read naturally. Timeouts are the values calibrated over there.
+    georef_base_url: str | None = None
+    georef_username: str | None = None
+    georef_password: str | None = None
+    georef_navigation_timeout_ms: int = 90000
+    georef_post_save_wait_ms: int = 3000
+    georef_selectors_path: Path = FEATURE_ROOT / "config" / "selectors.yaml"
+    playwright_browser: str = "chromium"
+    playwright_slow_mo_ms: int = 0
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -172,4 +184,8 @@ def load_settings() -> Settings:
             str(name): dict(values or {})
             for name, values in (raw.get("satellites") or {}).items()
         },
+        georef_base_url=get_env("GEOREF_BASE_URL"),
+        georef_username=get_env("GEOREF_USERNAME"),
+        georef_password=get_env("GEOREF_PASSWORD"),
+        playwright_slow_mo_ms=int(get_env("PLAYWRIGHT_SLOW_MO_MS") or 0),
     )

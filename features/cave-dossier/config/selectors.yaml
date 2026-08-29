@@ -1,0 +1,41 @@
+# georef.hr DOM selectors — ported verbatim from crospeleo-automation
+# config/selectors.yaml 2026-08-29 (see docs/PORTING.md). Parsed by
+# cave_dossier/georef/selectors.py (line-based, NOT full YAML).
+#
+# Login form: primaries left empty so the *_or_fallback helpers go
+# straight to the role+name fallbacks (Korisničko ime / Lozinka /
+# Prijava) which match the live DOM.  See georef/client.py.
+georef_login_username: ""
+georef_login_password: ""
+georef_login_submit: ""
+georef_landing_start_button: "text='Start »'"
+georef_accept_terms: "text=Prihvaćam"
+georef_post_login_ready: ""
+georef_map_switch_tk25: "label:has-text('DGU TK25')"
+georef_tools_menu_link: "text='Osnovni alati za'"
+georef_coordinate_tool_link: "#coordopen"
+georef_coordinate_form_ready: ""
+georef_point_tool: "text=Točka"
+georef_object_name_input: ""
+georef_locality_input: "input[placeholder='Naziv lokaliteta']"
+georef_x_htrs_input: "#uncertCoordX"
+georef_y_htrs_input: "#uncertCoordY"
+georef_projection_select: ""
+georef_projection_value: ""
+georef_uncertainty_input: ""
+georef_uncertainty_value: ""
+# text=Provjeri primary doesn't match the live DOM; the validate step
+# is optional anyway (georef/flows.py uses click(..., optional=True))
+# so leaving this empty turns it into a fast no-op.
+georef_validate_button: ""
+georef_save_button: "#uncertCoordSave"
+georef_saved_ready: ""
+georef_identification_popup_trigger: ""
+georef_identification_popup: ""
+georef_copy_record_button: "#localityCopy"
+georef_copy_record_attribute: "data-clipboard-text"
+georef_close_popup_button: "#localityClose"
+georef_record_value: ""  # Cleared 2026-05-13 (crospeleo): placeholder from a different Georef template; wasted 20 s per failed copy.
+georef_locality_details: "[data-testid='locality-details']"
+georef_map_container: "div.olLayerDiv.olLayerGrid:has(img.olTileImage[src*='layers=tk:TK25'])"
+georef_hide_overlays: ".leaflet-control-container"
