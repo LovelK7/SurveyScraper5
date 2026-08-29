@@ -11,7 +11,7 @@ findings generalise, the mechanism is in `core/matching.py` and `intake/`.
 | Table | Where | Size | Own id | What it holds |
 |---|---|---|---|---|
 | **Svi objekti** | SB workbook, `SO_v2_1` | 1313 | `Redni broj`, `Katastarski broj SUE` | the master registry |
-| **Liburnija_pot_speleo_2024** | separate Google Sheet, owner `grozicdino@` | 396 | `name` = row number | LIDAR candidates: coords, checked y/n, is-it-a-cave, plaque, comment |
+| **Liburnija_pot_speleo_2024** | separate Google Sheet, owner `grozicdino@` | 410 | `name` = row number | LIDAR candidates: coords, checked y/n, is-it-a-cave, plaque, comment. Also called the **LiDAR Kristal** table |
 | **Literatura** | SB workbook, own sheet | 45 | `Broj` | caves known only from literature; has plaque, name, GK + HTRS coords, lokalitet |
 | **Katastar RH** | SB workbook, own sheet | 4595 | `Katastarski broj` (RH) | mirror of the national cadastre: status, name, year, synonyms, HTRS + GK coords |
 | **Kategorije** | SB workbook | 88 | — | vocabularies (Lokalitet, Vrsta objekta), not objects |
@@ -37,6 +37,7 @@ were plainly Veprinac. Joining on a local id produces confident nonsense.
 | Key | Available in | Strength |
 |---|---|---|
 | **Broj pločice** | SB, Liburnija (`Br.pl`), Literatura | strongest — this is what cracked Liburnija |
+| **`LiDAR Kristal N` synonym** | SB (`Sinonimi`/`Ime objekta`), Liburnija (`name` = N) | strong and *deterministic* — the sheet's own number, but written INTO SB rather than guessed. 56 rows, **0 conflicts with the plaque key** |
 | **Katastarski broj RH** | SB, Katastar RH | strong, but only for caves already in the national cadastre |
 | **HTRS coordinates** | SB, Liburnija, Literatura, Katastar RH | **strong and universal — not yet used, see below** |
 | Object name / synonym | all | weak alone; fine with a second signal |
@@ -81,10 +82,24 @@ GK vs HTRS columns in the older tables, and caves genuinely metres apart.
    live). Anything that compares SB against another source wants LIVE or a fresh
    copy.
 
+## The stage SB does not have
+
+A LIDAR table holds **probable** caves — rows nobody has checked are caves at
+all. Liburnija flags this with `provjereno` + `speleo_obj`, and the two together
+make a four-state machine of which SB models only the last two. A row crosses
+into SB when `provjereno=1 AND speleo_obj=1`, never earlier (user, 2026-08-29);
+`nije objekt` and `neprovjeren` rows are ineligible for matching, because a link
+from a non-cave to a cave is a false positive by definition.
+
 ## Open
 
-* Promote Liburnija from a read-only bridge to a real input source — people
-  enter data there. Architecture decision, not yet made (`ARCHITECTURE.md`).
+* Promote Liburnija from a read-only bridge to a real **two-way** source — people
+  enter data there, and the sheet needs SB's answers back (was it explored, what
+  name did it get). Designed in **[sb-liburnija-hub.md](sb-liburnija-hub.md)**;
+  the architecture decision itself is still the user's to make.
 * `Literatura` (45) and `Katastar RH` (4595) are entirely unlinked so far.
-* A coordinate-proximity join would likely subsume most of the per-table
-  matching above.
+* A coordinate-proximity join subsumes less than it promised: measured on
+  Liburnija, true pairs run to 12.3 m while 54 sheet points sit within 15 m of
+  another sheet point, so the usable auto-link band is ~5 m — it adds ~7 links,
+  not a wholesale replacement for the per-table keys. Calibrate per table
+  (see the hub doc §5).

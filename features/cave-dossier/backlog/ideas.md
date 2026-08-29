@@ -98,3 +98,10 @@ when an idea's time comes. Nothing here is a commitment.
   caves (sheet 89, Jama na Patuhovcu) are not re-raised every run.
 - 2026-08-29 — five intake leaves are empty placeholders; a "leaf with no files" flag in
   `intake map` would make that visible at a glance instead of only in the file count.
+- 2026-08-29 — **satellite hub** (`cave_dossier/satellites/`): a committed crosswalk
+  file per satellite table + a ranked resolver, replacing the per-table bespoke bridge.
+  First payoff is `sat gaps liburnija` — 117 confirmed caves the sheet has and SB does
+  not. Designed in [docs/sb-liburnija-hub.md](../docs/sb-liburnija-hub.md); unscheduled.
+- 2026-08-29 — SB naming convention worth enforcing at row creation: a cave born from
+  Liburnija row N always carries `LiDAR Kristal N` (as `Ime objekta` if unnamed, else in
+  `Sinonimi`). Turns the sheet's local number into a legitimate key instead of a trap.

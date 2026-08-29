@@ -24,7 +24,12 @@ PY
 | Nesređeni | `NO_v2_1` | Napomena contains any of 9 keywords | 221 |
 | Sudjelovanje | `S_v2_1` | Napomena contains `sudjelovanje` | 77 |
 
-## Proposed: exclude *za istražit* rows from Nesređeni
+## ~~Proposed:~~ APPLIED — exclude *za istražit* rows from Nesređeni
+
+> **Applied by the user 2026-08-29** (Option A below, verbatim). Verified against
+> the live workbook: `NO_v2_1` now carries the exclusion and the Nesređeni view
+> holds 208 rows with none of them flagged *za istražit*. Kept here as the record
+> of what changed and why.
 
 **Why.** 13 rows carry both markers — `za istražit, 593, istražio SU Ri, treba
 ponoviti` matches `ponoviti`, so a cave nobody has explored yet shows up on the

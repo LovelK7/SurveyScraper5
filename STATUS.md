@@ -141,11 +141,15 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 1. **Field-data intake dir layout on Drive** — unblocked by the Redni-broj decision;
    proposal to be drafted. This is what gates the 2.1a handoff.
-2. **Excel-side**: exclude `za istražit` rows from the Nesređeni Power Query — 13 rows
-   carry both markers today (221 → 208). M code in
+2. ~~**Excel-side**: exclude `za istražit` rows from the Nesređeni Power Query.~~
+   **DONE — user applied it, verified against live 2026-08-29.** `NO_v2_1` now opens with
+   `not Text.Contains([Napomena] ?? "", "za istražit") and ( … )`; the view holds **208 rows,
+   0 of them za istražit** — exactly the predicted 221 → 208. M code kept for reference in
    [features/cave-dossier/docs/sb-powerquery.md](features/cave-dossier/docs/sb-powerquery.md).
-   (The earlier "ponor over-matches" note was **wrong** — checked against live, all 5
-   ponor-only rows tag it deliberately: "ponor, možda kopati". No change needed there.)
+   (The earlier "ponor over-matches" note was **wrong** — all 5 ponor-only rows tag it
+   deliberately: "ponor, možda kopati". No change was needed there.)
+   *Minor:* the view is 2 rows behind the master (210 by the rule) because SB has grown to
+   1313 rows since the last query refresh — refresh Nesređeni to catch up.
 
 ## Recent sessions
 

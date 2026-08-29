@@ -76,13 +76,28 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
   a queue item.
 - **Croatian terms are domain identity** (OSZ, Nacrt, SB, SUE, izjava, isječak karte) —
   see [shared/glossary.md](shared/glossary.md). The codebase itself is English.
-- **A third data source is on the horizon.** Besides SB and the archive dirs, part
-  of the society keeps LIDAR-candidate data in the *Liburnija_pot_speleo_2024*
-  Google Sheet (396 rows: coordinates, checked/unchecked, plaque numbers). Field
-  folders are named after its row numbers, and the plaque number is what links a
-  row back to SB. `cave_dossier/intake/liburnija.py` reads a cached CSV export of
-  it read-only, purely to map folders; promoting the sheet to a real input is an
-  open design decision (user, 2026-08-29).
+- **SB is the master, but not the only table with cave data.** Four satellites
+  surround it: the *Liburnija_pot_speleo_2024* Google Sheet (a.k.a. the **LiDAR
+  Kristal** table — 410 rows, live, edited in the field), and three inside the
+  workbook itself — **Literatura** (45), **Katastar RH** (4595, a mirror of the
+  national cadastre) and **Kategorije** (vocabulary, no objects). None of them
+  carries an SB row number, and **their own row numbers must never be used as a
+  join key** — they leak into folder and file names where three numbering
+  schemes collide, and a measured test resolved 5 of 20 field numbers to the
+  *wrong* cave. Join on a shared key instead, ranked: Broj pločice → `LiDAR
+  Kristal N` synonym → Katastarski broj RH → HTRS coordinates (tight tolerance)
+  → name. See [sb-satellite-tables.md](features/cave-dossier/docs/sb-satellite-tables.md).
+- **LIDAR tables carry a stage SB does not model**: *probable* caves — points
+  nobody has yet checked are caves at all (`provjereno` / `speleo_obj`). A row
+  crosses into SB only once it is confirmed a cave, entering as *Za istražit* or
+  *Istraženi*; SB gets no "za provjeriti" sheet for now. Liburnija is therefore a
+  **two-way** partner, not an import: it needs SB's answers back (explored? what
+  name? which deliverables exist?) because it is the spreadsheet people use in
+  the field. Design — a crosswalk hub, per-stage field ownership, write-back
+  transport — in
+  [sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md);
+  `cave_dossier/intake/liburnija.py` is today's read-only bridge and the decision
+  to promote it is still open (user, 2026-08-29).
 - **Real data from day one**: development and testing run against real dirs (photos,
   csx, descriptions) under gitignored `example/` zones; committed test fixtures are
   tiny and synthetic.
