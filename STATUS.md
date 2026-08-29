@@ -1,6 +1,6 @@
 # STATUS
 
-Updated: 2026-08-25 (maintained by `/wrap-up` at the end of each session)
+Updated: 2026-08-29 (maintained by `/wrap-up` at the end of each session)
 
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -15,7 +15,8 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2.1c — isječak karte | NOT STARTED (port planned, M3) |
 | 2.1d — fotografije ulaza | **new part, added 2026-08-26**. Matcher + staleness guard DONE (2026-08-28); downsizing not started. Staged photos are keyed by Redni broj in `…za istražit` (a queue, not a repo) and move to `!!Fotografije ulaza` as `<padded SUE>_…` when the cave is explored. Downsizing rides along with M6 |
 | 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` (SB-only) done; archive intake next |
-| 2.2 — SB communication | **M1 ✅ DONE** (read-only, live SB v3.0); M2 next |
+| 2.2a — SB (master registry) | **M1 ✅ DONE** (read-only, live SB v3.0). Live workbook now **1438 rows**; write-back still M6 |
+| 2.2b — satellite tables | **OPERATIONAL (new 2026-08-29)** — `cavedossier sat sync` compares a satellite against SB and emits four review lists; never writes to either side. Liburnija done end to end: **126 rows entered SB**, 7 synonyms added, run is idempotent. `Literatura` (45) and `Katastar RH` (4595) still untouched |
 
 ## M1 — SB read-only communication ✅ complete (2026-08-25)
 
@@ -74,6 +75,19 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       files in `!!Fotografije ulaza za istražit` back to SB rows by plaque / cave name / old
       Za-istražit broj and proposes `<Redni broj>_…`, replacing stale old-number prefixes.
       **52 of 52 matched**; dry run by default, `--apply` performs the renames.
+- [x] **Satellite hub shipped (2026-08-29)** — `cave_dossier/satellites/`
+      (`model` · `liburnija` · `resolver` · `sync`) plus `cavedossier sat sync`.
+      Resolves every sheet row against SB on ranked keys (pločica → `LiDAR Kristal N`
+      synonym → coordinates → name-as-duplicate-guard), never on a local row id, and
+      emits four review lists: new SB rows as a paste-able CSV, synonym additions to
+      existing rows, sheet corrections, and things to decide. **Read-only on both
+      sides.** 41 tests. Design: [docs/sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md).
+- [x] **Liburnija round trip completed** — 126 confirmed caves pasted into `Svi objekti`
+      (Redni broj 1313–1438, `Lokalitet = Ćićarija`, year from `datum provjere`,
+      `Napomena` seeded with the `za istražit` queue flag) and 7 `LiDAR Kristal N`
+      synonyms added to existing rows. Verified cell by cell against the generated
+      CSV: every cell matches bar three deliberate capitalisations. Re-run is clean —
+      0 to add, 0 conflicts. *Za istražit* 199 → 325.
 - [~] Field-data intake dir layout on Drive (blocks the 2.1a handoff) — **layout settled
       2026-08-28**: the leaf folders under `!!!Digitalizacija/!Za digitalizirat` get a
       `<Redni broj>_<Ime objekta>_<original>` prefix. `cavedossier intake map` proposes the
@@ -141,6 +155,15 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 1. **Field-data intake dir layout on Drive** — unblocked by the Redni-broj decision;
    proposal to be drafted. This is what gates the 2.1a handoff.
+2. **Liburnija sheet corrections not yet applied** (30 cells) — `sat sync` list 3,
+   to be typed into the Google Sheet by hand: 15 × `Foto ulaza`, 9 names SB is
+   authoritative for, 1 `Br.pl`, 1 `istrazeno`, 2 deliverable flags.
+3. **Two entrance-photo questions** (`sat sync` list 4): sheet rows 130 (SB 1370)
+   and 369 (SB 407) claim a `Foto ulaza` that SB does not say DA to — check which
+   side is right and fix SB if the photo exists.
+4. **`Najbliže mjesto` left empty** on the 126 new rows. 53 of the existing LiDAR
+   Kristal rows say *Veprinac*; the sheet does not carry it, so it was not guessed.
+   Say if it should be defaulted the way `Lokalitet` is.
 2. ~~**Excel-side**: exclude `za istražit` rows from the Nesređeni Power Query.~~
    **DONE — user applied it, verified against live 2026-08-29.** `NO_v2_1` now opens with
    `not Text.Contains([Napomena] ?? "", "za istražit") and ( … )`; the view holds **208 rows,
@@ -153,6 +176,7 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
+- 2026-08-29 — satellite hub (part 2.2b) built and run end to end: 126 Liburnija caves into SB, sync now idempotent → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-25 — OSZ v10 shipped (Google-Docs variant, `.dotx` lock, distributed) + SB v3.0 adopted, M1 closed → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-23 — project renamed SurveyScraper4 → SurveyScraper5 (complete: folder, Claude key, venv re-verified) → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-23 — OSZ v10 template finalised: placeholders, checkbox vocabularies, workbench + conformance tooling → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)

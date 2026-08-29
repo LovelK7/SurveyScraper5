@@ -105,3 +105,17 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-29 — SB naming convention worth enforcing at row creation: a cave born from
   Liburnija row N always carries `LiDAR Kristal N` (as `Ime objekta` if unnamed, else in
   `Sinonimi`). Turns the sheet's local number into a legitimate key instead of a trap.
+- 2026-08-29 — `Najbliže mjesto` could be a `row_defaults` entry like `Lokalitet`
+  (*Veprinac* on 53 of the 55 existing LiDAR Kristal rows) — left empty deliberately
+  because the sheet does not carry it; ask before guessing.
+- 2026-08-29 — the ambiguity radius is flat (15 m). A *relative* rule — a rival only
+  counts if it is comparably close — would be better reasoning than the absolute one;
+  `EXACT_MATCH_M` covers today's cases so it was not needed yet.
+- 2026-08-29 — `sat sync` reads a cached CSV export of the Google Sheet; a
+  `sat refresh liburnija` that re-exports via the Drive MCP would close the staleness
+  hole the README warns about.
+- 2026-08-29 — promote the crosswalk from derived-per-run to a committed file once
+  human overrides outgrow `config.yaml` (`confirmed_new`, `manual_matches`,
+  `out_of_scope`). Types in `satellites/model.py` are already shaped for it.
+- 2026-08-29 — `Literatura` (45 rows) is the cheap second satellite: same protocol,
+  its own coordinate calibration run before its tolerances are trusted.

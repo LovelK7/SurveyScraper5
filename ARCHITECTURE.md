@@ -32,10 +32,23 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 └──────────────────────────────┘         │  │ 2.1c isječak karte ─→ map excerpt PNG   │  │
                                          │  │ 2.1d foto ulaza    ─→ resized + renamed │  │
         (manual for now: user            │  └───────────┬────────────────▲────────────┘  │
-         copies files by hand)           │              │ dims           │ coords, year   │
-                                         │              ▼                │                │
-                                         │        2.2 SB (Speleo baza) ─┘                │
-                                         │        read basic data · write back new data  │
+         copies files by hand)           │              │ dims           │ coords, year  │
+                                         │              ▼                │               │
+                                         │        2.2 REGISTRY ──────────┘               │
+                                         │  ┌─────────────────────────────────────────┐  │
+                                         │  │ 2.2a SB · Svi objekti — THE MASTER      │  │
+                                         │  │      read basic data · write back new   │  │
+                                         │  │      ▲                ▼                 │  │
+                                         │  │      │ new rows       │ names, status,  │  │
+                                         │  │      │ + synonyms     │ deliverables    │  │
+                                         │  │ 2.2b satellite tables                   │  │
+                                         │  │      Liburnija gdoc (LiDAR Kristal) ·   │  │
+                                         │  │      Literatura · Katastar RH           │  │
+                                         │  │      joined on shared keys, never on a  │  │
+                                         │  │      local row id · review lists a      │  │
+                                         │  │      person carries out, never an       │  │
+                                         │  │      automatic write                    │  │
+                                         │  └─────────────────────────────────────────┘  │
                                          └───────────────────────┬───────────────────────┘
                                                                  ▼
                                           Drive archive dirs: OSZ · Nacrt · entrance photos
@@ -54,11 +67,13 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 | **2.1b** | OSZ builder: fills the society's blank OSZ template (SB primary data + 2.1a results + part-1 field data + 2.1c excerpt) | `features/cave-dossier/` (module `osz/`) | waiting on template DOCX |
 | **2.1c** | Isječak karte: map excerpt from georef.hr (HTRS96 coords → marker-centered PNG + record text) | `features/cave-dossier/` (module `georef/`, to be ported from crospeleo-automation) | not started |
 | **2.1d** | Entrance-photo processing: field photos come off the camera at full resolution, so they are downsized (~1920 px / ~1.5 MB) and renamed to the archive convention (`<padded SUE>_<ime>_…_<autor>.jpg`) before being filed into `!!Fotografije ulaza`. Queued caves' photos live in the `!!Fotografije ulaza za istražit` staging folder keyed by **Redni broj**, and move across when the cave earns its SUE number. That move is manual today and routinely forgotten, so the tool also **flags staged photos whose cave already has a SUE number** — the leak that leaves old photos in the queue forever | `features/cave-dossier/` (module `photos/`) | matcher + staleness guard done 2026-08-28; downsizing not started |
-| **2.2** | SB (Speleo baza) communication: the registry of all caves (discovered + to-be-explored). Source of coordinates/year/etc. for the OSZ; updated with new data (dimensions) once a survey is finished | `features/cave-dossier/` (module `sb/`) | **M1 in progress** |
+| **2.2** | **Registry communication** — everything the app knows about *which caves exist*. Not a side channel: 2.1 cannot start a dossier without it, and every finished dossier ends by writing back into it | `features/cave-dossier/` | in development |
+| **2.2a** | **SB (Speleo baza)** — the master registry of all caves (discovered + to-be-explored), an `.xlsm` on the Drive mount. Source of coordinates/year/etc. for the OSZ; updated with new data (dimensions) once a survey is finished. Everything else in the app treats it as ground truth | `features/cave-dossier/` (module `sb/`) | **M1 ✅**; write-back at M6 |
+| **2.2b** | **Satellite tables** — SB is the master but not the only table holding cave data. The *Liburnija* Google Sheet (the LiDAR Kristal table, live and edited in the field), plus `Literatura` and `Katastar RH` inside the workbook. None carries an SB row number, so they are joined on shared keys (pločica → `LiDAR Kristal N` synonym → coordinates), **never on a local row id**. `sat sync` compares a satellite against SB and emits four review lists a person carries out — it never writes to either side. This is how a LIDAR candidate becomes an SB row, and how the field sheet learns what happened to it | `features/cave-dossier/` (module `satellites/`), design in [docs/sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md) | **operational** — 126 rows entered SB from Liburnija 2026-08-29 |
 
 ## Key facts that shape the design
 
-- **SB is an Excel workbook**, `!Speleo_baza_SUE_v2.4.xlsm` — live, macro-heavy, shared,
+- **SB is an Excel workbook**, `!Speleo_baza_SUE_v3.0.xlsm` — live, macro-heavy, shared,
   on a Google Drive Desktop mount. No Google API anywhere: all cloud access is
   locally-synced paths (`LOCAL_DRIVE_ROOT`). Reads are openpyxl (save physically
   impossible); the only safe write path is xlwings/Excel COM (Excel itself saves).
@@ -76,28 +91,24 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
   a queue item.
 - **Croatian terms are domain identity** (OSZ, Nacrt, SB, SUE, izjava, isječak karte) —
   see [shared/glossary.md](shared/glossary.md). The codebase itself is English.
-- **SB is the master, but not the only table with cave data.** Four satellites
-  surround it: the *Liburnija_pot_speleo_2024* Google Sheet (a.k.a. the **LiDAR
-  Kristal** table — 410 rows, live, edited in the field), and three inside the
-  workbook itself — **Literatura** (45), **Katastar RH** (4595, a mirror of the
-  national cadastre) and **Kategorije** (vocabulary, no objects). None of them
-  carries an SB row number, and **their own row numbers must never be used as a
-  join key** — they leak into folder and file names where three numbering
-  schemes collide, and a measured test resolved 5 of 20 field numbers to the
-  *wrong* cave. Join on a shared key instead, ranked: Broj pločice → `LiDAR
-  Kristal N` synonym → Katastarski broj RH → HTRS coordinates (tight tolerance)
-  → name. See [sb-satellite-tables.md](features/cave-dossier/docs/sb-satellite-tables.md).
-- **LIDAR tables carry a stage SB does not model**: *probable* caves — points
+- **Never join a satellite on its own row number** (2.2b). Every satellite
+  numbers its own rows, and those numbers leak into folder and file names where
+  three schemes collide; a measured test resolved 5 of 20 field numbers to the
+  *wrong* cave. Join on a shared key, ranked: Broj pločice → `LiDAR Kristal N`
+  synonym → Katastarski broj RH → HTRS coordinates (tight, calibrated bands) →
+  name (corroboration and duplicate-guard only). Details and the measurements:
+  [sb-satellite-tables.md](features/cave-dossier/docs/sb-satellite-tables.md).
+- **A LIDAR table carries a stage SB does not model**: *probable* caves — points
   nobody has yet checked are caves at all (`provjereno` / `speleo_obj`). A row
   crosses into SB only once it is confirmed a cave, entering as *Za istražit* or
-  *Istraženi*; SB gets no "za provjeriti" sheet for now. Liburnija is therefore a
-  **two-way** partner, not an import: it needs SB's answers back (explored? what
-  name? which deliverables exist?) because it is the spreadsheet people use in
-  the field. Design — a crosswalk hub, per-stage field ownership, write-back
-  transport — in
-  [sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md);
-  `cave_dossier/intake/liburnija.py` is today's read-only bridge and the decision
-  to promote it is still open (user, 2026-08-29).
+  *Istraženi*; SB gets no "za provjeriti" sheet for now. So the satellite owns
+  the pre-SB stage and SB owns everything after the crossing — that split is what
+  makes the traffic safely two-way.
+- **Nothing writes to a live shared source automatically.** SB is a macro-heavy
+  workbook and Liburnija is a Google Sheet people type into in the field, so
+  `sat sync` produces review lists (a paste-able CSV for SB, worksheets for the
+  rest) and a person carries them out. Same reasoning as the Excel safety rules:
+  [sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md) §7.
 - **Real data from day one**: development and testing run against real dirs (photos,
   csx, descriptions) under gitignored `example/` zones; committed test fixtures are
   tiny and synthetic.

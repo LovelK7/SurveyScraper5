@@ -6,6 +6,59 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-08-29 — satellite hub (part 2.2b): Liburnija ↔ SB, end to end (agent) ✅
+
+- **Did:** turned the read-only Liburnija bridge into a real two-way hub.
+  (1) *Design* — [docs/sb-liburnija-hub.md](../docs/sb-liburnija-hub.md): the
+  four-state candidate lifecycle (`provjereno` × `speleo_obj`), the crossing rule,
+  per-stage field ownership, ranked join keys with measured thresholds, and the
+  write-back transport options. (2) *Code* — new `cave_dossier/satellites/`
+  (`model` · `liburnija` · `resolver` · `sync`, ~900 lines) and
+  `cavedossier sat sync [--coords] [--out [DIR]] [--limit N]`; `intake/liburnija.py`
+  reduced to a thin slice over the same reader so intake and sync cannot disagree.
+  (3) *Run* — generated the lists, user pasted 126 rows into `Svi objekti`
+  (1313–1438) and added 7 synonyms; re-ran to verify. (4) *Docs* — ARCHITECTURE.md
+  now shows 2.2 REGISTRY with 2.2a SB / 2.2b satellites in the schema and the part
+  map; `sb-satellite-tables.md` gained the Kristal key and the candidate stage;
+  new `sb-sync/` output tree (gitignored, README tracked).
+- **Result:** operational and **idempotent** — the re-run after the paste reports
+  0 rows to add, 0 synonyms, 0 conflicts, 196 linked. Every pasted cell matches the
+  generated CSV bar three deliberate capitalisations; no duplicate Redni broj, no
+  gaps, no column shift. 41 satellite tests (122 total) green. Still open: 30 sheet
+  corrections and 2 photo questions, both for the user to carry out by hand.
+- **Learned:**
+  - **The satellite's own row number is a trap, but the number written *into SB* is
+    not.** `LiDAR Kristal N` as `Ime objekta` or `Sinonimi` gave 56 links with **zero**
+    disagreements against the plaque key. Making it a rule at row creation converts a
+    forbidden key into a hard one — which is why `sat sync` now also proposes adding
+    the synonym to rows that link only by coordinates or name.
+  - **Coordinate proximity is much weaker than it looks here.** True pairs run to
+    12.3 m (median 0.9), but 54 sheet points sit within 15 m of another point. A naive
+    30 m scan proposed 17 links of which 11 were nonsense. What made it usable: only
+    confirmed caves are eligible to match, a 5 m auto band, and `EXACT_MATCH_M = 1.0`
+    — a row on the same point *is* that row, whatever else is near.
+  - **Idempotency is the real test of a sync, and it failed twice.** `confirmed_new`
+    (a human override saying "this is a new cave") suppressed matching permanently, so
+    after the paste the tool proposed the same row again; and a 0.0 m match with an
+    11 m runner-up was called ambiguous by a flat radius. Both fixed by the exact-match
+    rule; both now regression-tested as propose → paste → re-run finds nothing.
+  - **`Link Zapisnik` is not "has a zapisnik"** (user) — it records only whether a
+    *digital* copy is on file, and every *Istraženi* object has one analog or digital.
+    Reading its absence as absence raised false findings; the SUE number is the signal.
+  - **Excel-facing files need three things or they are useless:** every column in the
+    workbook's own order (a tidy subset cannot be pasted into a table), a BOM (else
+    Windows Excel reads UTF-8 as the local codepage and every č/š/ž breaks), and
+    newlines written through untranslated (`write_text` turned CRLF into CR-CRLF and
+    126 rows parsed back as 253 — invisible in an editor).
+  - **The gap was two orders of magnitude bigger than the folder-driven pass found.**
+    That pass saw one missing row (*Jamorinke*) because it only looked at folders that
+    already held data; a sheet-driven pass found 126.
+  - `sList` on this machine is `,` despite an hr-HR locale, so comma CSV splits into
+    columns correctly. On a `;` machine the same file lands in one column.
+- **Next:** apply the 30 sheet corrections and answer the 2 photo questions, then
+  point the same protocol at `Literatura` (45 rows — the cheap one) to prove it
+  generalises before touching `Katastar RH`.
+
 ### 2026-08-25 — OSZ v10 shipped to recorders + SB v3.0 adopted, M1 closed (agent) ✅
 
 - **Did:** (1) *Google Docs compatibility* — traced the reported corruption to
