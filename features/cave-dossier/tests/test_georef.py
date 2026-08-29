@@ -1,5 +1,5 @@
-"""Part 2.1c unit tests — everything that runs WITHOUT a browser: serial
-lookup, input building, delivery naming, the georef_zapisi.csv upsert, and
+﻿"""Part 2.1c unit tests — everything that runs WITHOUT a browser: serial
+lookup, input building, delivery naming, the !georef_zapisi.csv upsert, and
 the selectors-file parser. The Playwright flow itself is exercised live
 (one cave per attended run), never from tests."""
 
@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import dataclasses
 from pathlib import Path
+
+import pytest
 
 from cave_dossier.core.config import Settings
 from cave_dossier.georef import worker
@@ -64,18 +66,18 @@ def test_delivery_paths_use_padded_serial(settings: Settings, tmp_path: Path) ->
     )
     paths = worker.delivery_paths(configured, 17)
     assert paths.png == tmp_path / "!!Isječci karte" / "0017.png"
-    assert paths.records_csv == tmp_path / "!!Isječci karte" / "georef_zapisi.csv"
+    assert paths.records_csv == tmp_path / "!!Isječci karte" / "!georef_zapisi.csv"
 
 
 def test_delivery_paths_need_drive_root(settings: Settings) -> None:
     assert worker.delivery_paths(settings, 17) is None  # fixture has no drive root
 
 
-# ── georef_zapisi.csv upsert ───────────────────────────────────────
+# ── !georef_zapisi.csv upsert ───────────────────────────────────────
 
 
 def test_upsert_record_creates_then_updates(tmp_path: Path) -> None:
-    csv_path = tmp_path / "georef_zapisi.csv"
+    csv_path = tmp_path / "!georef_zapisi.csv"
     worker.upsert_record(csv_path, "0002", "Jama Čavlić", "zapis; star", "2026-08-29")
     worker.upsert_record(csv_path, "0001", "Špilja Testovka", "zapis; jedan", "2026-08-29")
     # Re-running cave 0002 must REPLACE its row, not append a duplicate.
@@ -91,6 +93,26 @@ def test_upsert_record_creates_then_updates(tmp_path: Path) -> None:
     assert lines[1].startswith("0001")  # sorted by padded serial
     assert "zapis; nov" in lines[2]  # updated + flattened to one line
     assert "star" not in lines[2]
+
+
+# ── Excerpt size budget ────────────────────────────────────────────
+
+
+def test_save_png_under_limit_downscales_to_fit(tmp_path: Path) -> None:
+    # Random noise defeats PNG compression, forcing the downscale loop.
+    pytest.importorskip("PIL")
+    pytest.importorskip("playwright")  # flows.py imports it at module scope
+    import numpy
+    from PIL import Image
+
+    from cave_dossier.georef.flows import save_png_under_limit
+
+    noise = numpy.random.default_rng(7).integers(0, 256, (1400, 1400, 3), dtype="uint8")
+    image = Image.fromarray(noise, "RGB")
+    target = tmp_path / "excerpt.png"
+    save_png_under_limit(image, target, max_bytes=1_000_000)
+    assert target.stat().st_size <= 1_000_000
+    assert min(Image.open(target).size) >= 512  # floor respected
 
 
 # ── Selectors parser ───────────────────────────────────────────────

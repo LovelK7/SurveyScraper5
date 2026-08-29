@@ -1,4 +1,4 @@
-# cave-dossier — SB communication + cave dossier builder
+﻿# cave-dossier — SB communication + cave dossier builder
 
 Pipeline parts **2.1 / 2.1b / 2.1c / 2.1d / 2.2** ([ARCHITECTURE.md](../../ARCHITECTURE.md)):
 talk to **SB** (Speleo baza, the society's cave-registry Excel workbook), build a
@@ -545,7 +545,7 @@ also self-reconfigures its output streams, so this is rarely needed).
 | `src/cave_dossier/dossier/sb_mapper.py` | SB row → dossier; queue flag + lifecycle derivation | `report` |
 | `src/cave_dossier/dossier/gating.py` | the rule table → blockers / warnings / unchecked, per gate | `report` |
 | `src/cave_dossier/dossier/report.py` | the text rendering behind `cavedossier report` | `report` |
-| `src/cave_dossier/georef/` | 2.1c: georef.hr Playwright flow (ported), delivery to `!!Isječci karte` + `georef_zapisi.csv` | `karta` |
+| `src/cave_dossier/georef/` | 2.1c: georef.hr Playwright flow (ported), delivery to `!!Isječci karte` + `!georef_zapisi.csv` | `karta` |
 | `sessions/SESSIONS.md` | session journal (appended by `/wrap-up`) | — |
 | `backlog/ideas.md` | dated idea capture | — |
 | `example/` | **gitignored** — sandbox workbook + real cave data (PII, never committed) | — |

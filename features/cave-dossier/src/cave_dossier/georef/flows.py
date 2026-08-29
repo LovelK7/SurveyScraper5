@@ -11,6 +11,7 @@ import os
 import sys
 import time
 from io import BytesIO
+from pathlib import Path
 
 from PIL import Image
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -22,6 +23,13 @@ from cave_dossier.georef.selectors import SelectorRegistry
 
 LOGGER = logging.getLogger(__name__)
 _DEBUG_COPY = os.environ.get("GEOREF_DEBUG_COPY") == "1"
+
+# Delivery budget for the excerpt PNG (user, 2026-08-29): as much map as
+# fits under 1 MB.  The capture window is oversized on purpose (see
+# client.py), so the guard downscales in 15 % steps only if the encoded
+# PNG actually overshoots.
+MAX_EXCERPT_BYTES = 1_000_000
+_MIN_EXCERPT_SIDE = 512
 
 
 def _diag(msg: str) -> None:
@@ -452,9 +460,41 @@ def _save_marker_centered_map(page: object, artifacts: GeorefArtifacts) -> None:
         top = int(clip["y"] * dpr)
         right = int((clip["x"] + clip["width"]) * dpr)
         bottom = int((clip["y"] + clip["height"]) * dpr)
-        image.crop((left, top, right, bottom)).save(str(artifacts.map_screenshot_path))
+        save_png_under_limit(image.crop((left, top, right, bottom)), artifacts.map_screenshot_path)
     finally:
         _set_overlay_visibility(page, visible=True)
+
+
+def save_png_under_limit(image: Image.Image, path, *, max_bytes: int = MAX_EXCERPT_BYTES) -> None:
+    """Write `image` as a PNG that fits `max_bytes`, sacrificing color depth
+    before pixels.
+
+    At each size: try truecolor first; if too big, try a 256-color adaptive
+    palette — the TK25 scan has few colors, so quantizing costs almost
+    nothing visually and compresses ~2-3× better, which is what lets the
+    full-window capture (~1000 px) stay under the budget where truecolor
+    would have to shrink to ~600 px.  Only when even the palette PNG
+    overshoots does the image lose 15 % of its side and retry.  The floor at
+    `_MIN_EXCERPT_SIDE` px guards against a pathological spiral (e.g. an
+    incompressible screenshot); below it the last attempt is written as-is.
+    """
+    current = image
+    while True:
+        last = None
+        for candidate in (current, current.convert("RGB").quantize(colors=256)):
+            buffer = BytesIO()
+            candidate.save(buffer, format="PNG", optimize=True)
+            last = buffer
+            if buffer.tell() <= max_bytes:
+                Path(str(path)).write_bytes(buffer.getvalue())
+                return
+        if min(current.size) <= _MIN_EXCERPT_SIDE:
+            Path(str(path)).write_bytes(last.getvalue())
+            return
+        current = current.resize(
+            (int(current.width * 0.85), int(current.height * 0.85)),
+            Image.LANCZOS,
+        )
 
 
 def _set_overlay_visibility(page: object, *, visible: bool) -> None:

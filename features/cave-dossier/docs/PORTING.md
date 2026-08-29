@@ -1,4 +1,4 @@
-# Porting ledger — code copied from crospeleo-automation
+﻿# Porting ledger — code copied from crospeleo-automation
 
 Rule ([CLAUDE.md](../../../CLAUDE.md)): code may be COPIED from the read-only
 `../crospeleo-automation` repo and adapted freely; every copy is logged here.
@@ -18,9 +18,9 @@ Source paths are under `crospeleo-automation/src/crospeleo_automation/`.
 | 2026-08-29 | `georef/selectors.py` | `georef/selectors.py` | Verbatim (quote-aware inline-comment stripper, `SelectorRegistry`); import repointed to `core/normalization.cleanup_whitespace`. |
 | 2026-08-29 | `config/selectors.yaml` | `config/selectors.yaml` | Verbatim copy of the live-DOM selector set as of 2026-08-29, comments trimmed to the load-bearing ones. |
 | 2026-08-29 | `georef/client.py` | `georef/client.py` | Near-verbatim: login flow, `*_or_fallback` helpers with the 1 s primary-probe calibration, tracing, page logging. Settings now come from `core/config.py` (same field names). |
-| 2026-08-29 | `georef/flows.py` | `georef/flows.py` | Verbatim minus imports: point flow, the 45 s record wait + marker-click popup retrigger, TK25 tile wait, marker-centered square crop with DPR-aware Python-side cropping. |
+| 2026-08-29 | `georef/flows.py` | `georef/flows.py` | Verbatim minus imports: point flow, the 45 s record wait + marker-click popup retrigger, TK25 tile wait, marker-centered square crop with DPR-aware Python-side cropping. **New:** `save_png_under_limit` — 1 MB delivery budget; tries truecolor, then 256-color palette (near-free on the TK25 scan, keeps the full ~1017 px capture), downscales 15 % steps only as a last resort. Capture window is settings-sized (default 2560×1600, client.py). |
 | 2026-08-29 | `georef/artifacts.py` | `georef/artifacts.py` | Kept the artifact set + `persist_georef_result`. **Changed layout:** no run machinery here, so artifacts land under gitignored `runs/georef/<padded Redni broj>/`, overwritten on re-run. |
-| 2026-08-29 | `services/georef_worker.py` | `georef/worker.py` | **Restructured.** Kept the login→flow→persist orchestration shape. Dropped the dossier/readiness bookkeeping and the OSZ/stored-georef coordinate fallbacks (SB is the only source here). **New:** Redni-broj-only lookup (`find_by_serial`), delivery of `<4-digit padded Redni broj>.png` into the shared `!!Isječci karte` Drive folder, and the collated `georef_zapisi.csv` (one row per cave, upserted by Redni broj; crospeleo keeps per-run `georef_record.txt` instead). |
+| 2026-08-29 | `services/georef_worker.py` | `georef/worker.py` | **Restructured.** Kept the login→flow→persist orchestration shape. Dropped the dossier/readiness bookkeeping and the OSZ/stored-georef coordinate fallbacks (SB is the only source here). **New:** Redni-broj-only lookup (`find_by_serial`), delivery of `<4-digit padded Redni broj>.png` into the shared `!!Isječci karte` Drive folder, and the collated `!georef_zapisi.csv` (one row per cave, upserted by Redni broj; crospeleo keeps per-run `georef_record.txt` instead). |
 
 Planned ports (rest of M2+): `services/name_resolver.py` + `services/statement_checker.py`
 (per-author izjava matching — `dossier/gating.py` uses a provisional substring match until

@@ -1,4 +1,4 @@
-"""``cavedossier`` — CLI for SurveyScraper5 stage 2.
+﻿"""``cavedossier`` — CLI for SurveyScraper5 stage 2.
 
 Commands: read-only SB inspection (`sb columns` / `sb inspect` / `sb stats`,
 M1) and the per-cave dossier report (`report`, M2).  Every command starts with
@@ -569,7 +569,7 @@ def cmd_karta(settings: Settings, serial: int, debug: bool, force: bool) -> int:
     """Part 2.1c: fetch the georef.hr map excerpt for ONE cave by Redni broj.
 
     Delivers ``<padded Redni broj>.png`` into the shared ``!!Isječci karte``
-    Drive folder and upserts the cave's row in ``georef_zapisi.csv`` there.
+    Drive folder and upserts the cave's row in ``!georef_zapisi.csv`` there.
     NOTE this WRITES to georef.hr (creates/validates the point server-side)
     — same operation crospeleo-automation performs, one cave per run.
     """

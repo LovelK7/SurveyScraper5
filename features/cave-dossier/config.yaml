@@ -74,7 +74,7 @@ archive:
 
   # Part 2.1c — shared collection folder for georef.hr map excerpts
   # (Drive folder 1vGy0XN6wFsnwdhiGFpMEVK7jV_CUMMvo, created 2026-08-29).
-  # Holds <zero-padded Redni broj>.png per cave plus georef_zapisi.csv, the
+  # Holds <zero-padded Redni broj>.png per cave plus !georef_zapisi.csv, the
   # collated record texts ("Georef zapis"). See cave_dossier/georef/worker.py.
   map_excerpts_dir: "!!Isječci karte"
 

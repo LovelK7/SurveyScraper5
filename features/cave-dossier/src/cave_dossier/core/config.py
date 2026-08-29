@@ -76,6 +76,12 @@ class Settings:
     georef_password: str | None = None
     georef_navigation_timeout_ms: int = 90000
     georef_post_save_wait_ms: int = 3000
+    # Browser window for the map capture. The excerpt is a square crop of the
+    # live map area, one screen pixel per map pixel — so a bigger window IS
+    # the excerpt resolution. Headless runs honour this fully; headed (--debug)
+    # runs are clamped to the physical display and the crop adapts.
+    georef_window_width: int = 2560
+    georef_window_height: int = 1600
     georef_selectors_path: Path = FEATURE_ROOT / "config" / "selectors.yaml"
     playwright_browser: str = "chromium"
     playwright_slow_mo_ms: int = 0

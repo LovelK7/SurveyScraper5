@@ -63,15 +63,23 @@ class GeorefClient:
         _trace("starting playwright + browser", t0)
         playwright = sync_playwright().start()
         browser_launcher = getattr(playwright, self.settings.playwright_browser)
-        # Pin the headed window to a consistent size so the
-        # marker-centered map crop math (in georef/flows.py) has
-        # deterministic room around the pin.  Without this, Chromium
-        # picks a default size that varies by display/DPI and the crop
-        # constraints end up clamped asymmetrically.
+        # Pin the window to a consistent size so the marker-centered map
+        # crop math (in georef/flows.py) has deterministic room around
+        # the pin.  Without this, Chromium picks a default size that
+        # varies by display/DPI and the crop constraints end up clamped
+        # asymmetrically.  The size doubles as the excerpt resolution —
+        # one screen pixel per map pixel — so headless runs use a window
+        # far larger than any physical display (settings default
+        # 2560×1600 → ~1000 px square crop).  Headed (--debug) runs get
+        # clamped to the real display by the OS; the crop math reads the
+        # actual window.innerWidth/Height, so it degrades gracefully.
         browser = browser_launcher.launch(
             headless=not self.debug,
             slow_mo=self.settings.playwright_slow_mo_ms,
-            args=["--window-size=1440,900", "--window-position=0,0"],
+            args=[
+                f"--window-size={self.settings.georef_window_width},{self.settings.georef_window_height}",
+                "--window-position=0,0",
+            ],
         )
         # `no_viewport=True` disables Playwright's fixed-viewport emulation
         # so the page renders at the actual headed window size.  Without

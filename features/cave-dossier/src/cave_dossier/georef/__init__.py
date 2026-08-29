@@ -9,6 +9,7 @@ square PNG of the TK25 map. Delivery: PNG + record into the shared
 
 from cave_dossier.georef.worker import (
     build_input,
+    deliver,
     delivery_paths,
     find_by_serial,
     map_excerpts_dir,
@@ -18,6 +19,7 @@ from cave_dossier.georef.worker import (
 
 __all__ = [
     "build_input",
+    "deliver",
     "delivery_paths",
     "find_by_serial",
     "map_excerpts_dir",

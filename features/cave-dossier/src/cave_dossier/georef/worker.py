@@ -1,4 +1,4 @@
-"""Part 2.1c orchestration: SB row → georef.hr flow → shared Drive folder.
+﻿"""Part 2.1c orchestration: SB row → georef.hr flow → shared Drive folder.
 
 New code (the crospeleo counterpart, ``services/georef_worker.py``, feeds a
 submission dossier — here the products are collected per cave instead):
@@ -8,7 +8,7 @@ submission dossier — here the products are collected per cave instead):
 - the map excerpt PNG is delivered into the shared ``!!Isječci karte`` Drive
   folder as ``<zero-padded Redni broj>.png``;
 - the georef record texts ("Georef zapis" in crospeleo's readiness terms)
-  are collated into ONE ``georef_zapisi.csv`` at the top of that folder,
+  are collated into ONE ``!georef_zapisi.csv`` at the top of that folder,
   one row per cave, upserted by Redni broj — re-running a cave updates its
   row rather than appending a duplicate.
 """
@@ -33,7 +33,9 @@ from cave_dossier.sb.loader import CaveRow, SBReader
 # 1000, so 4 keeps Drive listings sorted for the registry's lifetime.
 SERIAL_PAD = 4
 
-RECORDS_CSV_NAME = "georef_zapisi.csv"
+# The `!` prefix floats the collation file above the numbered PNGs in Drive
+# listings — same convention as the archive dirs themselves (user, 2026-08-29).
+RECORDS_CSV_NAME = "!georef_zapisi.csv"
 RECORDS_CSV_COLUMNS = ("Redni broj", "Ime objekta", "Georef zapis", "Datum")
 
 
@@ -179,7 +181,7 @@ def deliver(settings: Settings, cave_name: str, serial: int | str, result: Geore
 
 def upsert_record(csv_path: Path, serial_label: str, cave_name: str,
                   record: str, date_text: str) -> None:
-    """One row per cave in georef_zapisi.csv, keyed by (padded) Redni broj.
+    """One row per cave in !georef_zapisi.csv, keyed by (padded) Redni broj.
 
     Same CSV dialect as `satellites/sync.to_csv`: comma separator (Excel picks
     it from the machine's list separator, checked 2026-08-29), CRLF, BOM.
