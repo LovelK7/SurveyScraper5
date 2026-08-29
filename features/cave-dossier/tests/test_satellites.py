@@ -309,3 +309,55 @@ def test_next_serial_spans_rows_with_no_name(settings) -> None:
             )
 
     assert resolver.next_serial_number(_Reader(), settings) == 1314
+
+
+def test_write_lists_produces_all_three_files(tmp_path: Path) -> None:
+    result = sync.build(resolver.resolve_rows(_rows(tmp_path), RECORDS), next_serial=1313)
+    written = sync.write_lists(result, tmp_path / "run")
+    assert set(written) == {"za-sb", "za-tablicu", "za-odluku"}
+    assert all(path.is_file() for path in written.values())
+    # List 1 stays machine-pasteable; the other two are worksheets for a human.
+    assert written["za-sb"].read_text(encoding="utf-8").startswith("Redni broj\t")
+    assert "ZA TABLICU" in written["za-tablicu"].read_text(encoding="utf-8")
+
+
+def test_an_existing_sb_name_stops_the_add_and_asks(tmp_path: Path) -> None:
+    """Sheet 70 is *Guštićeva jama*; if SB already has that name, do not paste a twin.
+
+    A name is too weak to link on, and far too strong to ignore when the
+    alternative is duplicating a cave (sheet 285 = SB 733, same name, 5 m apart).
+    """
+    records = [_record(500, "Guštićeva jama")]
+    resolved = _by_id(resolver.resolve_rows(_rows(tmp_path), records))
+    assert resolved["70"].status is LinkStatus.CONFLICT
+    assert resolved["70"].key == "name"
+    assert "500" in resolved["70"].evidence
+    # It stops the add without becoming a link — the row is not claimed.
+    assert resolved["70"].record is None
+    # A nameless candidate is unaffected.
+    assert resolved["10"].status is LinkStatus.CANDIDATE
+
+
+def test_neistrazeno_in_napomena_means_not_explored() -> None:
+    """SB 914 said "neistraženo" and the tool proposed istraženo = 1 anyway.
+
+    The queue flag is not the only way SB says "not explored" — the Nesređeni
+    keyword does too, and the reason line would otherwise contradict itself.
+    """
+    queued = _record(1, "A", note="za istražit, LiDAR")
+    keyword = _record(2, "B", note="neistraženo, ponoviti - dubina 8 m")
+    unfiled = _record(3, "C", note="fali nacrt i zapisnik, ponoviti")
+    numbered = _record(4, "D", sue="512", note="za istražit, stale")
+    assert not queued.is_explored
+    assert not keyword.is_explored
+    assert unfiled.is_explored          # visited and surveyed, just not filed
+    assert numbered.is_explored         # a SUE number settles it
+    # The bare word must not trip it: "istraženo 3.10.2000" is a date, not a flag.
+    assert _record(5, "E", note="istraženo 3.10.2000., tal. Katastar 1445").is_explored
+
+
+def test_the_default_out_dir_is_one_dated_folder_per_satellite() -> None:
+    from datetime import date
+
+    path = sync.default_out_dir("liburnija", date(2026, 8, 29))
+    assert path.parts[-3:] == ("sb-sync", "liburnija", "2026-08-29")

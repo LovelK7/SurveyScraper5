@@ -18,6 +18,8 @@ The direction of each list is fixed by ownership (hub doc §6): the field owns
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
 
 from cave_dossier.core.normalization import normalize_lookup_key
 from cave_dossier.satellites import liburnija
@@ -272,10 +274,100 @@ def to_tsv(rows: list[NewRow], columns: tuple[str, ...] = NEW_ROW_COLUMNS) -> st
     return "\n".join(lines) + "\n"
 
 
+def _joined(lines: list[str]) -> str:
+    """One text block, newline-terminated."""
+    return chr(10).join(lines) + chr(10)
+
+
+def _column(value: str, width: int) -> str:
+    """Pad to ``width``, but never let a long value swallow the next column.
+
+    Cave names run past any sensible width (*Ivanina zvijezdica*), and a bare
+    ``ljust`` then glues two fields together into an unreadable line.
+    """
+    return value.ljust(width) if len(value) < width else value + "  "
+
+
+def render_sheet_list(differences: list[Difference]) -> str:
+    """List 2 as a worksheet: one line per cell, to tick off in the browser."""
+    widths = (10, 18, 22, 22)
+    lines = [
+        "ZA TABLICU — ćelije koje SB zna bolje.",
+        "Ispraviti rukom u Liburnija tablici; SB je mjerodavan.",
+        "",
+        "".join(
+            _column(head, width)
+            for head, width in zip(("red", "stupac", "sada", "treba"), widths)
+        )
+        + "razlog",
+    ]
+    for item in differences:
+        lines.append(
+            "".join(
+                _column(value, width)
+                for value, width in zip(
+                    (item.row_id, item.column, item.current, item.proposed), widths
+                )
+            )
+            + item.reason
+        )
+    return _joined(lines)
+
+
+def render_decision_list(decisions: list[Decision]) -> str:
+    """List 3 as a worksheet. Nothing here may be actioned by a rule."""
+    lines = ["ZA ODLUKU — ništa se ne mijenja automatski.", ""]
+    for item in decisions:
+        lines.append(f"red {item.row_id}: {item.issue}")
+        if item.detail:
+            lines.append(f"    {item.detail}")
+    return _joined(lines)
+
+
+#: Where a run lands when `--out` is given no path. One dated folder per run,
+#: grouped by satellite; gitignored (see sb-sync/README.md).
+SYNC_ROOT_NAME = "sb-sync"
+
+
+def default_out_dir(satellite: str, today: date) -> Path:
+    """`sb-sync/<satellite>/<YYYY-MM-DD>/`, resolved against the feature root."""
+    from cave_dossier.core.config import FEATURE_ROOT
+
+    return FEATURE_ROOT / SYNC_ROOT_NAME / satellite / today.isoformat()
+
+
+def write_lists(result: SyncResult, directory: Path) -> dict[str, Path]:
+    """Write all three lists into ``directory``, returning what was written.
+
+    List 1 is TSV because it is meant to be pasted into `Svi objekti`; the other
+    two are plain text because they are worked through by hand, one line at a
+    time. Nothing here writes to SB or to the sheet.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    written = {
+        "za-sb": directory / "1-za-sb.tsv",
+        "za-tablicu": directory / "2-za-tablicu.txt",
+        "za-odluku": directory / "3-za-odluku.txt",
+    }
+    written["za-sb"].write_text(to_tsv(result.to_sb), encoding="utf-8")
+    written["za-tablicu"].write_text(
+        render_sheet_list(result.to_sheet), encoding="utf-8"
+    )
+    written["za-odluku"].write_text(
+        render_decision_list(result.to_decide), encoding="utf-8"
+    )
+    return written
+
+
 __all__ = [
     "NEW_ROW_COLUMNS",
+    "SYNC_ROOT_NAME",
+    "default_out_dir",
     "build",
     "new_sb_row",
     "sheet_differences",
+    "render_decision_list",
+    "render_sheet_list",
     "to_tsv",
+    "write_lists",
 ]

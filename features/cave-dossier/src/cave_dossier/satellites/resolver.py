@@ -85,15 +85,23 @@ class SBRecord:
     def is_explored(self) -> bool:
         """SB's answer to "has this been explored".
 
-        A SUE number settles it. Otherwise the queue flag does: a row still
-        marked *za istražit* has not been, and anything else (nesređeni —
-        "fali nacrt", "ponoviti") has been visited and surveyed, just not filed.
+        A SUE number settles it. Failing that, two things in Napomena say no —
+        the v3.0 queue flag (`za istražit, …`) and the Nesređeni keyword
+        **neistraženo**, which SB's own Power Query treats as outstanding work.
+        Reading only the queue flag made the tool propose *istraženo = 1* for
+        SB 914 while quoting a note that begins "neistraženo": a contradiction
+        on the very line someone is meant to act on.
+
+        Anything else (`fali nacrt`, `ponoviti`) means visited and surveyed but
+        not yet filed — explored, as far as the field sheet is concerned.
         """
         if self.sue_number:
             return True
         from cave_dossier.dossier.sb_mapper import parse_queue_flag
 
-        return not parse_queue_flag(self.note).queued
+        if parse_queue_flag(self.note).queued:
+            return False
+        return "neistraz" not in normalize_lookup_key(self.note or "")
 
 
 @dataclass(frozen=True)
@@ -256,6 +264,7 @@ def resolve_rows(
     by_plaque: dict[str, SBRecord] = {}
     by_kristal: dict[str, SBRecord] = {}
     by_serial: dict[int, SBRecord] = {}
+    by_name: dict[str, SBRecord] = {}
     for record in records:
         if record.plaque:
             by_plaque.setdefault(normalize_lookup_key(record.plaque), record)
@@ -263,6 +272,10 @@ def resolve_rows(
             by_kristal.setdefault(number, record)
         if record.serial_number is not None:
             by_serial.setdefault(record.serial_number, record)
+        for label in (record.name, *record.synonyms):
+            key = normalize_lookup_key(label)
+            if key:
+                by_name.setdefault(key, record)
 
     resolutions: list[Resolution] = []
     for row in rows:
@@ -399,7 +412,27 @@ def resolve_rows(
             )
             continue
 
-        # 6. A confirmed cave of ours that nothing reaches: it belongs in SB.
+        # 6. Last guard before proposing a new row: does SB already carry this
+        #    name? A name is too weak to LINK on — spellings drift and caves get
+        #    reused names — but an exact match is far too strong to ignore when
+        #    the alternative is pasting a duplicate. Sheet 285 *Jama u Puharima*
+        #    is SB 733 under the same name, 5 m away; adding it would have
+        #    duplicated a cave. So the name stops the add and asks.
+        twin = by_name.get(normalize_lookup_key(row.field_name)) if row.field_name else None
+        if twin is not None:
+            resolutions.append(
+                Resolution(
+                    row=row,
+                    record=None,
+                    status=LinkStatus.CONFLICT,
+                    key="name",
+                    evidence=f"SB već ima ime \"{twin.name}\" (Redni broj "
+                             f"{twin.serial_number}) — isti objekt ili imenjak?",
+                )
+            )
+            continue
+
+        # 7. A confirmed cave of ours that nothing reaches: it belongs in SB.
         resolutions.append(Resolution(row=row, record=None, status=LinkStatus.CANDIDATE))
 
     return resolutions

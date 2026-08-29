@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
 from pathlib import Path
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
@@ -432,15 +433,17 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
 
 def cmd_sat_sync(
     settings: Settings,
+    satellite: str,
     limit: int,
     use_coordinates: bool,
-    tsv_path: str | None,
+    out_dir: str | None,
 ) -> int:
     """Compare the Liburnija sheet against SB and print the three review lists.
 
     Read-only against both sides — the sheet is a live Google Sheet people type
-    into, and nothing here writes to it or to SB. `--tsv` only saves list 1 to a
-    file so the new rows can be pasted into `Svi objekti` in one motion.
+    into, and nothing here writes to it or to SB. `--out` only saves the three
+    lists to files: list 1 as a block to paste into `Svi objekti`, the other two
+    as worksheets to tick off by hand.
     """
     rows, path = sheet.load_from_settings(settings)
     if not rows:
@@ -504,12 +507,22 @@ def cmd_sat_sync(
     if len(result.to_decide) > limit:
         print(f"    … {len(result.to_decide) - limit} more (raise --limit)")
 
-    if tsv_path:
-        target = Path(tsv_path)
-        target.write_text(sync.to_tsv(result.to_sb), encoding="utf-8")
+    if out_dir is not None:
+        # `--out` with no path means the conventional spot: one dated folder
+        # per run under sb-sync/, grouped by satellite (see sb-sync/README.md).
+        target = (
+            Path(out_dir)
+            if out_dir
+            else sync.default_out_dir(satellite, date.today())
+        )
+        written = sync.write_lists(result, target)
         print()
-        print(f"List 1 written to {target} — select the block, copy, and paste it")
-        print("below the last row of `Svi objekti`. Check the Redni broj column first.")
+        print(f"Written to {target}:")
+        for label, path in written.items():
+            print(f"  {path.name:<20} {label}")
+        print("  1-za-sb.tsv: open it, select the rows under the header, copy, and")
+        print("  paste below the last row of `Svi objekti`. Check Redni broj first —")
+        print("  it assumes nobody added a row since this run.")
 
     return EXIT_READY if (result.to_sb or result.to_sheet) else EXIT_NOT_READY
 
@@ -618,10 +631,14 @@ def build_parser() -> argparse.ArgumentParser:
              "listed for a decision)",
     )
     sat_sync.add_argument(
-        "--tsv",
-        dest="tsv_path",
-        help="Write list 1 (new SB rows) to this file, tab-separated for pasting "
-             "into Excel",
+        "--out",
+        dest="out_dir",
+        nargs="?",
+        const="",
+        metavar="DIR",
+        help="Write all three lists — 1-za-sb.tsv (paste into Svi objekti), "
+             "2-za-tablicu.txt, 3-za-odluku.txt. Bare --out uses "
+             "sb-sync/<satellite>/<today>/; pass DIR to put them elsewhere",
     )
 
     photos = subparsers.add_parser(
@@ -682,7 +699,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "sat":
             if args.sat_command == "sync":
                 return cmd_sat_sync(
-                    settings, args.limit, args.use_coordinates, args.tsv_path
+                    settings,
+                    args.satellite,
+                    args.limit,
+                    args.use_coordinates,
+                    args.out_dir,
                 )
         if args.command == "intake":
             if args.intake_command == "map":

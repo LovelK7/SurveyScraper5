@@ -11,6 +11,14 @@
 features/*/literature/
 features/*/example/
 
+# === SB <-> satellite sync runs (features/*/sb-sync) ====================
+# One dated folder per `cavedossier sat sync --out` run. The lists carry real
+# society data (cave names, field comments, coordinates), and a run is a
+# snapshot of two moving sources — re-run rather than reuse. The README that
+# explains the folder is tracked; nothing a run produces is.
+features/*/sb-sync/*
+!features/*/sb-sync/README.md
+
 # === Secrets / per-machine config =======================================
 .env
 
