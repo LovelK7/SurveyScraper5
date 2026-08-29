@@ -101,6 +101,21 @@ class SheetRow:
         return f"LiDAR Kristal {int(number)}" if number else None
 
     @property
+    def checked_year(self) -> str | None:
+        """The year someone walked to this point — its "found" year.
+
+        `datum provjere` is hand-typed and comes in several shapes:
+        `21/10/2024`, `9/3/2025`, `15/12/2024 13:06:00`. Only the year is ever
+        wanted (SB's column is *Godina ili period istraživanja*), so rather than
+        parse the date, pull the first plausible year out of it. 17 of the
+        current candidates have no date at all, and they simply get no year.
+        """
+        if not self.checked_on:
+            return None
+        match = re.search(r"(?<!\d)((?:19|20)\d{2})(?!\d)", self.checked_on)
+        return match.group(1) if match else None
+
+    @property
     def field_name(self) -> str | None:
         """The name the field gave it, newest first. Often absent."""
         return self.name_new or self.name_old

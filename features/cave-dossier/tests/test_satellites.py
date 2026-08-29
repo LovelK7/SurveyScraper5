@@ -327,12 +327,27 @@ def test_build_numbers_new_rows_consecutively_from_the_next_free(tmp_path: Path)
     assert result.counts[LinkStatus.OUT_OF_SCOPE.value] == 1
 
 
-def test_tsv_is_tab_separated_so_a_paste_splits_into_cells(tmp_path: Path) -> None:
+def test_the_block_is_real_csv_commas_and_quotes_and_all(tmp_path: Path) -> None:
+    """Napomena is full of commas, so only proper quoting survives the trip."""
+    import csv
+    import io as _io
+
     result = sync.build(resolver.resolve_rows(_rows(tmp_path), RECORDS), next_serial=1314)
-    text = sync.to_tsv(result.to_sb)
-    lines = text.splitlines()
-    assert lines[0].split("\t") == list(sync.NEW_ROW_COLUMNS)
-    assert all(len(line.split("\t")) == len(sync.NEW_ROW_COLUMNS) for line in lines)
+    rows = list(csv.reader(_io.StringIO(sync.to_csv(result.to_sb))))
+    assert rows[0] == list(sync.NEW_ROW_COLUMNS)
+    assert all(len(row) == len(sync.NEW_ROW_COLUMNS) for row in rows)
+    # The comma inside a Napomena must not become a column break.
+    note = dict(zip(rows[0], rows[1]))["Napomena"]
+    assert note.startswith("za istražit, ")
+
+
+def test_a_value_with_a_quote_round_trips(tmp_path: Path) -> None:
+    row = sync.NewRow(row_id="x", values={"Napomena": 'za istražit, "Opasna" 6metarka'})
+    import csv
+    import io as _io
+
+    parsed = list(csv.reader(_io.StringIO(sync.to_csv([row], ("Napomena",)))))
+    assert parsed[1] == ['za istražit, "Opasna" 6metarka']
 
 
 def test_the_block_carries_the_workbooks_own_columns_in_its_own_order(
@@ -345,9 +360,12 @@ def test_the_block_carries_the_workbooks_own_columns_in_its_own_order(
     """
     workbook_columns = ("Redni broj", "Ime objekta", "Duljina", "Napomena", "Sinonimi")
     result = sync.build(resolver.resolve_rows(_rows(tmp_path), RECORDS), next_serial=1313)
-    lines = sync.to_tsv(result.to_sb, workbook_columns).splitlines()
-    assert lines[0].split("\t") == list(workbook_columns)
-    first = dict(zip(workbook_columns, lines[1].split("\t")))
+    import csv
+    import io as _io
+
+    parsed = list(csv.reader(_io.StringIO(sync.to_csv(result.to_sb, workbook_columns))))
+    assert parsed[0] == list(workbook_columns)
+    first = dict(zip(workbook_columns, parsed[1]))
     assert first["Redni broj"] == "1313"
     assert first["Duljina"] == ""            # nothing known, so nothing invented
     assert first["Ime objekta"].startswith("LiDAR Kristal")
@@ -426,7 +444,7 @@ def test_write_lists_produces_every_list(tmp_path: Path) -> None:
     assert set(written) == {"za-sb", "dopune-sb", "za-tablicu", "za-odluku"}
     assert all(path.is_file() for path in written.values())
     # List 1 stays machine-pasteable; the rest are worksheets for a human.
-    assert written["za-sb"].read_text(encoding="utf-8-sig").startswith("Redni broj\t")
+    assert written["za-sb"].read_text(encoding="utf-8-sig").startswith("Redni broj,")
     assert "ZA TABLICU" in written["za-tablicu"].read_text(encoding="utf-8-sig")
 
 
@@ -436,7 +454,7 @@ def test_every_file_carries_a_bom_so_excel_reads_croatian(tmp_path: Path) -> Non
     bom = bytes([0xEF, 0xBB, 0xBF])
     for path in sync.write_lists(result, tmp_path / "run").values():
         assert path.read_bytes().startswith(bom), path.name
-    text = (tmp_path / "run" / "1-za-sb.tsv").read_text(encoding="utf-8-sig")
+    text = (tmp_path / "run" / "1-za-sb.csv").read_text(encoding="utf-8-sig")
     assert "Špiljkotina" in text  # round-trips intact
 
 
@@ -480,3 +498,98 @@ def test_the_default_out_dir_is_one_dated_folder_per_satellite() -> None:
 
     path = sync.default_out_dir("liburnija", date(2026, 8, 29))
     assert path.parts[-3:] == ("sb-sync", "liburnija", "2026-08-29")
+
+
+def test_the_written_csv_parses_back_to_the_rows_it_was_given(tmp_path: Path) -> None:
+    """Windows newline translation once turned every CRLF into CR-CRLF.
+
+    The file still looked fine in an editor, but each record gained a blank line
+    and 126 rows parsed back as 253.
+    """
+    import csv
+    import io as _io
+
+    result = sync.build(resolver.resolve_rows(_rows(tmp_path), RECORDS), next_serial=1313)
+    path = sync.write_lists(result, tmp_path / "run")["za-sb"]
+    assert bytes([13, 13, 10]) not in path.read_bytes()
+    parsed = list(
+        csv.reader(_io.open(path, encoding="utf-8-sig", newline=""))
+    )
+    assert len(parsed) == len(result.to_sb) + 1
+    assert all(len(row) == len(parsed[0]) for row in parsed)
+
+
+def test_the_found_year_comes_out_of_datum_provjere(tmp_path: Path) -> None:
+    """Hand-typed dates in several shapes; only the year is ever wanted."""
+    rows = {row.row_id: row for row in _rows(tmp_path)}
+    assert rows["10"].checked_year == "2024"     # 10/10/2024
+    assert rows["70"].checked_year == "2025"     # 03/03/2025
+    assert rows["50"].checked_year is None       # nobody has been there
+
+
+def test_campaign_defaults_fill_columns_no_row_can_supply(tmp_path: Path) -> None:
+    """`Lokalitet` is a property of the campaign, not of any one point."""
+    rows = {row.row_id: row for row in _rows(tmp_path)}
+    new = sync.new_sb_row(rows["10"], 1313, {"Lokalitet": "Ćićarija"})
+    assert new.values["Lokalitet"] == "Ćićarija"
+    assert new.values["Godina ili period istraživanja"] == "2024"
+    # A default never overwrites something the row itself decides.
+    shadowed = sync.new_sb_row(rows["10"], 1313, {"Ime objekta": "krivo"})
+    assert shadowed.values["Ime objekta"] == "LiDAR Kristal 10"
+
+
+def test_defaults_reach_every_new_row_in_a_run(tmp_path: Path) -> None:
+    result = sync.build(
+        resolver.resolve_rows(_rows(tmp_path), RECORDS),
+        next_serial=1313,
+        row_defaults={"Lokalitet": "Ćićarija"},
+    )
+    assert result.to_sb
+    assert all(row.values["Lokalitet"] == "Ćićarija" for row in result.to_sb)
+
+
+def test_a_row_already_pasted_into_sb_is_never_proposed_again(tmp_path: Path) -> None:
+    """The round trip: propose -> paste -> re-run must find nothing to do.
+
+    *Špiljuljak* is a `confirmed_new` cave 4.7 m from a known one. Once it was
+    pasted into SB, the override kept suppressing the coordinate key and the run
+    proposed adding it a second time. A row sitting on the same point IS that
+    row, whatever the override says.
+    """
+    rows = _rows(tmp_path)
+    confirmed = {"70"}
+
+    # Before the paste: the near neighbour must not claim it.
+    neighbour = _record(1172, "Susjed", x=323000, y=5026004)
+    before = _by_id(
+        resolver.resolve_rows(
+            rows, [neighbour], use_coordinates=True, confirmed_new=confirmed
+        )
+    )["70"]
+    assert before.status is LinkStatus.CANDIDATE
+
+    # After the paste SB carries it at its own coordinates — and the rival is
+    # still right there, which is exactly the case that used to re-propose.
+    pasted = _record(1439, "Guštićeva jama", x=323000, y=5026000)
+    after = _by_id(
+        resolver.resolve_rows(
+            rows, [neighbour, pasted], use_coordinates=True, confirmed_new=confirmed
+        )
+    )["70"]
+    assert after.status is LinkStatus.LINKED
+    assert after.record.serial_number == 1439
+
+
+def test_an_exact_point_outranks_a_nearby_rival(tmp_path: Path) -> None:
+    """0.0 m with a rival 11 m away is decisive, not ambiguous.
+
+    *Puhalica kraj 41* sat on its own SB row and 11 m from *LiDAR Kristal 41*;
+    the flat 15 m ambiguity radius called that a conflict.
+    """
+    exact = _record(1435, "Puhalica kraj 41", x=323000, y=5026000)
+    rival = _record(1330, "LiDAR Kristal 41", x=323000, y=5026011)
+    resolved = _by_id(
+        resolver.resolve_rows(_rows(tmp_path), [exact, rival], use_coordinates=True)
+    )["70"]
+    assert resolved.status is LinkStatus.LINKED
+    assert resolved.record.serial_number == 1435

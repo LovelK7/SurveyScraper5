@@ -18,6 +18,8 @@ The direction of each list is fixed by ownership (hub doc §6): the field owns
 
 from __future__ import annotations
 
+import csv
+import io
 from datetime import date
 from pathlib import Path
 
@@ -216,12 +218,19 @@ def synonym_edit(resolution: Resolution) -> SBEdit | None:
     )
 
 
-def new_sb_row(row: SheetRow, serial_number: int) -> NewRow:
+def new_sb_row(
+    row: SheetRow, serial_number: int, defaults: dict[str, str] | None = None
+) -> NewRow:
     """Render a confirmed cave as an SB row.
 
     Naming follows the convention that makes the sheet's number a legitimate
     key (hub doc §5): a cave with no name of its own **is** `LiDAR Kristal N`;
     a named one keeps its name and carries `LiDAR Kristal N` as a synonym.
+
+    ``defaults`` are columns that are a property of the *campaign* rather than
+    of any one row — `Lokalitet: Ćićarija` for this sheet, which is where all
+    396 of its points lie. They form a base layer; anything derived from the row
+    itself wins over them.
     """
     field_name = row.field_name
     kristal = row.kristal_name
@@ -248,7 +257,7 @@ def new_sb_row(row: SheetRow, serial_number: int) -> NewRow:
         # "Za istražit" without anyone touching the view.
         note = "za istražit" + (f", {row.comment}" if row.comment else "")
 
-    values = {
+    derived = {
         "Redni broj": str(serial_number),
         "Broj pločice": row.plaque or "",
         "Ime objekta": name,
@@ -256,15 +265,23 @@ def new_sb_row(row: SheetRow, serial_number: int) -> NewRow:
         "X HTRS": f"{row.x:.0f}" if row.x is not None else "",
         "Y HTRS": f"{row.y:.0f}" if row.y is not None else "",
         "Z": f"{row.z:.0f}" if row.z is not None else "",
-        # For a queued cave this column holds the finder/source, not a survey
-        # author — which is exactly what `provjerio` is.
+        # For a queued cave these two hold the finder and the year it was
+        # found, not a survey author and a survey year — which is exactly what
+        # `provjerio` and `datum provjere` are.
         "Autori nacrta ili izvor": row.checked_by or "",
+        "Godina ili period istraživanja": row.checked_year or "",
         "Napomena": note,
     }
+    values = {**(defaults or {}), **derived}
     return NewRow(row_id=row.row_id, values=values, warning=warning)
 
 
-def build(resolutions: list[Resolution], *, next_serial: int) -> SyncResult:
+def build(
+    resolutions: list[Resolution],
+    *,
+    next_serial: int,
+    row_defaults: dict[str, str] | None = None,
+) -> SyncResult:
     """Turn resolved rows into the review lists."""
     result = SyncResult()
     counts = {status.value: 0 for status in LinkStatus}
@@ -280,7 +297,9 @@ def build(resolutions: list[Resolution], *, next_serial: int) -> SyncResult:
             if edit is not None:
                 result.to_sb_edits.append(edit)
         elif resolution.status is LinkStatus.CANDIDATE:
-            result.to_sb.append(new_sb_row(resolution.row, next_serial))
+            result.to_sb.append(
+                new_sb_row(resolution.row, next_serial, row_defaults)
+            )
             next_serial += 1
         elif resolution.status is LinkStatus.CONFLICT:
             result.to_decide.append(
@@ -304,19 +323,17 @@ def _joined(lines: list[str]) -> str:
     return chr(10).join(lines) + chr(10)
 
 
-def _tsv_cell(value: str) -> str:
-    """Flatten a cell so the pasted block stays rectangular.
+def _flat_cell(value: str) -> str:
+    """Collapse whitespace so one value stays one line.
 
-    Comments come from a spreadsheet, so they can carry tabs and line breaks —
-    either would silently shift every following column on paste. A value that
-    *starts* with a quote is re-parsed by Excel's clipboard reader as a quoted
-    field, so the quote is spaced away from the front.
+    Comments come from a spreadsheet, so they can carry tabs and line breaks.
+    Quoting would keep those legal, but a cell that spans lines is miserable to
+    read in the file and to re-paste, and nothing is lost by flattening it.
     """
-    flat = " ".join(value.split())
-    return " " + flat if flat.startswith('"') else flat
+    return " ".join(value.split())
 
 
-def to_tsv(rows: list[NewRow], columns: tuple[str, ...] = NEW_ROW_COLUMNS) -> str:
+def to_csv(rows: list[NewRow], columns: tuple[str, ...] = NEW_ROW_COLUMNS) -> str:
     """The paste-able block: a header line plus one line per new SB row.
 
     ``columns`` must be **the workbook's own header, in its own order** — a
@@ -324,21 +341,24 @@ def to_tsv(rows: list[NewRow], columns: tuple[str, ...] = NEW_ROW_COLUMNS) -> st
     a new row has no value for are emitted empty, which is what keeps the block
     aligned with the table.
 
-    Tab-separated because that is the format Excel and Google Sheets split into
-    cells on paste; comma-separated text would land in a single cell.
+    Real CSV, written by `csv.writer`: Napomena is full of commas and the odd
+    quote (`za istražit, "Opasna" 6metarka`), and only proper quoting survives
+    that. Excel picks the field separator from the machine's list separator, so
+    a comma is right here (`sList = ","`, checked 2026-08-29); CRLF and the BOM
+    are what it expects of a `.csv`.
     """
     by_key = {normalize_lookup_key(column): column for column in columns}
-    lines = [chr(9).join(columns)]
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator=chr(13) + chr(10))
+    writer.writerow(columns)
     for row in rows:
         # Match our value keys to the workbook's spelling, not the other way.
         values = {
             by_key.get(normalize_lookup_key(name), name): value
             for name, value in row.values.items()
         }
-        lines.append(
-            chr(9).join(_tsv_cell(values.get(column, "")) for column in columns)
-        )
-    return _joined(lines)
+        writer.writerow([_flat_cell(values.get(column, "")) for column in columns])
+    return buffer.getvalue()
 
 
 def _column(value: str, width: int) -> str:
@@ -424,19 +444,25 @@ def write_lists(
 ) -> dict[str, Path]:
     """Write the review lists into ``directory``, returning what was written.
 
-    List 1 is TSV because it is meant to be pasted into `Svi objekti`; the rest
-    are plain text because they are worked through by hand, one line at a time.
+    List 1 is CSV because it is meant to be opened in Excel and pasted into
+    `Svi objekti`; the rest are plain text because they are worked through by
+    hand, one line at a time.
     All of them carry a BOM — see ``FILE_ENCODING``. Nothing here writes to SB
     or to the sheet.
     """
     directory.mkdir(parents=True, exist_ok=True)
     written = {
-        "za-sb": directory / "1-za-sb.tsv",
+        "za-sb": directory / "1-za-sb.csv",
         "dopune-sb": directory / "2-dopune-sb.txt",
         "za-tablicu": directory / "3-za-tablicu.txt",
         "za-odluku": directory / "4-za-odluku.txt",
     }
-    written["za-sb"].write_text(to_tsv(result.to_sb, columns), encoding=FILE_ENCODING)
+    # newline="" so the CRLF `csv.writer` already emitted is written through
+    # untranslated. Without it Windows turns each one into CR-CRLF and every
+    # record ends up separated by a blank line — 126 rows parse back as 253.
+    written["za-sb"].write_text(
+        to_csv(result.to_sb, columns), encoding=FILE_ENCODING, newline=""
+    )
     written["dopune-sb"].write_text(
         render_sb_edits(result.to_sb_edits), encoding=FILE_ENCODING
     )
@@ -461,6 +487,6 @@ __all__ = [
     "render_sheet_list",
     "sheet_differences",
     "synonym_edit",
-    "to_tsv",
+    "to_csv",
     "write_lists",
 ]

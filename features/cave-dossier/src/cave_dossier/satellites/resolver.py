@@ -14,7 +14,8 @@ order they are tried:
    the number lives *inside SB*, put there deliberately, rather than being
    guessed from a name.
 3. **Coordinate proximity**, off by default and deliberately timid — see
-   ``AUTO_LINK_M``.
+   ``AUTO_LINK_M``. Its one unconditional case is ``EXACT_MATCH_M``: a row
+   sitting on the same point *is* that row, whatever else is nearby.
 4. **Name**, corroboration only; never enough on its own.
 
 Two guards keep the whole thing honest:
@@ -53,6 +54,13 @@ REVIEW_LINK_M = 15.0
 #: An auto-link also requires no runner-up this close — dense terrain, so
 #: "nearest" is not the same as "unambiguous".
 AMBIGUITY_M = 15.0
+#: At or below this, the two rows are *the same point*, and no rival and no
+#: override can make it otherwise. Grounded in the data: two Liburnija points
+#: are never closer than 1.4 m to each other, and two SB rows in that window
+#: never closer than 4.2 m — so nothing else can be sitting on this spot. Its
+#: real job is round-tripping: once a candidate has been pasted into SB, the
+#: next run has to recognise the row it just created, rivals or not.
+EXACT_MATCH_M = 1.0
 
 
 @dataclass(frozen=True)
@@ -372,60 +380,84 @@ def resolve_rows(
 
         # 4. Coordinates last, timid, and only when asked for.
         confirmed = normalize_lookup_key(row.row_id) in confirmed_new
-        if use_coordinates and not confirmed:
+        if use_coordinates:
             near = _nearest(row, records)
             if near:
                 distance, record = near[0]
                 rival = near[1][1] if len(near) > 1 else None
                 rival_distance = near[1][0] if len(near) > 1 else None
-                # Two independent signals that agree beat either alone: an exact
-                # name match inside the review radius is the same cave, even
-                # past the auto band. Sheet 285 *Jama u Puharima* is SB 733 at
-                # 5.1 m — one tenth of a metre outside AUTO_LINK_M, and plainly
-                # the same cave (user, 2026-08-29).
-                if _same_name(row.field_name, record):
-                    resolutions.append(
-                        Resolution(
-                            row=row,
-                            record=record,
-                            status=LinkStatus.LINKED,
-                            key="name+coordinate",
-                            evidence=f"isto ime i {distance:.1f} m",
-                            distance_m=distance,
-                        )
-                    )
-                    continue
-                if distance <= AUTO_LINK_M and rival is None:
+
+                # An exact match is the same point, and nothing overrides that
+                # — not a near rival, not `confirmed_new`. This is what makes a
+                # run idempotent: *Špiljuljak* is a confirmed new cave, so the
+                # last run proposed it and it was added to SB; without this the
+                # next run would propose adding it again, forever.
+                if distance <= EXACT_MATCH_M:
                     resolutions.append(
                         Resolution(
                             row=row,
                             record=record,
                             status=LinkStatus.LINKED,
                             key="coordinate",
-                            evidence=f"{distance:.1f} m, nema drugog unutar "
-                                     f"{AMBIGUITY_M:.0f} m",
+                            evidence=f"{distance:.1f} m — ista točka",
                             distance_m=distance,
                         )
                     )
                     continue
-                detail = f"{record.name} (Redni broj {record.serial_number}) na {distance:.1f} m"
-                if rival is not None:
-                    detail += (
-                        f"; ali i {rival.name} (Redni broj {rival.serial_number})"
-                        f" na {rival_distance:.1f} m"
+
+                if not confirmed:
+                    # Two independent signals that agree beat either alone: an
+                    # exact name match inside the review radius is the same
+                    # cave, even past the auto band. Sheet 285 *Jama u
+                    # Puharima* is SB 733 at 5.1 m — one tenth of a metre
+                    # outside AUTO_LINK_M, and plainly the same cave (user,
+                    # 2026-08-29).
+                    if _same_name(row.field_name, record):
+                        resolutions.append(
+                            Resolution(
+                                row=row,
+                                record=record,
+                                status=LinkStatus.LINKED,
+                                key="name+coordinate",
+                                evidence=f"isto ime i {distance:.1f} m",
+                                distance_m=distance,
+                            )
+                        )
+                        continue
+                    if distance <= AUTO_LINK_M and rival is None:
+                        resolutions.append(
+                            Resolution(
+                                row=row,
+                                record=record,
+                                status=LinkStatus.LINKED,
+                                key="coordinate",
+                                evidence=f"{distance:.1f} m, nema drugog unutar "
+                                         f"{AMBIGUITY_M:.0f} m",
+                                distance_m=distance,
+                            )
+                        )
+                        continue
+                    detail = (
+                        f"{record.name} (Redni broj {record.serial_number})"
+                        f" na {distance:.1f} m"
                     )
-                resolutions.append(
-                    Resolution(
-                        row=row,
-                        record=None,
-                        status=LinkStatus.CONFLICT,
-                        key="coordinate",
-                        evidence=detail,
-                        distance_m=distance,
-                        rival=rival,
+                    if rival is not None:
+                        detail += (
+                            f"; ali i {rival.name} (Redni broj"
+                            f" {rival.serial_number}) na {rival_distance:.1f} m"
+                        )
+                    resolutions.append(
+                        Resolution(
+                            row=row,
+                            record=None,
+                            status=LinkStatus.CONFLICT,
+                            key="coordinate",
+                            evidence=detail,
+                            distance_m=distance,
+                            rival=rival,
+                        )
                     )
-                )
-                continue
+                    continue
 
         # 5. Nothing reaches it. Only now does scope matter: a cave another
         #    society explored separately does not enter SB (user, 2026-08-29).
@@ -480,6 +512,7 @@ def resolve_rows(
 __all__ = [
     "AMBIGUITY_M",
     "AUTO_LINK_M",
+    "EXACT_MATCH_M",
     "KRISTAL_RE",
     "REVIEW_LINK_M",
     "Resolution",

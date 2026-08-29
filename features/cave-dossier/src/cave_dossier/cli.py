@@ -467,7 +467,13 @@ def cmd_sat_sync(
         out_of_scope=set(overrides.get("out_of_scope") or []),
         confirmed_new=set(overrides.get("confirmed_new") or []),
     )
-    result = sync.build(resolutions, next_serial=next_serial)
+    result = sync.build(
+        resolutions,
+        next_serial=next_serial,
+        row_defaults={
+            str(k): str(v) for k, v in (overrides.get("row_defaults") or {}).items()
+        },
+    )
     counts = result.counts
 
     print(f"Liburnija: {len(rows)} row(s) from {path.name}")
@@ -489,6 +495,14 @@ def cmd_sat_sync(
     if result.to_sb:
         print(f"     Redni broj {result.to_sb[0].values['Redni broj']}"
               f" – {result.to_sb[-1].values['Redni broj']}")
+        # A missing year is not worth a line each, but it is worth knowing.
+        undated = [
+            new_row
+            for new_row in result.to_sb
+            if not new_row.values.get("Godina ili period istraživanja")
+        ]
+        if undated:
+            print(f"     {len(undated)} bez godine — tablica nema datum provjere")
     for new_row in result.to_sb[:limit]:
         values = new_row.values
         print(f"    {values['Redni broj']:>5}  {values['Ime objekta']}"
@@ -540,10 +554,11 @@ def cmd_sat_sync(
         print(f"Written to {target}:")
         for label, path in written.items():
             print(f"  {path.name:<20} {label}")
-        print(f"  1-za-sb.tsv carries all {len(sb_columns)} SB columns in the")
-        print("  workbook's own order: open it, select the rows under the header,")
-        print("  copy, and paste below the last row of `Svi objekti`. Check Redni")
-        print("  broj first — it assumes nobody added a row since this run.")
+        print(f"  1-za-sb.csv carries all {len(sb_columns)} SB columns in the")
+        print("  workbook's own order: open it in Excel, select the rows under")
+        print("  the header, copy, and paste below the last row of `Svi objekti`.")
+        print("  Check Redni broj first — it assumes nobody added a row since")
+        print("  this run.")
 
     actionable = result.to_sb or result.to_sb_edits or result.to_sheet
     return EXIT_READY if actionable else EXIT_NOT_READY
@@ -658,8 +673,8 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="?",
         const="",
         metavar="DIR",
-        help="Write all three lists — 1-za-sb.tsv (paste into Svi objekti), "
-             "2-za-tablicu.txt, 3-za-odluku.txt. Bare --out uses "
+        help="Write the review lists — 1-za-sb.csv (paste into Svi objekti), "
+             "2-dopune-sb.txt, 3-za-tablicu.txt, 4-za-odluku.txt. Bare --out uses "
              "sb-sync/<satellite>/<today>/; pass DIR to put them elsewhere",
     )
 

@@ -310,15 +310,17 @@ the next run resolves it for free and no longer has to guess.
 
 ### The jargon, unpacked
 
-**TSV** — "tab-separated values". A plain text table where a Tab character
-separates one column from the next. It matters for exactly one reason: when you
-copy TSV text and paste it into Excel or Google Sheets, it lands **spread across
-cells**. Paste comma-separated text instead and the whole line piles into a
-single cell. So TSV is not a technology, it is just the format that makes
-copy-paste work.
+**CSV** — "comma-separated values". A plain text table, one row per line,
+columns separated by commas, and any value that itself contains a comma wrapped
+in quotes — which every Napomena here needs. Excel opens it as a spreadsheet, so
+the flow is open → select the rows → copy → paste. Excel picks the separator
+from the machine's list separator rather than from the file: `sList` is `,` here
+(checked 2026-08-29), so a comma is right. On a machine set to `;` the same file
+would land in a single column.
 
 **Patch file** — list 1, written to a file instead of only printed, so that
-adding 126 caves is *select → copy → paste below the last row of `Svi objekti`*
+adding 126 caves is *open in Excel → select → copy → paste below the last row of
+`Svi objekti`*
 rather than typing 126 rows by hand. Its destination is **SB**, in Excel, on your
 machine. A paste is an ordinary Excel action: it does not disturb macros,
 validations or the Power Query views, which recompute on their own — unlike
@@ -334,6 +336,10 @@ not, both learned the hard way on the first generated file:
 * **A BOM.** Windows Excel reads a UTF-8 file as the local codepage unless it
   finds one, which turns every č/š/ž into mojibake. The files are written
   `utf-8-sig`.
+* **Newlines written through untranslated.** `csv.writer` emits CRLF and Windows
+  then translates it again, so the file gains a blank line between every record
+  and 126 rows parse back as 253. It looks fine in an editor, which is what
+  makes it worth a regression test.
 
 **Mirror tab** — a *tab* is one page inside a spreadsheet (the tabs along the
 bottom edge). The idea was that the tool would own one tab in the Liburnija
@@ -375,7 +381,7 @@ cave_dossier/satellites/
   model.py       CandidateState · LinkStatus · Difference · NewRow · Decision · SyncResult
   liburnija.py   the full sheet reader: 18 columns, the four-state lifecycle
   resolver.py    SBRecord index · ranked keys · eligibility filter · coordinate bands
-  sync.py        the three review lists + the paste-able TSV block
+  sync.py        the four review lists + the paste-able CSV block
 cave_dossier/intake/liburnija.py   the narrow number→plaque→SB slice, now over the
                                    same reader (one CSV parser, two callers)
 
@@ -388,7 +394,7 @@ sb-sync/<satellite>/<YYYY-MM-DD>/  where a run lands. Gitignored (real society
 |---|---|
 | `cavedossier sat sync [liburnija]` | **built** — resolves every sheet row against SB and prints the four lists. Read-only on both sides |
 | `… --coords` | adds the coordinate key, auto-linking only under 5 m and unambiguous; everything else lands in list 3 |
-| `… --out` | writes the lists into `sb-sync/<satellite>/<today>/` — `1-za-sb.tsv` (paste into `Svi objekti`), `2-dopune-sb.txt`, `3-za-tablicu.txt`, `4-za-odluku.txt`. `--out DIR` puts them elsewhere |
+| `… --out` | writes the lists into `sb-sync/<satellite>/<today>/` — `1-za-sb.csv` (paste into `Svi objekti`), `2-dopune-sb.txt`, `3-za-tablicu.txt`, `4-za-odluku.txt`. `--out DIR` puts them elsewhere |
 | `… --limit N` | rows printed per list |
 
 Sequencing (each step useful on its own):
@@ -505,6 +511,20 @@ decision 2 (other societies removed) and the calibrated bands:
 - Only one carries a plaque already; the rest get theirs when someone visits.
 - Every row gets `Napomena` seeded with the queue flag `za istražit, <komentar>`
   so SB's own Power Query files it under *Za istražit* — which grows **199 → 325**.
+- **`Lokalitet` = Ćićarija** on every row (user, 2026-08-29): a property of the
+  campaign, not of any one point, so it lives in `config.yaml` as
+  `satellites.liburnija.row_defaults`. Corroborated — 53 of the 55 *LiDAR
+  Kristal* rows already in SB say exactly that, and it is an established value
+  in SB's own vocabulary (83 rows).
+- **`Godina ili period istraživanja` = the year found**, parsed out of the
+  sheet's `datum provjere`. For a queued cave that column holds the year someone
+  walked to the point, the same way `Autori nacrta ili izvor` holds the finder
+  rather than a survey author. 2024 × 61, 2025 × 41, 2026 × 6, 2023 × 1 — and
+  **17 rows have no date in the sheet at all**, so they get no year; the run
+  prints that count rather than a line each.
+- Left empty on purpose: `Najbliže mjesto`, which 53 of the existing Kristal
+  rows fill with *Veprinac*. The sheet does not carry it, and guessing it from
+  the neighbours would be inventing data.
 - The earlier figures in this doc (*117*, then *127*) predate two guards the
   live runs added — the duplicate-name stop and the coordinate bands. **126** is
   the number to work from; the eight above are the difference worth looking at.

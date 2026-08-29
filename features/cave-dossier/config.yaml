@@ -134,6 +134,13 @@ satellites:
       # (SB 1254) — a legitimate third cave in the same cluster (user, 2026-08-29).
       - "špiljuljak"
 
+    # Values every new SB row from this sheet gets. A property of the campaign
+    # rather than of any one row: all 396 LIDAR points lie on Ćićarija, and 53
+    # of the 55 LiDAR Kristal rows already in SB say exactly this (user,
+    # 2026-08-29). A campaign somewhere else sets its own.
+    row_defaults:
+      Lokalitet: "Ćićarija"
+
     # Sheet row id -> SB Redni broj, for links no key reaches.
     manual_matches: {}
 
