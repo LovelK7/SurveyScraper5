@@ -88,3 +88,77 @@ def test_manual_mapping_resolves_a_folder_with_no_cave_name(tmp_path: Path) -> N
     match = match_leaves(leaves, CANDIDATES, {"108_Renata": 752})[0]
     assert match.cave.object_name == "Malenica"
     assert match.proposed_name == "752_Malenica_108_Renata"
+
+
+# ── The Liburnija sheet bridge ────────────────────────────────────────
+
+
+SHEET_CSV = """name,x,y,z,vjerojatnost,provjereno (1/0),provjerio,datum provjere,speleo_obj (1/0),istrazeno (1/0),Istražili,Naziv_novi,Naziv_stari,Br.pl,Komentar,Zapisnik,Nacrt,Foto ulaza
+4,1,2,3,visoka,1,Tin,16/11/2024,1,1,SUE,Integral,,051-679,13 m dubine,TRUE,TRUE,TRUE
+43,1,2,3,niska,1,Dino,15/12/2024,1,1,SUE,,,051-742,"7 m , OBJEKT",TRUE,TRUE,TRUE
+79,1,2,3,niska,1,Fero,15/12/2024,1,1,SUE,,Jamorinke,051-814,SUE docrtala,TRUE,TRUE,TRUE
+14,1,2,3,visoka,1,Dino,15/12/2024,1,0,,,,,"Velikih 7 metara, OBJEKT",FALSE,FALSE,FALSE
+"""
+
+
+def _sheet(tmp_path: Path) -> dict:
+    from cave_dossier.intake import liburnija
+
+    path = tmp_path / "sheet.csv"
+    path.write_text(SHEET_CSV, encoding="utf-8")
+    return liburnija.load_rows(path)
+
+
+def test_sheet_row_resolves_into_sb_through_its_plaque(tmp_path: Path) -> None:
+    from cave_dossier.intake import liburnija
+
+    kristal = CaveCandidate(
+        1257, "LiDAR Kristal 43", None, "051-742", None, normalize_lookup_key("LiDAR Kristal 43")
+    )
+    row, cave = liburnija.resolve("43", _sheet(tmp_path), [kristal])
+    assert row.plaque == "051-742"
+    assert cave.serial_number == 1257
+
+
+def test_sheet_row_with_no_sb_row_is_the_add_to_sb_case(tmp_path: Path) -> None:
+    """Sheet 79 (*Jamorinke*, 051-814) is a real cave SB does not have."""
+    from cave_dossier.intake import liburnija
+
+    row, cave = liburnija.resolve("79", _sheet(tmp_path), CANDIDATES)
+    assert row.name == "Jamorinke"
+    assert row.is_cave and row.explored
+    assert cave is None
+
+
+def test_sheet_row_without_a_plaque_cannot_reach_sb(tmp_path: Path) -> None:
+    """No plaque means no bridge — which is what keeps other numbering schemes out."""
+    from cave_dossier.intake import liburnija
+
+    row, cave = liburnija.resolve("14", _sheet(tmp_path), CANDIDATES)
+    assert row.plaque is None
+    assert cave is None
+
+
+def test_a_number_glued_inside_a_word_is_not_a_sheet_row() -> None:
+    """`Mune_Nat4_Natalija` must not offer "4" — it matched *Integral* on the live run."""
+    from cave_dossier.intake import sheet_number_tokens
+
+    assert sheet_number_tokens("Mune_Nat4_Natalija") == []
+    assert sheet_number_tokens("108_Renata") == ["108"]
+    assert sheet_number_tokens("Jasnina jam lidar 43") == ["43"]
+    assert sheet_number_tokens("lisina L366") == ["366"]      # LIDAR marker letter
+    assert sheet_number_tokens("79_89_Jamorinke_Fero") == ["79", "89"]
+
+
+def test_folder_named_after_a_sheet_row_maps_through_the_sheet(tmp_path: Path) -> None:
+    from cave_dossier.intake import find_leaf_folders, match_leaves
+
+    (tmp_path / "!!Lidarke" / "43_Jasna").mkdir(parents=True)
+    kristal = CaveCandidate(
+        1257, "LiDAR Kristal 43", None, "051-742", None, normalize_lookup_key("LiDAR Kristal 43")
+    )
+    leaves = find_leaf_folders(tmp_path)
+    match = match_leaves(leaves, [kristal], sheet_rows=_sheet(tmp_path))[0]
+    assert match.cave.serial_number == 1257
+    assert match.sheet_number == "43"
+    assert match.proposed_name == "1257_LiDAR Kristal 43_Jasna"

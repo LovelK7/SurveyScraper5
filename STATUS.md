@@ -78,11 +78,12 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       2026-08-28**: the leaf folders under `!!!Digitalizacija/!Za digitalizirat` get a
       `<Redni broj>_<Ime objekta>_<original>` prefix. `cavedossier intake map` proposes the
       mapping (dry run; `--apply` renames). **12 of 55 leaves resolve automatically**;
-      **17 of 55 leaves map to an SB row; the other 38 are caves SB does not have yet**
-      (user-confirmed), so they wait on a row before they can be numbered. Folder
-      numbers are old Za-istražit numbers but collide across campaigns — of 20 checked,
-      5 resolved and all 5 pointed at the wrong locality — so they are printed as
-      suggestions, never used to rename.
+      **31 of 55 leaves map to an SB row; the other 24 are caves SB does not have yet.**
+      The Veprinac folders are named after rows in the **Liburnija_pot_speleo_2024**
+      Google Sheet (396 LIDAR candidates); that row's plaque number is what links them
+      to SB, resolving 14 of 15. Read-only bridge in `intake/liburnija.py` over a
+      gitignored CSV cache — wiring the sheet in as a real source is a later
+      architecture decision (user, 2026-08-29).
 
 **M4 (OSZ builder) is no longer gated** — the template shipped 2026-08-25; picking it up
 before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).

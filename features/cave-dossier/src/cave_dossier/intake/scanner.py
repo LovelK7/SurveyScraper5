@@ -29,10 +29,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from cave_dossier.core.config import Settings
 from cave_dossier.core.matching import CaveCandidate, PathMatch, match_paths
 from cave_dossier.core.normalization import normalize_lookup_key
+from cave_dossier.intake import liburnija
 
 #: Files Windows or Drive leave behind; never cave data.
 _SYSTEM_FILENAMES = {"desktop.ini", "thumbs.db", ".ds_store"}
@@ -41,10 +43,16 @@ _SYSTEM_FILENAMES = {"desktop.ini", "thumbs.db", ".ds_store"}
 class IntakeMatch(PathMatch):
     """A leaf intake folder resolved to a cave."""
 
+    #: Row number in the Liburnija LIDAR sheet, when that is what linked it.
+    sheet_number: str | None = None
+
+    #: A folder, so a dot in the name is part of the name ("M.Dol Pećina").
+    has_extension: ClassVar[bool] = False
+
     #: Confirmed to hold data for a cave that is not in SB yet. Set from
     #: `intake.new_entries`; overrides any automatic match, because a new cave
     #: often resembles an existing name (`Božur_Frustuck` is NOT *Božur* 1087).
-    is_new_entry: bool = False
+    is_new_entry: bool = False  # per-instance, set by match_leaves
 
     @property
     def proposed_name(self) -> str | None:
@@ -114,6 +122,7 @@ def match_leaves(
     candidates: list[CaveCandidate],
     manual: dict[str, int] | None = None,
     new_entries: list[str] | None = None,
+    sheet_rows: dict[str, object] | None = None,
 ) -> list[IntakeMatch]:
     """Resolve leaf folders to SB rows. Leading numbers are NOT used — see above."""
     matches: list[IntakeMatch] = match_paths(  # type: ignore[assignment]
@@ -123,6 +132,24 @@ def match_leaves(
         use_numbers=False,
         match_class=IntakeMatch,
     )
+    # The Liburnija sheet resolves what the names cannot: a folder named after
+    # a sheet row number reaches SB through that row's plaque number.
+    if sheet_rows:
+        for match in matches:
+            if match.cave is not None:
+                continue
+            for token in sheet_number_tokens(match.path.name):
+                resolved = liburnija.resolve(token, sheet_rows, candidates)  # type: ignore[arg-type]
+                if resolved and resolved[1] is not None:
+                    row, cave = resolved
+                    match.cave = cave
+                    match.confidence = "high"
+                    match.evidence = (
+                        f"Liburnija list br. {row.number} -> pločica {row.plaque}"
+                    )
+                    match.sheet_number = row.number
+                    break
+
     fragments = [fragment.casefold() for fragment in (new_entries or [])]
     for match in matches:
         if any(fragment in match.path.name.casefold() for fragment in fragments):
@@ -131,6 +158,24 @@ def match_leaves(
             match.evidence = "potvrđeno: nema retka u SB"
             match.confidence = "new"
     return matches
+
+
+def sheet_number_tokens(name: str) -> list[str]:
+    """Digit runs in a folder name that could be a Liburnija sheet row number.
+
+    A number only counts when it stands on its own — at the start, after a
+    separator, or after a lone LIDAR marker letter (`lisina L366`). Two digits
+    minimum. Without this, `Mune_Nat4_Natalija` would offer up the "4" inside
+    "Nat4" and match sheet row 4, which is *Integral* in an entirely different
+    place — a false positive found on the first live run.
+    """
+    tokens: list[str] = []
+    for hit in re.finditer(r"\d{2,4}(?!\d)", name):
+        start = hit.start()
+        before = name[start - 1] if start else ""
+        if start == 0 or before in " _-.(/" or before in "Ll":
+            tokens.append(hit.group())
+    return tokens
 
 
 def old_queue_candidates(
@@ -186,5 +231,6 @@ __all__ = [
     "intake_root",
     "match_leaves",
     "old_queue_candidates",
+    "sheet_number_tokens",
     "suggest",
 ]

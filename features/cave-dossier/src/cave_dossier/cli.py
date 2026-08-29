@@ -23,6 +23,7 @@ from cave_dossier.photos import (
 )
 from cave_dossier.intake import (
     find_leaf_folders,
+    liburnija,
     intake_root,
     match_leaves,
     old_queue_candidates,
@@ -348,8 +349,12 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
         print(f"No leaf folders under {root}")
         return EXIT_NOT_READY
     candidates = build_candidates(SBReader(settings), settings)
+    sheet_csv = liburnija.sheet_path(settings)
+    sheet_rows = liburnija.load_rows(sheet_csv) if sheet_csv else {}
+    if sheet_rows:
+        print(f"Liburnija sheet: {len(sheet_rows)} numbered rows from {sheet_csv.name}")
     matches = match_leaves(leaves, candidates, settings.intake_manual_matches,
-                           settings.intake_new_entries)
+                           settings.intake_new_entries, sheet_rows)
     by_path = {leaf.path: leaf for leaf in leaves}
 
     matched = [m for m in matches if m.cave is not None and m.confidence != "conflict"]

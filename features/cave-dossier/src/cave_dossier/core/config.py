@@ -62,6 +62,8 @@ class Settings:
     intake_manual_matches: dict[str, int] = field(default_factory=dict)
     # Folder fragments confirmed to hold data for caves not yet in SB.
     intake_new_entries: list[str] = field(default_factory=list)
+    # Cached CSV of the Liburnija LIDAR sheet; see intake/liburnija.py.
+    intake_sheet_csv: str | None = None
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -162,4 +164,5 @@ def load_settings() -> Settings:
         intake_new_entries=[
             str(value) for value in ((raw.get("intake") or {}).get("new_entries") or []) if value
         ],
+        intake_sheet_csv=((raw.get("intake") or {}).get("sheet_csv") or None),
     )

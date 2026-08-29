@@ -76,6 +76,13 @@ archive:
 # for leaves the name matcher cannot resolve, and the folders confirmed to hold
 # data for caves that are NOT in SB yet.
 intake:
+  # Cached CSV export of the "Liburnija_pot_speleo_2024" Google Sheet
+  # (1-YNyvG5p9pkiqss0au5IEKZfwkXzUUAylCcFDRPCFY8). The Veprinac intake folders
+  # are named after its row numbers; the row's plaque number is what links them
+  # to SB. Read-only bridge for now — wiring the sheet in as a real source is a
+  # later architecture decision (user, 2026-08-29).
+  sheet_csv: "example/liburnija_pot_speleo.csv"
+
   manual_matches:
     "Bilova ponikva": 976          # SB spells it "Billova ponikva"
     "Golobreška nanoekspedicija": 1103   # SB: "Golobreška mikroekspedicija"

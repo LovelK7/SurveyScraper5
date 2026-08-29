@@ -27,7 +27,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 from pathlib import Path
+from typing import ClassVar
 
 from cave_dossier.core.config import Settings
 from cave_dossier.core.normalization import normalize_lookup_key, split_semicolon_values
@@ -78,6 +80,11 @@ class PathMatch:
     confidence: str = "none"  # high | medium | conflict | none
     conflict_with: CaveCandidate | None = None
 
+    #: Files have an extension to preserve; folders do not. Without this a
+    #: folder named "M.Dol Pećina" would have ".Dol Pećina" torn off as if it
+    #: were a suffix. Subclasses for directories set it False.
+    has_extension: ClassVar[bool] = True
+
     @property
     def stale_prefix(self) -> str | None:
         """A leading number that is NOT this cave's Redni broj.
@@ -108,13 +115,19 @@ class PathMatch:
         )
 
     def rest(self, *, strip_stale: bool = True, insert_name: bool = True) -> str:
-        """The name minus a stale number, with the cave name inserted.
+        """The name minus a stale number, with the SB cave name put in front.
 
         Target shape ``<broj>_<Ime objekta>_<sve ostalo>``: the number alone is
-        unreadable in a listing, and the rest usually carries an author or a
-        description worth keeping. The name is only inserted when it is not
-        already there, so `478_Podbudišinac_SKnaus.jpg` does not become
-        `954_Podbudišinac_Podbudišinac_SKnaus.jpg`.
+        unreadable in a listing, and the tail usually carries the collector or a
+        description worth keeping.
+
+        Three cases:
+
+        * the SB name is already in the name (in any word order) → untouched
+        * a leading segment is the *same cave under a worse spelling*
+          (`Bilova ponikva_Cico` vs SB *Billova ponikva*) → that segment is
+          **replaced** by the SB name, per the user's instruction 2026-08-29
+        * otherwise → the SB name is prepended and nothing is lost
         """
         rest = self.path.name
         if strip_stale:
@@ -126,14 +139,15 @@ class PathMatch:
         name = sanitize_for_filename(self.cave.object_name)
         if not name:
             return rest
-        rest_stem = Path(rest).stem if Path(rest).suffix else rest
-        if normalize_lookup_key(name) in normalize_lookup_key(rest_stem):
+        suffix = Path(rest).suffix if self.has_extension else ""
+        stem = rest[: -len(suffix)] if suffix else rest
+        if normalize_lookup_key(name) in normalize_lookup_key(stem):
             return rest
         # Same words in a different order ("Grotta possibile" vs "Possibile
         # Grotta") — the name is already there, just rearranged.
-        if _tokens(name) and _tokens(name) <= _tokens(rest_stem):
+        if _tokens(name) and _tokens(name) <= _tokens(stem):
             return rest
-        return f"{name}_{rest}"
+        return f"{name}_{_drop_variant_segments(stem, name)}{suffix}".rstrip("_")
 
     @property
     def proposed_name(self) -> str | None:
@@ -303,6 +317,35 @@ def apply_renames(matches: list[PathMatch]) -> list[RenameOutcome]:
             continue
         outcomes.append(RenameOutcome(match.path, target, "renamed"))
     return outcomes
+
+
+def _drop_variant_segments(stem: str, sb_name: str) -> str:
+    """Remove leading segments that are the SB name under a worse spelling.
+
+    `Bilova ponikva_Cico` + *Billova ponikva* → `Cico`, so the proposal reads
+    `976_Billova ponikva_Cico` rather than carrying both spellings. Only leading
+    segments are considered, and only while they resemble the SB name: the tail
+    (the collector, a local id, a qualifier) is never touched.
+    """
+    segments = stem.split("_")
+    name_key = normalize_lookup_key(sb_name)
+    if not name_key:
+        return stem
+    kept = list(segments)
+    while kept:
+        key = normalize_lookup_key(kept[0])
+        if not key:
+            kept.pop(0)
+            continue
+        resembles = (
+            key in name_key
+            or name_key in key
+            or SequenceMatcher(None, key, name_key).ratio() >= 0.6
+        )
+        if not resembles:
+            break
+        kept.pop(0)
+    return "_".join(kept)
 
 
 def _tokens(text: str) -> set[str]:

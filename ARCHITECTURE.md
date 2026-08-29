@@ -76,6 +76,13 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
   a queue item.
 - **Croatian terms are domain identity** (OSZ, Nacrt, SB, SUE, izjava, isječak karte) —
   see [shared/glossary.md](shared/glossary.md). The codebase itself is English.
+- **A third data source is on the horizon.** Besides SB and the archive dirs, part
+  of the society keeps LIDAR-candidate data in the *Liburnija_pot_speleo_2024*
+  Google Sheet (396 rows: coordinates, checked/unchecked, plaque numbers). Field
+  folders are named after its row numbers, and the plaque number is what links a
+  row back to SB. `cave_dossier/intake/liburnija.py` reads a cached CSV export of
+  it read-only, purely to map folders; promoting the sheet to a real input is an
+  open design decision (user, 2026-08-29).
 - **Real data from day one**: development and testing run against real dirs (photos,
   csx, descriptions) under gitignored `example/` zones; committed test fixtures are
   tiny and synthetic.

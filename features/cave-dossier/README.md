@@ -387,10 +387,29 @@ Redni broj, for spelling variants like *Bilova* → *Billova ponikva*) and
 needed because a new cave often resembles an existing name (`Božur_Frustuck` is
 **not** *Božur* 1087).
 
+### The third source: the Liburnija LIDAR sheet
+
+The Veprinac folders are named after row numbers in a Google Sheet,
+*Liburnija_pot_speleo_2024* — 396 LIDAR candidates with coordinates, whether
+someone checked the point, and for the ones that turned out to be caves, a name
+and a **plaque number**. That plaque is the bridge: `108_Renata` → sheet row 108
+→ pločica 051-723 → SB *LiDAR Kristal 108* (Redni broj 1248). It resolved 14 of
+the 15 numbered Veprinac folders.
+
+Two guards keep it from over-reaching. A number only counts when it stands on
+its own — at a separator or after a lone LIDAR marker letter (`lisina L366`) —
+and two digits minimum, because `Mune_Nat4_Natalija` otherwise offers the "4"
+inside "Nat4" and matches sheet row 4 (*Integral*, somewhere else entirely; a
+false positive caught on the first live run). And the row must carry a plaque
+that exists in SB, so numbers from other schemes simply fail to resolve.
+
+The sheet is cached as CSV under `example/` (gitignored) and read read-only:
+`intake/liburnija.py`. Wiring it in as a real source — people do enter data
+there — is a later architecture decision.
+
 **An unresolved folder means a new cave.** Confirmed by the user: the caves in
 these folders were mostly never entered into SB. So the tool reports them as
-"no SB row — create one, then re-run", not as a matching failure. Current state:
-**17 of 55 mapped, 38 awaiting an SB row.**
+"no SB row — create one, then re-run", not as a matching failure. Current state: **31 of 55 mapped, 24 awaiting an SB row.**
 
 ## Still open
 
