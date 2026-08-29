@@ -77,13 +77,15 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
 - [~] Field-data intake dir layout on Drive (blocks the 2.1a handoff) — **layout settled
       2026-08-28**: the leaf folders under `!!!Digitalizacija/!Za digitalizirat` get a
       `<Redni broj>_<Ime objekta>_<original>` prefix. `cavedossier intake map` proposes the
-      mapping (dry run; `--apply` renames). **12 of 55 leaves resolve automatically**;
-      **31 of 55 leaves map to an SB row; the other 24 are caves SB does not have yet.**
-      The Veprinac folders are named after rows in the **Liburnija_pot_speleo_2024**
-      Google Sheet (396 LIDAR candidates); that row's plaque number is what links them
-      to SB, resolving 14 of 15. Read-only bridge in `intake/liburnija.py` over a
-      gitignored CSV cache — wiring the sheet in as a real source is a later
-      architecture decision (user, 2026-08-29).
+      mapping (dry run; `--apply` renames). The Veprinac folders are named after rows in
+      the **Liburnija_pot_speleo_2024** Google Sheet (396 LIDAR candidates); that row's
+      plaque number is what links them to SB, resolving 14 of 15. Read-only bridge in
+      `intake/liburnija.py` over a gitignored CSV cache — wiring the sheet in as a real
+      source is a later architecture decision (user, 2026-08-29).
+      Mapping **agreed 2026-08-29**: user added *Jamorinke* (row 1311, pločica 051-814),
+      deleted two duplicate folders, confirmed five empty leaves are placeholders and
+      that sheet row 89 (*Jama na Patuhovcu*, another society's cave) stays out of SB.
+      **30 of 53 leaves map; renames approved in principle, awaiting `intake map --apply`.**
 
 **M4 (OSZ builder) is no longer gated** — the template shipped 2026-08-25; picking it up
 before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).

@@ -409,7 +409,14 @@ there — is a later architecture decision.
 
 **An unresolved folder means a new cave.** Confirmed by the user: the caves in
 these folders were mostly never entered into SB. So the tool reports them as
-"no SB row — create one, then re-run", not as a matching failure. Current state: **31 of 55 mapped, 24 awaiting an SB row.**
+"no SB row — create one, then re-run", not as a matching failure. Current state: **30 of 53 mapped, 23 awaiting an SB row** (2026-08-29, after the
+user added *Jamorinke* as row 1311 and removed two duplicate folders).
+
+Three findings the mapping surfaced, all now settled: two folders held the same
+cave twice (`43_Jasna` / `Jasnina jam lidar 43`, `366_Nina` / `lisina L366` —
+duplicates deleted, the Venio copies kept); five leaves are empty placeholders;
+and sheet row 89 (*Jama na Patuhovcu*) stays out of SB deliberately — another
+society explored it.
 
 ## Still open
 

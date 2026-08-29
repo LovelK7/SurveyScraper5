@@ -91,3 +91,10 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-26 — ~~two staged photos match no SB row~~ → resolved 2026-08-28: `rubinija` is a
   transposition of *Rubijina jama* (1214, now in `photos.manual_matches`), `kostrčani` was
   removed by the user as unidentifiable. The folder now matches 52 of 52.
+- 2026-08-29 — `cavedossier intake sheet-gaps`: list Liburnija sheet rows that are caves,
+  explored, carry a plaque and have no SB row — i.e. what to add to SB. Run ad hoc on
+  2026-08-29 and it found exactly one (Jamorinke, added as 1311); worth a command once
+  people keep adding rows to that sheet. Needs an out-of-scope list so another society's
+  caves (sheet 89, Jama na Patuhovcu) are not re-raised every run.
+- 2026-08-29 — five intake leaves are empty placeholders; a "leaf with no files" flag in
+  `intake map` would make that visible at a glance instead of only in the file count.
