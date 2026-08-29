@@ -78,9 +78,11 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       2026-08-28**: the leaf folders under `!!!Digitalizacija/!Za digitalizirat` get a
       `<Redni broj>_<Ime objekta>_<original>` prefix. `cavedossier intake map` proposes the
       mapping (dry run; `--apply` renames). **12 of 55 leaves resolve automatically**;
-      the rest await the user because most of those caves are not in SB at all.
-      Leading numbers there are LIDAR/expedition ids, verified NOT to be SB numbers,
-      so the number signal is off for intake.
+      **17 of 55 leaves map to an SB row; the other 38 are caves SB does not have yet**
+      (user-confirmed), so they wait on a row before they can be numbered. Folder
+      numbers are old Za-istražit numbers but collide across campaigns — of 20 checked,
+      5 resolved and all 5 pointed at the wrong locality — so they are printed as
+      suggestions, never used to rename.
 
 **M4 (OSZ builder) is no longer gated** — the template shipped 2026-08-25; picking it up
 before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).

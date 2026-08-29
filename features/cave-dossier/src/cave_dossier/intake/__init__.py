@@ -11,6 +11,7 @@ from cave_dossier.intake.scanner import (
     find_leaf_folders,
     intake_root,
     match_leaves,
+    old_queue_candidates,
     suggest,
 )
 
@@ -20,5 +21,6 @@ __all__ = [
     "find_leaf_folders",
     "intake_root",
     "match_leaves",
+    "old_queue_candidates",
     "suggest",
 ]

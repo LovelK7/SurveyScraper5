@@ -9,12 +9,14 @@ working identity.
 
 Two things make this different from the staged-photo scan:
 
-**Leading numbers are not SB numbers here.** `!!Lidarke Veprinac/43_Jasna` and
-`Venio/Jasnina jam lidar 43` are the same object under LIDAR point 43; the
-Veprinac expedition folders (`108_Renata`, `295_Dino`, `Kraj 309_Sara`) use
-their own sequence. Reading those as Redni broj would produce confident
-nonsense, so the number signal is switched off — an unmatched folder is the
-honest answer, and the user maps it by hand.
+**Numbers here are a suggestion, never evidence.** The user's account (2026-08-29)
+is that they are old *Za istražit* numbers, kept in SB's Napomena as
+``za istražit, NNN, …`` — and `old_queue_candidates` looks them up on exactly
+that. But the numbering collides across campaigns, and checking 20 folder
+numbers against the live workbook resolved only 5, every one of them pointing at
+a Šverda cave while the folder sat in a Veprinac LIDAR group. So a number is
+surfaced for a human to accept, and never turned into a rename by itself; a
+folder with nothing but a number stays unresolved, which is the honest answer.
 
 **Nothing is stripped.** The local id is information the user still needs, so a
 proposal only ever prepends: `<Redni broj>_<Ime objekta>_<original name>`.
@@ -24,6 +26,7 @@ name is then the signal that matches.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -38,6 +41,11 @@ _SYSTEM_FILENAMES = {"desktop.ini", "thumbs.db", ".ds_store"}
 class IntakeMatch(PathMatch):
     """A leaf intake folder resolved to a cave."""
 
+    #: Confirmed to hold data for a cave that is not in SB yet. Set from
+    #: `intake.new_entries`; overrides any automatic match, because a new cave
+    #: often resembles an existing name (`Božur_Frustuck` is NOT *Božur* 1087).
+    is_new_entry: bool = False
+
     @property
     def proposed_name(self) -> str | None:
         """``<Redni broj>_<Ime objekta>_<original folder name>``.
@@ -46,7 +54,7 @@ class IntakeMatch(PathMatch):
         folders it is a LIDAR point or an expedition sequence the user still
         needs, not a stale SB id.
         """
-        if self.cave is None or self.cave.serial_number is None:
+        if self.is_new_entry or self.cave is None or self.cave.serial_number is None:
             return None
         if self.confidence == "conflict" or self.already_correct:
             return None
@@ -105,15 +113,46 @@ def match_leaves(
     leaves: list[LeafFolder],
     candidates: list[CaveCandidate],
     manual: dict[str, int] | None = None,
+    new_entries: list[str] | None = None,
 ) -> list[IntakeMatch]:
     """Resolve leaf folders to SB rows. Leading numbers are NOT used — see above."""
-    return match_paths(
+    matches: list[IntakeMatch] = match_paths(  # type: ignore[assignment]
         [leaf.path for leaf in leaves],
         candidates,
         manual,
         use_numbers=False,
         match_class=IntakeMatch,
     )
+    fragments = [fragment.casefold() for fragment in (new_entries or [])]
+    for match in matches:
+        if any(fragment in match.path.name.casefold() for fragment in fragments):
+            match.is_new_entry = True
+            match.cave = None
+            match.evidence = "potvrđeno: nema retka u SB"
+            match.confidence = "new"
+    return matches
+
+
+def old_queue_candidates(
+    name: str, candidates: list[CaveCandidate]
+) -> list[tuple[str, CaveCandidate]]:
+    """Caves whose old Za-istražit broj appears as a number in this folder name.
+
+    Reported as a **suggestion only**, never as evidence. The numbering is scoped
+    per campaign and collides across them: `43_Jasna` sits in a Veprinac LIDAR
+    group, while old broj 43 is *Jama na 25000 2* in Šverda. Verified against the
+    live workbook 2026-08-29 — of 20 folder numbers checked, 5 resolved and all 5
+    pointed at the wrong locality. A human decides.
+    """
+    by_old = {c.old_queue_number: c for c in candidates if c.old_queue_number}
+    hits: list[tuple[str, CaveCandidate]] = []
+    seen: set[int] = set()
+    for token in re.findall(r"\d{1,4}", name):
+        cave = by_old.get(token.lstrip("0") or token)
+        if cave and id(cave) not in seen:
+            seen.add(id(cave))
+            hits.append((token, cave))
+    return hits
 
 
 def suggest(name: str, candidates: list[CaveCandidate], limit: int = 3) -> list[tuple[CaveCandidate, float]]:
@@ -146,5 +185,6 @@ __all__ = [
     "find_leaf_folders",
     "intake_root",
     "match_leaves",
+    "old_queue_candidates",
     "suggest",
 ]

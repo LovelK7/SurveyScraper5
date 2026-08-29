@@ -72,6 +72,25 @@ archive:
   # Leaf folders here get a Redni broj prefix — see cave_dossier/intake/.
   intake_dir: "!!!Digitalizacija/!Za digitalizirat"
 
+# Field-data intake mapping (user, 2026-08-28/29). Folder fragment -> Redni broj
+# for leaves the name matcher cannot resolve, and the folders confirmed to hold
+# data for caves that are NOT in SB yet.
+intake:
+  manual_matches:
+    "Bilova ponikva": 976          # SB spells it "Billova ponikva"
+    "Golobreška nanoekspedicija": 1103   # SB: "Golobreška mikroekspedicija"
+    "Krater_CL": 1226              # SB: "Jama Krater u dolcima"
+    "Eugenov Dalekovod": 1174      # SB: "Jama pod dalekovodom"
+    "M.Dol Pećina": 1272           # SB: "Pećina u Mudnoj doli"
+
+  # Confirmed NOT in SB. Every unresolved leaf is a new entry by default (user,
+  # 2026-08-29), so this list is only needed to OVERRIDE a wrong automatic match:
+  # Božur_Frustuck resembles "Božur" (1087) but is a different, new cave.
+  new_entries:
+    - "Božur_Frustuck"
+    - "Ona je glonđa"
+    - "Špilja M.Dol"
+
 # Part 2.1d — entrance-photo processing spec (user, 2026-08-26).
 # Field photos arrive at 7 MB+; the manual workflow is FastStone Image Viewer
 # "resize to screen size", which lands around 1 MB. These are the targets the

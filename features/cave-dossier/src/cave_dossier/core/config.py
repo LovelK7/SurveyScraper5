@@ -60,6 +60,8 @@ class Settings:
     # Field-data intake: folder-name fragment -> Redni broj, for leaves whose
     # name carries no cave name at all (a LIDAR id, a surveyor first name).
     intake_manual_matches: dict[str, int] = field(default_factory=dict)
+    # Folder fragments confirmed to hold data for caves not yet in SB.
+    intake_new_entries: list[str] = field(default_factory=list)
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -157,4 +159,7 @@ def load_settings() -> Settings:
             for key, value in ((raw.get("intake") or {}).get("manual_matches") or {}).items()
             if value is not None
         },
+        intake_new_entries=[
+            str(value) for value in ((raw.get("intake") or {}).get("new_entries") or []) if value
+        ],
     )

@@ -370,20 +370,27 @@ intake lands.
 prefix: `<Redni broj>_<Ime objekta>_<original name>`. Nothing is ever stripped,
 because the original name carries the collector and the local id.
 
-The one rule that matters: **a leading number in these folders is not an SB
-number.** `!!Lidarke Veprinac/43_Jasna` and `Venio/Jasnina jam lidar 43` are the
-same object under LIDAR point 43; `108_Renata`, `295_Dino`, `Kraj 309_Sara` use
-the Veprinac expedition sequence. Checked against SB: row 762 is *Devetstokunka*
-at Plitvice while the folder `Munina_762_Renata` is a Mune cave, row 837 is *Žaba
-krastača* against `Nikad više_Venio_837` — the numbers do not line up. So the
-number signal is switched **off** for intake, and an unmatched folder is the
-honest answer.
+**Numbers in these folder names are a suggestion, never evidence.** They are old
+*Za istražit* numbers (user, 2026-08-29), and SB keeps those in Napomena as
+`za istražit, NNN, …` — so `old_queue_candidates` looks them up there and prints
+what it finds. But the numbering collides across campaigns: of 20 folder numbers
+checked against the live workbook, 5 resolved and every one pointed at a Šverda
+cave while the folder sat in a Veprinac LIDAR group. So a number never drives a
+rename on its own; a folder carrying nothing else stays unresolved.
 
 Matching therefore leans on names, in four passes (see `core/matching.py`):
 exact stem → SB name inside the folder name → folder name inside the SB name
 (unique hits only) → same words in any order (`Grotta possibile` → *Possibile
-Grotta*). For anything left over, `--unmatched-only` prints the closest SB rows
-by string similarity as prompts for a human — never as evidence.
+Grotta*). Two config hooks close the rest: `intake.manual_matches` (fragment →
+Redni broj, for spelling variants like *Bilova* → *Billova ponikva*) and
+`intake.new_entries`, which marks a folder as a cave SB does not have yet —
+needed because a new cave often resembles an existing name (`Božur_Frustuck` is
+**not** *Božur* 1087).
+
+**An unresolved folder means a new cave.** Confirmed by the user: the caves in
+these folders were mostly never entered into SB. So the tool reports them as
+"no SB row — create one, then re-run", not as a matching failure. Current state:
+**17 of 55 mapped, 38 awaiting an SB row.**
 
 ## Still open
 

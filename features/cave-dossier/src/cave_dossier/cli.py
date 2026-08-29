@@ -21,7 +21,13 @@ from cave_dossier.photos import (
     match_photos,
     staged_photo_dir,
 )
-from cave_dossier.intake import find_leaf_folders, intake_root, match_leaves, suggest
+from cave_dossier.intake import (
+    find_leaf_folders,
+    intake_root,
+    match_leaves,
+    old_queue_candidates,
+    suggest,
+)
 from cave_dossier.sb.audit import AUTHOR_FLAG_HELP, audit_authors, audit_unclassified
 from cave_dossier.sb.loader import SBReader
 from cave_dossier.sb.safe_io import SBWorkbookUnreachable
@@ -342,16 +348,20 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
         print(f"No leaf folders under {root}")
         return EXIT_NOT_READY
     candidates = build_candidates(SBReader(settings), settings)
-    matches = match_leaves(leaves, candidates, settings.intake_manual_matches)
+    matches = match_leaves(leaves, candidates, settings.intake_manual_matches,
+                           settings.intake_new_entries)
     by_path = {leaf.path: leaf for leaf in leaves}
 
     matched = [m for m in matches if m.cave is not None and m.confidence != "conflict"]
     conflicts = [m for m in matches if m.confidence == "conflict"]
-    unmatched = [m for m in matches if m.cave is None]
+    new_entries = [m for m in matches if m.is_new_entry]
+    unmatched = [m for m in matches if m.cave is None and not m.is_new_entry]
 
     print(f"Intake root: {root}")
-    print(f"  {len(leaves)} leaf folder(s) — matched {len(matched)}, "
-          f"unmatched {len(unmatched)}" + (f", conflicting {len(conflicts)}" if conflicts else ""))
+    print(f"  {len(leaves)} leaf folder(s) — mapped to an SB row: {len(matched)}"
+          + (f", conflicting {len(conflicts)}" if conflicts else ""))
+    print(f"  {len(new_entries) + len(unmatched)} with no SB row — new caves that need"
+          f" a row before they can be numbered")
     print(
         "APPLYING — folders will be renamed in place."
         if apply
@@ -371,9 +381,16 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
             group = leaf.group
             print()
             print(f"  [{group or '(top level)'}]")
-        mark = "?" if match.cave is None else match.confidence[:4]
+        mark = "NEW" if match.is_new_entry else ("?" if match.cave is None else match.confidence[:4])
         print(f"    {mark:<4} {leaf.relative.name}   ({leaf.file_count} files)")
+        if match.is_new_entry:
+            print("         → NEW: confirmed absent from SB (overrides a lookalike match)")
+            continue
         if match.cave is None:
+            print("         → NEW: no SB row resolves; create one, then re-run")
+            for token, cave in old_queue_candidates(leaf.relative.name, candidates):
+                print(f"         ? stari broj {token} → {cave.object_name} "
+                      f"(Redni broj {cave.serial_number})")
             for cave, score in suggest(leaf.relative.name, candidates):
                 if score < 0.45:
                     break
