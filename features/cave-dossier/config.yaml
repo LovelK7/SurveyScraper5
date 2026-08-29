@@ -122,6 +122,25 @@ intake:
     - "Nikad više_Venio_837"
     - "vrazji prolaz 2kom"
 
+# Satellite tables around SB (part 2.2) — see docs/sb-liburnija-hub.md.
+# Overrides for the handful of rows no rule can settle. Everything else is
+# derived on each run, so this list stays short by design.
+satellites:
+  liburnija:
+    # Sheet rows confirmed to be NEW caves even though they resolve close to an
+    # existing SB row. Without this the same proximity is re-raised every run.
+    confirmed_new:
+      # 4.7 m from Špiljuljak 2 (SB 1172) and 7.1 m from Jama kraj špiljuljaka
+      # (SB 1254) — a legitimate third cave in the same cluster (user, 2026-08-29).
+      - "špiljuljak"
+
+    # Sheet row id -> SB Redni broj, for links no key reaches.
+    manual_matches: {}
+
+    # Sheet row ids that must never enter SB, beyond the automatic rule
+    # (`Istražili` naming another society).
+    out_of_scope: []
+
 # Part 2.1d — entrance-photo processing spec (user, 2026-08-26).
 # Field photos arrive at 7 MB+; the manual workflow is FastStone Image Viewer
 # "resize to screen size", which lands around 1 MB. These are the targets the

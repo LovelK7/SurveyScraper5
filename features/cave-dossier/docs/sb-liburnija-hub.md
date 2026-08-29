@@ -62,6 +62,14 @@ them**. That grouping is the whole design.
 | `Komentar` | field-owned | free text |
 | `Zapisnik`, `Nacrt`, `Foto ulaza` | SB-owned | TRUE/FALSE — the exact three deliverables gate 1 checks |
 
+**A trap in the last three.** SB's `Link Nacrt` / `Link Zapisnik` record only
+whether a **digital** copy is on file; every *Istraženi* object has both, analog
+or digital (user, 2026-08-29). So an empty link cell is no evidence the document
+is missing, and the sheet claiming one is not a disagreement. The katastarski
+broj SUE is the real signal: hold one, and both documents exist by definition.
+`Fotografija ulaza` is different — an explicit DA/NE claim, so it disagrees in
+both directions and the sheet's own TRUE is worth acting on.
+
 The last three columns are the interesting discovery: **the field sheet already
 tries to track gate-1 deliverables**, by hand, and drifts. SB (plus the dossier)
 knows the truth for all of them. That is the ready-made payload for the SB→sheet
@@ -187,7 +195,7 @@ guessed from a folder name. Make it a rule at the crossing:
 > `Ime objekta` if the cave has no real name yet (7 rows do this today), else in
 > `Sinonimi` (48 rows do this today).
 
-That single convention gives all 125 currently-missing rows a deterministic
+That single convention gives all 126 currently-missing rows a deterministic
 identity from the moment they are created, and it costs one cell.
 
 ### Key 3 needs tight bands — the terrain is dense
@@ -252,11 +260,12 @@ the fact, so where it disagrees with SB it is the sheet that is wrong — both
 divergences found (*PP Bjeloučka*, *Ivanina zvijezdica*) are sheet-side typos to
 correct.
 
-**Measured payload today** (`sat sync --coords`, LIVE, 2026-08-29): on the 69
-linked rows, **23 cells** disagree — 15 × `Foto ulaza` false in the sheet but
-present in SB, 1 × `Nacrt`, 1 × `Zapisnik`, 5 name gaps, and 1 lifecycle
-disagreement (row 272 → SB 1256: sheet says unexplored, SB says *"fali nacrt i
-zapisnik, ponoviti"*).
+**Measured payload today** (`sat sync --coords`, LIVE, 2026-08-29): on the 70
+linked rows, **24 cells** disagree — 15 × `Foto ulaza` false in the sheet but
+present in SB, 2 × `Nacrt`/`Zapisnik` on caves that hold a SUE number, 5 name
+gaps, and 1 lifecycle disagreement (row 272 → SB 1256: sheet says unexplored,
+SB says *"fali nacrt i zapisnik, ponoviti"*). Plus **7 synonym additions** to
+existing SB rows, and **1** thing to decide.
 
 The name gaps are the interesting few. Only two are real divergences —
 *PP Bjeloučka*/*Bijeloučka* and *Ivanina zvijezdica*/*zvjezdica*, both sheet-side
@@ -276,23 +285,28 @@ They are constantly confused, so keep them apart:
 | **SB** | an `.xlsm` workbook sitting on the Google Drive Desktop mount — a real file, opened in real Excel | Excel COM / xlwings, backup first. Already designed: [sb-write-back-design.md](sb-write-back-design.md) |
 | **Liburnija** | a *native* Google Sheet. There is no file on disk, Excel cannot open it, and people are typing into it in the field while the tool runs | **this section** |
 
-### What the tool produces: three lists, and nothing else
+### What the tool produces: four lists, and nothing else
 
-No automatic writing anywhere. Each `sat sync` run ends in three reviewable
+No automatic writing anywhere. Each `sat sync` run ends in four reviewable
 lists — exactly the *"here are the differences, these rows would be added"* step
 you described:
 
 | List | Direction | Contents today |
 |---|---|---|
-| **1 · Za SB** | sheet → SB | confirmed caves with no SB row, each rendered as a complete SB row in SB's column order, already named. **125 rows** |
-| **2 · Za tablicu** | SB → sheet | cells the sheet has wrong, one line each: `red 43 · Foto ulaza · FALSE → TRUE (SB 1257 ima Fotografija ulaza)`. **23 cells** |
-| **3 · Za odluku** | — | conflicts and ambiguities. Nothing is ever decided automatically |
+| **1 · Za SB** | sheet → SB | confirmed caves with no SB row, each rendered as a full SB row in **the workbook's own 24 columns, in its own order**, already named. **126 rows** |
+| **2 · Dopune SB** | sheet → SB | the `LiDAR Kristal N` synonym to add to *existing* SB rows — an addition, never a replacement. **7 rows** |
+| **3 · Za tablicu** | SB → sheet | cells the sheet has wrong, one line each: `red 43 · Foto ulaza · FALSE → TRUE (SB 1257 ima Fotografija ulaza)`. **24 cells** |
+| **4 · Za odluku** | — | conflicts and ambiguities. Nothing is ever decided automatically. **1** |
 
-Lists 2 and 3 need no tooling at all to act on: they are instructions a person
-carries out in the browser, one cell at a time. 23 cells is a coffee's worth of
+Lists 2–4 need no tooling at all to act on: they are instructions a person
+carries out by hand, one cell at a time. 24 cells is a coffee's worth of
 clicking, and after the first pass each run produces a handful. That is the
 answer to "manageable for people without the tools" — the *output* is the
 product, not the automation.
+
+**List 2 is the one that compounds.** Every synonym added there converts a link
+that today rests on coordinates or a name into one that rests on a hard key, so
+the next run resolves it for free and no longer has to guess.
 
 ### The jargon, unpacked
 
@@ -304,11 +318,22 @@ single cell. So TSV is not a technology, it is just the format that makes
 copy-paste work.
 
 **Patch file** — list 1, written to a file instead of only printed, so that
-adding 125 caves is *select → copy → paste below the last row of `Svi objekti`*
-rather than typing 125 rows by hand. Its destination is **SB**, in Excel, on your
+adding 126 caves is *select → copy → paste below the last row of `Svi objekti`*
+rather than typing 126 rows by hand. Its destination is **SB**, in Excel, on your
 machine. A paste is an ordinary Excel action: it does not disturb macros,
 validations or the Power Query views, which recompute on their own — unlike
 letting Python save the workbook, which is what the safety doc forbids.
+
+Two things make the difference between a block that pastes and one that does
+not, both learned the hard way on the first generated file:
+
+* **Every column, in the workbook's order.** The block carries all 24 columns of
+  `Svi objekti` as the header row spells them, with empties where the sheet has
+  nothing to offer. A tidy nine-column subset cannot be pasted into a table at
+  all.
+* **A BOM.** Windows Excel reads a UTF-8 file as the local codepage unless it
+  finds one, which turns every č/š/ž into mojibake. The files are written
+  `utf-8-sig`.
 
 **Mirror tab** — a *tab* is one page inside a spreadsheet (the tabs along the
 bottom edge). The idea was that the tool would own one tab in the Liburnija
@@ -361,15 +386,15 @@ sb-sync/<satellite>/<YYYY-MM-DD>/  where a run lands. Gitignored (real society
 
 | Command | Does |
 |---|---|
-| `cavedossier sat sync [liburnija]` | **built** — resolves every sheet row against SB and prints the three lists. Read-only on both sides |
+| `cavedossier sat sync [liburnija]` | **built** — resolves every sheet row against SB and prints the four lists. Read-only on both sides |
 | `… --coords` | adds the coordinate key, auto-linking only under 5 m and unambiguous; everything else lands in list 3 |
-| `… --out` | writes all three lists into `sb-sync/<satellite>/<today>/` — `1-za-sb.tsv` (paste into `Svi objekti`), `2-za-tablicu.txt`, `3-za-odluku.txt`. `--out DIR` puts them elsewhere |
+| `… --out` | writes the lists into `sb-sync/<satellite>/<today>/` — `1-za-sb.tsv` (paste into `Svi objekti`), `2-dopune-sb.txt`, `3-za-tablicu.txt`, `4-za-odluku.txt`. `--out DIR` puts them elsewhere |
 | `… --limit N` | rows printed per list |
 
 Sequencing (each step useful on its own):
 
 1. ✅ **resolver + `sat sync`** over the plaque and Kristal keys.
-2. ✅ **the gap report** — list 1 surfaces the 125 rows SB is missing.
+2. ✅ **the gap report** — list 1 surfaces the 126 rows SB is missing.
 3. **Paste the block** into `Svi objekti`. The one-off that clears the backlog;
    no write code involved.
 4. **List 2 by hand** in the browser. Two-way begins.
@@ -404,6 +429,18 @@ so folder `108_Renata` and the sync agree on what row 108 is by construction.
   v3.0 queue flag made the tool propose *istraženo = 1* for SB 914 while quoting
   a note that begins "neistraženo" — a contradiction on the very line someone is
   meant to act on. The Nesređeni keyword now counts too.
+- **A link column is not a document column.** `Link Zapisnik` says only whether a
+  *digital* zapisnik is on file, and the tool was reading its absence as "SB has
+  no zapisnik" — raising decisions about caves that certainly have one. Every
+  Istraženi object has both documents; the SUE number is what says so.
+- **An exact name inside the review radius is corroboration, not coincidence.**
+  Sheet 285 was 5.1 m from SB 733 *Jama u Puharima* and carried that exact name.
+  One tenth of a metre outside the auto band, it sat in the decision list twice
+  over. Two signals that agree now link, and the run proposes the synonym that
+  makes the link permanent.
+- **A near miss needs somewhere to be settled.** *Špiljuljak* is 4.7 m from
+  SB 1172 and is genuinely its own cave. Without a `confirmed_new` list in
+  `config.yaml`, that proximity would be re-raised on every run forever.
 
 ## 9. Measured baseline (2026-08-29)
 
@@ -423,7 +460,7 @@ and live agreed on every named row. Re-measure after either side changes.
 | SB rows carrying `LiDAR Kristal N` | 56 — 7 as `Ime objekta`, 48+ as `Sinonimi`, 0 duplicate N |
 | Plaque vs Kristal conflicts | **0** |
 | **Confirmed caves with no SB row** | **176** — 48 `Istražili=SUS` + 1 Karsterra (out of scope), 2 SUE, 125 with no society recorded |
-| `sat sync` candidates (out-of-scope + duplicates already removed) | **126** by keys alone · **125** with `--coords` |
+| `sat sync` candidates (out-of-scope + duplicates already removed) | **126** with `--coords` (the recommended run) |
 | … of those, with no SB row within 50 m at all | **117** |
 | … carrying no name at all | 124 → they enter SB as `LiDAR Kristal N` |
 | Cells disagreeing on linked rows | 32 (see §6) |
@@ -432,7 +469,7 @@ and live agreed on every named row. Re-measure after either side changes.
 The headline is the gap. The earlier folder-driven pass found exactly one row to
 add (*Jamorinke*) because it only looked at folders that already held data; a
 sheet-driven pass looks at every confirmed cave, and the queue is two orders of
-magnitude bigger. `sat sync`'s own figure — **125** — is the one to work from
+magnitude bigger. `sat sync`'s own figure — **126** — is the one to work from
 (§10); the rows above it are the raw gap before scope, the coordinate bands and
 the duplicate-name guard are applied.
 
@@ -440,10 +477,10 @@ the duplicate-name guard are applied.
 
 | # | Question | Answer | What it means in code |
 |---|---|---|---|
-| 1 | Do the confirmed unexplored caves belong in SB? | **Yes, add them**, named per the convention | one-off `sat sync --out` batch of 125; *Za istražit* grows 199 → 324 |
+| 1 | Do the confirmed unexplored caves belong in SB? | **Yes, add them**, named per the convention | one-off `sat sync --out` batch of 126; *Za istražit* grows 199 → 325 |
 | 2 | Is `Istražili ≠ SUE` enough to keep a row out? | **Yes** — other societies' caves do not enter SB | automatic `out_of_scope`, no prompt; 48 SUS + 1 Karsterra |
 | 3 | May the sheet gain `SUE` / `SB_redni_broj` columns? | **No, keep the sheet as it is** | mirror tab dropped; the link lives only in the crosswalk (§7) |
-| 4 | Patch file or mirror tab? | patch file — but the real product is the **review list** | §7 rewritten around three lists |
+| 4 | Patch file or mirror tab? | patch file — but the real product is the **review list** | §7 rewritten around four lists |
 | 5 | Can `Naziv_novi` outrank SB's name? | **No — SB is ground truth**; `Naziv_novi` is filled in afterwards | name disagreements are always sheet-side corrections |
 
 ### What decision 1 actually produces
@@ -451,12 +488,12 @@ the duplicate-name guard are applied.
 `sat sync` against LIVE, 2026-08-29 — the authoritative count, since it applies
 decision 2 (other societies removed) and the calibrated bands:
 
-- **125 rows** with `--coords` (the recommended run), taking `Redni broj`
-  **1313 – 1437**. Without it, 126 — the difference is *Špiljuljak*, 4.7 m from
-  SB 1172 but with a rival 7.1 m away, which belongs in list 3 either way.
-  *Jama u Puharima* is caught in both modes: by coordinates when they are on, by
-  the name guard when they are not.
-- **118 have no name at all** → they enter as `Ime objekta = "LiDAR Kristal N"`.
+- **126 rows** with `--coords` (the recommended run), taking `Redni broj`
+  **1313 – 1438**. *Špiljuljak* is among them — 4.7 m from SB 1172 and still its
+  own cave, settled once in `config.yaml` rather than re-raised every run.
+  *Jama u Puharima* is not: it links to SB 733 on name + distance, and list 2
+  proposes the synonym that keeps it linked.
+- **119 have no name at all** → they enter as `Ime objekta = "LiDAR Kristal N"`.
   Two carry a real name (*Jama iznad Andreti* 288, *Guštićeva jama* 338) → real
   name, with `LiDAR Kristal N` in `Sinonimi`.
 - **Five have a text id, not a number** (the `nije na Lidaru` field finds —
@@ -467,9 +504,9 @@ decision 2 (other societies removed) and the calibrated bands:
   the calibration, but the batch is the moment to eyeball them.
 - Only one carries a plaque already; the rest get theirs when someone visits.
 - Every row gets `Napomena` seeded with the queue flag `za istražit, <komentar>`
-  so SB's own Power Query files it under *Za istražit* — which grows **199 → 324**.
+  so SB's own Power Query files it under *Za istražit* — which grows **199 → 325**.
 - The earlier figures in this doc (*117*, then *127*) predate two guards the
-  live runs added — the duplicate-name stop and the coordinate bands. **125** is
+  live runs added — the duplicate-name stop and the coordinate bands. **126** is
   the number to work from; the eight above are the difference worth looking at.
 
 ### Still open

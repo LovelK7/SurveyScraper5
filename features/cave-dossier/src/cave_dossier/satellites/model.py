@@ -72,6 +72,24 @@ class NewRow:
 
 
 @dataclass(frozen=True)
+class SBEdit:
+    """One cell to ADD to a row SB already has.
+
+    Distinct from ``Difference`` (which corrects the satellite) and from
+    ``NewRow`` (which creates an SB row): this touches an existing SB row, and
+    only ever by addition — ``proposed`` carries the current content plus the
+    new value, never a replacement.
+    """
+
+    serial_number: int | None
+    column: str
+    current: str
+    proposed: str
+    reason: str
+    row_id: str
+
+
+@dataclass(frozen=True)
 class Decision:
     """Something no rule may settle: a conflict, an ambiguity, an oddity."""
 
@@ -82,9 +100,10 @@ class Decision:
 
 @dataclass
 class SyncResult:
-    """The three lists one `sat sync` run produces, plus the counts behind them."""
+    """The review lists one `sat sync` run produces, and the counts behind them."""
 
     to_sb: list[NewRow] = field(default_factory=list)
+    to_sb_edits: list[SBEdit] = field(default_factory=list)
     to_sheet: list[Difference] = field(default_factory=list)
     to_decide: list[Decision] = field(default_factory=list)
     counts: dict[str, int] = field(default_factory=dict)
@@ -96,5 +115,6 @@ __all__ = [
     "Difference",
     "LinkStatus",
     "NewRow",
+    "SBEdit",
     "SyncResult",
 ]

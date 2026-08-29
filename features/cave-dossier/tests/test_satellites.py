@@ -263,23 +263,59 @@ def test_sb_wins_on_a_real_name(tmp_path: Path) -> None:
     assert name.proposed == "Prava jama"
 
 
-def test_the_deliverable_flags_flow_both_ways(tmp_path: Path) -> None:
-    """SB fills a gap in the sheet; the sheet claiming more is a decision."""
+def test_sb_fills_the_photo_gap_and_the_sheet_claiming_more_is_a_decision(
+    tmp_path: Path,
+) -> None:
+    """`Fotografija ulaza` is a DA/NE claim, so it disagrees in both directions."""
     resolved = _by_id(resolver.resolve_rows(_rows(tmp_path), RECORDS))
-    differences, decisions = sync.sheet_differences(resolved["43"])
+    differences, _ = sync.sheet_differences(resolved["43"])
     photo = next(d for d in differences if d.column == liburnija.COL_PHOTO)
     assert (photo.current, photo.proposed) == ("FALSE", "TRUE")
     # Row 61 says nothing; SB 823 has a SUE number, so it is explored.
     explored, _ = sync.sheet_differences(resolved["61"])
     assert not [d for d in explored if d.column == liburnija.COL_EXPLORED]
 
-    claims_more = [
-        _record(1257, "LiDAR Kristal 43", plaque="051-742", note="za istražit, LiDAR")
-    ]
-    _, decisions = sync.sheet_differences(
-        _by_id(resolver.resolve_rows(_rows(tmp_path), claims_more))["43"]
+
+def test_an_empty_link_cell_is_not_evidence_of_a_missing_document(
+    tmp_path: Path,
+) -> None:
+    """`Link Zapisnik` records only whether a DIGITAL copy is on file.
+
+    Every *Istraženi* object has a zapisnik and a nacrt, analog or digital
+    (user, 2026-08-29), so an empty link cell must never contradict the sheet,
+    and a SUE number is enough on its own to say both exist.
+    """
+    # Sheet 43 says Nacrt TRUE and Zapisnik TRUE; SB has neither link and no
+    # SUE number. Not a disagreement: SB simply has not filed a digital copy.
+    bare = [_record(1257, "LiDAR Kristal 43", plaque="051-742")]
+    differences, decisions = sync.sheet_differences(
+        _by_id(resolver.resolve_rows(_rows(tmp_path), bare))["43"]
     )
-    assert any("Nacrt" in decision.issue for decision in decisions)
+    assert not [
+        d
+        for d in differences
+        if d.column in (liburnija.COL_NACRT, liburnija.COL_ZAPISNIK)
+    ]
+    assert not decisions
+
+    # Sheet 61 says both FALSE while SB 823 holds a SUE number -> both proposed.
+    proposed, _ = sync.sheet_differences(
+        _by_id(resolver.resolve_rows(_rows(tmp_path), RECORDS))["61"]
+    )
+    documents = [
+        d
+        for d in proposed
+        if d.column in (liburnija.COL_NACRT, liburnija.COL_ZAPISNIK)
+    ]
+    assert {d.column for d in documents} == {liburnija.COL_NACRT, liburnija.COL_ZAPISNIK}
+    assert all(d.proposed == "TRUE" for d in documents)
+    assert "SUE" in documents[0].reason
+
+
+def test_a_digital_link_counts_even_without_a_sue_number() -> None:
+    record = _record(1257, "LiDAR Kristal 43", plaque="051-742", nacrt="843")
+    assert sync._sb_has_document(record, record.nacrt_link)
+    assert not sync._sb_has_document(record, record.zapisnik_link)
 
 
 def test_build_numbers_new_rows_consecutively_from_the_next_free(tmp_path: Path) -> None:
@@ -299,6 +335,79 @@ def test_tsv_is_tab_separated_so_a_paste_splits_into_cells(tmp_path: Path) -> No
     assert all(len(line.split("\t")) == len(sync.NEW_ROW_COLUMNS) for line in lines)
 
 
+def test_the_block_carries_the_workbooks_own_columns_in_its_own_order(
+    tmp_path: Path,
+) -> None:
+    """A subset cannot be pasted into `Svi objekti` - every column must be there.
+
+    Columns we have no value for come out empty; that is what keeps the block
+    aligned with the table.
+    """
+    workbook_columns = ("Redni broj", "Ime objekta", "Duljina", "Napomena", "Sinonimi")
+    result = sync.build(resolver.resolve_rows(_rows(tmp_path), RECORDS), next_serial=1313)
+    lines = sync.to_tsv(result.to_sb, workbook_columns).splitlines()
+    assert lines[0].split("\t") == list(workbook_columns)
+    first = dict(zip(workbook_columns, lines[1].split("\t")))
+    assert first["Redni broj"] == "1313"
+    assert first["Duljina"] == ""            # nothing known, so nothing invented
+    assert first["Ime objekta"].startswith("LiDAR Kristal")
+
+
+def test_a_linked_row_missing_the_synonym_becomes_an_sb_addition(
+    tmp_path: Path,
+) -> None:
+    """The convention that turns a fuzzy match into a permanent hard key."""
+    plain = [_record(733, "Jama u Puharima", plaque="051-742", synonyms=("stari naziv",))]
+    resolved = _by_id(resolver.resolve_rows(_rows(tmp_path), plain))["43"]
+    edit = sync.synonym_edit(resolved)
+    assert edit is not None
+    assert edit.serial_number == 733 and edit.column == "Sinonimi"
+    # An addition, never a replacement: what is there already survives.
+    assert edit.current == "stari naziv"
+    assert edit.proposed == "stari naziv; LiDAR Kristal 43"
+
+    # A row that already carries it proposes nothing.
+    already = _by_id(resolver.resolve_rows(_rows(tmp_path), RECORDS))["43"]
+    assert sync.synonym_edit(already) is None
+
+
+def test_an_exact_name_inside_the_review_radius_is_the_same_cave(
+    tmp_path: Path,
+) -> None:
+    """Two signals that agree beat either alone.
+
+    Sheet 285 *Jama u Puharima* is SB 733 at 5.1 m - a tenth of a metre outside
+    the auto band, and plainly the same cave (user, 2026-08-29).
+    """
+    # 8 m away, so past AUTO_LINK_M, but the name matches exactly.
+    twin = _record(733, "Guštićeva jama", x=323000, y=5026008)
+    resolved = _by_id(
+        resolver.resolve_rows(_rows(tmp_path), [twin], use_coordinates=True)
+    )["70"]
+    assert resolved.status is LinkStatus.LINKED
+    assert resolved.key == "name+coordinate"
+
+
+def test_a_confirmed_new_row_is_not_re_raised_as_a_near_miss(
+    tmp_path: Path,
+) -> None:
+    """*Špiljuljak* sits 4.7 m from a known cave and is still its own cave.
+
+    Without this the same proximity is raised on every run forever.
+    """
+    neighbour = _record(1172, "Susjed", x=323000, y=5026002)
+    rows = _rows(tmp_path)
+    raised = _by_id(resolver.resolve_rows(rows, [neighbour], use_coordinates=True))["70"]
+    assert raised.status is LinkStatus.LINKED  # nearest, unambiguous
+
+    confirmed = _by_id(
+        resolver.resolve_rows(
+            rows, [neighbour], use_coordinates=True, confirmed_new={"70"}
+        )
+    )["70"]
+    assert confirmed.status is LinkStatus.CANDIDATE
+
+
 def test_next_serial_spans_rows_with_no_name(settings) -> None:
     """SB carries a blank pre-numbered row; numbering must not collide with it."""
 
@@ -311,14 +420,24 @@ def test_next_serial_spans_rows_with_no_name(settings) -> None:
     assert resolver.next_serial_number(_Reader(), settings) == 1314
 
 
-def test_write_lists_produces_all_three_files(tmp_path: Path) -> None:
+def test_write_lists_produces_every_list(tmp_path: Path) -> None:
     result = sync.build(resolver.resolve_rows(_rows(tmp_path), RECORDS), next_serial=1313)
     written = sync.write_lists(result, tmp_path / "run")
-    assert set(written) == {"za-sb", "za-tablicu", "za-odluku"}
+    assert set(written) == {"za-sb", "dopune-sb", "za-tablicu", "za-odluku"}
     assert all(path.is_file() for path in written.values())
-    # List 1 stays machine-pasteable; the other two are worksheets for a human.
-    assert written["za-sb"].read_text(encoding="utf-8").startswith("Redni broj\t")
-    assert "ZA TABLICU" in written["za-tablicu"].read_text(encoding="utf-8")
+    # List 1 stays machine-pasteable; the rest are worksheets for a human.
+    assert written["za-sb"].read_text(encoding="utf-8-sig").startswith("Redni broj\t")
+    assert "ZA TABLICU" in written["za-tablicu"].read_text(encoding="utf-8-sig")
+
+
+def test_every_file_carries_a_bom_so_excel_reads_croatian(tmp_path: Path) -> None:
+    """Without it Excel reads UTF-8 as the local codepage and č/š/ž break."""
+    result = sync.build(resolver.resolve_rows(_rows(tmp_path), RECORDS), next_serial=1313)
+    bom = bytes([0xEF, 0xBB, 0xBF])
+    for path in sync.write_lists(result, tmp_path / "run").values():
+        assert path.read_bytes().startswith(bom), path.name
+    text = (tmp_path / "run" / "1-za-sb.tsv").read_text(encoding="utf-8-sig")
+    assert "Špiljkotina" in text  # round-trips intact
 
 
 def test_an_existing_sb_name_stops_the_add_and_asks(tmp_path: Path) -> None:

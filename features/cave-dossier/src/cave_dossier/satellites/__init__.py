@@ -24,6 +24,7 @@ from cave_dossier.satellites.model import (
     Difference,
     LinkStatus,
     NewRow,
+    SBEdit,
     SyncResult,
 )
 from cave_dossier.satellites.resolver import (
@@ -40,6 +41,7 @@ __all__ = [
     "LinkStatus",
     "NewRow",
     "Resolution",
+    "SBEdit",
     "SBRecord",
     "SyncResult",
     "build_sb_index",

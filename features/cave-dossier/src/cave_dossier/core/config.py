@@ -64,6 +64,9 @@ class Settings:
     intake_new_entries: list[str] = field(default_factory=list)
     # Cached CSV of the Liburnija LIDAR sheet; see intake/liburnija.py.
     intake_sheet_csv: str | None = None
+    # Per-satellite overrides (config.yaml `satellites`): satellite name ->
+    # {confirmed_new, manual_matches, out_of_scope}. See satellites/resolver.py.
+    satellites: dict[str, dict] = field(default_factory=dict)
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -165,4 +168,8 @@ def load_settings() -> Settings:
             str(value) for value in ((raw.get("intake") or {}).get("new_entries") or []) if value
         ],
         intake_sheet_csv=((raw.get("intake") or {}).get("sheet_csv") or None),
+        satellites={
+            str(name): dict(values or {})
+            for name, values in (raw.get("satellites") or {}).items()
+        },
     )

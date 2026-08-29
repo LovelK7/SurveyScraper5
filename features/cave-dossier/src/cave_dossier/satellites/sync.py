@@ -1,15 +1,16 @@
-"""`sat sync` — compare a satellite against SB and produce three lists.
+"""`sat sync` — compare a satellite against SB and produce the review lists.
 
-Nothing is ever written by machine. A run ends in exactly three reviewable
-lists, and a person carries them out (user, 2026-08-29):
+Nothing is ever written by machine. A run ends in four reviewable lists, and a
+person carries them out (user, 2026-08-29):
 
 1. **Za SB** — confirmed caves the satellite has and SB does not, each rendered
-   as a complete SB row in SB's own column order, ready to paste below the last
-   row of `Svi objekti`.
-2. **Za tablicu** — cells the satellite has wrong, one line each, corrected by
+   as a full SB row in the workbook's own column order, ready to paste below the
+   last row of `Svi objekti`.
+2. **Dopune SB** — cells to add to *existing* SB rows. Today that is the
+   `LiDAR Kristal N` synonym, which turns a fuzzy match into a permanent key.
+3. **Za tablicu** — cells the satellite has wrong, one line each, corrected by
    hand in the browser. SB is ground truth for everything in this list.
-3. **Za odluku** — conflicts, ambiguities, and the cases where the *satellite*
-   knows something SB does not. No rule may settle these.
+4. **Za odluku** — conflicts and ambiguities. No rule may settle these.
 
 The direction of each list is fixed by ownership (hub doc §6): the field owns
 "is it a cave", SB owns everything from the moment a candidate crosses into it.
@@ -17,7 +18,6 @@ The direction of each list is fixed by ownership (hub doc §6): the field owns
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
@@ -30,40 +30,43 @@ from cave_dossier.satellites.model import (
     Difference,
     LinkStatus,
     NewRow,
+    SBEdit,
     SyncResult,
 )
 from cave_dossier.satellites.resolver import Resolution, SBRecord
 
-#: SB columns a new row from Liburnija can honestly fill, in SB's own order.
-#: Deliberately short: a value nobody has is left empty rather than invented.
+#: Fallback column order, used only when the workbook's own header is not to
+#: hand (tests). A real run passes SB's header so the block pastes straight in.
 NEW_ROW_COLUMNS = (
     "Redni broj",
+    "Katastarski broj SUE",
+    "CroSpeleo unos",
+    "Katastarski broj RH",
     "Broj pločice",
     "Ime objekta",
     "Sinonimi",
     "X HTRS",
     "Y HTRS",
     "Z",
+    "Lokalitet",
+    "Najbliže mjesto",
+    "Duljina",
+    "Dubina",
+    "Godina ili period istraživanja",
     "Autori nacrta ili izvor",
     "Napomena",
+    "Fotografija ulaza",
+    "Zagađenost",
+    "Ledenica",
+    "Link Nacrt",
+    "Link Zapisnik",
+    "Dopunski zapisnik?",
+    "Godina zadnjeg istraživanja",
 )
 
-
-@dataclass(frozen=True)
-class _FlagField:
-    """One of the three deliverable flags the sheet keeps by hand."""
-
-    column: str          # the sheet's column
-    label: str           # what SB calls it, for the reason line
-    sheet_value: str     # attribute on SheetRow
-    sb_value: str        # attribute on SBRecord
-
-
-_FLAGS = (
-    _FlagField("Nacrt", "Link Nacrt", "has_nacrt", "nacrt_link"),
-    _FlagField("Zapisnik", "Link Zapisnik", "has_zapisnik", "zapisnik_link"),
-    _FlagField("Foto ulaza", "Fotografija ulaza", "has_photo", "photo_flag"),
-)
+#: Windows Excel reads a UTF-8 file as the local codepage unless it finds a BOM,
+#: which turns every č/š/ž into mojibake. `utf-8-sig` writes that BOM.
+FILE_ENCODING = "utf-8-sig"
 
 
 def _same_name(left: str | None, right: str | None) -> bool:
@@ -72,25 +75,30 @@ def _same_name(left: str | None, right: str | None) -> bool:
     return normalize_lookup_key(left) == normalize_lookup_key(right)
 
 
-def _sb_has_photo(record: SBRecord) -> bool:
-    """`Fotografija ulaza` is a DA/NE claim, not a link."""
-    flag = (record.photo_flag or "").strip().upper()
-    return flag.startswith("DA")
+def _sb_says_photo(record: SBRecord) -> bool:
+    """`Fotografija ulaza` is an explicit DA/NE claim, not a link."""
+    return (record.photo_flag or "").strip().upper().startswith("DA")
 
 
-def _sb_flag_present(record: SBRecord, flag: _FlagField) -> bool:
-    if flag.sb_value == "photo_flag":
-        return _sb_has_photo(record)
-    return bool(getattr(record, flag.sb_value))
+def _sb_has_document(record: SBRecord, link: str | None) -> bool:
+    """Does SB say this cave has a nacrt / zapisnik at all?
+
+    `Link Nacrt` and `Link Zapisnik` record only whether a **digital** copy is
+    linked, so an empty cell is no evidence of absence — every *Istraženi*
+    object has both, analog or digital (user, 2026-08-29). The katastarski broj
+    SUE is therefore the stronger signal, and the link is the fallback for caves
+    that do not have one yet.
+    """
+    return bool(record.sue_number) or bool(link)
 
 
 def sheet_differences(resolution: Resolution) -> tuple[list[Difference], list[Decision]]:
     """What one linked row disagrees with SB about, split by who is right.
 
     SB wins on name, plaque, exploration status and the deliverable flags. The
-    one case that flows the other way is the sheet claiming a deliverable SB has
-    no record of — that is the field telling us something, so it goes to the
-    decide list instead of being overwritten.
+    one case that flows the other way is the sheet claiming an entrance photo SB
+    has no record of — the field telling us something, so it goes to the decide
+    list instead of being overwritten.
     """
     row, record = resolution.row, resolution.record
     if record is None:
@@ -99,6 +107,17 @@ def sheet_differences(resolution: Resolution) -> tuple[list[Difference], list[De
     differences: list[Difference] = []
     decisions: list[Decision] = []
 
+    def propose(column: str, current: str, proposed: str, reason: str) -> None:
+        differences.append(
+            Difference(
+                row_id=row.row_id,
+                column=column,
+                current=current,
+                proposed=proposed,
+                reason=reason,
+            )
+        )
+
     # Name — SB is ground truth; `Naziv_novi` is filled in afterwards, so where
     # they differ the sheet is the one that is wrong (user, 2026-08-29). A
     # `LiDAR Kristal N` placeholder is never written back: it would claim the
@@ -106,25 +125,19 @@ def sheet_differences(resolution: Resolution) -> tuple[list[Difference], list[De
     if not record.has_placeholder_name and not (
         _same_name(record.name, row.name_new) or _same_name(record.name, row.name_old)
     ):
-        differences.append(
-            Difference(
-                row_id=row.row_id,
-                column=liburnija.COL_NAME_NEW,
-                current=row.name_new or "—",
-                proposed=record.name,
-                reason=f"SB {record.serial_number} je mjerodavan za ime",
-            )
+        propose(
+            liburnija.COL_NAME_NEW,
+            row.name_new or "—",
+            record.name,
+            f"SB {record.serial_number} je mjerodavan za ime",
         )
 
     if record.plaque and not row.plaque:
-        differences.append(
-            Difference(
-                row_id=row.row_id,
-                column=liburnija.COL_PLAQUE,
-                current="—",
-                proposed=record.plaque,
-                reason=f"SB {record.serial_number} ima pločicu",
-            )
+        propose(
+            liburnija.COL_PLAQUE,
+            "—",
+            record.plaque,
+            f"SB {record.serial_number} ima pločicu",
         )
 
     if record.is_explored != row.explored:
@@ -133,42 +146,74 @@ def sheet_differences(resolution: Resolution) -> tuple[list[Difference], list[De
             if record.sue_number
             else (record.note or "nije u redu za istražit")
         )
-        differences.append(
-            Difference(
+        propose(
+            liburnija.COL_EXPLORED,
+            "1" if row.explored else "0",
+            "1" if record.is_explored else "0",
+            f"SB {record.serial_number}: {why}",
+        )
+
+    # Nacrt / Zapisnik are only ever proposed in the TRUE direction. SB's empty
+    # link cell means "no digital copy on file", never "no such document", so
+    # the sheet claiming one is not a disagreement worth raising.
+    for column, in_sheet, link, label in (
+        (liburnija.COL_NACRT, row.has_nacrt, record.nacrt_link, "nacrt"),
+        (liburnija.COL_ZAPISNIK, row.has_zapisnik, record.zapisnik_link, "zapisnik"),
+    ):
+        if in_sheet or not _sb_has_document(record, link):
+            continue
+        reason = (
+            f"SB {record.serial_number} ima katastarski broj SUE "
+            f"{record.sue_number} — dakle i {label}"
+            if record.sue_number
+            else f"SB {record.serial_number} ima digitalni {label}"
+        )
+        propose(column, "FALSE", "TRUE", reason)
+
+    # Fotografija ulaza is a DA/NE claim in SB, so it disagrees in both
+    # directions and the sheet's own TRUE is worth acting on.
+    if _sb_says_photo(record) and not row.has_photo:
+        propose(
+            liburnija.COL_PHOTO,
+            "FALSE",
+            "TRUE",
+            f"SB {record.serial_number} ima Fotografija ulaza",
+        )
+    elif row.has_photo and not _sb_says_photo(record):
+        decisions.append(
+            Decision(
                 row_id=row.row_id,
-                column=liburnija.COL_EXPLORED,
-                current="1" if row.explored else "0",
-                proposed="1" if record.is_explored else "0",
-                reason=f"SB {record.serial_number}: {why}",
+                issue="tablica tvrdi Foto ulaza, SB ne kaže DA",
+                detail=f"SB {record.serial_number} · {record.name}"
+                       f" — provjeriti i po potrebi ispraviti SB",
             )
         )
 
-    for flag in _FLAGS:
-        in_sheet = bool(getattr(row, flag.sheet_value))
-        in_sb = _sb_flag_present(record, flag)
-        if in_sheet == in_sb:
-            continue
-        if in_sb:
-            differences.append(
-                Difference(
-                    row_id=row.row_id,
-                    column=flag.column,
-                    current="FALSE",
-                    proposed="TRUE",
-                    reason=f"SB {record.serial_number} ima {flag.label}",
-                )
-            )
-        else:
-            decisions.append(
-                Decision(
-                    row_id=row.row_id,
-                    issue=f"tablica tvrdi {flag.column}, SB nema {flag.label}",
-                    detail=f"SB {record.serial_number} · {record.name}"
-                           f" — provjeriti postoji li i unijeti u SB",
-                )
-            )
-
     return differences, decisions
+
+
+def synonym_edit(resolution: Resolution) -> SBEdit | None:
+    """Propose the `LiDAR Kristal N` synonym on a linked SB row that lacks it.
+
+    This is the convention that makes the sheet's number a legitimate key (hub
+    doc §5): once SB carries it, the row resolves on a hard key forever instead
+    of on coordinates or a name. Only ever an *addition* — the existing
+    `Sinonimi` text is preserved.
+    """
+    row, record = resolution.row, resolution.record
+    if record is None or not row.kristal_name or not row.kristal_number:
+        return None
+    if row.kristal_number in record.kristal_numbers:
+        return None
+    current = "; ".join(record.synonyms)
+    return SBEdit(
+        serial_number=record.serial_number,
+        column="Sinonimi",
+        current=current or "—",
+        proposed=f"{current}; {row.kristal_name}" if current else row.kristal_name,
+        reason=f"tablica red {row.row_id} → {record.name}; sinonim čini vezu trajnom",
+        row_id=row.row_id,
+    )
 
 
 def new_sb_row(row: SheetRow, serial_number: int) -> NewRow:
@@ -220,7 +265,7 @@ def new_sb_row(row: SheetRow, serial_number: int) -> NewRow:
 
 
 def build(resolutions: list[Resolution], *, next_serial: int) -> SyncResult:
-    """Turn resolved rows into the three lists."""
+    """Turn resolved rows into the review lists."""
     result = SyncResult()
     counts = {status.value: 0 for status in LinkStatus}
 
@@ -231,6 +276,9 @@ def build(resolutions: list[Resolution], *, next_serial: int) -> SyncResult:
             differences, decisions = sheet_differences(resolution)
             result.to_sheet.extend(differences)
             result.to_decide.extend(decisions)
+            edit = synonym_edit(resolution)
+            if edit is not None:
+                result.to_sb_edits.append(edit)
         elif resolution.status is LinkStatus.CANDIDATE:
             result.to_sb.append(new_sb_row(resolution.row, next_serial))
             next_serial += 1
@@ -248,6 +296,14 @@ def build(resolutions: list[Resolution], *, next_serial: int) -> SyncResult:
     return result
 
 
+# ── rendering ──────────────────────────────────────────────────────
+
+
+def _joined(lines: list[str]) -> str:
+    """One text block, newline-terminated."""
+    return chr(10).join(lines) + chr(10)
+
+
 def _tsv_cell(value: str) -> str:
     """Flatten a cell so the pasted block stays rectangular.
 
@@ -263,59 +319,84 @@ def _tsv_cell(value: str) -> str:
 def to_tsv(rows: list[NewRow], columns: tuple[str, ...] = NEW_ROW_COLUMNS) -> str:
     """The paste-able block: a header line plus one line per new SB row.
 
+    ``columns`` must be **the workbook's own header, in its own order** — a
+    subset or a reordering cannot be pasted into `Svi objekti` at all. Columns
+    a new row has no value for are emitted empty, which is what keeps the block
+    aligned with the table.
+
     Tab-separated because that is the format Excel and Google Sheets split into
-    cells on paste — comma-separated text would land in a single cell.
+    cells on paste; comma-separated text would land in a single cell.
     """
-    lines = ["\t".join(columns)]
+    by_key = {normalize_lookup_key(column): column for column in columns}
+    lines = [chr(9).join(columns)]
     for row in rows:
+        # Match our value keys to the workbook's spelling, not the other way.
+        values = {
+            by_key.get(normalize_lookup_key(name), name): value
+            for name, value in row.values.items()
+        }
         lines.append(
-            "\t".join(_tsv_cell(row.values.get(column, "")) for column in columns)
-        )
-    return "\n".join(lines) + "\n"
-
-
-def _joined(lines: list[str]) -> str:
-    """One text block, newline-terminated."""
-    return chr(10).join(lines) + chr(10)
-
-
-def _column(value: str, width: int) -> str:
-    """Pad to ``width``, but never let a long value swallow the next column.
-
-    Cave names run past any sensible width (*Ivanina zvijezdica*), and a bare
-    ``ljust`` then glues two fields together into an unreadable line.
-    """
-    return value.ljust(width) if len(value) < width else value + "  "
-
-
-def render_sheet_list(differences: list[Difference]) -> str:
-    """List 2 as a worksheet: one line per cell, to tick off in the browser."""
-    widths = (10, 18, 22, 22)
-    lines = [
-        "ZA TABLICU — ćelije koje SB zna bolje.",
-        "Ispraviti rukom u Liburnija tablici; SB je mjerodavan.",
-        "",
-        "".join(
-            _column(head, width)
-            for head, width in zip(("red", "stupac", "sada", "treba"), widths)
-        )
-        + "razlog",
-    ]
-    for item in differences:
-        lines.append(
-            "".join(
-                _column(value, width)
-                for value, width in zip(
-                    (item.row_id, item.column, item.current, item.proposed), widths
-                )
-            )
-            + item.reason
+            chr(9).join(_tsv_cell(values.get(column, "")) for column in columns)
         )
     return _joined(lines)
 
 
+def _column(value: str, width: int) -> str:
+    """Pad to ``width``, but never let a long value swallow the next column."""
+    return value.ljust(width) if len(value) < width else value + "  "
+
+
+def _table(
+    header: tuple[str, ...], widths: tuple[int, ...], rows: list[tuple]
+) -> list[str]:
+    lines = ["".join(_column(h, w) for h, w in zip(header[:-1], widths)) + header[-1]]
+    for row in rows:
+        lines.append(
+            "".join(_column(str(v), w) for v, w in zip(row[:-1], widths)) + str(row[-1])
+        )
+    return lines
+
+
+def render_sb_edits(edits: list[SBEdit]) -> str:
+    """List 2: cells to add to rows SB already has."""
+    return _joined(
+        [
+            "DOPUNE SB — dodati u postojeće retke `Svi objekti`.",
+            "Samo dopuna: postojeći sadržaj ćelije ostaje.",
+            "",
+            *_table(
+                ("Redni broj", "stupac", "sada", "dodati", "razlog"),
+                (12, 12, 26, 30),
+                [
+                    (e.serial_number, e.column, e.current, e.proposed, e.reason)
+                    for e in edits
+                ],
+            ),
+        ]
+    )
+
+
+def render_sheet_list(differences: list[Difference]) -> str:
+    """List 3 as a worksheet: one line per cell, to tick off in the browser."""
+    return _joined(
+        [
+            "ZA TABLICU — ćelije koje SB zna bolje.",
+            "Ispraviti rukom u Liburnija tablici; SB je mjerodavan.",
+            "",
+            *_table(
+                ("red", "stupac", "sada", "treba", "razlog"),
+                (10, 18, 22, 22),
+                [
+                    (d.row_id, d.column, d.current, d.proposed, d.reason)
+                    for d in differences
+                ],
+            ),
+        ]
+    )
+
+
 def render_decision_list(decisions: list[Decision]) -> str:
-    """List 3 as a worksheet. Nothing here may be actioned by a rule."""
+    """List 4 as a worksheet. Nothing here may be actioned by a rule."""
     lines = ["ZA ODLUKU — ništa se ne mijenja automatski.", ""]
     for item in decisions:
         lines.append(f"red {item.row_id}: {item.issue}")
@@ -336,38 +417,50 @@ def default_out_dir(satellite: str, today: date) -> Path:
     return FEATURE_ROOT / SYNC_ROOT_NAME / satellite / today.isoformat()
 
 
-def write_lists(result: SyncResult, directory: Path) -> dict[str, Path]:
-    """Write all three lists into ``directory``, returning what was written.
+def write_lists(
+    result: SyncResult,
+    directory: Path,
+    columns: tuple[str, ...] = NEW_ROW_COLUMNS,
+) -> dict[str, Path]:
+    """Write the review lists into ``directory``, returning what was written.
 
-    List 1 is TSV because it is meant to be pasted into `Svi objekti`; the other
-    two are plain text because they are worked through by hand, one line at a
-    time. Nothing here writes to SB or to the sheet.
+    List 1 is TSV because it is meant to be pasted into `Svi objekti`; the rest
+    are plain text because they are worked through by hand, one line at a time.
+    All of them carry a BOM — see ``FILE_ENCODING``. Nothing here writes to SB
+    or to the sheet.
     """
     directory.mkdir(parents=True, exist_ok=True)
     written = {
         "za-sb": directory / "1-za-sb.tsv",
-        "za-tablicu": directory / "2-za-tablicu.txt",
-        "za-odluku": directory / "3-za-odluku.txt",
+        "dopune-sb": directory / "2-dopune-sb.txt",
+        "za-tablicu": directory / "3-za-tablicu.txt",
+        "za-odluku": directory / "4-za-odluku.txt",
     }
-    written["za-sb"].write_text(to_tsv(result.to_sb), encoding="utf-8")
+    written["za-sb"].write_text(to_tsv(result.to_sb, columns), encoding=FILE_ENCODING)
+    written["dopune-sb"].write_text(
+        render_sb_edits(result.to_sb_edits), encoding=FILE_ENCODING
+    )
     written["za-tablicu"].write_text(
-        render_sheet_list(result.to_sheet), encoding="utf-8"
+        render_sheet_list(result.to_sheet), encoding=FILE_ENCODING
     )
     written["za-odluku"].write_text(
-        render_decision_list(result.to_decide), encoding="utf-8"
+        render_decision_list(result.to_decide), encoding=FILE_ENCODING
     )
     return written
 
 
 __all__ = [
+    "FILE_ENCODING",
     "NEW_ROW_COLUMNS",
     "SYNC_ROOT_NAME",
-    "default_out_dir",
     "build",
+    "default_out_dir",
     "new_sb_row",
-    "sheet_differences",
     "render_decision_list",
+    "render_sb_edits",
     "render_sheet_list",
+    "sheet_differences",
+    "synonym_edit",
     "to_tsv",
     "write_lists",
 ]

@@ -231,6 +231,16 @@ def build_sb_index(reader: SBReader, settings: Settings) -> list[SBRecord]:
     return records
 
 
+def _same_name(name: str | None, record: SBRecord) -> bool:
+    """Does the satellite's name match this SB row's name or any synonym?"""
+    if not name:
+        return False
+    key = normalize_lookup_key(name)
+    return bool(key) and key in {
+        normalize_lookup_key(label) for label in (record.name, *record.synonyms)
+    }
+
+
 def _nearest(row: SheetRow, records: list[SBRecord]) -> list[tuple[float, SBRecord]]:
     """SB rows within the review radius, closest first."""
     if not row.has_coordinates:
@@ -256,10 +266,17 @@ def resolve_rows(
     use_coordinates: bool = False,
     manual: dict[str, int] | None = None,
     out_of_scope: set[str] | None = None,
+    confirmed_new: set[str] | None = None,
 ) -> list[Resolution]:
-    """Resolve every satellite row. Order of the result mirrors the input."""
+    """Resolve every satellite row. Order of the result mirrors the input.
+
+    ``confirmed_new`` names rows a human has already ruled to be new caves
+    despite sitting close to an existing SB row — without it the same proximity
+    is re-raised on every run.
+    """
     manual = manual or {}
     out_of_scope = out_of_scope or set()
+    confirmed_new = {normalize_lookup_key(value) for value in (confirmed_new or set())}
 
     by_plaque: dict[str, SBRecord] = {}
     by_kristal: dict[str, SBRecord] = {}
@@ -354,12 +371,30 @@ def resolve_rows(
             continue
 
         # 4. Coordinates last, timid, and only when asked for.
-        if use_coordinates:
+        confirmed = normalize_lookup_key(row.row_id) in confirmed_new
+        if use_coordinates and not confirmed:
             near = _nearest(row, records)
             if near:
                 distance, record = near[0]
                 rival = near[1][1] if len(near) > 1 else None
                 rival_distance = near[1][0] if len(near) > 1 else None
+                # Two independent signals that agree beat either alone: an exact
+                # name match inside the review radius is the same cave, even
+                # past the auto band. Sheet 285 *Jama u Puharima* is SB 733 at
+                # 5.1 m — one tenth of a metre outside AUTO_LINK_M, and plainly
+                # the same cave (user, 2026-08-29).
+                if _same_name(row.field_name, record):
+                    resolutions.append(
+                        Resolution(
+                            row=row,
+                            record=record,
+                            status=LinkStatus.LINKED,
+                            key="name+coordinate",
+                            evidence=f"isto ime i {distance:.1f} m",
+                            distance_m=distance,
+                        )
+                    )
+                    continue
                 if distance <= AUTO_LINK_M and rival is None:
                     resolutions.append(
                         Resolution(
@@ -418,7 +453,11 @@ def resolve_rows(
         #    the alternative is pasting a duplicate. Sheet 285 *Jama u Puharima*
         #    is SB 733 under the same name, 5 m away; adding it would have
         #    duplicated a cave. So the name stops the add and asks.
-        twin = by_name.get(normalize_lookup_key(row.field_name)) if row.field_name else None
+        twin = (
+            by_name.get(normalize_lookup_key(row.field_name))
+            if row.field_name and not confirmed
+            else None
+        )
         if twin is not None:
             resolutions.append(
                 Resolution(

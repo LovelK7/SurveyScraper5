@@ -454,8 +454,19 @@ def cmd_sat_sync(
     reader = SBReader(settings)
     records = resolver.build_sb_index(reader, settings)
     next_serial = resolver.next_serial_number(reader, settings)
+    # The block has to paste into `Svi objekti`, so it carries the workbook's
+    # own header in the workbook's own order — never a subset of our choosing.
+    _header_row, sb_columns = reader.describe_columns()
 
-    resolutions = resolver.resolve_rows(rows, records, use_coordinates=use_coordinates)
+    overrides = settings.satellites.get(satellite, {})
+    resolutions = resolver.resolve_rows(
+        rows,
+        records,
+        use_coordinates=use_coordinates,
+        manual={str(k): int(v) for k, v in (overrides.get("manual_matches") or {}).items()},
+        out_of_scope=set(overrides.get("out_of_scope") or []),
+        confirmed_new=set(overrides.get("confirmed_new") or []),
+    )
     result = sync.build(resolutions, next_serial=next_serial)
     counts = result.counts
 
@@ -490,7 +501,16 @@ def cmd_sat_sync(
         print(f"    … {len(result.to_sb) - limit} more (raise --limit)")
 
     print()
-    print(f"2 · ZA TABLICU — {len(result.to_sheet)} ćelij(a) koje SB zna bolje")
+    print(f"2 · DOPUNE SB — {len(result.to_sb_edits)} postojeć(ih) redaka bez sinonima")
+    for edit in result.to_sb_edits[:limit]:
+        print(f"    Redni broj {edit.serial_number:<6} {edit.column}: "
+              f"{edit.current} → {edit.proposed}")
+        print(f"           ({edit.reason})")
+    if len(result.to_sb_edits) > limit:
+        print(f"    … {len(result.to_sb_edits) - limit} more (raise --limit)")
+
+    print()
+    print(f"3 · ZA TABLICU — {len(result.to_sheet)} ćelij(a) koje SB zna bolje")
     for difference in result.to_sheet[:limit]:
         print(f"    red {difference.row_id:<6} {difference.column:<12}"
               f" {difference.current} → {difference.proposed}")
@@ -499,7 +519,7 @@ def cmd_sat_sync(
         print(f"    … {len(result.to_sheet) - limit} more (raise --limit)")
 
     print()
-    print(f"3 · ZA ODLUKU — {len(result.to_decide)}")
+    print(f"4 · ZA ODLUKU — {len(result.to_decide)}")
     for decision in result.to_decide[:limit]:
         print(f"    red {decision.row_id:<6} {decision.issue}")
         if decision.detail:
@@ -515,16 +535,18 @@ def cmd_sat_sync(
             if out_dir
             else sync.default_out_dir(satellite, date.today())
         )
-        written = sync.write_lists(result, target)
+        written = sync.write_lists(result, target, tuple(sb_columns))
         print()
         print(f"Written to {target}:")
         for label, path in written.items():
             print(f"  {path.name:<20} {label}")
-        print("  1-za-sb.tsv: open it, select the rows under the header, copy, and")
-        print("  paste below the last row of `Svi objekti`. Check Redni broj first —")
-        print("  it assumes nobody added a row since this run.")
+        print(f"  1-za-sb.tsv carries all {len(sb_columns)} SB columns in the")
+        print("  workbook's own order: open it, select the rows under the header,")
+        print("  copy, and paste below the last row of `Svi objekti`. Check Redni")
+        print("  broj first — it assumes nobody added a row since this run.")
 
-    return EXIT_READY if (result.to_sb or result.to_sheet) else EXIT_NOT_READY
+    actionable = result.to_sb or result.to_sb_edits or result.to_sheet
+    return EXIT_READY if actionable else EXIT_NOT_READY
 
 
 # ── Entry point ────────────────────────────────────────────────────
