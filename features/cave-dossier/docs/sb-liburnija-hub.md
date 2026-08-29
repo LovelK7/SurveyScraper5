@@ -101,6 +101,9 @@ added to SB for now; the unverified stage stays in the satellite where it
 belongs. (If SB ever wants that stage, it is one more Napomena flag and one more
 Power Query view — the design below does not change.)
 
+**Confirmed caves are added to SB in bulk, not on demand** (user, 2026-08-29),
+carrying the naming convention of §5. What that batch looks like, exactly: §10.
+
 Two consequences that the code must enforce, not merely document:
 
 1. **`nije objekt` and `neprovjeren` rows are ineligible for matching.** They are
@@ -227,13 +230,18 @@ The crossing (§3) is the moment ownership transfers:
 | `Naziv_novi` | sheet | **SB** | **SB → sheet** |
 | `istrazeno`, `Istražili` | sheet | **SB** (lifecycle) | **SB → sheet** |
 | `Zapisnik`, `Nacrt`, `Foto ulaza` | — | **SB + dossier** | **SB → sheet** |
-| *(new)* `SUE`, `SB_redni_broj` | — | **SB** | **SB → sheet** |
+| ~~*(new)* `SUE`, `SB_redni_broj`~~ | — | — | **refused** (user, 2026-08-29) — the sheet keeps its 18 columns; see §7 |
 
-The two proposed new sheet columns are what the user asked for in plain terms —
-*"did cave 10 turn out to be explored, and what name did it get"* — and they
-close the join problem permanently: once written, the link is explicit and never
-has to be re-derived. The crosswalk stays the source of truth for the link;
-the sheet column is a mirror, and a disagreement between them is a finding.
+No new columns (user, 2026-08-29). The sheet answers *"did cave 10 turn out to be
+explored, and what name did it get"* through the columns it already has —
+`istrazeno`, `Naziv_novi`, `Br.pl`, `Zapisnik`/`Nacrt`/`Foto ulaza` — and the
+**link itself is never written into the sheet**. It lives only in the crosswalk
+file in this repo, which makes that file the thing that must not be lost (§4).
+
+**Names: SB is ground truth** (user, 2026-08-29). `Naziv_novi` is filled in after
+the fact, so where it disagrees with SB it is the sheet that is wrong — both
+divergences found (*PP Bjeloučka*, *Ivanina zvijezdica*) are sheet-side typos to
+correct.
 
 **Measured payload today**, on the 68 linked rows: 32 cells disagree —
 15 × `Foto ulaza` false in the sheet but present in SB, 4 × the other two
@@ -243,27 +251,81 @@ SB holding the `LiDAR Kristal N` placeholder, which must **not** be written back
 as a name), and 1 lifecycle disagreement (row 272 → SB 1256 *Paralelka*: sheet
 says unexplored, SB says *"fali nacrt i zapisnik, ponoviti"*).
 
-## 7. How to actually write to the sheet
+## 7. Getting the answers back — plainly
 
-Constraint: SB access is deliberately Google-API-free (local Drive mount), but a
-native Google Sheet has no readable file on that mount, and **it is edited by
-people in the field while we run**. Four options, ranked:
+### First: two destinations, two different mechanisms
 
-| | Approach | Verdict |
+They are constantly confused, so keep them apart:
+
+| Destination | What it physically is | How anything gets written to it |
 |---|---|---|
-| **A** | **Generated mirror tab + formulas.** The tool writes a `SB_status` tab (or its own file) keyed by sheet `name`; the field sheet gains `SUE`, `Naziv (SB)`, `istraženo (SB)`, `Nacrt/Zapisnik/Foto` as `VLOOKUP`/`IMPORTRANGE` formulas over it. | **Recommended.** The tool never touches a human-edited cell, so concurrent editing is structurally impossible to break — the same split-responsibility trick that keeps SB safe. |
-| B | Emit a **patch file** (TSV of changed cells + a printed before→after preview) the user pastes in. | Good fallback / first increment. Zero credentials, matches the existing `--apply` discipline. |
-| C | Sheets API cell writes with a service account. | Real two-way, but adds credentials and breaks the no-Google-API rule. Only if A and B prove insufficient. |
-| D | Drive MCP `update_file` on the sheet. | **No.** Media upload replaces the whole file — it would silently drop concurrent field edits. |
+| **SB** | an `.xlsm` workbook sitting on the Google Drive Desktop mount — a real file, opened in real Excel | Excel COM / xlwings, backup first. Already designed: [sb-write-back-design.md](sb-write-back-design.md) |
+| **Liburnija** | a *native* Google Sheet. There is no file on disk, Excel cannot open it, and people are typing into it in the field while the tool runs | **this section** |
 
-Start at B (it is a day's work and immediately useful), design the payload so A
-is a drop-in swap for the same computed rows.
+### What the tool produces: three lists, and nothing else
 
-The read direction keeps the current shape: a cached CSV export under `example/`
-(gitignored, UTF-8, society data), refreshed via the Drive MCP. One hardening
-step is non-negotiable and already has a scar: **any run that reports "missing
-from SB" must refresh both sides first**, or it repeats the stale-sandbox
-incident that reported *Jamorinke* as absent when it had just been added.
+No automatic writing anywhere. Each `sat sync` run ends in three reviewable
+lists — exactly the *"here are the differences, these rows would be added"* step
+you described:
+
+| List | Direction | Contents today |
+|---|---|---|
+| **1 · Za SB** | sheet → SB | confirmed caves with no SB row, each rendered as a complete SB row in SB's column order, already named. **117 rows** |
+| **2 · Za tablicu** | SB → sheet | cells the sheet has wrong, one line each: `red 43 · Foto ulaza · FALSE → TRUE (SB 1247 ima fotografiju ulaza)`. **32 cells** |
+| **3 · Za odluku** | — | conflicts and ambiguities. Nothing is ever decided automatically |
+
+Lists 2 and 3 need no tooling at all to act on: they are instructions a person
+carries out in the browser, one cell at a time. 32 cells is a coffee's worth of
+clicking, and after the first pass each run produces a handful. That is the
+answer to "manageable for people without the tools" — the *output* is the
+product, not the automation.
+
+### The jargon, unpacked
+
+**TSV** — "tab-separated values". A plain text table where a Tab character
+separates one column from the next. It matters for exactly one reason: when you
+copy TSV text and paste it into Excel or Google Sheets, it lands **spread across
+cells**. Paste comma-separated text instead and the whole line piles into a
+single cell. So TSV is not a technology, it is just the format that makes
+copy-paste work.
+
+**Patch file** — list 1, written to a file instead of only printed, so that
+adding 117 caves is *select → copy → paste below the last row of `Svi objekti`*
+rather than typing 117 rows by hand. Its destination is **SB**, in Excel, on your
+machine. A paste is an ordinary Excel action: it does not disturb macros,
+validations or the Power Query views, which recompute on their own — unlike
+letting Python save the workbook, which is what the safety doc forbids.
+
+**Mirror tab** — a *tab* is one page inside a spreadsheet (the tabs along the
+bottom edge). The idea was that the tool would own one tab in the Liburnija
+spreadsheet, called something like `SB status`, fill it with SB's answers, and
+the field table would display them through formulas — so the tool would never
+touch a cell a human typed. **Your answer to question 3 rules it out**: showing
+anything from that tab in the field table requires new columns in the field
+table. Dropped; nothing is written into the spreadsheet by machine.
+
+### What keeping the sheet as-is costs
+
+Somebody looking only at the spreadsheet cannot tell which SB row a LIDAR point
+became — that link exists only in the crosswalk file here. Acceptable for now,
+and worth revisiting if field users start asking "is this one already in SB?".
+
+Two cheap ways out, if that day comes:
+- `Komentar` is an existing free-text column. `SB 1248` written into it
+  materialises the link with no schema change — at the cost of a human field's
+  tidiness.
+- The `Naziv_novi` write-back already carries the answer implicitly: once the
+  sheet says *LiDAR Kristal 43*, the cave is in SB by definition.
+
+### Later, when the manual step gets annoying
+
+Only two things would change, and neither is needed to start: writing list 1 into
+SB automatically (the `safe_io` machinery already exists — it needs the rehearsal
+protocol, not new code), and writing list 2 into the Google Sheet through the
+Sheets API with a service account. The second one adds credentials and breaks the
+"no Google API" rule, so it wants a real reason. The Drive MCP is **not** that
+route: its `update_file` replaces a whole file and would silently discard
+whatever someone typed in the field that morning.
 
 ## 8. Shape of the implementation
 
@@ -287,8 +349,8 @@ CLI, matching the existing verb style (dry-run by default, `--apply` to act):
 |---|---|
 | `cavedossier sat sync liburnija` | resolve every sheet row, update the crosswalk, print the diff: new links, new conflicts, newly confirmed candidates |
 | `cavedossier sat gaps liburnija` | the two-way gap report — confirmed caves with no SB row (with the proposed `Ime objekta`/synonym), and SB rows the sheet could enrich |
-| `cavedossier sat push liburnija` | the SB→sheet payload: preview the 32 disagreeing cells; `--apply` writes the patch file (option B) or the mirror tab (option A) |
-| `cavedossier sat add liburnija <N>` | scaffold the SB row for one crossed candidate — the row's values, ready to paste, with `LiDAR Kristal N` in the right cell |
+| `cavedossier sat push liburnija` | list 2 — the 32 cells the sheet has wrong, as `red N · stupac · staro → novo (razlog)`, for a human to correct in the browser |
+| `cavedossier sat add liburnija [<N>]` | list 1 — the SB rows to create, in SB column order with `LiDAR Kristal N` in the right cell. `--tsv` writes the paste-able block for all 117; a bare `<N>` scaffolds one |
 
 Sequencing (each step useful on its own):
 
@@ -296,12 +358,14 @@ Sequencing (each step useful on its own):
    keys. Materialises the 68 links; costs nothing new.
 2. **`sat gaps`** — the report that surfaces the 117 missing rows. Read-only, and
    the highest-value single output here.
-3. **`sat push` as a patch file.** Two-way begins; 32 cells of drift get fixed.
-4. **Coordinate key**, with the §5 bands, behind a flag until it has been run
+3. **`sat add --tsv`** — the 117 rows as a paste-able block for `Svi objekti`.
+   The one-off that clears the backlog; pasted by hand into Excel, no write code.
+4. **`sat push`** — list 2. Two-way begins; 32 cells of drift get corrected in
+   the browser by hand.
+5. **Coordinate key**, with the §5 bands, behind a flag until it has been run
    once and eyeballed.
-5. **`sat add`**, feeding SB write-back (M6 machinery, `safe_io`, backups,
-   sandbox rehearsal — nothing new needed).
-6. **Mirror tab** replaces the patch file if the round trip proves annoying.
+6. **Automated SB write** for subsequent (small) batches, on the M6 machinery —
+   `safe_io`, backups, sandbox rehearsal. Nothing new to build, only to rehearse.
 7. **Second satellite** (`Literatura`, 45 rows — the cheap one) to prove the
    protocol generalises before touching `Katastar RH`'s 4595.
 
@@ -336,14 +400,38 @@ add (*Jamorinke*) because it only looked at folders that already held data; a
 sheet-driven pass looks at every confirmed cave, and the queue is two orders of
 magnitude bigger.
 
-## 10. Decisions needed before building
+## 10. Decided (user, 2026-08-29)
 
-1. **Are the ~117 unexplored confirmed caves genuinely SB's?** They would grow
-   *Za istražit* from 199 to ~316. Bulk-add, or add on demand as each is worked?
-2. **`Istražili` as the out-of-scope rule** — is "not SUE" sufficient to keep a
-   row out automatically (48 rows), or does each still need a look?
-3. **Two new sheet columns** (`SUE`, `SB_redni_broj`) — acceptable to add to a
-   sheet the society owns collectively?
-4. **Patch file or mirror tab** for the first write-back increment (§7 A vs B).
-5. **Does `Naziv_stari` ever outrank SB's name?** Today SB wins by default; the
-   two real divergences are both spelling.
+| # | Question | Answer | What it means in code |
+|---|---|---|---|
+| 1 | Do the ~117 confirmed unexplored caves belong in SB? | **Yes, add them**, named per the convention | one-off `sat add --tsv` batch; *Za istražit* grows 199 → ~316 |
+| 2 | Is `Istražili ≠ SUE` enough to keep a row out? | **Yes** — other societies' caves do not enter SB | automatic `out_of_scope`, no prompt; 48 SUS + 1 Karsterra |
+| 3 | May the sheet gain `SUE` / `SB_redni_broj` columns? | **No, keep the sheet as it is** | mirror tab dropped; the link lives only in the crosswalk (§7) |
+| 4 | Patch file or mirror tab? | patch file — but the real product is the **review list** | §7 rewritten around three lists |
+| 5 | Can `Naziv_novi` outrank SB's name? | **No — SB is ground truth**; `Naziv_novi` is filled in afterwards | name disagreements are always sheet-side corrections |
+
+### What decision 1 actually produces
+
+Measured against the same baseline, after decision 2 removes the other societies:
+
+- **117 rows**, taking `Redni broj` **1314 – 1430** (the column is a dense 1…1313
+  today, no gaps to fill).
+- **115 of them have no name at all** → they enter as `Ime objekta =
+  "LiDAR Kristal N"`. Two carry a real name (*Jama iznad Andreti* 288,
+  *Guštićeva jama* 338) → real name, with `LiDAR Kristal N` in `Sinonimi`.
+- **Five have a text id, not a number** (the `nije na Lidaru` field finds, e.g.
+  *Špilja kraj 15*). The `LiDAR Kristal N` convention cannot apply to them — they
+  enter under their own sheet name, and the crosswalk is the only link. Worth a
+  glance before the batch goes in.
+- Only one carries a plaque already; the rest get theirs when someone visits.
+- Every row needs `Napomena` seeded with the queue flag `za istražit, <komentar>`
+  so SB's own Power Query puts it in the right view, plus coordinates from the
+  sheet.
+
+### Still open
+
+- Whether the 49 explored-by-others rows should exist in SB as *sudjelovanje*
+  where SUE took part — decision 2 keeps them out entirely, which is right for
+  caves SUE had nothing to do with.
+- Per-table coordinate tolerances for `Literatura` and `Katastar RH` (§5), to be
+  calibrated when those are picked up.
