@@ -43,6 +43,15 @@ code, docs, logs — lands in SurveyScraper5.
 Open [SurveyScraper5.code-workspace](SurveyScraper5.code-workspace) to get all
 three folders in one VS Code window (reference repos labeled read-only).
 
+## Dev vs prod
+
+This repo is the **dev** half; **prod is the registry Google Drive** — the
+shared folders where the society's non-developer users work and where every
+tool's outputs already land. Productionization (distributable tools + cloud
+copies of the data/templates they need) is a noted, unscheduled stage — see
+[ARCHITECTURE.md](ARCHITECTURE.md) §"Dev vs prod" for the standing
+portability rules every new tool must respect NOW so that step stays cheap.
+
 ## Shared domain, not shared code
 
 The source projects overlap on the **speleology domain** — caves, surveys,

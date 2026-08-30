@@ -159,3 +159,10 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-30 — the three karta re-runs this session each allocated a fresh
   georef.hr point ID for the same caves (format migration) — the
   detect-existing-point idea above (2026-08-30, `--force` litter) got more urgent.
+- 2026-08-30 — **productionization** (user): dev is this repo on the personal
+  PC, prod is the registry Drive where non-developer users work — eventually
+  the tools must run FROM the prod side: distributable entry points (scripts /
+  bundled runtime), cloud copies on the Drive of `data/geo/` + the OSZ template,
+  and a non-developer setup guide. Consideration documented in ARCHITECTURE.md
+  §"Dev vs prod" (with the portability rules to keep NOW); promote to a real
+  work item when its time comes.

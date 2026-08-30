@@ -115,6 +115,44 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 - **Reuse by porting**: code is COPIED from read-only `../crospeleo-automation` and
   adapted; every copy is logged in `features/cave-dossier/docs/PORTING.md`.
 
+## Dev vs prod — a duality to design for (noted 2026-08-30, unscheduled)
+
+Today everything runs in **dev**: this repo on the developer's PC (VS Code,
+local Python venvs, a Google Drive Desktop mount, GitHub as backup). But
+**prod is the registry Drive itself** — the shared `Speleo baza SUE` folder is
+where the society's real work lives, and the people who will eventually run
+these tools (recorders, the archivist) work *there*, not in a cloned repo.
+Anything a tool needs must therefore one day be available FROM the Drive side:
+not just entry-point scripts, but everything they stand on —
+
+- the Python package + its optional extras (or a packaged/self-contained form);
+- per-machine config (`.env`: `LOCAL_DRIVE_ROOT`, georef credentials) with a
+  setup story a non-developer can follow;
+- the regenerable local data (`data/geo/` GeoPackages + DEM tiles — or cloud
+  copies of them on the Drive so `fetch-data` becomes a copy, not a download);
+- the committed inputs tools read at runtime (OSZ v10 template,
+  `config/selectors.yaml`, `config.yaml`).
+
+Nothing is productionized yet and no milestone schedules it. What we do NOW is
+keep the code prod-portable so that step stays cheap. Standing rules:
+
+- **One command per tool, no repo knowledge required to run it** — every
+  capability is a `cavedossier` subcommand with the Redni broj as the only
+  input; keep it that way.
+- **Per-machine facts live only in `.env`**, never in code or committed config.
+- **Every local dataset must be regenerable from open services by one command**
+  (`geo fetch-data` is the model) — a prod machine can then be provisioned
+  by running it once, or by copying a ready-made bundle to/from the Drive.
+- **Outputs already land in prod** (the `!!`-prefixed Drive dirs) and tolerate
+  hand management there — that contract (fail-soft delivery, self-healing
+  collections, review lists instead of writes) is the prod interface and must
+  survive any packaging.
+
+When productionization becomes real, expect: a distributable entry point
+(installer, bundled runtime, or thin launcher scripts beside the Drive dirs),
+cloud copies of `data/geo/` and the template on the Drive, and a documented
+non-developer setup. Track it as its own work item when its time comes.
+
 ## Milestones (stage 2)
 
 M0 docs scaffold ✅ → **M1 SB read-only (sandbox → live)** ✅ → M2 dossier skeleton +

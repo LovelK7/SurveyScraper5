@@ -476,6 +476,18 @@ Every command prints the mode first — `SB mode: LIVE (...)`,
 > auto-refreshed fallback (2026-08-30) exists precisely to close that hole; a
 > FALLBACK banner still means "data may lag — retry when SB is free".
 
+### Dev vs prod — this setup is the DEV half
+
+Everything on this page assumes the developer's PC. **Prod is the registry
+Drive** (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §Dev vs prod): the
+people who will eventually run these tools work in the shared Drive folders,
+not in a repo clone. Productionizing (a distributable entry point, cloud
+copies of `data/geo/` and the template, a non-developer setup guide) is
+noted but unscheduled — until then, keep the portability rules: one
+subcommand per tool, per-machine facts only in `.env`, every local dataset
+regenerable by one command, outputs delivered fail-soft into the hand-managed
+Drive dirs.
+
 ### Two venvs exist — know which one you are in
 
 | Venv | What it holds | Use it for |
