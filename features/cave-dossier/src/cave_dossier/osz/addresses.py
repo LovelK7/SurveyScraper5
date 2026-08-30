@@ -42,6 +42,7 @@ V10: dict[str, CellAddr] = {
     "y_htrs": CellAddr(2, 2, 4, kind="sdt_cell"),
     "kota_ulaza": CellAddr(2, 4, 2),
     "izvor_kote": CellAddr(2, 4, 4),
+    "izvor_koordinata": CellAddr(2, 5, 4),
     "duljina": CellAddr(4, 3, 0),
     "dubina": CellAddr(4, 3, 2),
     "datum_istrazivanja": CellAddr(6, 8, 1),

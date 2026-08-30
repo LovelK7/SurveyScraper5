@@ -30,7 +30,7 @@ from pathlib import Path
 
 from cave_dossier import georef
 from cave_dossier.core.config import FEATURE_ROOT, Settings
-from cave_dossier.core.normalization import parse_optional_float
+from cave_dossier.core.normalization import normalize_lookup_key, parse_optional_float
 from cave_dossier.geo import elevation as elevation_mod
 from cave_dossier.geo import locality as locality_mod
 from cave_dossier.osz.addresses import KARTA_FRAME, TEMPLATE_VERSION, V10
@@ -42,6 +42,16 @@ TEMPLATE_PATH = FEATURE_ROOT / "osz-template" / "templates" / "Zapisnik_OSZ_v10.
 RUNS_DIR = FEATURE_ROOT / "runs" / "osz"
 
 SB_UPDATES_CSV_COLUMNS = ("Redni broj", "Stupac", "Vrijednost", "Izvor", "Napomena")
+
+# The LiDAR flag (user, 2026-08-30): a cave whose name or synonym carries
+# "lidar" (which also covers "lidarka" and the "LiDAR Kristal N" convention
+# every Liburnija-derived row gets) had its coordinates AND Z produced by
+# the LiDAR analysis — so Izvor koordinata and Izvor kote ulaza are known in
+# advance. "LiDAR" normalises to the CroSpeleo vocabulary's "LIDAR" option
+# (osz_parser matches on normalize_lookup_key), so the friendly casing is
+# downstream-safe.
+LIDAR_SOURCE_LABEL = "LiDAR"
+_LIDAR_KEY = "lidar"
 
 
 class PrefillError(RuntimeError):
@@ -231,6 +241,16 @@ def _resolve_fields(
     if y_htrs is not None:
         fields["y_htrs"] = FieldValue(value=str(int(round(y_htrs))), source="sb")
 
+    # Izvor koordinata (user, 2026-08-30): LiDAR-derived caves are known in
+    # advance; everything else defaults to GPS — the most common source by
+    # far. Both spellings are exact CroSpeleo vocabulary matches.
+    lidar = _is_lidar_derived(cave, settings)
+    if x_htrs is not None or y_htrs is not None:
+        if lidar:
+            fields["izvor_koordinata"] = FieldValue(value=LIDAR_SOURCE_LABEL, source="lidar-flag")
+        else:
+            fields["izvor_koordinata"] = FieldValue(value="GPS", source="default")
+
     if finding is not None:
         if finding.zupanija:
             fields["zupanija"] = FieldValue(value=finding.zupanija, source="geo-admin")
@@ -257,10 +277,22 @@ def _resolve_fields(
                     source="RGI (najbliži toponim)",
                 ))
 
-    _resolve_kota(settings, cave, result, kota_finding)
+    _resolve_kota(settings, cave, result, kota_finding, lidar)
 
 
-def _resolve_kota(settings: Settings, cave: CaveRow, result: PrefillResult, kota_finding) -> None:
+def _is_lidar_derived(cave: CaveRow, settings: Settings) -> bool:
+    """True when the cave's name or a synonym carries the LiDAR marker."""
+    synonyms = SBReader._cell_as_text(
+        cave.values, settings.sb_field_columns.get("synonyms", "Sinonimi")
+    )
+    for text in (cave.object_name, synonyms):
+        if text and _LIDAR_KEY in normalize_lookup_key(text):
+            return True
+    return False
+
+
+def _resolve_kota(settings: Settings, cave: CaveRow, result: PrefillResult,
+                  kota_finding, lidar: bool) -> None:
     sb_z = _sb_float(cave, _field_column(settings, "entrance_elevation_m"))
     computed = kota_finding.elevation_m if kota_finding is not None else None
 
@@ -268,6 +300,21 @@ def _resolve_kota(settings: Settings, cave: CaveRow, result: PrefillResult, kota
 
     if sb_z is not None:
         result.fields["kota_ulaza"] = FieldValue(value=_format_number(sb_z), source="sb")
+        if lidar:
+            # A LiDAR cave's SB Z came from the LiDAR analysis, whatever
+            # the DMV grid says — the source is known in advance. A grid
+            # disagreement is still worth a heads-up, but stays advisory.
+            result.fields["izvor_kote"] = FieldValue(
+                value=LIDAR_SOURCE_LABEL, source="lidar-flag"
+            )
+            if computed is not None and abs(computed - sb_z) > settings.geo_elevation_tolerance_m:
+                result.mismatches.append(
+                    f"Kota ulaza: SB (LiDAR) kaže {_format_number(sb_z)} m, "
+                    f"{label} kaže {_format_number(computed)} m "
+                    f"(razlika > {_format_number(settings.geo_elevation_tolerance_m)} m). "
+                    "SB vrijednost je zadržana, Izvor kote je LiDAR."
+                )
+            return
         if computed is not None and abs(computed - sb_z) > settings.geo_elevation_tolerance_m:
             # Disagreement: SB's value stands, but claiming a DMV source
             # for a number the DMV grid contradicts would be false — leave

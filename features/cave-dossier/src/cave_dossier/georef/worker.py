@@ -40,6 +40,13 @@ SERIAL_PAD = 4
 RECORDS_CSV_NAME = "!georef_zapisi.csv"
 RECORDS_CSV_COLUMNS = ("Redni broj", "Ime objekta", "Georef zapis", "Datum")
 
+# The current excerpt format: landscape 5:4 (user, 2026-08-30; the original
+# port produced 1:1 squares). An excerpt whose aspect does not match is from
+# an older format and gets refreshed automatically — nobody should have to
+# delete files by hand to force a format migration (the user had to, once).
+EXCERPT_ASPECT = 5 / 4
+_ASPECT_TOLERANCE = 0.02
+
 
 def padded_serial(serial: int | str) -> str:
     return str(serial).strip().zfill(SERIAL_PAD)
@@ -215,17 +222,30 @@ def refresh_reason(settings: Settings, serial: int | str, current_name: str) -> 
     """Why an already-collected excerpt must be fetched AGAIN, or None if it is
     current.
 
-    The cave name is an integral part of the georef zapis — it is typed into
-    the Naziv lokaliteta field and comes back inside the record — so when SB
-    renames a cave (a field name like `LiDAR Kristal 31` becoming a synonym of
-    the real name, user example SB 1320, 2026-08-30), the collected point and
-    record are stale and the flow has to run again under the new name.
-    A missing CSV row with the PNG present is the other refresh case: the
-    delivery is only complete as a pair.
+    The delivery dir is managed BY HAND as much as by this tool (user,
+    2026-08-30) — people delete PNGs, prune CSV rows, edit the CSV in Excel.
+    Every stale state must therefore be detected here, never require a
+    manual cleanup ritual:
+
+    - SB renamed the cave → the name is an integral part of the georef zapis
+      (typed into Naziv lokaliteta, embedded in the record; SB 1320's
+      `LiDAR Kristal 31` was the trigger) → re-run under the new name;
+    - PNG present but no CSV row (or vice versa — a missing PNG takes the
+      normal fetch path) → the delivery is only complete as a pair;
+    - the PNG is in an outdated excerpt format (wrong aspect — the original
+      port made 1:1 squares, current is landscape 5:4) or unreadable → the
+      format migration happens on the next run instead of by hand.
     """
     paths = delivery_paths(settings, serial)
     if paths is None or not paths.png.exists():
         return None  # nothing collected yet — the normal fetch path handles it
+    dimensions = _png_dimensions(paths.png)
+    if dimensions is None:
+        return f"{paths.png.name} nije čitljiv PNG — isječak se dohvaća ponovno"
+    width, height = dimensions
+    if height == 0 or abs(width / height - EXCERPT_ASPECT) > _ASPECT_TOLERANCE:
+        return (f"isječak je u starom formatu ({width}×{height}) — "
+                "aktualni format je položeni 5:4")
     stored = read_records(paths.records_csv).get(record_key(serial))
     if stored is None:
         return "excerpt PNG exists but !georef_zapisi.csv has no row — record lost"
@@ -234,6 +254,21 @@ def refresh_reason(settings: Settings, serial: int | str, current_name: str) -> 
         return (f"SB je preimenovao objekt: '{stored_name}' -> '{current_name}' — "
                 "ime je sastavni dio georef zapisa")
     return None
+
+
+def _png_dimensions(path: Path) -> tuple[int, int] | None:
+    """(width, height) from the PNG IHDR header, or None when unreadable.
+    Header-only read — no Pillow, works without the [karta] extra."""
+    try:
+        with path.open("rb") as handle:
+            header = handle.read(24)
+    except OSError:
+        return None
+    if len(header) < 24 or header[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    width = int.from_bytes(header[16:20], "big")
+    height = int.from_bytes(header[20:24], "big")
+    return (width, height) if width and height else None
 
 
 def upsert_record(csv_path: Path, serial_label: str, cave_name: str,

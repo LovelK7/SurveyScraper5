@@ -435,6 +435,9 @@ in the workbook.
 cavedossier sb columns                      # what the tool sees in the workbook
 cavedossier report --cave "Konglomeratača"  # one cave, end to end, both gates
 cavedossier report --cave 570 --json        # the same dossier as data
+cavedossier geo locate 570                  # the locality finders vs the SB row
+cavedossier geo kota 570                    # DMV elevation vs the SB row's Z
+cavedossier osz prefill 570                 # the whole 2.1b chain for one cave
 ```
 
 ---
@@ -523,10 +526,46 @@ cavedossier photos check-flag              # every staged photo's cave should sa
 cavedossier karta 1234                     # fetch the map excerpt for Redni broj 1234
 cavedossier karta 1234 --debug             # watch the browser do it (headed + screenshots)
 cavedossier karta 1234 --force             # refresh an excerpt already collected
-# Re-running an already-collected cave skips — UNLESS SB renamed it since: the
-# name is an integral part of the georef zapis (typed into the point, embedded
-# in the record), so a rename auto-triggers a fresh run (e.g. a field name like
-# "LiDAR Kristal 31" later becoming a synonym of the cave's real name).
+# Re-running an already-collected cave skips — UNLESS something makes the
+# collection stale, which auto-triggers a fresh run instead of needing --force
+# or hand-deleting files (the delivery dir is managed by hand too):
+#   · SB renamed the cave (the name is typed into the point and embedded in
+#     the georef zapis — e.g. "LiDAR Kristal 31" becoming a synonym later);
+#   · the PNG is in an outdated excerpt format (pre-2026-08-30 1:1 squares;
+#     current format is landscape 5:4, ~1.5 km above/below the entrance);
+#   · the PNG exists without its !georef_zapisi.csv row (or is unreadable).
+# The CSV survives Excel edits: unpadded brojevi, local dates and blank rows
+# are tolerated, and the next upsert repairs that row's formatting.
+
+# Part 2.1b — locality + elevation finders (geo data from open DGU services)
+cavedossier geo fetch-data                 # one-time: boundary GeoPackages + RGI gazetteer
+cavedossier geo fetch-data --no-inspire-au # skip the ~209 MB INSPIRE AU download path
+cavedossier geo locate 1234                # županija / grad-općina / najbliže mjesto /
+                                           #   lokalitet from the row's X/Y, vs what SB says
+cavedossier geo kota 1234                  # Kota ulaza from the DGU DMV grid vs SB's Z
+cavedossier geo locate 1234 --offline      # no network: local RGI gpkg + cached data only
+cavedossier geo kota 1234 --offline        #   (elevation needs the cave's DEM tile cached)
+
+# Part 2.1b — OSZ prefill (fills the v10 template, embeds the isječak karte,
+# delivers SB_<broj>_OSZ.docx into !!!Digitalizacija/Osnovni speleološki zapisnik)
+cavedossier osz prefill 1234               # SB + finders -> prefilled DOCX + prefill.json
+                                           #   + dopune-sb.csv (empty SB cells a finder filled)
+cavedossier osz prefill 1234 --force-karta # re-fetch the excerpt first (server-side save)
+cavedossier osz prefill 1234 --offline     # never touch the network; an already-collected
+                                           #   excerpt is still embedded, georef.hr is skipped
+# Precedence: SB wins — computed values only fill EMPTY cells; disagreements
+# (e.g. kota vs the DMV grid beyond 10 m) are warnings, never overrides.
+# LiDAR flag: a cave whose name or synonym carries "lidar" (Lidarka, the
+# "LiDAR Kristal N" Liburnija convention, …) had its coordinates and Z
+# produced by the LiDAR analysis, so Izvor koordinata AND Izvor kote ulaza
+# are prefilled as "LiDAR" — known in advance, even when the DMV grid
+# disagrees (the warning then stays advisory). Any other cave with
+# coordinates gets Izvor koordinata = "GPS", the most common source —
+# the recorder corrects the rare exception by hand.
+# Never prefilled by design: Katastarski broj (the archivist's manual final
+# step), Duljina/Dubina (come from the survey), Datum istraživanja (SB only
+# holds a year). dopune-sb.csv is a review list a person carries into Excel —
+# nothing writes to SB automatically.
 ```
 
 Exit codes (your convention): **1** = ready, **0** = not ready, **99** = error.

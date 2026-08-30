@@ -10,11 +10,26 @@ from pathlib import Path
 
 import pytest
 
+import struct
+import zlib
+
 from cave_dossier.core.config import Settings
 from cave_dossier.georef import worker
 from cave_dossier.georef.models import GeorefInput
 from cave_dossier.georef.selectors import load_selectors
 from cave_dossier.sb.loader import SBReader
+
+
+def tiny_png(width: int, height: int) -> bytes:
+    """A minimal valid PNG — refresh_reason reads real IHDR headers now."""
+    def chunk(typ: bytes, data: bytes) -> bytes:
+        return (struct.pack(">I", len(data)) + typ + data
+                + struct.pack(">I", zlib.crc32(typ + data) & 0xFFFFFFFF))
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    raw = b"".join(b"\x00" + b"\x00\x00\x00" * width for _ in range(height))
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
 # ── Serial lookup + input building (synthetic mini workbook) ───────
@@ -115,7 +130,7 @@ def test_excel_mangled_csv_still_matches(settings: Settings, tmp_path: Path) -> 
         settings, local_drive_root=tmp_path, archive_dirs={"map_excerpts_dir": "."},
     )
     paths = worker.delivery_paths(configured, 651)
-    paths.png.write_bytes(b"png")
+    paths.png.write_bytes(tiny_png(50, 40))  # current 5:4 format
     assert worker.refresh_reason(configured, 651, "Jama na Globoko") is None
 
     # Upsert re-pads the Excel-stripped row rather than adding a second one.
@@ -124,6 +139,32 @@ def test_excel_mangled_csv_still_matches(settings: Settings, tmp_path: Path) -> 
     lines = csv_path.read_text(encoding="utf-8-sig").splitlines()
     assert len(lines) == 2  # header + the one cave
     assert lines[1].startswith("0651")
+
+
+def test_old_format_excerpt_refreshes_itself(settings: Settings, tmp_path: Path) -> None:
+    """A format change must invalidate collected excerpts automatically —
+    the 1:1 → 5:4 migration (2026-08-30) forced the user to delete files
+    by hand because skip-if-collected saw the old squares as 'present'.
+    The dir is managed by hand by non-technical people; the tool detects."""
+    configured = dataclasses.replace(
+        settings, local_drive_root=tmp_path, archive_dirs={"map_excerpts_dir": "."},
+    )
+    paths = worker.delivery_paths(configured, 651)
+    worker.upsert_record(paths.records_csv, "0651", "Jama na Globoko",
+                         "999;Jama na Globoko;1;2;0.7", "2026-08-30")
+
+    # The old square format → stale, regardless of a valid CSV row.
+    paths.png.write_bytes(tiny_png(50, 50))
+    reason = worker.refresh_reason(configured, 651, "Jama na Globoko")
+    assert reason is not None and "5:4" in reason
+
+    # Junk where the PNG should be (hand-copied wrong file) → also stale.
+    paths.png.write_bytes(b"not a png at all........")
+    assert worker.refresh_reason(configured, 651, "Jama na Globoko") is not None
+
+    # Current 5:4 format → clean skip.
+    paths.png.write_bytes(tiny_png(50, 40))
+    assert worker.refresh_reason(configured, 651, "Jama na Globoko") is None
 
 
 def test_rename_invalidates_a_collected_excerpt(settings: Settings, tmp_path: Path) -> None:
@@ -138,7 +179,7 @@ def test_rename_invalidates_a_collected_excerpt(settings: Settings, tmp_path: Pa
     )
     paths = worker.delivery_paths(configured, 1320)
     paths.png.parent.mkdir(parents=True)
-    paths.png.write_bytes(b"png")
+    paths.png.write_bytes(tiny_png(50, 40))  # current 5:4 format
     worker.upsert_record(paths.records_csv, "1320", "LiDAR Kristal 31",
                          "999;LiDAR Kristal 31;1;2;0.7", "2026-08-30")
 
