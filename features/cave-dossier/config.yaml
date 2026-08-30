@@ -78,6 +78,12 @@ archive:
   # collated record texts ("Georef zapis"). See cave_dossier/georef/worker.py.
   map_excerpts_dir: "!!Isječci karte"
 
+  # Part 2.1b — prefilled OSZ zapisnici (Drive folder
+  # 1cleUlhHat82v9SCAIXkqvEXqPOmK_73h, designated by the user 2026-08-30).
+  # Holds SB_<zero-padded Redni broj>_OSZ.docx per cave — the v10 template
+  # prefilled from SB + the locality/elevation finders, isječak karte embedded.
+  osz_prefill_dir: "!!!Digitalizacija/Osnovni speleološki zapisnik"
+
 # Field-data intake mapping (user, 2026-08-28/29). Folder fragment -> Redni broj
 # for leaves the name matcher cannot resolve, and the folders confirmed to hold
 # data for caves that are NOT in SB yet.
@@ -127,6 +133,23 @@ intake:
     - "Jama na gradilištu (110)_Venio"
     - "Nikad više_Venio_837"
     - "vrazji prolaz 2kom"
+
+# Part 2.1b — locality + elevation finders (cave_dossier/geo/). The boundary
+# GeoPackages and DEM tiles live in the gitignored data_dir; `cavedossier geo
+# fetch-data` provisions them (see data/README.md for provenance + licences).
+geo:
+  # Feature-relative unless absolute. Holds naselja/jls/zupanije.gpkg,
+  # rgi_named_places.gpkg (offline RGI fallback) and dem/ (EL-COV GeoTIFFs).
+  data_dir: "data/geo"
+  # RGI WFS spatial query radius around the entrance.
+  rgi_radius_m: 2000
+  # |computed - SB Z| beyond this prints a mismatch warning (SB still wins).
+  # 10 m ≈ the honest band between the 25 m-class DMV grid and SB's
+  # mixed-provenance hand-entered Z values.
+  elevation_tolerance_m: 10
+  # What "Izvor kote ulaza" says when the finder supplied the elevation —
+  # short-label practice like the existing HOK / TK / LIDAR values.
+  elevation_source_label: "DMV (DGU)"
 
 # Satellite tables around SB (part 2.2) — see docs/sb-liburnija-hub.md.
 # Overrides for the handful of rows no rule can settle. Everything else is

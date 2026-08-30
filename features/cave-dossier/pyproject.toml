@@ -21,8 +21,21 @@ dev = ["pytest>=8"]
 sb-write = ["xlwings>=0.30"]
 # Isječak karte (georef.hr headed browser flow) — M3
 karta = ["playwright>=1.40", "Pillow>=10"]
-# OSZ DOCX builder — M4
-osz = ["python-docx>=1.1"]
+# OSZ DOCX builder — M4. lxml directly, NOT python-docx: the template's w:sdt
+# content controls are invisible to python-docx, so every OSZ tool (the
+# osz-template workbench included) works on word/document.xml through lxml.
+osz = ["lxml>=4.9"]
+# Locality + elevation finders (part 2.1b prefill) — RGI WFS, DGU admin
+# boundaries, INSPIRE EL-COV sampling. All imports are lazy: the base install
+# works without this extra, the finders just report "unavailable".
+geo = [
+    "requests>=2.31",
+    "geopandas>=0.14",
+    "shapely>=2",
+    "pyproj>=3.6",
+    "rapidfuzz>=3",
+    "rasterio>=1.3",
+]
 
 [project.scripts]
 cavedossier = "cave_dossier.cli:main"

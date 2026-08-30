@@ -25,6 +25,13 @@ features/*/sb-sync/*
 # (!!Isječci karte); nothing here is the record.
 features/*/runs/
 
+# === Downloaded geodata (features/*/data) ================================
+# DGU boundary GeoPackages, the RGI gazetteer and EL-COV DEM tiles —
+# provisioned by `cavedossier geo fetch-data`, regenerable from open DGU
+# services. The README documenting provenance + licences stays tracked.
+features/*/data/*
+!features/*/data/README.md
+
 # === Secrets / per-machine config =======================================
 .env
 

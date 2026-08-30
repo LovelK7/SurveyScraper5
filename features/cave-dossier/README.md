@@ -556,16 +556,21 @@ also self-reconfigures its output streams, so this is rarely needed).
 | `src/cave_dossier/dossier/gating.py` | the rule table → blockers / warnings / unchecked, per gate | `report` |
 | `src/cave_dossier/dossier/report.py` | the text rendering behind `cavedossier report` | `report` |
 | `src/cave_dossier/georef/` | 2.1c: georef.hr Playwright flow (ported), delivery to `!!Isječci karte` + `!georef_zapisi.csv` | `karta` |
+| `src/cave_dossier/geo/` | 2.1b: locality finder (RGI WFS + DGU boundaries, ported) + elevation finder (INSPIRE EL-COV, new); data provisioned into gitignored `data/geo/` | `geo fetch-data`, `geo locate`, `geo kota`, `osz prefill` |
+| `src/cave_dossier/osz/` | 2.1b: OSZ v10 writer (lxml, from the osz-template workbench) + prefill orchestrator — SB + karta + finders → `SB_<broj>_OSZ.docx` into `!!!Digitalizacija/Osnovni speleološki zapisnik` | `osz prefill` |
 | `sessions/SESSIONS.md` | session journal (appended by `/wrap-up`) | — |
 | `backlog/ideas.md` | dated idea capture | — |
 | `example/` | **gitignored** — sandbox workbook + real cave data (PII, never committed) | — |
 | `tests/` | pytest on tiny synthetic fixtures | `python -m pytest` |
 
 Planned modules: `dossier/intake.py` (rest of M2 — resolve a cave's files on
-Drive), `osz/` (M4 — OSZ builder), and the downsize/rename half of `photos/`
-(2.1d — the matcher is done, the processor is not). `georef/` (M3) landed
-2026-08-29; the `[karta]` extra (playwright + Pillow) must be installed and
-`playwright install chromium` run once.
+Drive), the OSZ *fetcher* half of `osz/` (M4 — reading filled zapisnici back),
+and the downsize/rename half of `photos/` (2.1d — the matcher is done, the
+processor is not). `georef/` (M3) landed 2026-08-29; the `[karta]` extra
+(playwright + Pillow) must be installed and `playwright install chromium` run
+once. `geo/` + the prefill half of `osz/` (2.1b) landed 2026-08-30; they need
+the `[osz]` (lxml) and `[geo]` (requests/geopandas/shapely/pyproj/rapidfuzz/
+rasterio) extras, plus a one-time `cavedossier geo fetch-data`.
 
 ## Testing
 

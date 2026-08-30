@@ -138,3 +138,17 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-30 — headed `--debug` runs clamp the capture window to the physical
   display, so their excerpts are lower-res than headless ones; if a verified-by-eye
   full-res capture is ever needed, verify headed first, then re-run headless.
+- 2026-08-30 — `osz prefill --missing`: sweep SB (analogous to the `karta --missing`
+  idea above) for rows that have coordinates but no `SB_<broj>_OSZ.docx` in the
+  prefill Drive dir and generate them in a batch.
+- 2026-08-30 — elevation source upgrade (user): the 2.1b Z-finder samples the open
+  25 m-class DMV (INSPIRE EL-COV); the user will eventually look for a **DEM10-class
+  layer** for local fetching of better-resolution elevations — `geo/elevation.py`
+  only needs a new tile source + `geo.elevation_source_label` when it appears.
+- 2026-08-30 — converge `osz-template/tools/make_mockup.py` onto
+  `cave_dossier.osz.writer` (the maintained copy of its fill primitives) the next
+  time the workbench is touched, so the two cannot drift.
+- 2026-08-30 — `geo locate`'s settlement screening flagged SB 651's `Lokalitet =
+  Breza` as a naselje (it IS the nearest settlement, 1.26 km away) — a
+  `sb audit-lokalitet` sweep over all rows would list every Lokalitet cell holding
+  a settlement name, for one cleaning pass in Excel.

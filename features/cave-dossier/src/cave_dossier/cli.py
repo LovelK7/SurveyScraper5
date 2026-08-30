@@ -636,6 +636,131 @@ def cmd_karta(settings: Settings, serial: int, debug: bool, force: bool) -> int:
     return 0
 
 
+def _find_serial_or_exit(settings: Settings, serial: int):
+    """The SB row for a Redni broj, or None after printing the error."""
+    cave = georef.find_by_serial(SBReader(settings), settings, serial)
+    if cave is None:
+        print(f"No SB row carries Redni broj {serial}.", file=sys.stderr)
+    return cave
+
+
+def cmd_geo_fetch_data(settings: Settings, include_au: bool) -> int:
+    """Provision the gitignored geo data dir (boundaries, RGI, DEM index)."""
+    from cave_dossier.geo import provision
+
+    return provision.fetch_data(settings, include_au=include_au)
+
+
+def cmd_geo_locate(settings: Settings, serial: int) -> int:
+    """Part 2.1b debug harness: the locality finder for one cave, verbose."""
+    from cave_dossier.geo import locality as locality_mod
+    from cave_dossier.georef.worker import _coordinate
+
+    cave = _find_serial_or_exit(settings, serial)
+    if cave is None:
+        return EXIT_ERROR
+    x = _coordinate(cave, settings.sb_x_htrs_column)
+    y = _coordinate(cave, settings.sb_y_htrs_column)
+    if x is None or y is None:
+        print("SB row has no usable X HTRS / Y HTRS.", file=sys.stderr)
+        return EXIT_ERROR
+    sb_lokalitet = cave.values.get(settings.sb_field_columns.get("locality", "Lokalitet"))
+    sb_najblize = cave.values.get(settings.sb_field_columns.get("nearest_place", "Najbliže mjesto"))
+    sb_lokalitet = None if _is_empty(sb_lokalitet) else str(sb_lokalitet).strip()
+    sb_najblize = None if _is_empty(sb_najblize) else str(sb_najblize).strip()
+
+    print(f"Redni broj {serial}: {cave.object_name or '<no name>'}  (X {x:.0f} · Y {y:.0f})")
+    finding = locality_mod.build_finder(settings).locate(
+        x, y, sb_lokalitet=sb_lokalitet, sb_najblize_mjesto=sb_najblize
+    )
+    print(f"  Županija:        {finding.zupanija or '—'}")
+    print(f"  Grad/općina:     {finding.grad_opcina or '—'}")
+    print(f"  Najbliže mjesto: {finding.najblize_mjesto or '—'}"
+          + (f"  [{finding.najblize_mjesto_source}]" if finding.najblize_mjesto_source else ""))
+    print(f"  Lokalitet:       {finding.lokalitet or '—'}"
+          + (f"  [{finding.lokalitet_source}]" if finding.lokalitet_source else ""))
+    if finding.rgi_hits:
+        label = "offline fallback" if finding.rgi_offline_fallback else "WFS"
+        print(f"  RGI ({label}, {len(finding.rgi_hits)} pogodaka ≤ "
+              f"{settings.geo_rgi_radius_m:.0f} m):")
+        for hit in finding.rgi_hits[:12]:
+            distance = f"{hit.distance_m:.0f} m" if hit.distance_m is not None else "?"
+            print(f"    {distance:>7}  {hit.geografskoime}  ({hit.vrstaobiljezja or '—'})")
+    for note in finding.notes:
+        print(f"  ! {note}")
+    return 0
+
+
+def cmd_geo_kota(settings: Settings, serial: int) -> int:
+    """Part 2.1b debug harness: the elevation finder vs SB's Z, verbose."""
+    from cave_dossier.core.normalization import parse_optional_float
+    from cave_dossier.geo import elevation as elevation_mod
+    from cave_dossier.georef.worker import _coordinate
+
+    cave = _find_serial_or_exit(settings, serial)
+    if cave is None:
+        return EXIT_ERROR
+    x = _coordinate(cave, settings.sb_x_htrs_column)
+    y = _coordinate(cave, settings.sb_y_htrs_column)
+    if x is None or y is None:
+        print("SB row has no usable X HTRS / Y HTRS.", file=sys.stderr)
+        return EXIT_ERROR
+    print(f"Redni broj {serial}: {cave.object_name or '<no name>'}  (X {x:.0f} · Y {y:.0f})")
+    finding = elevation_mod.build_finder(settings).kota(x, y)
+    z_column = settings.sb_field_columns.get("entrance_elevation_m", "Z")
+    sb_z = parse_optional_float(SBReader._cell_as_text(cave.values, z_column))
+    if finding.elevation_m is not None:
+        print(f"  Kota ({finding.source_label}): {finding.elevation_m:.0f} m"
+              + (f"  [pločica {finding.tile_name}]" if finding.tile_name else ""))
+    if sb_z is not None:
+        print(f"  SB {z_column}: {sb_z:g} m")
+        if finding.elevation_m is not None:
+            delta = abs(finding.elevation_m - sb_z)
+            verdict = ("OK" if delta <= settings.geo_elevation_tolerance_m
+                       else f"NESLAGANJE (> {settings.geo_elevation_tolerance_m:g} m)")
+            print(f"  Razlika: {delta:.0f} m — {verdict}")
+    elif finding.elevation_m is not None:
+        print(f"  SB {z_column}: prazan — kandidat za dopunu (dopune-sb.csv kod `osz prefill`)")
+    for note in finding.notes:
+        print(f"  ! {note}")
+    return 0
+
+
+def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: bool) -> int:
+    """Part 2.1b: SB row -> prefilled OSZ DOCX with the map excerpt embedded."""
+    from cave_dossier.osz import prefill
+
+    if settings.sb_mode != "LIVE":
+        print(f"⚠ {settings.sb_mode} workbook: SB data comes from a local copy,")
+        print("  which may lag the live SB. Verify before distributing the zapisnik.")
+        print()
+    try:
+        outcome = prefill.run_prefill(settings, serial, debug=debug, force_karta=force_karta)
+    except prefill.PrefillError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    result = outcome.result
+    print(f"Redni broj {serial}: {result.cave_name or '<no name>'}"
+          + (f" (SUE {result.sue_number})" if result.sue_number else ""))
+    filled = {k: v for k, v in result.fields.items() if v.value is not None}
+    print(f"Popunjeno {len(filled)} polja; isječak karte: {result.karta_status}")
+    for key, fv in filled.items():
+        print(f"  {key:<18} {fv.value}" + (f"  [{fv.source}]" if fv.source and fv.source != "sb" else ""))
+    for mismatch in result.mismatches:
+        print(f"  ⚠ {mismatch}")
+    for note in result.notes:
+        print(f"  ! {note}")
+    print()
+    if outcome.delivered_path is not None:
+        print(f"Delivered: {outcome.delivered_path}")
+    print(f"Run dir:   {outcome.docx_path.parent}")
+    if outcome.sb_updates_path is not None:
+        print(f"Dopune za SB ({len(result.sb_updates)}): {outcome.sb_updates_path}")
+        print("  (upiši ručno u Svi objekti — alat nikad ne piše u SB)")
+    return 0
+
+
 # ── Entry point ────────────────────────────────────────────────────
 
 
@@ -770,6 +895,58 @@ def build_parser() -> argparse.ArgumentParser:
         help="Refresh an excerpt that is already in !!Isječci karte (default skips it)",
     )
 
+    geo = subparsers.add_parser(
+        "geo",
+        help="Part 2.1b — locality + elevation finders over HTRS96 coordinates",
+    )
+    geo_sub = geo.add_subparsers(dest="geo_command", required=True)
+    fetch_data = geo_sub.add_parser(
+        "fetch-data",
+        help="Provision data/geo: DGU boundary GeoPackages + RGI gazetteer (open data)",
+    )
+    fetch_data.add_argument(
+        "--no-inspire-au",
+        action="store_false",
+        dest="include_au",
+        help="Skip the ~209 MB INSPIRE AU download when boundary files are missing",
+    )
+    geo_locate = geo_sub.add_parser(
+        "locate",
+        help="Županija / grad-općina / najbliže mjesto / lokalitet for one cave (debug)",
+    )
+    geo_locate.add_argument("redni_broj", type=int, help="SB Redni broj of the cave")
+    geo_kota = geo_sub.add_parser(
+        "kota",
+        help="Kota ulaza from the DGU elevation grid vs SB's Z for one cave (debug)",
+    )
+    geo_kota.add_argument("redni_broj", type=int, help="SB Redni broj of the cave")
+
+    osz = subparsers.add_parser(
+        "osz",
+        help="Part 2.1b — OSZ builder (v10 template)",
+    )
+    osz_sub = osz.add_subparsers(dest="osz_command", required=True)
+    osz_prefill = osz_sub.add_parser(
+        "prefill",
+        help="Prefill the OSZ template from SB + finders, embed the isječak karte, "
+             "deliver SB_<broj>_OSZ.docx",
+    )
+    osz_prefill.add_argument(
+        "redni_broj",
+        type=int,
+        help="SB Redni broj of the cave (the only input; everything else is derived)",
+    )
+    osz_prefill.add_argument(
+        "--debug",
+        action="store_true",
+        help="If the karta flow runs, run its browser headed (default is headless)",
+    )
+    osz_prefill.add_argument(
+        "--force-karta",
+        action="store_true",
+        help="Re-fetch the map excerpt even when one is already collected",
+    )
+
     photos = subparsers.add_parser(
         "photos",
         help="Part 2.1d — entrance-photo processing (read-only for now)",
@@ -839,6 +1016,16 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_intake_map(settings, args.limit, args.apply, args.unmatched_only)
         if args.command == "karta":
             return cmd_karta(settings, args.redni_broj, args.debug, args.force)
+        if args.command == "geo":
+            if args.geo_command == "fetch-data":
+                return cmd_geo_fetch_data(settings, args.include_au)
+            if args.geo_command == "locate":
+                return cmd_geo_locate(settings, args.redni_broj)
+            if args.geo_command == "kota":
+                return cmd_geo_kota(settings, args.redni_broj)
+        if args.command == "osz":
+            if args.osz_command == "prefill":
+                return cmd_osz_prefill(settings, args.redni_broj, args.debug, args.force_karta)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR

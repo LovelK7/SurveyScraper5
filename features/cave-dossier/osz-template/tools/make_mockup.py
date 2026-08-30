@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Fill the OSZ template with a worked example so the layout can be eyeballed.
 
+FROZEN template-QA workbench (2026-08-30): the fill primitives below were
+lifted into ``src/cave_dossier/osz/writer.py`` for part 2.1b — that module
+is the maintained copy (and adds PNG embedding); fix bugs THERE first.
+
 Data: SUE 811 "Piccolo Bertarelli" as recorded in the 2025 OSZ
 (tests/test_input/811 in crospeleo-automation), extended with plausible
 values for the fields the new template asks for and the 2025 document
