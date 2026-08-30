@@ -44,7 +44,9 @@ git diff --no-index projects\0002-tdx-symbol-mapping\runs\2026-07-19-ponor-impor
 
 ### step-00 — raw-export baseline ✅ done (agent, read-only)
 
-[step-00-raw-export.json](../../projects/0002-tdx-symbol-mapping/runs/2026-07-19-ponor-import/step-00-raw-export.json) — summarized in RUNLOG.
+`step-00-raw-export.json` (a gitignored run artifact under
+`projects/0002-tdx-symbol-mapping/runs/2026-07-19-ponor-import/`) — summarized
+in that run's RUNLOG, which is the tracked record.
 
 ### step-01 — open in cSurvey, save untouched (user)
 

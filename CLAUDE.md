@@ -103,6 +103,17 @@ sessions and again at session end. Those commits are tagged `chore(auto):` — t
 are a backup safety net, not the record. The record is still `/wrap-up`'s curated
 commit, so nothing below changes.
 
+**Development runs through `/feature-dev`**
+(`.claude/skills/feature-dev/SKILL.md`): the phased guide for building any
+feature or capability — standing build rules (SB never auto-written, hand-managed
+Drive dirs, fail-soft + offline, dev/prod portability), the test protocol
+(synthetic fixtures → terminal-first live validation → verify in the real
+consumer), and the **documentation close-out checklist** (README commands,
+_INDEX, design-decisions, ARCHITECTURE part status + bridges, STATUS milestone
+ladder, PORTING, backlog). It ends by running `python tools/pipeline_doctor.py`
+— broken links, undocumented CLI commands, _INDEX drift, doc orphans, stale
+status claims. Doc updates are part of the work, not a follow-up request.
+
 The repo runs a logging discipline — keep it up. **End every working session with
 `/wrap-up`** (`.claude/skills/wrap-up/SKILL.md`): it updates [STATUS.md](STATUS.md),
 appends a session block to the touched feature's `sessions/SESSIONS.md`, captures

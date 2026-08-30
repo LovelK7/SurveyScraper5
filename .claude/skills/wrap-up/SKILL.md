@@ -60,6 +60,17 @@ New ideas / "we should also" items that surfaced → append to the feature's
 `backlog/ideas.md` (one line each, dated). This is the implementation log for
 finding new ideas — don't lose them in chat history.
 
+### 4b — Pipeline doctor (pre-commit gate)
+
+```powershell
+python tools/pipeline_doctor.py
+```
+
+Fix every FAIL before committing (broken doc links, CLI commands missing from
+the README, `_INDEX` drift); triage WARNs (fix cheap ones, backlog the rest);
+re-confirm the STALE? status claims — this session's work may have just
+invalidated one. If `/feature-dev` was followed, this is already clean.
+
 ### 5 — Commit
 
 ```powershell

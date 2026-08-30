@@ -1,6 +1,8 @@
 <!-- Copied 2026-08-16 from crospeleo-automation/docs/EXCEL_WORKBOOK_SAFETY.md (read-only reference repo).
      Module paths inside refer to that repo; the principles apply verbatim to our port
      src/cave_dossier/sb/safe_io.py. See docs/PORTING.md. -->
+<!-- doctor:skip-links -->  <!-- verbatim copy — its links point at the source repo -->
+
 
 # Excel Workbook Safety — Guideline for AI Agents
 

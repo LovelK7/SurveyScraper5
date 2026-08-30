@@ -58,7 +58,7 @@ matriks snijeg/led, dva Strujanje dropdowna + smjer, i karticu *Mjerna točka*
 sedimenta). Zarez kao decimalni znak je u redu — parser ga prihvaća.
 
 ⚠ Ovaj placeholder sadrži riječi na koje heuristike reagiraju — vidi
-[§ Rizik od curenja placeholdera](#rizik-od-curenja-placeholdera).
+[§ Rizik od curenja placeholdera](#c-rizik-od-curenja-placeholdera).
 
 ## 5. Biospeleološki
 
@@ -91,7 +91,7 @@ objekta* 2, *Klasifikacija onečišćenja* 13) i tri padajuća izbornika:
 ranijem čišćenju — to su jedina dva podatka koja danas nemaju izvor u OSZ-u.
 
 ⚠ Sadrži riječi na koje heuristike reagiraju — vidi
-[§ Rizik od curenja placeholdera](#rizik-od-curenja-placeholdera).
+[§ Rizik od curenja placeholdera](#c-rizik-od-curenja-placeholdera).
 
 ## 8. Opasnosti
 
