@@ -10,6 +10,12 @@ firm up as real usage accumulates.
 - [What the app produces](#what-the-app-produces)
 - [The two main parts](#the-two-main-parts)
 - [Part map](#part-map)
+- [Bridges — the scripts between the nodes](#bridges--the-scripts-between-the-nodes)
+  - [Map 1 — everything that flows INTO SB](#map-1--everything-that-flows-into-sb)
+  - [Map 2 — producing the field kit (SB → prefilled zapisnik)](#map-2--producing-the-field-kit-sb--prefilled-zapisnik)
+  - [Map 3 — identity, photos, readiness](#map-3--identity-photos-readiness)
+  - [Bridge catalog](#bridge-catalog)
+  - [Chains — whole journeys, bridge by bridge](#chains--whole-journeys-bridge-by-bridge)
 - [Key facts that shape the design](#key-facts-that-shape-the-design)
 - [Dev vs prod — a duality to design for](#dev-vs-prod--a-duality-to-design-for-noted-2026-08-30-unscheduled)
 - [Milestones (stage 2)](#milestones-stage-2)
@@ -79,6 +85,151 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 | **2.2** | **Registry communication** — everything the app knows about *which caves exist*. Not a side channel: 2.1 cannot start a dossier without it, and every finished dossier ends by writing back into it | `features/cave-dossier/` | in development |
 | **2.2a** | **SB (Speleo baza)** — the master registry of all caves (discovered + to-be-explored), an `.xlsm` on the Drive mount. Source of coordinates/year/etc. for the OSZ; updated with new data (dimensions) once a survey is finished. Everything else in the app treats it as ground truth | `features/cave-dossier/` (module `sb/`) | **M1 ✅**; write-back at M6 |
 | **2.2b** | **Satellite tables** — SB is the master but not the only table holding cave data. The *Liburnija* Google Sheet (the LiDAR Kristal table, live and edited in the field), plus `Literatura` and `Katastar RH` inside the workbook. None carries an SB row number, so they are joined on shared keys (pločica → `LiDAR Kristal N` synonym → coordinates), **never on a local row id**. `sat sync` compares a satellite against SB and emits four review lists a person carries out — it never writes to either side. This is how a LIDAR candidate becomes an SB row, and how the field sheet learns what happened to it | `features/cave-dossier/` (module `satellites/`), design in [docs/sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md) | **operational** — 126 rows entered SB from Liburnija 2026-08-29 |
+
+> Picking a part tells you WHAT; the [Bridges section](#bridges--the-scripts-between-the-nodes)
+> right below tells you what to RUN — find your part in its per-part table,
+> follow the bridge labels through the maps, and each label resolves to its
+> command in the [catalog](#bridge-catalog).
+
+## Bridges — the scripts between the nodes
+
+The part map above says what exists; THIS section says **what runs to get from
+one node to another**. A *node* is where data lives (SB, a Drive dir, an
+external service, a local cache); a *bridge* is the script or human step that
+moves data between two nodes. Every scripted bridge is labeled **[B#]** and
+every human step **[H#]**; the [catalog below](#bridge-catalog) resolves each
+label to its exact command. Deep flags live in the feature README's
+[command reference](features/cave-dossier/README.md#commands) — start from the
+bridge, not from the command list.
+
+**Which bridges do I need for part X?**
+
+| Part | Its bridges |
+|---|---|
+| 2.1 dossier builder | **B9** (report); intake tail of M2 pending |
+| 2.1a csx-to-survey | **B10** (M5, planned) — until then its own feature's pipeline |
+| 2.1b OSZ builder | **B4** (once) → **B6** (prefill) → **H2** (field) → **B7** (fetch) → **H1**; **B5** to verify the finders |
+| 2.1c isječak karte | **B3** (standalone; B6 runs it for you) |
+| 2.1d fotografije ulaza | **B8**; processing rides with **B11** (M6) |
+| 2.2a SB master | destination of **H1**; source of B3/B6/B9; **B11** (M6) will write it |
+| 2.2b satellites | **B1** → **H1** |
+
+### Map 1 — everything that flows INTO SB
+
+Nothing writes to SB automatically before M6 — every inbound edge converges on
+**[H1]**, a person pasting a review list into Excel. That is the design, not a
+gap ([key facts](#key-facts-that-shape-the-design)).
+
+```text
+  Liburnija LIDAR sheet          filled OSZ zapisnik            empty SB cells a geo
+  (satellites, 2.2b)             (in the cave's intake dir,     finder could fill
+        │                         arrived there via [H2])       (found during prefill)
+        │ [B1] sat sync                │ [B7] osz fetch              │ [B6] osz prefill
+        ▼                              ▼                             ▼
+  4 review lists                dopune-sb-iz-osz.csv           dopune-sb.csv
+  (new rows · synonyms ·        (pločica · ime→sinonimi ·      (Z · Najbliže mjesto ·
+   corrections · decisions)      duljina/dubina · godina ·      Lokalitet)
+        │                        autori)                            │
+        └───────────────────────────────┴───────────────────────────┘
+                                        │
+                        [H1] a person pastes into Svi objekti
+                                        ▼
+                     ┌─────────────────────────────────────┐
+                     │   SB — Svi objekti  (THE MASTER)    │
+                     │   !Speleo_baza_SUE_v3.0.xlsm, Drive │
+                     └─────────────────────────────────────┘
+```
+
+### Map 2 — producing the field kit (SB → prefilled zapisnik)
+
+The 2.1b forward direction: from a bare SB row (name, synonym, X/Y) to a
+zapisnik a recorder takes to the cave.
+
+```text
+                  ┌────────────────────────────────────┐
+                  │ SB row: ime · sinonimi · X/Y HTRS  │
+                  └───────┬─────────────────────┬──────┘
+                          │                     │
+              [B3] karta  │                     │  [B6] osz prefill
+       (georef.hr, one    │                     │  (runs B3 itself when the
+        server-side save) │                     │   excerpt is missing/stale)
+                          ▼                     │
+                  ┌───────────────┐             │
+   georef.hr ───► │ !!Isječci     │────────────►│◄──────── data/geo cache
+   (external)     │ karte:        │   excerpt   │          (RGI gazetteer · DGU
+                  │ SB_<broj>.png │   embedded  │           granice · DMV tiles)
+                  │ !georef_zapisi│             │                ▲
+                  └───────────────┘             │                │ [B4] geo fetch-data
+                                                │                │ (once per machine;
+                                                ▼                │  open DGU services)
+              ┌──────────────────────────────────────────┐       │
+              │ Osnovni speleološki zapisnik/            │   [B5] geo locate / kota
+              │ SB_<broj>_OSZ.docx  (prefilled: identity,│   (verify the finders
+              │ koordinate+izvori, lokacija, kota,       │    against any SB row)
+              │ isječak karte)                           │
+              └───────────────┬──────────────────────────┘
+                              │ [H2] recorder completes it in the field and files
+                              │      it into the cave's SB_<broj>_… intake dir
+                              ▼
+              !Za digitalizirat/SB_<broj>_…/   ── from here [B7] reads it back (Map 1)
+```
+
+### Map 3 — identity, photos, readiness
+
+The bridges that keep names/numbers straight and say when a cave is done.
+
+```text
+  intake dirs (!Za digitalizirat)  ◄──[B2] intake map──── SB row numbers
+                                        (SB_<broj>_ prefix proposals, --apply renames)
+
+  staged photos (…za istražit)     ◄──[B8] photos ──────► SB
+                                        (match-queued names them SB_<broj>_…,
+                                         check-flag crosses them against SB's
+                                         "Fotografija ulaza" cell)
+
+  everything gathered so far       ───[B9] report ──────► gate 1 (SUE) / gate 2
+                                        (per-cave verdict:                (CroSpeleo)
+                                         blocker · warning · not-checked-yet)
+
+  2.1a survey artifacts            ···[B10] (M5, planned)···► dossier (Nacrt + dims)
+  finished dossier                 ···[B11] (M6, planned)···► SB write-back + archive
+                                        delivery; 2.1d downsize/rename rides along
+```
+
+### Bridge catalog
+
+What each label actually runs. One line here; flags and details in the
+[command reference](features/cave-dossier/README.md#commands).
+
+| Label | Runs | From → to | Run it when |
+|---|---|---|---|
+| **B1** | `cavedossier sat sync` | satellite sheet ↔ SB → 4 review lists | the Liburnija sheet changed, or periodically |
+| **B2** | `cavedossier intake map [--apply]` | SB numbering → intake dir names | new field-material folders appeared |
+| **B3** | `cavedossier karta <broj>` | SB row → georef.hr → `!!Isječci karte` | a cave needs its excerpt (B6 calls this for you); each run is a server-side save |
+| **B4** | `cavedossier geo fetch-data` | open DGU services → `data/geo` | once per machine (and after deleting the cache) |
+| **B5** | `cavedossier geo locate/kota <broj>` | `data/geo` + RGI ↔ one SB row | verifying what the finders would say — feeds nothing |
+| **B6** | `cavedossier osz prefill <broj>` | SB + excerpt + geo → prefilled DOCX (+ `dopune-sb.csv`) | a queued cave is about to be explored, or an explored one needs its zapisnik started |
+| **B7** | `cavedossier osz fetch <broj>` | filled zapisnik → `dopune-sb-iz-osz.csv` | a completed zapisnik landed in the cave's intake dir |
+| **B8** | `cavedossier photos match-queued/check-flag` | staged photos ↔ SB | new entrance photos were staged |
+| **B9** | `cavedossier report --cave <x>` | gathered sources → gate verdicts | any time — it never changes anything |
+| **B10** | *(M5, planned)* | 2.1a Nacrt + dimensions → dossier | — |
+| **B11** | *(M6, planned)* | dossier → SB write-back + archive delivery | — |
+| **H1** | a person, in Excel | any `dopune-*.csv` / review list → `Svi objekti` | after B1 / B6 / B7 produce one |
+| **H2** | the recorder, in the field | prefilled DOCX → completed zapisnik → cave's intake dir | after B6, around the exploration |
+
+### Chains — whole journeys, bridge by bridge
+
+The map answers "how do I get from A to B" as a bridge sequence:
+
+- **A LIDAR point becomes an SB cave:** Liburnija sheet → **B1 → H1** → SB row
+  (*Za istražit*).
+- **Prepare the field kit for a queued cave:** **B4** (first time only) →
+  **B6** (auto-runs **B3** if needed) → print/hand over → **H2**.
+- **After the exploration:** **H2** (zapisnik filed) → **B7 → H1** (SB
+  backfilled) → **B8** (photos) → **B9** (is gate 1 met?) → *(M6: B11 delivers
+  and writes back)*.
+- **Just checking where a cave stands:** **B9** alone; to sanity-check the
+  finders' data first, **B5**.
 
 ## Key facts that shape the design
 

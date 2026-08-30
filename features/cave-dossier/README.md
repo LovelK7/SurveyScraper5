@@ -38,6 +38,7 @@ agents and developers is [_INDEX.md](_INDEX.md).
 | See where the dev cycle stands right now | [../../STATUS.md](../../STATUS.md) (milestone ladder + checklists) |
 | What an "M-number" (M1…M6) means | [Milestones](#milestones--what-m1-m6-mean) (this page) |
 | The pipeline map + part numbering (2.1a/b/c…) | [../../ARCHITECTURE.md](../../ARCHITECTURE.md) |
+| **Which command connects part A to part B** (nodes, bridges, chains) | [ARCHITECTURE §Bridges](../../ARCHITECTURE.md#bridges--the-scripts-between-the-nodes) |
 | Where a ported file came from | [docs/PORTING.md](docs/PORTING.md) |
 | Why SB reads are openpyxl and writes Excel-COM only | [docs/EXCEL_WORKBOOK_SAFETY.md](docs/EXCEL_WORKBOOK_SAFETY.md) |
 | The OSZ v10 template workbench (audits, mockups, conformance) | [osz-template/README.md](osz-template/README.md) |
@@ -83,6 +84,11 @@ Until M6, every tool that "changes" SB really emits a **review list** a person
 carries into Excel — that is why so many outputs are `dopune-*.csv` files.
 
 ## Commands
+
+This is the full reference. If you are asking *"what do I run to get from
+here to there?"*, start from the pipeline's bridge maps instead —
+[ARCHITECTURE §Bridges](../../ARCHITECTURE.md#bridges--the-scripts-between-the-nodes)
+— and come back here for the flags.
 
 Exit codes: **1** = ready, **0** = not ready, **99** = error. `--gate` only
 chooses which gate the exit code reports on — both are always printed.
