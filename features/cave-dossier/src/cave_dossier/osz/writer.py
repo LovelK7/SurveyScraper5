@@ -62,15 +62,24 @@ class OszDocument:
         self._media: dict[str, bytes] = {}  # zip path -> bytes
 
     # ── plain cells ──────────────────────────────────────────────────
-    def fill_plain(self, tbl_i: int, row_i: int, cell_i: int, text: str,
-                   style_from: int | None = 0) -> None:
-        """Write text into a plain (non-control) table cell."""
-        cells = self._row_nodes(tbl_i, row_i)
-        tc = cells[cell_i]
-        rpr = _first_run_rpr(cells[style_from]) if style_from is not None else None
+    def fill_plain(self, tbl_i: int, row_i: int, cell_i: int, text: str) -> None:
+        """Write text into a plain (non-control) table cell, in the cell's
+        OWN style.
+
+        The v10 template keeps each empty value cell's intended run style
+        (Arial 20 pt bold for IME OBJEKTA, 18 pt for Katastarski broj, …)
+        on the paragraph mark (``w:pPr/w:rPr``) — copying a sibling cell's
+        style, as the old workbench script did, flattened everything to the
+        document default (user report 2026-08-30). Nothing is stripped:
+        bold on the mark is bold by design here.
+        """
+        tc = self._row_nodes(tbl_i, row_i)[cell_i]
         p = tc.find(W + "p")
         if p is None:
             p = etree.SubElement(tc, W + "p")
+        rpr = _paragraph_mark_rpr(p)
+        if rpr is None:
+            rpr = _first_run_rpr(tc, strip=())
         for r in p.findall(W + "r"):
             p.remove(r)
         p.append(_make_run(text, rpr))
@@ -224,8 +233,16 @@ class OszDocument:
         return [n for n in tr if n.tag in (W + "tc", W + "sdt")]
 
 
-# ── module-level primitives (verbatim from make_mockup.py) ───────────
-def _first_run_rpr(tc):
+# ── module-level primitives (from make_mockup.py; see fill_plain) ────
+def _paragraph_mark_rpr(p):
+    """The paragraph mark's run properties — where the template stores an
+    empty value cell's intended style."""
+    ppr = p.find(W + "pPr")
+    mark_rpr = ppr.find(W + "rPr") if ppr is not None else None
+    return copy.deepcopy(mark_rpr) if mark_rpr is not None else None
+
+
+def _first_run_rpr(tc, strip: tuple[str, ...] = ("b", "bCs", "i", "rStyle")):
     r = tc.find(".//" + W + "r")
     if r is None:
         return None
@@ -233,7 +250,7 @@ def _first_run_rpr(tc):
     if rpr is None:
         return None
     rpr = copy.deepcopy(rpr)
-    for bad in ("b", "bCs", "i", "rStyle"):
+    for bad in strip:
         for el in rpr.findall(W + bad):
             rpr.remove(el)
     return rpr

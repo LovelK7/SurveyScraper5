@@ -95,7 +95,7 @@ class Settings:
     geo_data_dir: Path = FEATURE_ROOT / "data" / "geo"
     geo_rgi_radius_m: float = 2000.0
     geo_elevation_tolerance_m: float = 10.0
-    geo_elevation_source_label: str = "DMV (DGU)"
+    geo_elevation_source_label: str = "DMV"
     # Why the workbook is not the live one (mode FALLBACK); None for LIVE and
     # for an explicit SANDBOX override. Printed by the CLI banner.
     sb_mode_reason: str | None = None
@@ -236,7 +236,7 @@ def load_settings() -> Settings:
         geo_data_dir=_feature_relative(str(geo.get("data_dir") or "data/geo")),
         geo_rgi_radius_m=float(geo.get("rgi_radius_m") or 2000.0),
         geo_elevation_tolerance_m=float(geo.get("elevation_tolerance_m") or 10.0),
-        geo_elevation_source_label=str(geo.get("elevation_source_label") or "DMV (DGU)"),
+        geo_elevation_source_label=str(geo.get("elevation_source_label") or "DMV"),
         georef_base_url=get_env("GEOREF_BASE_URL"),
         georef_username=get_env("GEOREF_USERNAME"),
         georef_password=get_env("GEOREF_PASSWORD"),

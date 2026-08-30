@@ -63,14 +63,43 @@ def test_fill_all_v10_addresses(tmp_path, template_exists):
         if addr.kind == "sdt_cell":
             doc.fill_sdt_cell(addr.table, addr.row, addr.cell, [values[key]])
         else:
-            doc.fill_plain(addr.table, addr.row, addr.cell, values[key],
-                           style_from=addr.style_from)
+            doc.fill_plain(addr.table, addr.row, addr.cell, values[key])
     out = tmp_path / "filled.docx"
     doc.save(out)
 
     root = _document_root(out)
     for key, addr in V10.items():
         assert values[key] in _cell_text(root, addr.table, addr.row, addr.cell), key
+
+
+def _run_rpr(root, tbl_i, row_i, cell_i):
+    body = root.find(W + "body")
+    tbl = body.findall(W + "tbl")[tbl_i]
+    tr = tbl.findall(W + "tr")[row_i]
+    tc = [n for n in tr if n.tag in (W + "tc", W + "sdt")][cell_i]
+    run = tc.find(".//" + W + "r")
+    return run.find(W + "rPr") if run is not None else None
+
+
+def test_fill_plain_keeps_cell_own_style(tmp_path, template_exists):
+    """The user's 2026-08-30 regression: IME OBJEKTA must come out Arial
+    20 pt bold (the template stores that on the empty cell's paragraph
+    mark), Katastarski broj 18 pt — not the 12 pt document default."""
+    doc = OszDocument(TEMPLATE)
+    doc.fill_plain(1, 0, 1, "Špilja Proba")   # ime_objekta
+    doc.fill_plain(0, 0, 1, "999")            # katastarski_broj
+    out = tmp_path / "styled.docx"
+    doc.save(out)
+
+    root = _document_root(out)
+    ime_rpr = _run_rpr(root, 1, 0, 1)
+    assert ime_rpr is not None
+    assert ime_rpr.find(W + "b") is not None, "bold must survive"
+    assert ime_rpr.find(W + "sz").get(W + "val") == "40"  # half-points = 20 pt
+
+    kat_rpr = _run_rpr(root, 0, 0, 1)
+    assert kat_rpr is not None
+    assert kat_rpr.find(W + "sz").get(W + "val") == "36"  # 18 pt
 
 
 def test_multiline_sdt_stays_single_paragraph(tmp_path, template_exists):

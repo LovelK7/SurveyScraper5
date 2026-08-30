@@ -21,11 +21,14 @@ class CellAddr:
     table: int
     row: int
     cell: int
-    kind: str = "plain"        # "plain" | "sdt_cell"
-    style_from: int | None = 0  # which sibling cell donates the run style
+    kind: str = "plain"  # "plain" | "sdt_cell"
 
 
 # Field key -> address. Keys match osz/models.PrefillValues field names.
+# This maps every machine-addressable identity/location cell; which of them
+# PREFILL actually fills is decided in osz/prefill.py (user, 2026-08-30:
+# Katastarski broj is the archivist's manual final step, Duljina/Dubina and
+# the exact Datum come from other processes — prefill never touches those).
 V10: dict[str, CellAddr] = {
     "katastarski_broj": CellAddr(0, 0, 1),
     "broj_plocice": CellAddr(0, 1, 1),
@@ -37,10 +40,10 @@ V10: dict[str, CellAddr] = {
     "lokalitet": CellAddr(1, 6, 1),
     "x_htrs": CellAddr(2, 2, 2, kind="sdt_cell"),
     "y_htrs": CellAddr(2, 2, 4, kind="sdt_cell"),
-    "kota_ulaza": CellAddr(2, 4, 2, style_from=1),
-    "izvor_kote": CellAddr(2, 4, 4, style_from=3),
-    "duljina": CellAddr(4, 3, 0, style_from=None),
-    "dubina": CellAddr(4, 3, 2, style_from=None),
+    "kota_ulaza": CellAddr(2, 4, 2),
+    "izvor_kote": CellAddr(2, 4, 4),
+    "duljina": CellAddr(4, 3, 0),
+    "dubina": CellAddr(4, 3, 2),
     "datum_istrazivanja": CellAddr(6, 8, 1),
 }
 

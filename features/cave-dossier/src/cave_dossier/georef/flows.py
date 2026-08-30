@@ -2,7 +2,8 @@
 crospeleo-automation ``georef/flows.py`` (see docs/PORTING.md).
 Only the imports changed; every timing calibration and retry lesson
 (the 45 s record wait, the marker-click popup retrigger, the
-marker-centered square crop) is kept exactly as learned over there."""
+marker-centered crop — landscape 5:4 over the near vicinity since
+2026-08-30, originally square) is kept exactly as learned over there."""
 
 from __future__ import annotations
 
@@ -411,30 +412,38 @@ def _save_marker_centered_map(page: object, artifacts: GeorefArtifacts) -> None:
             const mapWidth = Math.max(0, rightLimit - leftInset);
             const mapHeight = Math.max(0, bottomLimit - topInset);
 
-            // Square ("quadratic") crop: take the largest square that
-            // fits the live map area, then tighten it by a zoom factor
-            // so the captured ground area is smaller — i.e. the cave
-            // reads as "zoomed in a notch" rather than lost in a wide
-            // overview.  Shrinks automatically on small windows.
-            const zoomFactor = 0.7;
-            const side = Math.max(0, Math.floor(Math.min(mapWidth, mapHeight) * zoomFactor));
+            // Landscape 5:4 crop of the cave's NEAR vicinity (user,
+            // 2026-08-30 — replaces the original square crop, which read
+            // as ~2.5 km in every direction and, being 1:1, blew up the
+            // OSZ frame's height).  heightFactor 0.42 keeps roughly
+            // 1.5 km above and below the entrance at the default-window
+            // TK25 view (0.7 covered ~2.5 km, scaled by 1.5/2.5), and
+            // the width follows the 5:4 aspect.  Shrinks automatically
+            // on small windows.
+            const heightFactor = 0.42;
+            let cropH = Math.max(0, Math.floor(Math.min(mapWidth, mapHeight) * heightFactor));
+            let cropW = Math.floor(cropH * 5 / 4);
+            if (cropW > mapWidth) {
+                cropW = mapWidth;
+                cropH = Math.floor(cropW * 4 / 5);
+            }
 
             // True-center on the marker anchor, then clamp so the
-            // box stays within the map area.  The tighter square box
-            // leaves more slack on every side, so the clamp rarely
-            // fires and the pin stays centered; near a map edge the
-            // clamp still pushes the box inward (expected, unavoidable
-            // without scrolling the map).
-            let x = centerX - (side / 2);
-            let y = anchorY - (side / 2);
-            x = Math.max(leftInset, Math.min(x, rightLimit - side));
-            y = Math.max(topInset, Math.min(y, bottomLimit - side));
+            // box stays within the map area.  The tight box leaves
+            // slack on every side, so the clamp rarely fires and the
+            // pin stays centered; near a map edge the clamp still
+            // pushes the box inward (expected, unavoidable without
+            // scrolling the map).
+            let x = centerX - (cropW / 2);
+            let y = anchorY - (cropH / 2);
+            x = Math.max(leftInset, Math.min(x, rightLimit - cropW));
+            y = Math.max(topInset, Math.min(y, bottomLimit - cropH));
 
             return {
                 x: Math.max(0, x),
                 y: Math.max(0, y),
-                width: side,
-                height: side,
+                width: cropW,
+                height: cropH,
                 // Pixel ratio so the Python-side crop can scale CSS
                 // pixel coords to screenshot pixel coords on HiDPI
                 // displays.  page.screenshot() captures at the

@@ -72,19 +72,25 @@ class ElevationFinder:
         tiles = self._tile_index(finding)
         if not tiles:
             return finding
-        tile = next((t for t in tiles if t.contains(easting, northing)), None)
-        if tile is None:
+        covering = [t for t in tiles if t.contains(easting, northing)]
+        if not covering:
             finding.notes.append(
                 f"Nijedna EL-COV pločica ne pokriva točku (E {easting:.0f}, N {northing:.0f})."
             )
             return finding
-        finding.tile_name = tile.name
 
-        tile_path = self._ensure_tile(tile.name, finding)
-        if tile_path is None:
-            return finding
-
-        value = _sample_geotiff(tile_path, easting, northing, finding)
+        # Tile extents overlap at the seams, and a nodata hole in one tile
+        # can be valid terrain in its neighbour (cave 2, 2026-08-30 sweep)
+        # — try every covering tile before giving up.
+        value: float | None = None
+        for tile in covering:
+            tile_path = self._ensure_tile(tile.name, finding)
+            if tile_path is None:
+                continue
+            value = _sample_geotiff(tile_path, easting, northing, finding)
+            if value is not None:
+                finding.tile_name = tile.name
+                break
         if value is None:
             return finding
         finding.elevation_m = round(value)
@@ -199,6 +205,13 @@ def _to_etrs_tm33(x_htrs: float, y_htrs: float) -> tuple[float, float] | None:
     return float(easting), float(northing)
 
 
+# Nodata rescue: how far around the point to look for a valid grid cell.
+# 2 cells ≈ 50 m on the 25 m grid — the 2026-08-30 sweep found entrances
+# whose exact cell is a nodata hole (tile seams, water masks) while the
+# terrain around them is present.
+_NODATA_RESCUE_CELLS = 2
+
+
 def _sample_geotiff(
     path: Path, easting: float, northing: float, finding: ElevationFinding
 ) -> float | None:
@@ -211,19 +224,56 @@ def _sample_geotiff(
         with rasterio.open(path) as src:
             value = float(next(src.sample([(easting, northing)]))[0])
             nodata = src.nodata
+            if _invalid(value, nodata):
+                value = _nearest_valid(src, easting, northing, nodata, finding)
+                if value is None:
+                    finding.notes.append(
+                        f"{path.name}: točka i njena okolica "
+                        f"(±{_NODATA_RESCUE_CELLS} ćelije) su nodata."
+                    )
+                    return None
     except Exception as exc:  # noqa: BLE001 — fail-soft by contract
         logger.warning("Sampling %s failed: %s", path.name, exc)
         finding.notes.append(f"Očitavanje visine iz {path.name} nije uspjelo: {exc}")
         return None
+    return value
+
+
+def _invalid(value: float, nodata: float | None) -> bool:
     if nodata is not None and value == nodata:
-        finding.notes.append(f"{path.name}: točka pada na nodata vrijednost.")
-        return None
+        return True
     # EL-COV nodata is conventionally a large negative sentinel even when the
     # header omits it; no Croatian entrance is below the Dead Sea.
-    if value < -500:
-        finding.notes.append(f"{path.name}: očitana vrijednost {value} nije vjerodostojna.")
+    return value < -500
+
+
+def _nearest_valid(src, easting: float, northing: float, nodata: float | None,
+                   finding: ElevationFinding) -> float | None:
+    """The closest valid cell within the rescue window, or None."""
+    from rasterio.windows import Window
+
+    row, col = src.index(easting, northing)
+    r = _NODATA_RESCUE_CELLS
+    window = Window(col - r, row - r, 2 * r + 1, 2 * r + 1)
+    block = src.read(1, window=window, boundless=True,
+                     fill_value=nodata if nodata is not None else -9999.0)
+    best: tuple[float, float] | None = None  # (distance², value)
+    for i in range(block.shape[0]):
+        for j in range(block.shape[1]):
+            value = float(block[i, j])
+            if _invalid(value, nodata):
+                continue
+            distance_sq = (i - r) ** 2 + (j - r) ** 2
+            if best is None or distance_sq < best[0]:
+                best = (distance_sq, value)
+    if best is None:
         return None
-    return value
+    cells_away = best[0] ** 0.5
+    finding.notes.append(
+        f"Točka pada na nodata ćeliju — uzeta najbliža valjana "
+        f"(~{cells_away * abs(src.res[0]):.0f} m dalje)."
+    )
+    return best[1]
 
 
 def _download(url: str, target: Path, timeout_s: float) -> bool:

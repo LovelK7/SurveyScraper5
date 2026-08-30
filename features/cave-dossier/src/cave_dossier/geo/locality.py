@@ -65,8 +65,12 @@ _NON_LOCALITY_VRSTA_KEYWORDS = (
     "kamp",
     "kolodvor",
     "parkiraliste",
-    # 2. Populated places (go to Najbliže mjesto)
+    # 2. Populated places (go to Najbliže mjesto). "zasel" (zaselak /
+    #    zaseok) added 2026-08-30: SB routinely names hamlets, and the
+    #    first sweep showed RGI-typed zaselak hits would otherwise slip
+    #    into an empty Lokalitet.
     "naselje",
+    "zasel",
     # 3. Religious / commemorative point features
     "kapel",      # kapela / kapelica
     "crkv",       # crkva / crkvica
@@ -159,15 +163,22 @@ class LocalityFinder:
         hits: list[NamedPlaceHit],
     ) -> list[str]:
         """Names known to be settlements near the entrance: the widened DGU
-        polygon set + the containing naselje + RGI hits typed 'naselje'
-        (covers areas where the DGU set is sparse)."""
+        polygon set + the containing naselje + RGI hits of any populated-
+        place type.
+
+        Hamlets matter (2026-08-30 sweep): SB's Najbliže mjesto is often a
+        zaselak (Pavletići, Čonjini, Blažići…) that is no official DGU
+        naselje but IS an RGI point typed 'zaselak' — without them here,
+        every such SB value was flagged as unrecognised.
+        """
         names = self.admin_lookup.nearby_naselje_names(
             x, y, radius_m=_NASELJE_SCREEN_RADIUS_M
         )
         if admin_naselje and admin_naselje not in names:
             names.append(admin_naselje)
         for hit in hits:
-            if (hit.vrstaobiljezja or "").strip().lower() == "naselje":
+            vrsta = normalize_for_matching(hit.vrstaobiljezja or "")
+            if "naselje" in vrsta or "zasel" in vrsta:
                 if hit.geografskoime and hit.geografskoime not in names:
                     names.append(hit.geografskoime)
         return names

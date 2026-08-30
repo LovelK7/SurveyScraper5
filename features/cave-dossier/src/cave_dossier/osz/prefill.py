@@ -193,8 +193,11 @@ def _resolve_fields(
 ) -> None:
     fields = result.fields
 
-    if cave.sue_number:
-        fields["katastarski_broj"] = FieldValue(value=str(cave.sue_number), source="sb")
+    # Deliberately NOT filled (user, 2026-08-30): Katastarski broj — the
+    # archivist assigns it manually at the very end, never a prefill;
+    # Duljina/Dubina — supplied by the survey process (2.1a), not SB;
+    # Datum istraživanja — SB only holds a year, the real date comes from
+    # the field data.
     plaque = _sb_text(cave, settings.sb_plaque_column)
     if plaque:
         fields["broj_plocice"] = FieldValue(value=plaque, source="sb")
@@ -238,46 +241,40 @@ def _resolve_fields(
 
     _resolve_kota(settings, cave, result, kota_finding)
 
-    for key in ("length_m", "depth_m"):
-        value = _sb_float(cave, _field_column(settings, key))
-        if value is not None:
-            fields["duljina" if key == "length_m" else "dubina"] = FieldValue(
-                value=_format_number(value), source="sb"
-            )
-
-    period = _sb_text(cave, settings.sb_exploration_period_column)
-    if period:
-        fields["datum_istrazivanja"] = FieldValue(value=period, source="sb")
-
 
 def _resolve_kota(settings: Settings, cave: CaveRow, result: PrefillResult, kota_finding) -> None:
     sb_z = _sb_float(cave, _field_column(settings, "entrance_elevation_m"))
     computed = kota_finding.elevation_m if kota_finding is not None else None
 
+    label = settings.geo_elevation_source_label
+
     if sb_z is not None:
         result.fields["kota_ulaza"] = FieldValue(value=_format_number(sb_z), source="sb")
-        # SB does not record where its Z came from — the recorder fills
-        # Izvor kote by hand for an SB-supplied elevation.
         if computed is not None and abs(computed - sb_z) > settings.geo_elevation_tolerance_m:
+            # Disagreement: SB's value stands, but claiming a DMV source
+            # for a number the DMV grid contradicts would be false — leave
+            # Izvor kote to the recorder and warn.
             result.mismatches.append(
                 f"Kota ulaza: SB kaže {_format_number(sb_z)} m, "
-                f"{kota_finding.source_label} kaže {_format_number(computed)} m "
+                f"{label} kaže {_format_number(computed)} m "
                 f"(razlika > {_format_number(settings.geo_elevation_tolerance_m)} m). "
-                "SB vrijednost je zadržana."
+                "SB vrijednost je zadržana, Izvor kote ostaje prazan."
             )
+            return
+        # The society's Z values are DMV/LiDAR-derived (user, 2026-08-30) —
+        # Izvor kote gets the label whenever the kota goes in.
+        result.fields["izvor_kote"] = FieldValue(value=label, source="sb")
         return
 
     if computed is not None:
         result.fields["kota_ulaza"] = FieldValue(
             value=_format_number(computed), source="dmv-dgu"
         )
-        result.fields["izvor_kote"] = FieldValue(
-            value=kota_finding.source_label, source="dmv-dgu"
-        )
+        result.fields["izvor_kote"] = FieldValue(value=label, source="dmv-dgu")
         result.sb_updates.append(SBUpdate(
             column=_field_column(settings, "entrance_elevation_m") or "Z",
             value=_format_number(computed),
-            source=kota_finding.source_label or "DMV (DGU)",
+            source=label,
             note=kota_finding.tile_name or "",
         ))
 
@@ -293,8 +290,7 @@ def _write_docx(target: Path, result: PrefillResult, png_bytes: bytes | None,
         if addr.kind == "sdt_cell":
             doc.fill_sdt_cell(addr.table, addr.row, addr.cell, [field_value.value])
         else:
-            doc.fill_plain(addr.table, addr.row, addr.cell, field_value.value,
-                           style_from=addr.style_from)
+            doc.fill_plain(addr.table, addr.row, addr.cell, field_value.value)
     if png_bytes is not None:
         doc.embed_png(KARTA_FRAME.table, KARTA_FRAME.row, KARTA_FRAME.cell,
                       png_bytes, f"{_sb_prefix(serial)}.png")

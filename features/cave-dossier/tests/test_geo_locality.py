@@ -57,9 +57,26 @@ def test_vrsta_screening():
     assert is_topographic_locality_feature(None)  # conservative: keep unknowns
     assert not is_topographic_locality_feature("kapelica")   # object 525's lesson
     assert not is_topographic_locality_feature("naselje")
+    assert not is_topographic_locality_feature("zaselak")    # hamlets are settlements
     assert not is_topographic_locality_feature("autocesta")
     # Diacritic folding: 'parkiralište' matches the folded 'parkiraliste' stem.
     assert not is_topographic_locality_feature("parkiralište")
+
+
+def test_locate_sb_hamlet_recognised_via_rgi_zaselak():
+    """SB's Najbliže mjesto is often a hamlet that is no official DGU
+    naselje but IS an RGI 'zaselak' point — it must validate silently
+    (the 2026-08-30 sweep flagged every such value before this)."""
+    finder = LocalityFinder(
+        rgi_client=StubRGI([hit("Pavletići", "zaselak", 400.0)]),
+        admin_lookup=StubAdmin(),
+    )
+    finding = finder.locate(0.0, 0.0, sb_najblize_mjesto="Pavletići")
+    assert finding.najblize_mjesto == "Pavletići"
+    assert finding.notes == []
+    # ...and the same zaselak never fills an empty Lokalitet.
+    finding = finder.locate(0.0, 0.0)
+    assert finding.lokalitet is None
 
 
 # ── RGI parsing (pure, no network) ───────────────────────────────────

@@ -57,7 +57,7 @@ def geo_stubs(monkeypatch):
         lokalitet_source="geo-rgi",
     )
     elevation_finding = ElevationFinding(
-        elevation_m=680, source_label="DMV (DGU)", tile_name="RH_ELEV_7.tif"
+        elevation_m=680, source_label="DMV", tile_name="RH_ELEV_7.tif"
     )
     monkeypatch.setattr(
         prefill.locality_mod, "build_finder",
@@ -113,21 +113,21 @@ def test_prefill_full_row_sb_wins(settings, geo_stubs, run_dir, collected_karta)
     assert fields["kota_ulaza"].value == "500" and fields["kota_ulaza"].source == "sb"
     assert fields["najblize_mjesto"].value == "Testno Selo"
     assert fields["lokalitet"].value == "Testni kras"
-    assert "izvor_kote" not in fields  # SB's Z has no recorded source
+    # 680 vs 500 exceeds the 10 m tolerance → flagged, not overridden, and
+    # claiming a DMV source for a contradicted number would be false.
+    assert "izvor_kote" not in fields
+    assert any("Kota ulaza" in m for m in result.mismatches)
     # Always computed (SB has no columns for them).
     assert fields["zupanija"].value == "Istarska"
     assert fields["grad_opcina"].value == "Lanišće"
     # Straight SB data.
-    assert fields["katastarski_broj"].value == "001"
     assert fields["broj_plocice"].value == "T-01"
     assert fields["x_htrs"].value == "450123"
     assert fields["y_htrs"].value == "5023456"
-    assert fields["duljina"].value == "40"
-    assert fields["dubina"].value == "12"
-    assert fields["datum_istrazivanja"].value == "2015"
-
-    # 680 vs 500 exceeds the 10 m tolerance → flagged, not overridden.
-    assert any("Kota ulaza" in m for m in result.mismatches)
+    # NEVER prefilled (user, 2026-08-30): the archivist's manual final step
+    # and the fields other processes supply.
+    for never in ("katastarski_broj", "duljina", "dubina", "datum_istrazivanja"):
+        assert never not in fields, never
     # Every SB cell was filled → nothing to propose back.
     assert result.sb_updates == []
     assert outcome.sb_updates_path is None
@@ -160,7 +160,7 @@ def test_prefill_empty_cells_become_sb_updates(settings, geo_stubs, run_dir, mon
 
     assert result.fields["kota_ulaza"].value == "680"
     assert result.fields["kota_ulaza"].source == "dmv-dgu"
-    assert result.fields["izvor_kote"].value == "DMV (DGU)"
+    assert result.fields["izvor_kote"].value == "DMV"
     assert result.fields["najblize_mjesto"].source == "geo-admin"
     assert result.fields["lokalitet"].source == "geo-rgi"
     assert result.mismatches == []
@@ -179,6 +179,18 @@ def test_prefill_empty_cells_become_sb_updates(settings, geo_stubs, run_dir, mon
     assert rows[0] == list(prefill.SB_UPDATES_CSV_COLUMNS)
     assert len(rows) == 4
     assert all(row[0] == "1" for row in rows[1:])
+
+
+def test_prefill_sb_kota_with_agreeing_grid_gets_dmv(settings, geo_stubs, run_dir, monkeypatch):
+    _template_guard()
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+    # Widen the tolerance so the stub's 680 "agrees" with SB's 500 —
+    # an agreeing (or absent) grid means the SB kota is DMV-sourced too.
+    settings = dataclasses.replace(settings, geo_elevation_tolerance_m=500.0)
+    result = prefill.run_prefill(settings, 1).result
+    assert result.fields["kota_ulaza"].value == "500"
+    assert result.fields["izvor_kote"].value == "DMV"
+    assert result.mismatches == []
 
 
 def test_prefill_without_coordinates_degrades(settings, geo_stubs, run_dir, monkeypatch):

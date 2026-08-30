@@ -147,9 +147,10 @@ geo:
   # 10 m ≈ the honest band between the 25 m-class DMV grid and SB's
   # mixed-provenance hand-entered Z values.
   elevation_tolerance_m: 10
-  # What "Izvor kote ulaza" says when the finder supplied the elevation —
-  # short-label practice like the existing HOK / TK / LIDAR values.
-  elevation_source_label: "DMV (DGU)"
+  # What "Izvor kote ulaza" says — filled whenever a kota goes into the OSZ
+  # (the society's SB Z values are DMV/LiDAR-derived too; user 2026-08-30),
+  # except on an SB-vs-grid mismatch, where it stays blank with a warning.
+  elevation_source_label: "DMV"
 
 # Satellite tables around SB (part 2.2) — see docs/sb-liburnija-hub.md.
 # Overrides for the handful of rows no rule can settle. Everything else is

@@ -133,6 +133,42 @@ def test_kota_nodata_is_reported(tmp_path):
         encoding="utf-8",
     )
 
-    finding = ElevationFinder(tmp_path, "DMV (DGU)").kota(x_htrs, y_htrs)
+    finding = ElevationFinder(tmp_path, "DMV").kota(x_htrs, y_htrs)
     assert finding.elevation_m is None
-    assert any("nodata" in note or "vjerodostojna" in note for note in finding.notes)
+    assert any("nodata" in note for note in finding.notes)
+
+
+def test_kota_nodata_rescued_from_neighbor_cell(tmp_path):
+    rasterio = pytest.importorskip("rasterio")
+    pyproj = pytest.importorskip("pyproj")
+    from rasterio.transform import from_origin
+    import numpy as np
+
+    x_htrs, y_htrs = 450123.0, 5023456.0
+    transformer = pyproj.Transformer.from_crs("EPSG:3765", "EPSG:3045", always_xy=True)
+    easting, northing = transformer.transform(x_htrs, y_htrs)
+
+    # Valid terrain everywhere except a nodata hole on the entrance cell.
+    data = np.full((10, 10), 444.0, dtype="float32")
+    transform = from_origin(easting - 125, northing + 125, 25, 25)
+    dem_dir = tmp_path / "dem"
+    dem_dir.mkdir()
+    with rasterio.open(
+        dem_dir / "RH_ELEV_7.tif", "w", driver="GTiff", height=10, width=10,
+        count=1, dtype="float32", crs="EPSG:3045", transform=transform,
+        nodata=-9999.0,
+    ) as dst:
+        row, col = dst.index(easting, northing)
+        data[row, col] = -9999.0
+        dst.write(data[np.newaxis, :, :])
+    (tmp_path / "el_cov_index.gml").write_text(
+        f"""<?xml version="1.0"?><root xmlns:gml="http://www.opengis.net/gml/3.2">
+<gml:lowerCorner>{northing - 125:.0f} {easting - 125:.0f}</gml:lowerCorner>
+<gml:upperCorner>{northing + 125:.0f} {easting + 125:.0f}</gml:upperCorner>
+<file>RH_ELEV_7.tif</file></root>""",
+        encoding="utf-8",
+    )
+
+    finding = ElevationFinder(tmp_path, "DMV").kota(x_htrs, y_htrs)
+    assert finding.elevation_m == 444
+    assert any("najbliža valjana" in note for note in finding.notes)
