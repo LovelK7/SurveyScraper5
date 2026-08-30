@@ -763,6 +763,75 @@ def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: b
     return 0
 
 
+def cmd_osz_fetch(settings: Settings, serial: int, osz_path_arg: str | None) -> int:
+    """Part 2.1b fetcher: read a FILLED OSZ and propose the SB backfill.
+
+    Never writes SB — proposals land in dopune-sb-iz-osz.csv for a person
+    to carry into Excel (write-back is M6). Exit 1 when there is something
+    to carry over, 0 when SB already holds everything, 99 on errors.
+    """
+    from cave_dossier.osz import backfill as backfill_mod
+    from cave_dossier.osz import prefill as prefill_mod
+    from cave_dossier.osz.reader import OszReadError, read_osz
+
+    cave = _find_serial_or_exit(settings, serial)
+    if cave is None:
+        return EXIT_ERROR
+
+    if osz_path_arg:
+        osz_path = Path(osz_path_arg)
+    else:
+        subdir = settings.archive_dirs.get("osz_prefill_dir")
+        if not settings.local_drive_root or not subdir:
+            print("No default OSZ location (LOCAL_DRIVE_ROOT / archive.osz_prefill_dir "
+                  "unset) — pass --osz <file>.", file=sys.stderr)
+            return EXIT_ERROR
+        osz_path = (settings.local_drive_root / subdir
+                    / f"SB_{georef.padded_serial(serial)}_OSZ.docx")
+    if not osz_path.exists():
+        print(f"Filled OSZ not found: {osz_path}\nPass --osz <file> to point at it.",
+              file=sys.stderr)
+        return EXIT_ERROR
+
+    print(f"Redni broj {serial}: {cave.object_name or '<no name>'}"
+          + (f" (SUE {cave.sue_number})" if cave.sue_number else ""))
+    print(f"Čitam: {osz_path}")
+    try:
+        osz_values = read_osz(osz_path)
+    except OszReadError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    result = backfill_mod.build_backfill(cave, osz_values, settings)
+    print()
+    if result.matches:
+        print(f"Slaže se ({len(result.matches)}):")
+        for match in result.matches:
+            print(f"  ✓ {match}")
+    if result.proposals:
+        print(f"\nPRIJEDLOZI za SB ({len(result.proposals)}):")
+        for p in result.proposals:
+            arrow = f"'{p.current}' -> " if p.current else ""
+            print(f"  + {p.column}: {arrow}'{p.proposed}'  [{p.reason}]")
+    if result.differences:
+        print(f"\nRazlike — SB zadržan, provjeri ručno ({len(result.differences)}):")
+        for diff in result.differences:
+            print(f"  ⚠ {diff}")
+    for note in result.notes:
+        print(f"  ! {note}")
+
+    if result.proposals:
+        run_dir = prefill_mod.RUNS_DIR / georef.padded_serial(serial)
+        run_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = run_dir / "dopune-sb-iz-osz.csv"
+        backfill_mod.write_backfill_csv(csv_path, serial, result)
+        print(f"\nDopune za SB: {csv_path}")
+        print("  (upiši ručno u Svi objekti — alat nikad ne piše u SB)")
+        return EXIT_READY
+    print("\nSB već sadrži sve što ovaj OSZ nudi.")
+    return EXIT_NOT_READY
+
+
 # ── Entry point ────────────────────────────────────────────────────
 
 
@@ -959,6 +1028,23 @@ def build_parser() -> argparse.ArgumentParser:
              "and the georef.hr flow is skipped (an already-collected excerpt "
              "is still embedded)",
     )
+    osz_fetch = osz_sub.add_parser(
+        "fetch",
+        help="Read a FILLED OSZ and propose the SB backfill (pločica, ime/sinonimi, "
+             "duljina/dubina, godina, autori) — review CSV, never writes SB",
+    )
+    osz_fetch.add_argument(
+        "redni_broj",
+        type=int,
+        help="SB Redni broj of the cave the zapisnik belongs to",
+    )
+    osz_fetch.add_argument(
+        "--osz",
+        dest="osz_path",
+        metavar="FILE",
+        help="Path to the filled OSZ DOCX (default: SB_<broj>_OSZ.docx in "
+             "archive.osz_prefill_dir)",
+    )
 
     photos = subparsers.add_parser(
         "photos",
@@ -1040,6 +1126,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.osz_command == "prefill":
                 return cmd_osz_prefill(settings, args.redni_broj, args.debug,
                                        args.force_karta, args.offline)
+            if args.osz_command == "fetch":
+                return cmd_osz_fetch(settings, args.redni_broj, args.osz_path)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR

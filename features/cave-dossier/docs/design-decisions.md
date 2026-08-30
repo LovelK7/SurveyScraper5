@@ -31,6 +31,7 @@ keeps the chronology.
 - [Field-data intake — matching design](#field-data-intake--matching-design)
   - [The third source: the Liburnija LIDAR sheet](#the-third-source-the-liburnija-lidar-sheet)
 - [2.1b prefill rules (2026-08-30)](#21b-prefill-rules-2026-08-30)
+- [OSZ fetch → SB backfill rules (2026-08-30)](#osz-fetch--sb-backfill-rules-2026-08-30)
 
 ---
 
@@ -457,3 +458,37 @@ Settled with the user during the prefill build; enforced in `osz/prefill.py`:
   lives in the tool (`georef/worker.refresh_reason`): wrong excerpt aspect
   (format migrations), missing CSV rows, unreadable PNGs all auto-refresh on
   the next run; nothing requires a manual cleanup ritual.
+
+## OSZ fetch → SB backfill rules (2026-08-30)
+
+The fetcher direction (`cavedossier osz fetch`), settled with the user the
+same day the prefill shipped; enforced in `osz/reader.py` + `osz/backfill.py`:
+
+- **Scope**: only the SB-relevant cells — Broj pločice, Ime objekta/Sinonimi,
+  Duljina, Dubina, Datum → Godina/period, Crtali → Autori nacrta. The
+  CroSpeleo material (checkbox groups, narrative controls, the Google-Docs
+  text variant) is a later stage.
+- **Fill-missing, note-conflicts**: an empty SB cell gets a proposal; a
+  non-empty cell that disagrees with the OSZ is printed as a difference and
+  SB is kept — the operator decides.
+- **Name change**: when the OSZ carries a different Ime objekta, the field
+  name is the new authoritative one — it replaces SB's, and the old SB name
+  (typically a working `LiDAR Kristal N`) moves into Sinonimi, merged with
+  any OSZ synonyms; the new name never appears in Sinonimi.
+- **Godina convention**: the OSZ's free-form Datum is cropped to SB's style —
+  the single year (`"10.05.2025." → 2025`) or `min-max` when several years
+  appear (`"12.10.2025. i 3.5.2026." → 2025-2026`).
+- **Author conventions**: the OSZ writes full names, SB writes
+  initial·dot·surname (`Lovel Kukuljan` ↔ `L.Kukuljan`).
+  `core/person_aliases.py` (ported from crospeleo's alias generator) matches
+  across the two spellings so an author already in SB is never duplicated;
+  new authors are **merged, never dropped** — for queued caves the SB cell
+  holds the finder/source, and a later survey legitimately adds people.
+- **A control still showing its placeholder reads as EMPTY** (`w:showingPlcHdr`,
+  or a literal `⟨…⟩` in the Docs variant) — the grey hint text is not a value.
+- **No writes**: the output is `dopune-sb-iz-osz.csv` under `runs/osz/<broj>/`,
+  carried into Excel by hand. Exit 1 = something to carry over.
+- **Validated** against `osz-template/mockups/v10.2_primjer_811.docx` vs SB 764
+  (all 7 fields confirmed identical across conventions) and a simulated
+  completed zapisnik for queued SB 1320 (6 proposals incl. the name→synonym
+  move; year conflict correctly surfaced, not overridden).

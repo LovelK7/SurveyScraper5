@@ -140,6 +140,20 @@ cavedossier osz prefill 1234 --offline     # never touch the network; an already
 # step), Duljina/Dubina (come from the survey), Datum istraživanja (SB only
 # holds a year). dopune-sb.csv is a review list a person carries into Excel —
 # nothing writes to SB automatically.
+
+# ── OSZ fetch → SB backfill (part 2.1b — reads a FILLED zapisnik back) ──
+cavedossier osz fetch 1234                 # read SB_<broj>_OSZ.docx from the prefill Drive
+                                           #   dir and propose the SB backfill
+cavedossier osz fetch 1234 --osz FILE      # point at any filled v10 DOCX instead
+# Proposes for EMPTY SB cells: Broj pločice, Duljina, Dubina, Godina/period
+# (cropped out of the OSZ's free-form Datum: "10.05.2025." -> "2025",
+# two visits -> "2025-2026"), Autori nacrta (OSZ full names -> SB shorthand,
+# "Lovel Kukuljan" -> "L.Kukuljan"; spellings matched so an author already
+# in SB is never duplicated, and new authors MERGE, never replace).
+# A NEW name in the OSZ replaces SB's Ime objekta and the old name moves
+# into Sinonimi. Non-empty conflicting cells are printed as differences —
+# SB kept, human decides. Output: dopune-sb-iz-osz.csv under runs/osz/<broj>/,
+# carried into Excel by hand (write-back is M6). Exit 1 = something to carry.
 ```
 
 ## Quick checks

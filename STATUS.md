@@ -130,8 +130,18 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 - [x] Live validation: 651 / 764 / 1320 delivered + Word-verified (81 controls,
       correct fonts, embedded 5:4 excerpt); 24-cave stratified finder sweep
       (Δkota ≤ 5 m for 20/24, admin fields 24/24 correct).
-- [ ] The fetcher half of M4: reading filled zapisnici back (`w:sdt` + Docs text
-      parsers) — still waiting on the first filled zapisnici from recorders.
+- [x] **SB backfill fetcher shipped (2026-08-30, late)** — `cavedossier osz fetch
+      <broj> [--osz FILE]`: `osz/reader.py` (w:sdt-aware, placeholders read as
+      empty) + `osz/backfill.py` (fill-missing / note-conflicts; new OSZ name
+      replaces SB's and the old name moves to Sinonimi; Datum cropped to SB's
+      godina/period convention; Crtali full names ↔ SB `L.Kukuljan` shorthand via
+      the ported alias registry `core/person_aliases.py`; authors merge, never
+      drop) → `dopune-sb-iz-osz.csv` review list. Validated: mockup 811 vs SB 764
+      (7/7 fields confirmed across conventions) + a simulated completed zapisnik
+      for queued 1320 (6 proposals incl. the name→synonym move). Tests 183 → 193.
+- [ ] Validate `osz fetch` on the first REAL filled zapisnici from recorders;
+      then the CroSpeleo-field fetcher (checkbox groups, narrative controls,
+      Google-Docs text variant).
 - [ ] Batch mode (`osz prefill --missing`-style sweep) — backlog.
 
 ## Waiting on user
