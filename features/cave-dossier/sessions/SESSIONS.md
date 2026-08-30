@@ -6,6 +6,52 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-08-30 (evening) — 2.1b prefill slice: geo finders + OSZ writer + `osz prefill` (agent) ✅
+
+- **Did:** (1) *`geo/` package* — locality finder ported from crospeleo
+  `locality/` (RGI WFS client + NEW offline fallback over a locally provisioned
+  `rgi_named_places.gpkg`, DGU admin point-in-polygon simplified to one PIP over
+  `naselja.gpkg`, toponym matcher verbatim, enricher restructured into an SB-wins
+  synthesizer) + NEW elevation finder over the open INSPIRE EL-COV DMV grid
+  (pyproj 3765→3045, lazy ~34 MB tiles, nodata rescue ±2 cells + neighbour tile)
+  + `geo fetch-data` (RGI paged WFS → 125,731 places; admin boundaries
+  stream-parsed from the 600 MB INSPIRE AU GML with lxml `huge_tree`, 21/556/6759
+  units). (2) *`osz/` package* — writer with make_mockup's primitives + NEW
+  `embed_png`; `fill_plain` REWRITTEN to use each cell's own paragraph-mark rPr
+  (user caught Arial-12-everywhere; template stores Arial 20 bold etc. on the
+  mark); versioned v10 address map; prefill orchestrator with `prefill.json`
+  sidecar + `dopune-sb.csv` review list, fail-soft Drive delivery. (3) *CLI* —
+  `geo fetch-data/locate/kota`, `osz prefill`, `--offline` everywhere; extras
+  `[geo]` new, `[osz]`→lxml. (4) *2.1c format change* — excerpt now landscape
+  5:4 / ~1.5 km half-height (was 1:1 / ~2.5 km); `refresh_reason` self-heals
+  hand-managed collections (wrong aspect, deleted/mangled CSV rows, Excel-stripped
+  padding). (5) *Field rules (user)* — SB wins + 10 m kota tolerance; LiDAR-named
+  caves ⇒ Izvor koordinata + Izvor kote = "LiDAR", others ⇒ GPS default;
+  Katastarski broj / Duljina / Dubina / Datum istraživanja never prefilled.
+  Tests 135 → 183, all green.
+- **Result:** Live: 651/764/1320 prefilled, delivered to
+  `!!!Digitalizacija/Osnovni speleološki zapisnik`, Word-verified (81 controls,
+  correct fonts, embedded 5:4 excerpt); 24-cave stratified sweep — admin fields
+  24/24 plausible, Δkota ≤5 m for 20/24 (two Δ30 are honest steep-terrain
+  cases, correctly warned). Fully offline run produces a complete document.
+- **Learned:** (a) The v10 template stores every empty value cell's intended
+  style on the paragraph mark (`pPr/rPr`) — copying a sibling's run style (the
+  make_mockup way) flattens everything. (b) GDAL's GML driver drops INSPIRE AU's
+  level (xlink:title attribute) AND names (nested `gn:text`) — hand parsing was
+  the only way; the archive is one 600 MB line needing lxml `huge_tree`.
+  (c) EL-COV tiles are EPSG:3045 with real nodata holes; tile extents overlap,
+  and the neighbour tile often has the missing value. (d) SB's Najbliže mjesto
+  is routinely a *zaselak* — validating only against official DGU naselja
+  false-alarmed 10/24; RGI's zaselak-typed points close the gap. (e) The Drive
+  delivery dirs are hand-managed: Excel strips `0651`→`651` in the CSV, people
+  delete PNGs — every staleness check must live in the tool. (f) georef.hr's
+  elevation is nowhere in its record; the open DMV grid was the right source
+  (DMR1 is registered-WMS visualization only).
+- **Next:** (1) collect the first filled zapisnici → the M4 fetcher half
+  (`w:sdt` + Docs text parsers); (2) batch prefill over the Za istražit queue;
+  (3) sat-sync list 3 corrections + the `Najbliže mjesto` default question are
+  still open from earlier sessions.
+
 ### 2026-08-30 — isječak karte (2.1c / M3) shipped + `SB_` prefix convention (agent) ✅
 
 - **Did:** (1) *Port* — `cave_dossier/georef/` from crospeleo-automation

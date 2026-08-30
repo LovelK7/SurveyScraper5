@@ -152,3 +152,10 @@ when an idea's time comes. Nothing here is a commitment.
   Breza` as a naselje (it IS the nearest settlement, 1.26 km away) — a
   `sb audit-lokalitet` sweep over all rows would list every Lokalitet cell holding
   a settlement name, for one cleaning pass in Excel.
+- 2026-08-30 — promote the session's scratch sweep harness (loads SB once, runs
+  both geo finders over a stratified cave sample, prints a compact table + notes)
+  into a real `cavedossier geo sweep [--limit N]` command — it found three real
+  bugs in one run and is the natural data-quality report for the finders.
+- 2026-08-30 — the three karta re-runs this session each allocated a fresh
+  georef.hr point ID for the same caves (format migration) — the
+  detect-existing-point idea above (2026-08-30, `--force` litter) got more urgent.

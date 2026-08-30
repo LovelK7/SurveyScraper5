@@ -11,8 +11,8 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 |---|---|
 | 1 — field mobile app | PARKED (manual workflow; revisit after stage 2 works) |
 | 2.1a — csx-to-survey | OPERATIONAL (own feature, semi-manual 4-step pipeline) |
-| 2.1b — OSZ builder | NOT STARTED — **OSZ v10 template distributed to recorders 2026-08-25** (Word `.dotx` + Google-Docs `.docx`); M4 ungated. Reading filled zapisnici needs a `w:sdt`-aware parser for the Word form and a `[ ]`/`⟨ ⟩` text parser for the Docs form |
-| 2.1c — isječak karte | **OPERATIONAL (M3 done 2026-08-30)** — `cavedossier karta <Redni broj>` runs the ported georef.hr Playwright flow and delivers `SB_<padded broj>.png` (1017 px, ≤1 MB) + a row in `!georef_zapisi.csv` to the shared `!!Isječci karte` Drive folder. Validated live on caves 764 and 651; skip-if-collected, `--force` refreshes, `--debug` headed |
+| 2.1b — OSZ builder | **PREFILL SLICE OPERATIONAL (2026-08-30, evening)** — `cavedossier osz prefill <Redni broj>` fills the v10 template from SB + the new `geo/` finders (županija/grad-općina via DGU boundaries, najbliže mjesto/lokalitet via RGI, kota via open INSPIRE DMV grid), embeds the isječak karte, delivers `SB_<broj>_OSZ.docx` to `!!!Digitalizacija/Osnovni speleološki zapisnik`, and emits `dopune-sb.csv` (human-executed SB review list). SB wins on conflicts; LiDAR-named caves get Izvor koordinata/kote = LiDAR, others default GPS; Katastarski broj / Duljina / Dubina / Datum never prefilled (user rules). `--offline` works fully from local data. Validated live on 651, 764, 1320 + a 24-cave finder sweep. Still M4's other half: READING filled zapisnici back (`w:sdt` parser + Docs text parser) |
+| 2.1c — isječak karte | **OPERATIONAL (M3 done 2026-08-30)** — `cavedossier karta <Redni broj>` runs the ported georef.hr Playwright flow and delivers the excerpt + a row in `!georef_zapisi.csv` to the shared `!!Isječci karte` Drive folder. **Format changed same evening: landscape 5:4, ~1.5 km above/below the entrance** (was 1:1 / ~2.5 km); old-format or hand-deleted/mangled collections self-heal — refresh_reason detects wrong aspect, missing CSV rows, Excel-stripped padding |
 | 2.1d — fotografije ulaza | **new part, added 2026-08-26**. Matcher + staleness guard DONE (2026-08-28); downsizing not started. Staged photos are keyed by Redni broj in `…za istražit` (a queue, not a repo) and move to `!!Fotografije ulaza` as `<padded SUE>_…` when the cave is explored. Downsizing rides along with M6 |
 | 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` (SB-only) done; archive intake next |
 | 2.2a — SB (master registry) | **M1 ✅ DONE** (read-only, live SB v3.0). Live workbook now **1438 rows**; write-back still M6 |
@@ -110,6 +110,30 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
 **M4 (OSZ builder) is no longer gated** — the template shipped 2026-08-25; picking it up
 before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
+## M4 progress — 2.1b prefill slice ✅ shipped (2026-08-30)
+
+- [x] `cave_dossier/geo/` — locality finder (ported from crospeleo `locality/`:
+      RGI WFS client + offline gpkg fallback, DGU admin point-in-polygon, toponym
+      matcher, SB-wins synthesizer) + NEW elevation finder (open INSPIRE EL-COV
+      DMV grid, EPSG:3765→3045, lazy 34 MB tiles, nodata window + neighbour-tile
+      rescue) + `geo fetch-data` provisioning (RGI paged download 125,731 places;
+      admin boundaries stream-parsed out of the 600 MB INSPIRE AU GML — GDAL
+      cannot read its xlink attributes). Data in gitignored `data/geo/`.
+- [x] `cave_dossier/osz/` — writer (lxml primitives from make_mockup + NEW
+      `embed_png`; fills in each cell's OWN paragraph-mark style), versioned v10
+      address map, prefill orchestrator + `prefill.json` sidecar + `dopune-sb.csv`.
+- [x] CLI: `geo fetch-data / locate / kota`, `osz prefill`, `--offline` on all
+      finders + prefill; new extras `[geo]`, `[osz]`→lxml.
+- [x] Field rules (user): SB wins + mismatch warnings (kota tolerance 10 m);
+      LiDAR flag → Izvor koordinata + Izvor kote = "LiDAR"; GPS default otherwise;
+      Katastarski broj / Duljina / Dubina / Datum istraživanja never prefilled.
+- [x] Live validation: 651 / 764 / 1320 delivered + Word-verified (81 controls,
+      correct fonts, embedded 5:4 excerpt); 24-cave stratified finder sweep
+      (Δkota ≤ 5 m for 20/24, admin fields 24/24 correct).
+- [ ] The fetcher half of M4: reading filled zapisnici back (`w:sdt` + Docs text
+      parsers) — still waiting on the first filled zapisnici from recorders.
+- [ ] Batch mode (`osz prefill --missing`-style sweep) — backlog.
+
 ## Waiting on user
 
 - ~~Society's blank OSZ template DOCX~~ → delivered 2026-08-23:
@@ -188,6 +212,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
-- 2026-08-30 — 2.1c shipped (georef port, live-validated, 1 MB/1017 px excerpts) + `SB_` prefix convention rolled out across excerpts, intake folders and staged photos → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
+- 2026-08-30 (evening) — 2.1b prefill slice shipped: `geo/` finders (RGI + DGU boundaries + DMV elevation, offline-capable) + `osz/` writer/prefill, karta format → 5:4, LiDAR/GPS source flags, validated live on 3 caves + 24-cave sweep → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
+- 2026-08-30 — 2.1c shipped (georef port, live-validated) + `SB_` prefix convention rolled out across excerpts, intake folders and staged photos → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-29 — satellite hub (part 2.2b) built and run end to end: 126 Liburnija caves into SB, sync now idempotent → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-08-25 — OSZ v10 shipped (Google-Docs variant, `.dotx` lock, distributed) + SB v3.0 adopted, M1 closed → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
