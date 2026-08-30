@@ -164,9 +164,17 @@ non-developer setup. Track it as its own work item when its time comes.
 
 ## Milestones (stage 2)
 
-M0 docs scaffold ✅ → **M1 SB read-only (sandbox → live)** ✅ → M2 dossier skeleton +
-`report` command → M3 isječak karte port / M4 OSZ builder (order flexible; M4 gated on
-template) → M5 2.1a artifact handoff → M6 SB write-back + delivery to archive dirs
-(2.1d entrance-photo processing rides along with M6: resizing + renaming is a
-delivery action, and the SUE number it renames to only exists at that point).
-Current state: [STATUS.md](STATUS.md).
+The **canonical definition** of the M-numbers used across STATUS, SESSIONS and
+the code comments. They are the build order of stage 2 (the stationary app),
+roughly M0 → M6; M3/M4 were explicitly order-flexible. Current per-milestone
+state lives in [STATUS.md](STATUS.md) — this table only says what each one IS.
+
+| M | Name | What it delivers | Parts |
+|---|---|---|---|
+| **M0** | Docs scaffold | Feature skeleton: pyproject, config, docs, sessions/backlog discipline | — |
+| **M1** | SB read-only | `SBReader` against the live workbook (sandbox → live), `sb columns/inspect/stats`, the mode banner | 2.2a |
+| **M2** | Dossier skeleton + `report` | The `CaveDossier` object, two-gate rule table, lifecycle states, `report --cave`; archive **intake** (resolving a cave's files on Drive) is the tail that closes it | 2.1 |
+| **M3** | Isječak karte | The georef.hr flow ported: `karta <broj>` → excerpt PNG + georef zapis delivered to `!!Isječci karte` | 2.1c |
+| **M4** | OSZ builder | Both directions over the v10 template: **prefill** (SB + geo finders → `SB_<broj>_OSZ.docx`) and **fetch** (filled zapisnik → SB backfill review list); the CroSpeleo-field fetcher (checkboxes, narratives, Docs variant) is its tail | 2.1b |
+| **M5** | 2.1a artifact handoff | Consume the survey pipeline's products (Nacrt PDF + dimensions) into the dossier — integration via files, never imports | 2.1a↔2.1 |
+| **M6** | SB write-back + delivery | The only WRITE milestone: xlwings/COM write-back of gathered data into SB, delivery of finished dossiers into the archive dirs; 2.1d photo processing (downsize + SUE rename) rides along, because the SUE number it renames to only exists at that point | 2.2a, 2.1d |

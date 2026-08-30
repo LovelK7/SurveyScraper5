@@ -1,4 +1,4 @@
-# cave-dossier — SB communication + cave dossier builder
+﻿# cave-dossier — SB communication + cave dossier builder
 
 Pipeline parts **2.1 / 2.1b / 2.1c / 2.1d / 2.2** ([ARCHITECTURE.md](../../ARCHITECTURE.md)):
 talk to **SB** (Speleo baza, the society's cave-registry Excel workbook), build a
@@ -16,6 +16,7 @@ agents and developers is [_INDEX.md](_INDEX.md).
 
 - [Where to look next](#where-to-look-next)
 - [What this does (orientation)](#what-this-does-orientation)
+- [Milestones — what M1-M6 mean](#milestones--what-m1-m6-mean)
 - [Commands](#commands)
 - [Quick checks](#quick-checks)
 - [Setup (once)](#setup-once)
@@ -34,7 +35,8 @@ agents and developers is [_INDEX.md](_INDEX.md).
 | Set up a fresh machine | [Setup](#setup-once) (this page) |
 | Understand **why** a rule / verdict / heuristic behaves as it does | [docs/design-decisions.md](docs/design-decisions.md) |
 | Find a Python module, doc, or data location | [_INDEX.md](_INDEX.md) |
-| See where the dev cycle stands right now | [../../STATUS.md](../../STATUS.md) |
+| See where the dev cycle stands right now | [../../STATUS.md](../../STATUS.md) (milestone ladder + checklists) |
+| What an "M-number" (M1…M6) means | [Milestones](#milestones--what-m1-m6-mean) (this page) |
 | The pipeline map + part numbering (2.1a/b/c…) | [../../ARCHITECTURE.md](../../ARCHITECTURE.md) |
 | Where a ported file came from | [docs/PORTING.md](docs/PORTING.md) |
 | Why SB reads are openpyxl and writes Excel-COM only | [docs/EXCEL_WORKBOOK_SAFETY.md](docs/EXCEL_WORKBOOK_SAFETY.md) |
@@ -60,6 +62,25 @@ three-tier — blocker / warning / *not checked yet* — so "missing" is never
 confused with "nobody looked". The full design (state derivation from SB's own
 Power Query, the rule table, §5.1 year exemptions, identity numbering) is in
 [docs/design-decisions.md](docs/design-decisions.md).
+
+## Milestones — what M1-M6 mean
+
+The M-numbers this repo's docs and comments use everywhere are stage-2 build
+steps (canonical definitions: [ARCHITECTURE.md §Milestones](../../ARCHITECTURE.md#milestones-stage-2);
+current state per milestone: [STATUS.md](../../STATUS.md#milestone-ladder)):
+
+| M | In one line |
+|---|---|
+| M0 | docs scaffold |
+| M1 | read SB (the live workbook) safely |
+| M2 | the dossier object + `report` (+ archive intake, still open) |
+| M3 | isječak karte (`karta`) |
+| M4 | OSZ both ways: `osz prefill` + `osz fetch` (+ the CroSpeleo-field fetcher, still open) |
+| M5 | consume the 2.1a survey artifacts (Nacrt + dimensions) |
+| M6 | the only WRITE step: SB write-back + archive delivery (+ 2.1d photo processing) |
+
+Until M6, every tool that "changes" SB really emits a **review list** a person
+carries into Excel — that is why so many outputs are `dopune-*.csv` files.
 
 ## Commands
 

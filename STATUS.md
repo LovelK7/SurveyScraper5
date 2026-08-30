@@ -18,6 +18,21 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2.2a — SB (master registry) | **M1 ✅ DONE** (read-only, live SB v3.0). Live workbook now **1438 rows**; write-back still M6 |
 | 2.2b — satellite tables | **OPERATIONAL (new 2026-08-29)** — `cavedossier sat sync` compares a satellite against SB and emits four review lists; never writes to either side. Liburnija done end to end: **126 rows entered SB**, 7 synonyms added, run is idempotent. `Literatura` (45) and `Katastar RH` (4595) still untouched |
 
+## Milestone ladder
+
+Definitions live in [ARCHITECTURE.md §Milestones](ARCHITECTURE.md#milestones-stage-2);
+this table is where each one STANDS. Detailed checklists follow below.
+
+| M | Name | Status |
+|---|---|---|
+| M0 | Docs scaffold | ✅ done (2026-08-16) |
+| M1 | SB read-only | ✅ done (2026-08-25) — live workbook, banner, sandbox fallback |
+| M2 | Dossier skeleton + `report` | ◐ in progress — model/gating/report shipped; **archive intake is the open tail** |
+| M3 | Isječak karte | ✅ done (2026-08-30) — 5:4 format + self-healing collection same day |
+| M4 | OSZ builder | ◐ prefill + SB-backfill fetch shipped (2026-08-30); CroSpeleo-field fetcher + real-zapisnik validation open |
+| M5 | 2.1a artifact handoff | not started (blocked on the intake dir layout going live) |
+| M6 | SB write-back + delivery (+ 2.1d processing) | not started — everything upstream feeds review lists until then |
+
 ## M1 — SB read-only communication ✅ complete (2026-08-25)
 
 - [x] Feature scaffold `features/cave-dossier/` (pyproject, config, docs, sessions)
