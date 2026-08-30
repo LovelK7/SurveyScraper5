@@ -170,6 +170,7 @@ def test_ungathered_sources_are_unchecked_not_failed(
     # re-reports as PHOTOS.
     assert {rule.source for rule in report.unchecked} == {
         Source.ARCHIVE,
+        Source.STATEMENTS,
         Source.SURVEY,
         Source.OSZ,
         Source.MAP,

@@ -195,6 +195,10 @@ The bridges that keep names/numbers straight and say when a cave is done.
                                         (per-cave verdict:                (CroSpeleo)
                                          blocker · warning · not-checked-yet)
 
+  registar osoba + izjave dir      ◄──[<a href="#b12">B12</a>] people ─────► SB author cells
+  (data/people/registry.json ↔          (list/check: aliases resolved, per-person
+   !!Izjave za katastar RH)              izjava linkage, missing-statement audit)
+
   2.1a survey artifacts            ···[<a href="#b10">B10</a>] (M5, planned)···► dossier (Nacrt + dims)
   finished dossier                 ···[<a href="#b11">B11</a>] (M6, planned)···► SB write-back + archive
                                         delivery; 2.1d downsize/rename rides along
@@ -218,6 +222,7 @@ What each label actually runs. One line here; flags and details in the
 | <a name="b9"></a>**B9** | `cavedossier report --cave <x>` | gathered sources → gate verdicts | any time — it never changes anything |
 | <a name="b10"></a>**B10** | *(M5, planned)* | 2.1a Nacrt + dimensions → dossier | — |
 | <a name="b11"></a>**B11** | *(M6, planned)* | dossier → SB write-back + archive delivery | — |
+| <a name="b12"></a>**B12** | `cavedossier people list/check` | people registry ↔ izjave dir ↔ SB author cells → audit + `statements-index.json` | a new izjava or author appeared, or periodically — it never changes anything |
 | <a name="h1"></a>**H1** | a person, in Excel | any `dopune-*.csv` / review list → `Svi objekti` | after B1 / B6 / B7 produce one |
 | <a name="h2"></a>**H2** | the recorder, in the field | prefilled DOCX → completed zapisnik → cave's intake dir | after B6, around the exploration |
 
@@ -235,6 +240,9 @@ The map answers "how do I get from A to B" as a bridge sequence:
   (is gate 1 met?) → *(M6: [B11](#b11) delivers and writes back)*.
 - **Just checking where a cave stands:** [**B9**](#b9) alone; to sanity-check
   the finders' data first, [**B5**](#b5).
+- **A new author (or izjava) appears:** file `Izjava_<Ime>.<ext>` into
+  `!!Izjave za katastar RH` → [**B12**](#b12) (`people check` links it, or names
+  the registry entry to add) → [**B9**](#b9) re-checks any cave they authored.
 
 ## Key facts that shape the design
 
@@ -246,7 +254,14 @@ The map answers "how do I get from A to B" as a bridge sequence:
 - **Gating discipline** (inherited from crospeleo-automation): two tiers — *warnings*
   (advisory) vs *blockers* (hard gate on the final action). Statements ("Izjava za
   katastar") are checked **per author**, drawing and photo authors separately;
-  statements live in their own Drive dir.
+  statements live in their own Drive dir. Since 2026-08-30 the check goes through
+  the **registar osoba** (`features/cave-dossier/data/people/registry.json`): one
+  canonical name per person with aliases derived automatically, so SB's
+  `L.Kukuljan`, an OSZ's `Lovel Kukuljan` and `Izjava_LKukuljan.pdf` are one
+  person, and a locality-scoped izjava no longer satisfies a cave elsewhere. A
+  missing/wrong-scope author izjava blocks gate 1; any other named person
+  (recorder, team) without an izjava — or absent from the registry — warns at
+  gate 2.
 - **Two gates, not one** (user, 2026-08-26). Gate 1 is the society's own step:
   Nacrt + OSZ + fotografije ulaza + pločica + izjave earn the cave its
   **katastarski broj SUE**, which is what moves its SB row into *Istraženi*.

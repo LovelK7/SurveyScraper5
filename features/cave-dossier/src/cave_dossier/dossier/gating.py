@@ -41,13 +41,16 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from cave_dossier.core.normalization import normalize_lookup_key
 from cave_dossier.core.people import is_placeholder
 from cave_dossier.dossier.model import (
+    AUTHOR_ROLES,
     CaveDossier,
     DossierIssue,
     GateLevel,
     IssueCode,
     LifecycleState,
+    PersonRole,
     ReadinessReport,
     Severity,
     Source,
@@ -320,6 +323,7 @@ def evaluate(dossier: CaveDossier) -> ReadinessReport:
 
     issues.extend(_year_conditional_issues(dossier, unchecked))
     issues.extend(_statement_issues(dossier, unchecked))
+    issues.extend(_person_statement_warnings(dossier, unchecked))
     issues.extend(_context_notes(dossier))
 
     report = ReadinessReport(issues=issues, unchecked=unchecked)
@@ -434,6 +438,30 @@ def _year_conditional_issues(
     return issues
 
 
+def _statement_entries(dossier: CaveDossier) -> list:
+    """The per-person izjava linkage — from enrich, or derived on the spot.
+
+    ``cavedossier report`` fills ``person_statements`` via
+    ``people.statements.enrich`` (registry-aware); a hand-built dossier that
+    only carries ``statement_files`` gets the pure token-variant fallback.
+    Imported lazily: ``people.statements`` imports ``dossier.model``, so a
+    top-level import here would be circular.
+    """
+    if dossier.person_statements:
+        return dossier.person_statements
+    from cave_dossier.people.statements import link_person_statements
+
+    return link_person_statements(dossier)
+
+
+_ROLE_WORDS = {
+    PersonRole.DRAWING_AUTHOR: "autor nacrta",
+    PersonRole.PHOTO_AUTHOR: "autor fotografije",
+    PersonRole.RECORDER: "zapisničar",
+    PersonRole.TEAM_MEMBER: "član ekipe",
+}
+
+
 def _statement_issues(
     dossier: CaveDossier, unchecked: list[UncheckedRule]
 ) -> list[DossierIssue]:
@@ -442,48 +470,130 @@ def _statement_issues(
     Checked **per author**, never "are there any statement files at all": the
     2026-05-27 Konglomeratača case slipped through exactly that way — the photo
     author's izjava was present, so a non-empty list hid a missing
-    drawing-author izjava. Requires the statements dir, hence ``Source.ARCHIVE``.
+    drawing-author izjava.
+
+    Matching goes through the people registry (SB's ``D.Reš``, an OSZ's full
+    name and the izjava's ``DReš`` token all resolve to one person) and honours
+    the scope suffix: a locality-scoped izjava (``Izjava_ACiceran_Šverda.pdf``)
+    satisfies only caves that locality covers, so "has an izjava, but not for
+    THIS cave" is its own blocker.
     """
-    if not dossier.has(Source.ARCHIVE):
+    if not dossier.has(Source.STATEMENTS):
         unchecked.append(
             UncheckedRule(
                 label="Izjava za katastar (po autoru)",
-                source=Source.ARCHIVE,
+                source=Source.STATEMENTS,
                 severity=Severity.BLOCKER,
                 level=GateLevel.SUE,
             )
         )
         return []
 
-    # Provisional matcher: substring on the filename stem. crospeleo's
-    # `services/name_resolver.py` (initials, surname-only, diacritic folding)
-    # is the planned port — it lands together with the M2 archive intake, and
-    # with it the locality-scoped izjava rule (`Izjava_ACiceran_Šverda.pdf`
-    # only covers caves in Šverda).
     issues: list[DossierIssue] = []
-    buckets = (
-        ("nacrta", dossier.drawing_authors, dossier.drawing_author_statement_files),
-        ("fotografija", dossier.photo_author_candidates, dossier.photo_author_statement_files),
-    )
-    for role, authors, files in buckets:
-        matched = {file.path.stem.casefold() for file in files}
-        missing = [
-            author
-            for author in authors
-            if not any(author.casefold() in stem or stem.endswith(author.casefold()) for stem in matched)
-        ]
+    entries = _statement_entries(dossier)
+    for role, role_word in ((PersonRole.DRAWING_AUTHOR, "nacrta"), (PersonRole.PHOTO_AUTHOR, "fotografija")):
+        role_entries = [entry for entry in entries if entry.role is role]
+        missing = [entry.name for entry in role_entries if not entry.statements]
         if missing:
             issues.append(
                 DossierIssue(
                     code=IssueCode.MISSING_STATEMENT,
                     severity=Severity.BLOCKER,
                     level=GateLevel.SUE,
-                    label=f"Izjava za katastar (autori {role})",
-                    source=Source.ARCHIVE,
+                    label=f"Izjava za katastar (autori {role_word})",
+                    source=Source.STATEMENTS,
                     message=(
-                        f"Missing 'Izjava za katastar' for {role} author(s): "
+                        f"Missing 'Izjava za katastar' for {role_word} author(s): "
                         f"{', '.join(missing)}. Expected `Izjava_<ime>.<ext>` in the "
                         f"statements folder."
+                    ),
+                )
+            )
+        for entry in role_entries:
+            if entry.statements and not entry.covering:
+                scoped = ", ".join(path.name for path in entry.statements)
+                issues.append(
+                    DossierIssue(
+                        code=IssueCode.MISSING_STATEMENT,
+                        severity=Severity.BLOCKER,
+                        level=GateLevel.SUE,
+                        label=f"Izjava za katastar (autori {role_word})",
+                        source=Source.STATEMENTS,
+                        message=(
+                            f"{entry.name} has an izjava, but none that covers this cave "
+                            f"({scoped}) — the scope suffix names another locality/cave, "
+                            f"so a fresh `Izjava_<ime>.<ext>` is needed."
+                        ),
+                    )
+                )
+    return issues
+
+
+def _person_statement_warnings(
+    dossier: CaveDossier, unchecked: list[UncheckedRule]
+) -> list[DossierIssue]:
+    """Gate 2 — per-PERSON statement warnings over the registry (user, 2026-08-30).
+
+    The gate-1 blocker above covers the two author roles; this sweeps **every**
+    person the dossier names (recorder and team members included) and warns —
+    never blocks — when one of them has no izjava on file at all, or is missing
+    from the people registry so their aliases cannot be assessed. It sits at
+    gate 2 because that is where the full CroSpeleo submission types these
+    people in; a person already blocked at gate 1 is not repeated as a warning.
+    """
+    if not dossier.has(Source.STATEMENTS):
+        unchecked.append(
+            UncheckedRule(
+                label="Izjava po osobi (registar osoba)",
+                source=Source.STATEMENTS,
+                severity=Severity.WARNING,
+                level=GateLevel.CROSPELEO,
+            )
+        )
+        return []
+
+    issues: list[DossierIssue] = []
+    entries = _statement_entries(dossier)
+    author_keys = {
+        normalize_lookup_key(entry.canonical or entry.name)
+        for entry in entries
+        if entry.role in AUTHOR_ROLES
+    }
+    seen: set[str] = set()
+    for entry in entries:  # author roles come first, so they claim `seen` first
+        key = normalize_lookup_key(entry.canonical or entry.name)
+        if key in seen:
+            continue
+        seen.add(key)
+        display = entry.canonical or entry.name
+        role_word = _ROLE_WORDS[entry.role]
+        if entry.in_registry is False:
+            issues.append(
+                DossierIssue(
+                    code=IssueCode.UNKNOWN_PERSON,
+                    severity=Severity.WARNING,
+                    level=GateLevel.CROSPELEO,
+                    label="Registar osoba",
+                    source=Source.STATEMENTS,
+                    message=(
+                        f"'{entry.name}' ({role_word}) is not in the people registry — "
+                        f"add them to data/people/registry.json so aliases and izjave "
+                        f"can be assessed."
+                    ),
+                )
+            )
+        if not entry.statements and key not in author_keys:
+            issues.append(
+                DossierIssue(
+                    code=IssueCode.MISSING_STATEMENT,
+                    severity=Severity.WARNING,
+                    level=GateLevel.CROSPELEO,
+                    label="Izjava po osobi",
+                    source=Source.STATEMENTS,
+                    message=(
+                        f"No 'Izjava za katastar' on file for {display} ({role_word}) — "
+                        f"advisory: only authors are blocked, but the statement will be "
+                        f"needed the moment they author a nacrt or photo."
                     ),
                 )
             )

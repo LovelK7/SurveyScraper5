@@ -31,6 +31,11 @@ features/*/runs/
 # services. The README documenting provenance + licences stays tracked.
 features/*/data/*
 !features/*/data/README.md
+# …except the people registry: curated by hand, not downloaded, so it is the
+# record and stays tracked (crospeleo-automation's data/registries/curated/
+# pattern). Derived person↔izjava snapshots land in runs/ instead.
+!features/*/data/people/
+!features/*/data/people/**
 
 # === Secrets / per-machine config =======================================
 .env

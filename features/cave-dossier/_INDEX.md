@@ -17,6 +17,7 @@
 > - **OSZ template writing + prefill** → `osz/` — cell addresses per template version in `osz/addresses.py`
 > - **Satellite tables (Liburnija sheet ↔ SB)** → `satellites/`
 > - **Name/plaque/number matching shared by photos + intake** → `core/matching.py`
+> - **People: the author registry, aliases, izjava linkage** → `people/` + `data/people/registry.json`
 > - **Why a rule/heuristic exists** → [docs/design-decisions.md](docs/design-decisions.md)
 > - **Where a ported file came from** → [docs/PORTING.md](docs/PORTING.md)
 
@@ -44,7 +45,10 @@
 | `intake/scanner.py` | field-data leaf folders → SB rows, `SB_<Redni broj>_<Ime>_…` proposals | `intake map` |
 | `intake/liburnija.py` | read-only bridge over the cached Liburnija sheet CSV | `intake map` |
 | `photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `SB_<Redni broj>_…`, staleness guard | `photos *` |
-| `archive/izjave.py` | izjava filenames: person, scope, and what a scope covers | intake (next) |
+| `archive/izjave.py` | izjava filenames: person, scope, and what a scope covers | `people *`, `report` |
+| `people/registry.py` | the people registry: canonical names + curated aliases (`data/people/registry.json`), derived alias keys with collision detection, exact-key resolution (ported design) | `people *`, `report` |
+| `people/name_resolver.py` | comparison keys for a name as written anywhere (full / shorthand / 3+ tokens / hyphenated double surname; đ-fold) (ported) | statement matching |
+| `people/statements.py` | scan `!!Izjave za katastar RH`, link people ↔ izjave (scope-aware), fill `person_statements` + statement files on the dossier, JSON index snapshot (ported) | `people *`, `report` |
 
 Planned modules: `dossier/intake.py` (rest of M2 — resolve a cave's files on
 Drive), the CroSpeleo half of the OSZ fetcher (checkbox groups + narrative
@@ -57,7 +61,7 @@ identity/metadata cells the SB backfill needs), the downsize/rename half of
 | File | What | Kind |
 |---|---|---|
 | [README.md](README.md) | operator view: what this is, setup, commands, testing | living reference |
-| [docs/design-decisions.md](docs/design-decisions.md) | settled decisions + their why: two gates, rule table, identity, Q&A record, intake/izjava/photo matching, prefill rules | decision record |
+| [docs/design-decisions.md](docs/design-decisions.md) | settled decisions + their why: two gates, rule table, identity, Q&A record, intake/izjava/photo matching, people registry + statement gates, prefill rules | decision record |
 | [docs/PORTING.md](docs/PORTING.md) | ledger of every file copied from crospeleo-automation | living ledger |
 | [docs/EXCEL_WORKBOOK_SAFETY.md](docs/EXCEL_WORKBOOK_SAFETY.md) | why reads are openpyxl and writes are Excel-COM only | decision record |
 | [docs/sb-liburnija-hub.md](docs/sb-liburnija-hub.md) | satellite-hub design (2.2b) | design |
@@ -84,6 +88,8 @@ the dev cycle stands), [CLAUDE.md](../../CLAUDE.md) (agent orientation),
 | `config/selectors.yaml` | georef.hr DOM selectors (line-based, not real YAML) | yes |
 | `osz-template/templates/Zapisnik_OSZ_v10.docx` | the template `osz prefill` fills | yes |
 | `data/geo/` | boundary GeoPackages, RGI gazetteer, DEM tiles (`geo fetch-data`) | no (README is) |
+| `data/people/registry.json` | the people registry: canonical authors + curated aliases (hand-curated record) | **yes** |
+| `runs/people/statements-index.json` | derived person ↔ izjava linkage snapshot (`people check`) | no |
 | `example/` | sandbox workbook + real cave data (PII) | no |
 | `runs/georef/<broj>/`, `runs/osz/<broj>/` | per-cave run artifacts, overwritten on re-run | no |
 | `sb-sync/<satellite>/<date>/` | `sat sync --out` review lists | no (README is) |

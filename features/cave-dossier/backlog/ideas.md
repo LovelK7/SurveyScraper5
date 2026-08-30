@@ -86,8 +86,16 @@ when an idea's time comes. Nothing here is a commitment.
   drags in 8 unrelated rows.
 - 2026-08-26 — the 2.1d processor itself (downsize to ~1920 px / ~1.5 MB) is still to be
   written; `photos match-queued --apply` only renames. Pillow is already an optional extra.
-- 2026-08-26 — once intake lands, wire `archive/izjave.py` scope rules into gating: a
-  locality-scoped izjava must not satisfy a cave outside that Lokalitet.
+- 2026-08-26 — ~~once intake lands, wire `archive/izjave.py` scope rules into gating: a
+  locality-scoped izjava must not satisfy a cave outside that Lokalitet~~ → done
+  2026-08-30, without waiting on intake: the izjave dir got its own gather step
+  (`Source.STATEMENTS`) and the scope rule blocks gate 1 via the new people
+  registry (`people/`, `data/people/registry.json`).
+- 2026-08-30 — upgrade token-form registry entries (`ABahović`) to full `First Last`
+  names as they are learned — full names are what match an OSZ's spelling. `people
+  check` list 3 is the standing worklist; likely curated-alias candidates seen on the
+  first run: `S.Antolič` (→ `SKapidžić-Antolič`?), bare first names (`Tin` 89×,
+  `Dino` 64×, `Lovel` 32×) that only a person can bind to people.
 - 2026-08-26 — ~~two staged photos match no SB row~~ → resolved 2026-08-28: `rubinija` is a
   transposition of *Rubijina jama* (1214, now in `photos.manual_matches`), `kostrčani` was
   removed by the user as unidentifiable. The folder now matches 52 of 52.

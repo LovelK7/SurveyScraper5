@@ -157,6 +157,22 @@ def audit_unclassified(reader: SBReader, settings: Settings) -> list[Unclassifie
     return rows
 
 
+def iter_author_names(reader: SBReader, settings: Settings):
+    """``(CaveRow, parsed author names)`` for every named row with real authors.
+
+    The people-registry sweep (`cavedossier people check`): placeholder cells
+    and literature citations are skipped — they name sources, not people whose
+    aliases the registry should resolve.
+    """
+    for cave in _iter_caves(reader, settings):
+        raw = _cell(cave.values, settings.sb_drawing_authors_column)
+        if raw is None or is_placeholder(raw) or _CITATION_RE.search(raw):
+            continue
+        names, _societies = split_authors(raw)
+        if names:
+            yield cave, names
+
+
 # ── Shared helpers ────────────────────────────────────────────────────
 
 
@@ -202,4 +218,5 @@ __all__ = [
     "UnclassifiedRow",
     "audit_authors",
     "audit_unclassified",
+    "iter_author_names",
 ]

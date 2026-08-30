@@ -1,0 +1,398 @@
+{
+  "_note": "People registry — one entry per author/person; loaded by cave_dossier/people/registry.py. `name` in full 'First Last' form derives abbreviation aliases automatically (L.Kukuljan, LKukuljan, Lovel K., ...); entries still in izjava-token form (initial+surname, e.g. ABahovic) match the izjava file and SB's A.Bahovic shorthand but NOT an OSZ's full spelling - upgrade them to full names as they are learned. Optional per-entry fields: aliases (curated overrides, win over derived keys), society (None = SUE member), note. Seeded 2026-08-30 from the files in '!!Izjave za katastar RH'.",
+  "people": [
+    {
+      "name": "ABahović"
+    },
+    {
+      "name": "ABošnjak"
+    },
+    {
+      "name": "ACiceran"
+    },
+    {
+      "name": "ADeklić"
+    },
+    {
+      "name": "AKapidžić"
+    },
+    {
+      "name": "AKlepo"
+    },
+    {
+      "name": "ALipovac"
+    },
+    {
+      "name": "ARubinić"
+    },
+    {
+      "name": "AČukušić"
+    },
+    {
+      "name": "AŽmegač"
+    },
+    {
+      "name": "BTrojko"
+    },
+    {
+      "name": "DBasara"
+    },
+    {
+      "name": "DBelavić"
+    },
+    {
+      "name": "DDružeta"
+    },
+    {
+      "name": "DGrozić"
+    },
+    {
+      "name": "DHoić"
+    },
+    {
+      "name": "DJirkal"
+    },
+    {
+      "name": "DKolar"
+    },
+    {
+      "name": "DMaršanić"
+    },
+    {
+      "name": "DMimica"
+    },
+    {
+      "name": "DReš"
+    },
+    {
+      "name": "DRnjak"
+    },
+    {
+      "name": "DTroha"
+    },
+    {
+      "name": "DŠuperina"
+    },
+    {
+      "name": "DŽupanić"
+    },
+    {
+      "name": "EBrajković"
+    },
+    {
+      "name": "EFućak"
+    },
+    {
+      "name": "EKovač"
+    },
+    {
+      "name": "EVričić"
+    },
+    {
+      "name": "FKožemelj"
+    },
+    {
+      "name": "FŠarc"
+    },
+    {
+      "name": "GNikolić"
+    },
+    {
+      "name": "GRnjak"
+    },
+    {
+      "name": "HCvitanović"
+    },
+    {
+      "name": "IDujmović"
+    },
+    {
+      "name": "IGlavaš"
+    },
+    {
+      "name": "IJevtov"
+    },
+    {
+      "name": "IKnež"
+    },
+    {
+      "name": "IMarkanjević"
+    },
+    {
+      "name": "IMišur"
+    },
+    {
+      "name": "IPalatinuš"
+    },
+    {
+      "name": "IRogić"
+    },
+    {
+      "name": "IRubeša"
+    },
+    {
+      "name": "ISeitz"
+    },
+    {
+      "name": "IČavka"
+    },
+    {
+      "name": "JBedek"
+    },
+    {
+      "name": "JCapjak"
+    },
+    {
+      "name": "JJosipović"
+    },
+    {
+      "name": "JLazić"
+    },
+    {
+      "name": "KLisica"
+    },
+    {
+      "name": "KMiculinić"
+    },
+    {
+      "name": "KMotočić"
+    },
+    {
+      "name": "KRacan"
+    },
+    {
+      "name": "KŠtiberc"
+    },
+    {
+      "name": "LBogdanić"
+    },
+    {
+      "name": "LBožičević"
+    },
+    {
+      "name": "LDežulović"
+    },
+    {
+      "name": "LGrabar"
+    },
+    {
+      "name": "LHuten"
+    },
+    {
+      "name": "LIvančić"
+    },
+    {
+      "name": "Lovel Kukuljan"
+    },
+    {
+      "name": "LLugar"
+    },
+    {
+      "name": "LMarot"
+    },
+    {
+      "name": "LPeloza"
+    },
+    {
+      "name": "LPenezić"
+    },
+    {
+      "name": "LSkorić"
+    },
+    {
+      "name": "LŽarković"
+    },
+    {
+      "name": "MBorovec"
+    },
+    {
+      "name": "MDevčić"
+    },
+    {
+      "name": "MGrandić"
+    },
+    {
+      "name": "MGrgačević"
+    },
+    {
+      "name": "MGrgurev"
+    },
+    {
+      "name": "MJasprica"
+    },
+    {
+      "name": "MJekić"
+    },
+    {
+      "name": "MKrpešić"
+    },
+    {
+      "name": "MLičko"
+    },
+    {
+      "name": "MLišić"
+    },
+    {
+      "name": "MMandarić"
+    },
+    {
+      "name": "MNemčić"
+    },
+    {
+      "name": "MPavlek"
+    },
+    {
+      "name": "MRadešić"
+    },
+    {
+      "name": "MRakovac"
+    },
+    {
+      "name": "MSirotnjak"
+    },
+    {
+      "name": "MSulić"
+    },
+    {
+      "name": "MVrkić"
+    },
+    {
+      "name": "MZausnig"
+    },
+    {
+      "name": "MČepelak"
+    },
+    {
+      "name": "NCvitanović"
+    },
+    {
+      "name": "NGruborović"
+    },
+    {
+      "name": "NHabibović"
+    },
+    {
+      "name": "NHanžek"
+    },
+    {
+      "name": "NKuharić"
+    },
+    {
+      "name": "NKuzmanović"
+    },
+    {
+      "name": "NMalbašić"
+    },
+    {
+      "name": "NTrinajstić"
+    },
+    {
+      "name": "NVuglešić"
+    },
+    {
+      "name": "NZubović"
+    },
+    {
+      "name": "ODamijanić"
+    },
+    {
+      "name": "ODodić"
+    },
+    {
+      "name": "OMiklić"
+    },
+    {
+      "name": "OMilaković"
+    },
+    {
+      "name": "PAnić"
+    },
+    {
+      "name": "PFotinos"
+    },
+    {
+      "name": "PJagodic"
+    },
+    {
+      "name": "PKutleša"
+    },
+    {
+      "name": "RJerković"
+    },
+    {
+      "name": "RNovak"
+    },
+    {
+      "name": "RResch"
+    },
+    {
+      "name": "SAntić"
+    },
+    {
+      "name": "SGotić"
+    },
+    {
+      "name": "SKapidžić-Antolič"
+    },
+    {
+      "name": "SKlešin"
+    },
+    {
+      "name": "SKnaus"
+    },
+    {
+      "name": "SMaleš"
+    },
+    {
+      "name": "SMikičić"
+    },
+    {
+      "name": "SStrišković"
+    },
+    {
+      "name": "STutiš"
+    },
+    {
+      "name": "SZbašnik"
+    },
+    {
+      "name": "TIlić"
+    },
+    {
+      "name": "TMarkanjević"
+    },
+    {
+      "name": "TMilićević"
+    },
+    {
+      "name": "TTepavac"
+    },
+    {
+      "name": "VBožić"
+    },
+    {
+      "name": "VFabijančić"
+    },
+    {
+      "name": "VFerenčak"
+    },
+    {
+      "name": "VNovak"
+    },
+    {
+      "name": "VSenić"
+    },
+    {
+      "name": "VSudar"
+    },
+    {
+      "name": "VVukotić"
+    },
+    {
+      "name": "ZZavrški"
+    },
+    {
+      "name": "ŽBaćurin"
+    }
+  ]
+}

@@ -10,14 +10,20 @@ never be reported as a field that is missing.
 
 Source map (part numbers per repo-root ARCHITECTURE.md):
 
-| Source             | Part | Supplies                                                 |
-|--------------------|------|----------------------------------------------------------|
-| ``Source.SB``      | 2.2  | identity, coordinates, dimensions, year, drawing authors |
-| ``Source.ARCHIVE`` | 2.1  | files on Drive: nacrt, izjave, fotografije ulaza, OSZ    |
-| ``Source.SURVEY``  | 2.1a | processed survey: Nacrt PDF + measured dimensions        |
-| ``Source.OSZ``     | 2.1b | fields read back out of a filled zapisnik                |
-| ``Source.MAP``     | 2.1c | isječak karte PNG + georef record                        |
-| ``Source.PHOTOS``  | 2.1d | entrance photos downsized + renamed for the archive      |
+| Source                | Part | Supplies                                                 |
+|-----------------------|------|----------------------------------------------------------|
+| ``Source.SB``         | 2.2  | identity, coordinates, dimensions, year, drawing authors |
+| ``Source.ARCHIVE``    | 2.1  | per-cave files on Drive: nacrt, fotografije ulaza, OSZ   |
+| ``Source.STATEMENTS`` | 2.1  | the shared izjave dir, scanned + linked to the registry  |
+| ``Source.SURVEY``     | 2.1a | processed survey: Nacrt PDF + measured dimensions        |
+| ``Source.OSZ``        | 2.1b | fields read back out of a filled zapisnik                |
+| ``Source.MAP``        | 2.1c | isječak karte PNG + georef record                        |
+| ``Source.PHOTOS``     | 2.1d | entrance photos downsized + renamed for the archive      |
+
+``Source.STATEMENTS`` is separate from ``Source.ARCHIVE`` on purpose: the izjave
+live in ONE shared Drive dir (`!!Izjave za katastar RH`), not in per-cave
+folders, so they can be scanned — and the statement gates can run — before the
+per-cave archive intake exists at all.
 
 Only ``Source.SB`` is implemented at M2; the remaining fields are declared (so
 the gating table can already name them) and stay empty until their milestone.
@@ -37,6 +43,7 @@ class Source(StrEnum):
 
     SB = "sb"
     ARCHIVE = "archive"
+    STATEMENTS = "statements"
     SURVEY = "survey"
     OSZ = "osz"
     MAP = "map"
@@ -125,6 +132,7 @@ class IssueCode(StrEnum):
     MISSING_NACRT = "missing_nacrt"
     MISSING_ENTRANCE_PHOTO = "missing_entrance_photo"
     MISSING_STATEMENT = "missing_statement"
+    UNKNOWN_PERSON = "unknown_person"
     MISSING_MAP_EXCERPT = "missing_map_excerpt"
     MISSING_COORDINATES = "missing_coordinates"
     MISSING_PLAQUE = "missing_plaque"
@@ -210,6 +218,42 @@ class QueueFlag(BaseModel):
     old_number: str | None = None
     note: str | None = None
     raw: str | None = None
+
+
+class PersonRole(StrEnum):
+    """Where in the dossier a person's name appears.
+
+    Only the two author roles carry the hard izjava requirement (gate 1);
+    recorder and team members are named on the OSZ / in CroSpeleo but a missing
+    izjava for them is advisory (gate 2 warning) — see ``gating``.
+    """
+
+    DRAWING_AUTHOR = "nacrt"
+    PHOTO_AUTHOR = "fotografija"
+    RECORDER = "zapisničar"
+    TEAM_MEMBER = "ekipa"
+
+
+#: Roles whose missing izjava is a gate-1 BLOCKER rather than a gate-2 warning.
+AUTHOR_ROLES: frozenset[PersonRole] = frozenset(
+    {PersonRole.DRAWING_AUTHOR, PersonRole.PHOTO_AUTHOR}
+)
+
+
+class PersonStatementStatus(BaseModel):
+    """One person named in the dossier, linked to their izjava files.
+
+    Built by ``people.statements`` (registry-aware when a registry is loaded).
+    ``in_registry`` is three-valued on purpose: ``None`` means no registry was
+    consulted, which must never read as "unknown person".
+    """
+
+    name: str                      # as written in the dossier (SB / OSZ spelling)
+    role: PersonRole
+    canonical: str | None = None   # registry canonical name, when resolved
+    in_registry: bool | None = None
+    statements: list[Path] = Field(default_factory=list)  # every izjava linked to the person
+    covering: list[Path] = Field(default_factory=list)    # subset whose scope covers THIS cave
 
 
 class DossierIssue(BaseModel):
@@ -343,6 +387,10 @@ class CaveDossier(BaseModel):
     statement_files: list[ArchiveFile] = Field(default_factory=list)
     drawing_author_statement_files: list[ArchiveFile] = Field(default_factory=list)
     photo_author_statement_files: list[ArchiveFile] = Field(default_factory=list)
+    # Per-person izjava linkage (people/statements.py). Filled by the
+    # statements enrich step; gating falls back to deriving it from
+    # `statement_files` when a hand-built dossier leaves it empty.
+    person_statements: list[PersonStatementStatus] = Field(default_factory=list)
     map_excerpt: ArchiveFile | None = None
 
     # ── Fields the OSZ supplies (2.1b, M4 — not populated yet) ────────

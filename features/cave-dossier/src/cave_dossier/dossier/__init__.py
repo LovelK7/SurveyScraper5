@@ -7,6 +7,7 @@ and isječak karte (2.1c) fill the remaining sources in later milestones.
 
 from cave_dossier.dossier.gating import RULES, evaluate, start_year
 from cave_dossier.dossier.model import (
+    AUTHOR_ROLES,
     GATE_LABELS,
     ArchiveFile,
     CaveDossier,
@@ -16,6 +17,8 @@ from cave_dossier.dossier.model import (
     Georeference,
     IssueCode,
     LifecycleState,
+    PersonRole,
+    PersonStatementStatus,
     QueueFlag,
     ReadinessReport,
     Severity,
@@ -32,6 +35,7 @@ from cave_dossier.dossier.sb_mapper import (
 )
 
 __all__ = [
+    "AUTHOR_ROLES",
     "ArchiveFile",
     "CaveDossier",
     "DossierIssue",
@@ -42,6 +46,8 @@ __all__ = [
     "IssueCode",
     "LifecycleState",
     "NESREDENI_KEYWORDS",
+    "PersonRole",
+    "PersonStatementStatus",
     "QueueFlag",
     "RULES",
     "ReadinessReport",

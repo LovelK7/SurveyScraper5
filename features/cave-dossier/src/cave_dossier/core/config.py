@@ -93,6 +93,9 @@ class Settings:
     # dir holds the gitignored boundary GeoPackages / RGI gazetteer / DEM
     # tiles that `cavedossier geo fetch-data` provisions.
     geo_data_dir: Path = FEATURE_ROOT / "data" / "geo"
+    # People registry (authors + curated aliases + izjava linkage) — the
+    # committed JSON people/registry.py loads. config.yaml `people.registry_path`.
+    people_registry_path: Path = FEATURE_ROOT / "data" / "people" / "registry.json"
     geo_rgi_radius_m: float = 2000.0
     geo_elevation_tolerance_m: float = 10.0
     geo_elevation_source_label: str = "DMV"
@@ -145,6 +148,7 @@ def load_settings() -> Settings:
     sb = raw.get("sb") or {}
     archive = raw.get("archive") or {}
     geo = raw.get("geo") or {}
+    people = raw.get("people") or {}
 
     env = _load_env_file(ENV_FILE)
 
@@ -234,6 +238,9 @@ def load_settings() -> Settings:
             for name, values in (raw.get("satellites") or {}).items()
         },
         geo_data_dir=_feature_relative(str(geo.get("data_dir") or "data/geo")),
+        people_registry_path=_feature_relative(
+            str(people.get("registry_path") or "data/people/registry.json")
+        ),
         geo_rgi_radius_m=float(geo.get("rgi_radius_m") or 2000.0),
         geo_elevation_tolerance_m=float(geo.get("elevation_tolerance_m") or 10.0),
         geo_elevation_source_label=str(geo.get("elevation_source_label") or "DMV"),

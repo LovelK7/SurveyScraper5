@@ -14,7 +14,7 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2.1b — OSZ builder | **PREFILL SLICE OPERATIONAL (2026-08-30, evening)** — `cavedossier osz prefill <Redni broj>` fills the v10 template from SB + the new `geo/` finders (županija/grad-općina via DGU boundaries, najbliže mjesto/lokalitet via RGI, kota via open INSPIRE DMV grid), embeds the isječak karte, delivers `SB_<broj>_OSZ.docx` to `!!!Digitalizacija/Osnovni speleološki zapisnik`, and emits `dopune-sb.csv` (human-executed SB review list). SB wins on conflicts; LiDAR-named caves get Izvor koordinata/kote = LiDAR, others default GPS; Katastarski broj / Duljina / Dubina / Datum never prefilled (user rules). `--offline` works fully from local data. Validated live on 651, 764, 1320 + a 24-cave finder sweep. Still M4's other half: READING filled zapisnici back (`w:sdt` parser + Docs text parser) |
 | 2.1c — isječak karte | **OPERATIONAL (M3 done 2026-08-30)** — `cavedossier karta <Redni broj>` runs the ported georef.hr Playwright flow and delivers the excerpt + a row in `!georef_zapisi.csv` to the shared `!!Isječci karte` Drive folder. **Format changed same evening: landscape 5:4, ~1.5 km above/below the entrance** (was 1:1 / ~2.5 km); old-format or hand-deleted/mangled collections self-heal — refresh_reason detects wrong aspect, missing CSV rows, Excel-stripped padding |
 | 2.1d — fotografije ulaza | **new part, added 2026-08-26**. Matcher + staleness guard DONE (2026-08-28); downsizing not started. Staged photos are keyed by Redni broj in `…za istražit` (a queue, not a repo) and move to `!!Fotografije ulaza` as `<padded SUE>_…` when the cave is explored. Downsizing rides along with M6 |
-| 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` (SB-only) done; archive intake next |
+| 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` done; **people registry + statement gates live (2026-08-30)**: `data/people/registry.json` (131 people, seeded from the izjave dir), registry/scope-aware per-author izjava blocker at gate 1, per-person missing-izjava warning at gate 2, `cavedossier people list/check`. Per-cave archive intake (nacrt/OSZ/foto) still next |
 | 2.2a — SB (master registry) | **M1 ✅ DONE** (read-only, live SB v3.0). Live workbook now **1438 rows**; write-back still M6 |
 | 2.2b — satellite tables | **OPERATIONAL (new 2026-08-29)** — `cavedossier sat sync` compares a satellite against SB and emits four review lists; never writes to either side. Liburnija done end to end: **126 rows entered SB**, 7 synonyms added, run is idempotent. `Literatura` (45) and `Katastar RH` (4595) still untouched |
 
@@ -27,7 +27,7 @@ this table is where each one STANDS. Detailed checklists follow below.
 |---|---|---|
 | M0 | Docs scaffold | ✅ done (2026-08-16) |
 | M1 | SB read-only | ✅ done (2026-08-25) — live workbook, banner, sandbox fallback |
-| M2 | Dossier skeleton + `report` | ◐ in progress — model/gating/report shipped; **archive intake is the open tail** |
+| M2 | Dossier skeleton + `report` | ◐ in progress — model/gating/report + people registry & statement gates shipped; **per-cave archive intake is the open tail** |
 | M3 | Isječak karte | ✅ done (2026-08-30) — 5:4 format + self-healing collection same day |
 | M4 | OSZ builder | ◐ prefill + SB-backfill fetch shipped (2026-08-30); CroSpeleo-field fetcher + real-zapisnik validation open |
 | M5 | 2.1a artifact handoff | not started (blocked on the intake dir layout going live) |
@@ -74,9 +74,23 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       with `--gate {sue,crospeleo}`. Author cells: the `(SOV)` bracket is parsed as an
       outside-society flag, not part of the name.
       Live counts: 885 Istraženi · 185 Za istražit · 177 Nesređeni · 77 sudjelovanje · **19 in no view at all**.
-- [ ] Intake: resolve a cave's archive files from Drive (nacrt, izjave, fotografije ulaza)
-      — needs the `drive_resolver` + `name_resolver` ports; until then `Source.ARCHIVE`
-      rules report as *not checked yet*
+- [x] **People registry + statement gates (2026-08-30, user request)** — `people/`
+      package (`registry` · `name_resolver` · `statements`; crospeleo ports, see
+      PORTING.md) + committed `data/people/registry.json` (131 people, seeded from
+      `!!Izjave za katastar RH`; aliases derived at load with collision detection,
+      curated `aliases` win). Izjave get their own gather step (`Source.STATEMENTS`
+      — the dir is shared, so no waiting on per-cave intake): gate 1 now blocks
+      per author through the registry AND the izjava scope rule (a Šverda-scoped
+      izjava no longer covers an Učka cave); gate 2 **warns per person** —
+      recorder/team member without any izjava, or a person the registry cannot
+      resolve. New CLI `cavedossier people list` / `people check` (registry-wide
+      audit + `runs/people/statements-index.json`). First live `people check`:
+      133 izjave all linked, 0 orphans; **125 SB author spellings outside the
+      registry** (mostly bare first names — the standing cleanup worklist).
+      194 tests green.
+- [ ] Intake: resolve a cave's archive files from Drive (nacrt, fotografije ulaza, OSZ)
+      — needs the `drive_resolver` port; until then `Source.ARCHIVE`
+      rules report as *not checked yet* (izjave no longer wait on this — see above)
 - [~] `cavedossier report --cave <n>`: what is present / missing / blocking, per Protocol v6
       Tablica 2 — **shipped SB-only** (`--json` too); fills out as intake / 2.1a / OSZ land
 - [~] Queue reader over the v3.0 Napomena flag (`za istražit, [<old broj>,] <note>` — the
@@ -198,7 +212,8 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 - **Izjava filenames**: `Izjava_<Osoba>[_<Opseg>]`; no suffix = universal, a suffix is a
   scope (locality or a single cave), and a **double surname is hyphen-joined** so the
   underscore always means scope. Encoded in `archive/izjave.py` with the one legacy
-  exception listed explicitly. Becomes a gate-1 rule at intake.
+  exception listed explicitly. ~~Becomes a gate-1 rule at intake~~ — **live since
+  2026-08-30** via the people registry + `Source.STATEMENTS` (no waiting on intake).
 - **`sudjelovanje` is its own lifecycle state** (77 rows) — another society's cave that
   SUE took part in. Recognising it shrank the unclassified list from 47 rows to 19.
 - **`photos match-queued --apply`** performs the renames; dry run is the default.

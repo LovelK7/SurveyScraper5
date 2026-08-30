@@ -134,6 +134,13 @@ intake:
     - "Nikad više_Venio_837"
     - "vrazji prolaz 2kom"
 
+# People registry — canonical authors + curated aliases + izjava linkage
+# (cave_dossier/people/). The JSON is committed (curated by hand, like the
+# manual_matches maps above); abbreviation aliases are DERIVED from full
+# "First Last" names at load time, so the file mostly holds bare names.
+people:
+  registry_path: "data/people/registry.json"
+
 # Part 2.1b — locality + elevation finders (cave_dossier/geo/). The boundary
 # GeoPackages and DEM tiles live in the gitignored data_dir; `cavedossier geo
 # fetch-data` provisions them (see data/README.md for provenance + licences).

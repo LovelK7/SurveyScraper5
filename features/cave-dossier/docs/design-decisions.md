@@ -28,6 +28,7 @@ keeps the chronology.
   - [Cross-check against SB's Fotografija ulaza](#cross-check-against-sbs-fotografija-ulaza)
   - [The staleness guard](#the-staleness-guard)
 - [Izjava za katastar — filename scheme](#izjava-za-katastar--filename-scheme)
+- [People registry and the statement gates (2026-08-30)](#people-registry-and-the-statement-gates-2026-08-30)
 - [Field-data intake — matching design](#field-data-intake--matching-design)
   - [The third source: the Liburnija LIDAR sheet](#the-third-source-the-liburnija-lidar-sheet)
 - [2.1b prefill rules (2026-08-30)](#21b-prefill-rules-2026-08-30)
@@ -200,7 +201,8 @@ Every rule lives in [dossier/gating.py](../src/cave_dossier/dossier/gating.py).
 |---|---|---|
 | **SB** (working) | Ime objekta · Lokalitet · Najbliže mjesto · Razdoblje istraživanja · Autori nacrta · Dubina | Interni katastarski broj (SUE) |
 | **SB** (working) | Koordinate ulaza · Broj pločice — blockers if the exploration year is ≥ 2015, warnings otherwise (§5.1); kaverne exempt from the pločica rule (§5) | |
-| **ARCHIVE** (next) | Nacrt PDF · Zapisnik (OSZ DOCX) · Fotografija ulaza (§5.1) · Izjava za katastar **per author** | |
+| **ARCHIVE** (next) | Nacrt PDF · Zapisnik (OSZ DOCX) · Fotografija ulaza (§5.1) | |
+| **STATEMENTS** (✅ 2026-08-30) | Izjava za katastar **per author** (drawing + photo, registry- and scope-aware) | *warnings*: a named person (recorder, team member) with no izjava on file · a person missing from the registry |
 | **SURVEY** (M5) | Horizontalna duljina | Vertikalna razlika (falls back to Dubina) |
 | **OSZ** (M4) | Podrijetlo imena · Položaj i pristup · Vrsta objekta · Hidrogeološka funkcija · Hidrološka karakteristika · Osnovni opis s tehničkim podacima · Perspektiva daljnjeg istraživanja · Zapisničar · Članovi ekipe · Širina ulaza · Visina/duljina ulaza | Izvor koordinata · Istražile udruge |
 | **MAP** (M3 ✅) | — | Isječak karte · Georef zapis |
@@ -376,8 +378,50 @@ starting with `!` are templates and the society's own missing-izjave lists
 (`!!!Fale_Brane.txt`), never izjave.
 
 Scope resolution compares the suffix against the cave's `Lokalitet`, then its
-name and synonyms — diacritic-insensitively. It becomes a gate-1 rule when
-intake lands.
+name and synonyms — diacritic-insensitively. Since 2026-08-30 this IS a gate-1
+rule: the statements dir is shared (not per-cave), so it gets its own gathering
+step (`Source.STATEMENTS`) and does not wait for archive intake — see the next
+section.
+
+## People registry and the statement gates (2026-08-30)
+
+**The registry.** `data/people/registry.json` — one committed, hand-curated
+JSON, loaded by [people/registry.py](../src/cave_dossier/people/registry.py).
+One entry per person; `name` in full `First Last` form derives its
+abbreviation aliases automatically at load time (`L.Kukuljan`, `LKukuljan`,
+`Lovel K.` …), so the file mostly holds bare names. The design is the
+crospeleo-automation port (docs/PORTING.md): derived aliases with **collision
+detection** (a key two people claim resolves nobody — never guess), curated
+`aliases` entries that win over derived keys (crospeleo's `S.M.` case; ours:
+`S.Antolič` likely belongs on `SKapidžić-Antolič`), no global surname-only
+keys, exact-key resolution only (no fuzzy). Entries seeded from the izjava
+files are still in token form (`ABahović`); they match the izjava and SB's
+`A.Bahović` shorthand but not an OSZ's full spelling — **upgrade them to full
+names as they are learned**. Committing real names follows existing repo
+practice (config.yaml manual matches, test fixtures) — crospeleo's *scraped*
+mirror is gitignored PII, but its *curated* registry files are committed, and
+this file is all curation.
+
+**Linking people to statements.** The izjava's person token, SB's shorthand
+and the OSZ's full name all normalize into the registry's key space, so
+`Izjava_LKukuljan.pdf` ↔ `L.Kukuljan` ↔ `Lovel Kukuljan` are one person. The
+per-run linkage snapshot (person → izjave, orphans) lands as JSON in
+`runs/people/statements-index.json` (`cavedossier people check`); the registry
+stays the only curated record.
+
+**The two statement gates.**
+
+| Gate | Severity | Rule |
+|---|---|---|
+| 1 (SUE) | BLOCKER | Every **author** (drawing + photo, separately — the SUE 575 lesson) needs an izjava **whose scope covers this cave**. "Has an izjava, but it is scoped to another locality" is its own blocker message. |
+| 2 (CroSpeleo) | warning | Every **person** the dossier names (recorder, team members too) with no izjava on file at all; and every person the registry cannot resolve (aliases unassessable). Advisory by design — only authors are hard-gated — and a person already blocked at gate 1 is not repeated. |
+
+The gate-2 per-person warning is the user's request of 2026-08-30 ("warn if
+the person is missing a statement"); it sits at gate 2 because that is where
+the full CroSpeleo submission types these people in. `cavedossier people
+check` is the same check registry-wide, off any one cave: people without an
+izjava, izjave without a person, and every SB author cell swept through the
+registry.
 
 ## Field-data intake — matching design
 

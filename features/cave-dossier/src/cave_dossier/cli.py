@@ -146,6 +146,16 @@ def cmd_report(settings: Settings, query: str, as_json: bool, gate: str) -> int:
         return EXIT_ERROR
 
     dossier = build_from_sb(matches[0], settings)
+
+    # Statement gathering: the izjave dir is shared (not per-cave), so it can
+    # be scanned before archive intake exists. Unreachable Drive → the
+    # statement gates honestly report "not checked yet".
+    from cave_dossier.people.registry import PersonRegistry
+    from cave_dossier.people.statements import enrich as enrich_statements
+
+    registry = PersonRegistry.load(settings.people_registry_path)
+    enrich_statements(dossier, settings, registry)
+
     report = evaluate(dossier)
     if as_json:
         print(dossier.model_dump_json(indent=2, exclude={"sb_record"}))
@@ -838,6 +848,134 @@ def cmd_osz_fetch(settings: Settings, serial: int, osz_path_arg: str | None,
     return EXIT_NOT_READY
 
 
+def cmd_people_list(settings: Settings) -> int:
+    """The people registry, each person with their aliases and linked izjave."""
+    from cave_dossier.people.registry import PersonRegistry
+    from cave_dossier.people.statements import StatementIndex, scan_izjave, statements_dir
+
+    registry = PersonRegistry.load(settings.people_registry_path)
+    print(f"Registar osoba: {settings.people_registry_path}")
+    print(f"  {len(registry)} osoba · {len(registry.key_map)} ključeva "
+          f"({registry.stats.keys_derived} izvedenih, {registry.stats.keys_curated} ručnih)")
+    if registry.stats.collisions:
+        print(f"  ⚠ kolizije (ključ ne razrješava nikoga): {', '.join(registry.stats.collisions)}")
+    if not registry:
+        print("  (prazan — dodaj osobe u registry.json; `people check` predlaže koga)")
+        return EXIT_NOT_READY
+
+    directory = statements_dir(settings)
+    index = None
+    if directory is not None and directory.exists():
+        index = StatementIndex(scan_izjave(directory), registry)
+        print(f"Izjave: {len(index.izjave)} u {directory}")
+    else:
+        print("Izjave: mapa nedostupna (Drive?) — prikaz bez poveznica")
+    print()
+
+    for person in sorted(registry.people, key=lambda p: p.name.casefold()):
+        linked = index.statements_for(person.name) if index else []
+        mark = "✓" if linked else ("·" if index is None else "✗")
+        extras = []
+        if person.aliases:
+            extras.append(f"alias: {', '.join(person.aliases)}")
+        if person.society:
+            extras.append(f"[{person.society}]")
+        files = ", ".join(izjava.path.name for izjava in linked)
+        line = f"  {mark} {person.name:<26}"
+        if extras:
+            line += f" {'  '.join(extras)}"
+        if files:
+            line += f"  {files}"
+        print(line)
+    return 0
+
+
+def cmd_people_check(settings: Settings, limit: int) -> int:
+    """Registry-wide audit: aliases used anywhere + who is missing an izjava.
+
+    The registry-level face of the statement gates: (1) registry people with
+    no izjava on file, (2) izjava files whose person resolves to nobody,
+    (3) alias-key collisions, (4) every SB author cell swept through the
+    registry — names that resolve to no one. Writes the person↔izjava JSON
+    snapshot under runs/people/.
+    """
+    from cave_dossier.core.config import FEATURE_ROOT
+    from cave_dossier.people.registry import PersonRegistry
+    from cave_dossier.people.statements import (
+        StatementIndex,
+        scan_izjave,
+        statements_dir,
+        write_index_json,
+    )
+    from cave_dossier.sb.audit import iter_author_names
+
+    registry = PersonRegistry.load(settings.people_registry_path)
+    directory = statements_dir(settings)
+    if directory is None or not directory.exists():
+        print("Statements dir unreachable: set LOCAL_DRIVE_ROOT in .env and", file=sys.stderr)
+        print("`archive.statements_dir` in config.yaml (and mount Drive).", file=sys.stderr)
+        return EXIT_ERROR
+
+    izjave = scan_izjave(directory)
+    index = StatementIndex(izjave, registry)
+    print(f"Registar: {len(registry)} osoba ({settings.people_registry_path.name})")
+    print(f"Izjave:   {len(izjave)} u {directory}")
+
+    findings = False
+
+    if registry.stats.collisions:
+        findings = True
+        print()
+        print(f"⚠ Kolizije ključeva ({len(registry.stats.collisions)}) — ni jedna strana se ne razrješava:")
+        for key in registry.stats.collisions:
+            print(f"    {key}")
+
+    missing = index.missing_statement_people()
+    print()
+    print(f"1 · BEZ IZJAVE — {len(missing)} osoba iz registra nema nijednu izjavu")
+    for person in missing[:limit]:
+        print(f"    ✗ {person.name}")
+    if len(missing) > limit:
+        print(f"    … {len(missing) - limit} more (raise --limit)")
+    findings = findings or bool(missing)
+
+    orphans = index.orphan_izjave()
+    print()
+    print(f"2 · IZJAVE BEZ OSOBE — {len(orphans)} datoteka čiji potpisnik nije u registru")
+    for izjava in orphans[:limit]:
+        print(f"    ? {izjava.path.name}   → dodaj {{\"name\": \"{izjava.person}\"}} u registry.json")
+    findings = findings or bool(orphans)
+
+    # SB sweep: every author name anywhere in the workbook, through the registry.
+    unresolved: dict[str, list[str]] = {}
+    row_count = 0
+    for cave, names in iter_author_names(SBReader(settings), settings):
+        row_count += 1
+        for name in names:
+            if registry.resolve(name) is None:
+                label = cave.object_name or f"r{cave.row_number}"
+                unresolved.setdefault(name, []).append(label)
+    print()
+    print(f"3 · SB AUTORI IZVAN REGISTRA — {len(unresolved)} imena "
+          f"(pregledano {row_count} redaka s autorima)")
+    for name, caves in sorted(unresolved.items(), key=lambda item: -len(item[1]))[:limit]:
+        examples = ", ".join(caves[:3]) + (" …" if len(caves) > 3 else "")
+        print(f"    ? {name:<26} {len(caves)}×   ({examples})")
+    if len(unresolved) > limit:
+        print(f"    … {len(unresolved) - limit} more (raise --limit)")
+    findings = findings or bool(unresolved)
+
+    out_path = FEATURE_ROOT / "runs" / "people" / "statements-index.json"
+    write_index_json(index, out_path, source_dir=directory)
+    print()
+    print(f"Poveznice osoba ↔ izjava: {out_path}")
+
+    if not findings:
+        print("Sve se slaže: svaka osoba ima izjavu, svaka izjava osobu, svi SB autori poznati.")
+        return EXIT_READY
+    return EXIT_NOT_READY
+
+
 # ── Entry point ────────────────────────────────────────────────────
 
 
@@ -1058,6 +1196,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exact filled OSZ DOCX, skipping the dir search entirely",
     )
 
+    people = subparsers.add_parser(
+        "people",
+        help="Registar osoba — authors, their aliases, and their izjave",
+    )
+    people_sub = people.add_subparsers(dest="people_command", required=True)
+    people_sub.add_parser(
+        "list",
+        help="Every registry person with derived/curated aliases and linked izjave",
+    )
+    people_check = people_sub.add_parser(
+        "check",
+        help="Audit: people without an izjava, izjave without a person, SB author "
+             "names outside the registry; writes runs/people/statements-index.json",
+    )
+    people_check.add_argument("--limit", type=int, default=40, help="Rows printed per list")
+
     photos = subparsers.add_parser(
         "photos",
         help="Part 2.1d — entrance-photo processing (read-only for now)",
@@ -1108,6 +1262,11 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_sb_audit_authors(settings, args.limit)
             if args.sb_command == "unclassified":
                 return cmd_sb_unclassified(settings, args.limit)
+        if args.command == "people":
+            if args.people_command == "list":
+                return cmd_people_list(settings)
+            if args.people_command == "check":
+                return cmd_people_check(settings, args.limit)
         if args.command == "photos":
             if args.photos_command == "match-queued":
                 return cmd_photos_match_queued(settings, args.limit, args.apply)

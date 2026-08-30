@@ -64,6 +64,14 @@ confused with "nobody looked". The full design (state derivation from SB's own
 Power Query, the rule table, §5.1 year exemptions, identity numbering) is in
 [docs/design-decisions.md](docs/design-decisions.md).
 
+People go through the **registar osoba** (`data/people/registry.json`): one
+entry per author, aliases derived automatically, so SB's `L.Kukuljan`, an
+OSZ's `Lovel Kukuljan` and the file `Izjava_LKukuljan.pdf` count as one
+person. At gate 1 a missing (or wrongly scoped) izjava **per author** blocks;
+at gate 2 any named person without an izjava on file — recorder and team
+members included — gets a warning. `cavedossier people check` runs the same
+audit over the whole registry and workbook.
+
 ## Milestones — what M1-M6 mean
 
 The M-numbers this repo's docs and comments use everywhere are stage-2 build
@@ -108,6 +116,18 @@ cavedossier report --cave 570 --gate crospeleo  # exit code follows gate 2 inste
 # ── Workbook-wide audits (read-only worklists for an Excel cleanup pass) ─
 cavedossier sb audit-authors --limit 40    # author cells the splitter cannot read
 cavedossier sb unclassified                # rows in none of SB's views
+
+# ── Registar osoba — authors, aliases, izjave (part 2.1) ───────────────
+cavedossier people list                    # every registry person + aliases + linked izjave
+cavedossier people check                   # audit: people without an izjava · izjave whose
+                                           #   signer is not in the registry · SB author names
+                                           #   the registry cannot resolve; also writes the
+                                           #   person↔izjava JSON to runs/people/
+# The registry is data/people/registry.json (committed, hand-curated). Full
+# "First Last" names derive their aliases automatically (L.Kukuljan,
+# LKukuljan, Lovel K., …); entries still in token form (ABahović) match SB
+# shorthand + izjava files — upgrade them to full names as you learn them.
+# Odd spellings that derive to nothing get a manual "aliases": [...] entry.
 
 # ── Field-data intake (folders under !!!Digitalizacija/!Za digitalizirat) ─
 cavedossier intake map                     # DRY RUN: map each leaf folder to its SB row

@@ -22,6 +22,7 @@ _WIDTH = 74
 _SOURCE_LABELS: dict[Source, str] = {
     Source.SB: "SB (2.2)",
     Source.ARCHIVE: "arhiva na Driveu (2.1)",
+    Source.STATEMENTS: "izjave + registar osoba (2.1)",
     Source.SURVEY: "survey (2.1a)",
     Source.OSZ: "zapisnik (2.1b)",
     Source.MAP: "isječak karte (2.1c)",
@@ -76,6 +77,13 @@ def render(dossier: CaveDossier) -> str:
         add("")
         add("  Files")
         for line in files:
+            add(f"    {line}")
+
+    people = _people_lines(dossier)
+    if people:
+        add("")
+        add("  Osobe · izjave")
+        for line in people:
             add(f"    {line}")
 
     for gate in (GateLevel.SUE, GateLevel.CROSPELEO):
@@ -172,6 +180,40 @@ def _file_lines(dossier: CaveDossier) -> list[str]:
         lines.append(f"izjava     {archive_file.path}")
     if dossier.map_excerpt:
         lines.append(f"isječak    {dossier.map_excerpt.path}")
+    return lines
+
+
+def _people_lines(dossier: CaveDossier) -> list[str]:
+    """One line per person named in the dossier: izjava status + roles + files.
+
+    ``✓`` an izjava covers this cave · ``~`` izjave exist but none covers it
+    (scope names another locality/cave) · ``✗`` none on file · ``?`` not in
+    the people registry.
+    """
+    if not dossier.person_statements:
+        return []
+    merged: dict[str, dict] = {}
+    for entry in dossier.person_statements:
+        key = (entry.canonical or entry.name).casefold()
+        slot = merged.setdefault(
+            key,
+            {"display": entry.canonical or entry.name, "roles": [], "entry": entry},
+        )
+        if entry.role.value not in slot["roles"]:
+            slot["roles"].append(entry.role.value)
+    lines = []
+    for slot in merged.values():
+        entry = slot["entry"]
+        if entry.in_registry is False:
+            mark = "?"
+        elif entry.covering:
+            mark = "✓"
+        elif entry.statements:
+            mark = "~"
+        else:
+            mark = "✗"
+        files = ", ".join(path.name for path in entry.statements) or "(nema izjave)"
+        lines.append(f"{mark} {slot['display']:<24} {', '.join(slot['roles']):<20} {files}")
     return lines
 
 
