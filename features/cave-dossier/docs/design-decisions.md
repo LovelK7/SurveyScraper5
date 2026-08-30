@@ -409,6 +409,19 @@ per-run linkage snapshot (person → izjave, orphans) lands as JSON in
 `runs/people/statements-index.json` (`cavedossier people check`); the registry
 stays the only curated record.
 
+**Author vs finder — the single criterion (user, 2026-08-30).** SB's `Autori
+nacrta ili izvor` cell mixes two groups: **survey authors**, who need an
+izjava, and **cave finders/sources**, who do not. The distinguishing rule is
+the spelling alone: authors are consistently written **`N.Surname`**
+(initial·dot·surname — `L.Kukuljan`, `S.Kapidžić-Antolič`), finders every
+other way (bare first names, full names, phrases). Encoded as
+`core/people.is_author_shorthand`; only names it accepts enter the statement
+gates and the `people check` SB sweep — finders get no entry, no blocker, no
+warning, and are deliberately not scraped into the registry. Measured effect
+on the first live run: the unresolved-SB-authors list dropped from 125 noisy
+names to **28 real authors**. (The rule applies to that SB cell only —
+recorder/team names come from the OSZ, where everyone listed took part.)
+
 **The two statement gates.**
 
 | Gate | Severity | Rule |

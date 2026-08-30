@@ -54,6 +54,18 @@ def test_dj_is_folded_even_though_nfkd_will_not() -> None:
     assert matches_token("Đuro Đaković", "DDaković")
 
 
+def test_is_author_shorthand_is_the_author_vs_finder_criterion() -> None:
+    from cave_dossier.core.people import is_author_shorthand
+
+    # Survey authors — the N.Surname convention (double surnames included).
+    for author in ("L.Kukuljan", "D. Reš", "S.Kapidžić-Antolič", "A.Lipovac"):
+        assert is_author_shorthand(author), author
+    # Finders/sources — every other way the cell writes people.
+    for finder in ("Tin", "Denis Medica", "vedran", "SOV", ".Dujmović",
+                   "Malez M. (1960)", "", None):
+        assert not is_author_shorthand(finder), finder
+
+
 # ── Registry ──────────────────────────────────────────────────────────
 
 
@@ -212,9 +224,17 @@ def test_link_marks_registry_membership_three_valued() -> None:
     assert resolved.canonical == "Lovel Kukuljan"
 
     unknown = link_person_statements(
-        _dossier(drawing_authors=["Netko Nov"]), registry=registry
+        _dossier(team_members=["Netko Nov"]), registry=registry
     )[0]
     assert unknown.in_registry is False
+
+
+def test_link_skips_finder_shaped_names_in_the_author_cell() -> None:
+    """Only `N.Surname` marks a survey author (user, 2026-08-30); the finders
+    that share the SB cell get no entry — and hence no gate, no warning."""
+    dossier = _dossier(drawing_authors=["L.Kukuljan", "Tin", "Denis Medica", "vedran"])
+    entries = link_person_statements(dossier)
+    assert [entry.name for entry in entries] == ["L.Kukuljan"]
 
 
 # ── The gates ─────────────────────────────────────────────────────────
@@ -262,7 +282,7 @@ def test_gate2_warns_per_person_missing_statement_but_never_blocks() -> None:
 
 
 def test_gate2_does_not_repeat_an_author_already_blocked_at_gate1() -> None:
-    dossier = _dossier(drawing_authors=["Ivo Ivić"], team_members=["Ivo Ivić"])
+    dossier = _dossier(drawing_authors=["I.Ivić"], team_members=["I.Ivić"])
     report = evaluate(dossier)
     statement_issues = [i for i in report.issues if i.code is IssueCode.MISSING_STATEMENT]
     assert [issue.severity for issue in statement_issues] == [Severity.BLOCKER]

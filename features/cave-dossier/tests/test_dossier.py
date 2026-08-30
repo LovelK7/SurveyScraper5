@@ -242,12 +242,24 @@ def test_gate_1_can_pass_while_gate_2_still_fails() -> None:
 
 def test_missing_izjava_blocks_per_author() -> None:
     dossier = _complete_dossier()
-    dossier.drawing_authors = ["Ana Anić", "Ivo Ivić"]  # only Ana has an izjava
+    dossier.drawing_authors = ["A.Anić", "I.Ivić"]  # only Ana has an izjava
     report = evaluate(dossier)
-    statements = [i for i in report.issues if i.code is IssueCode.MISSING_STATEMENT]
+    statements = [i for i in report.issues if i.code is IssueCode.MISSING_STATEMENT
+                  and i.severity is Severity.BLOCKER]
     assert len(statements) == 1
-    assert "Ivo Ivić" in statements[0].message
+    assert "I.Ivić" in statements[0].message
     assert report.ready_sue is False
+
+
+def test_finders_in_the_author_cell_need_no_izjava() -> None:
+    """`Autori nacrta ili izvor` mixes authors and FINDERS (user, 2026-08-30):
+    only the `N.Surname` shorthand marks an author, so only that shape is gated."""
+    dossier = _complete_dossier()
+    dossier.drawing_authors = ["A.Anić", "Tin", "Denis Medica"]  # Ana has her izjava
+    report = evaluate(dossier)
+    assert not [i for i in report.issues if i.code is IssueCode.MISSING_STATEMENT
+                and i.severity is Severity.BLOCKER]
+    assert report.ready_sue is True
 
 
 def test_unprocessed_entrance_photos_are_flagged_for_2_1d() -> None:
@@ -307,7 +319,7 @@ def test_render_shows_identity_lifecycle_and_both_gates(
 
 def _complete_dossier() -> CaveDossier:
     """A dossier with every source gathered and every mandatory field filled."""
-    izjava = ArchiveFile(path=_p("Izjava_Ana Anić.pdf"), role=FileRole.STATEMENT_DRAWING_AUTHOR)
+    izjava = ArchiveFile(path=_p("Izjava_AAnić.pdf"), role=FileRole.STATEMENT_DRAWING_AUTHOR)
     return CaveDossier(
         gathered=set(Source),
         sb_row_number=3,
@@ -318,7 +330,7 @@ def _complete_dossier() -> CaveDossier:
         locality="Testni kras",
         nearest_place="Testno Selo",
         exploration_period="2015",
-        drawing_authors=["Ana Anić"],
+        drawing_authors=["A.Anić"],  # the SB N.Surname author convention
         depth_m=12,
         georeference=Georeference(
             x_htrs=450123.0,

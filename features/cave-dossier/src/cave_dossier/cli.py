@@ -946,18 +946,26 @@ def cmd_people_check(settings: Settings, limit: int) -> int:
         print(f"    ? {izjava.path.name}   → dodaj {{\"name\": \"{izjava.person}\"}} u registry.json")
     findings = findings or bool(orphans)
 
-    # SB sweep: every author name anywhere in the workbook, through the registry.
+    # SB sweep: every author name anywhere in the workbook, through the
+    # registry. Deduped on the normalized key so "R.Reš" and "R. Reš" are one
+    # row (first-seen spelling kept).
+    from cave_dossier.core.normalization import normalize_lookup_key
+
     unresolved: dict[str, list[str]] = {}
+    spelling: dict[str, str] = {}
     row_count = 0
     for cave, names in iter_author_names(SBReader(settings), settings):
         row_count += 1
         for name in names:
             if registry.resolve(name) is None:
                 label = cave.object_name or f"r{cave.row_number}"
-                unresolved.setdefault(name, []).append(label)
+                key = normalize_lookup_key(name)
+                spelling.setdefault(key, name)
+                unresolved.setdefault(spelling[key], []).append(label)
     print()
     print(f"3 · SB AUTORI IZVAN REGISTRA — {len(unresolved)} imena "
-          f"(pregledano {row_count} redaka s autorima)")
+          f"(pregledano {row_count} redaka; broje se samo autori u obliku "
+          f"N.Prezime — sve ostalo su pronalazači, bez obveze izjave)")
     for name, caves in sorted(unresolved.items(), key=lambda item: -len(item[1]))[:limit]:
         examples = ", ".join(caves[:3]) + (" …" if len(caves) > 3 else "")
         print(f"    ? {name:<26} {len(caves)}×   ({examples})")

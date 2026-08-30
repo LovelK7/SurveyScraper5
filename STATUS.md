@@ -84,10 +84,13 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       izjava no longer covers an Učka cave); gate 2 **warns per person** —
       recorder/team member without any izjava, or a person the registry cannot
       resolve. New CLI `cavedossier people list` / `people check` (registry-wide
-      audit + `runs/people/statements-index.json`). First live `people check`:
-      133 izjave all linked, 0 orphans; **125 SB author spellings outside the
-      registry** (mostly bare first names — the standing cleanup worklist).
-      194 tests green.
+      audit + `runs/people/statements-index.json`). **Author-vs-finder criterion**
+      (user, same day): in `Autori nacrta ili izvor` only the `N.Surname` shape
+      marks a survey author — everything else is a finder/source with no izjava
+      obligation (`is_author_shorthand`, applied in gating and the sweep). First
+      live `people check`: 133 izjave all linked, 0 orphans; **28 real authors
+      outside the registry** (down from 125 before the criterion — the standing
+      worklist, S.Antolič 21× at the top). 197 tests green.
 - [ ] Intake: resolve a cave's archive files from Drive (nacrt, fotografije ulaza, OSZ)
       — needs the `drive_resolver` port; until then `Source.ARCHIVE`
       rules report as *not checked yet* (izjave no longer wait on this — see above)

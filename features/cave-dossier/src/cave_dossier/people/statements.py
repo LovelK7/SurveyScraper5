@@ -28,6 +28,7 @@ from pathlib import Path
 from cave_dossier.archive.izjave import Izjava, covers, parse_izjava
 from cave_dossier.core.config import Settings
 from cave_dossier.core.normalization import normalize_lookup_key
+from cave_dossier.core.people import is_author_shorthand
 from cave_dossier.dossier.model import (
     ArchiveFile,
     CaveDossier,
@@ -135,8 +136,17 @@ def link_person_statements(
         ]
     index = StatementIndex(izjave, registry)
 
+    # SB's author cell mixes survey authors with cave FINDERS (user,
+    # 2026-08-30): only the `N.Surname` shorthand marks an author, so only
+    # those names carry the izjava requirement. Finders are exempt entirely —
+    # no entry, no gate-1 blocker, no gate-2 warning. The other buckets come
+    # from the OSZ, where names are full and everyone listed took part.
+    drawing_authors = [
+        name for name in dossier.drawing_authors if is_author_shorthand(name)
+    ]
+
     buckets: tuple[tuple[PersonRole, list[str]], ...] = (
-        (PersonRole.DRAWING_AUTHOR, dossier.drawing_authors),
+        (PersonRole.DRAWING_AUTHOR, drawing_authors),
         (PersonRole.PHOTO_AUTHOR, dossier.photo_author_candidates),
         (PersonRole.RECORDER, [dossier.recorder] if dossier.recorder else []),
         (PersonRole.TEAM_MEMBER, dossier.team_members),

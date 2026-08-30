@@ -83,3 +83,31 @@ def is_placeholder(value: str | None) -> bool:
     if value is None:
         return True
     return value.strip().casefold() in _PLACEHOLDER_TOKENS or not value.strip()
+
+
+# One or more uppercase initials, each with a dot (optional space), then an
+# uppercase-starting surname (hyphen/apostrophe joins allowed: Kapidžić-Antolič).
+_AUTHOR_SHORTHAND_RE = re.compile(
+    r"^(?:[^\W\d_]\.\s?)+[^\W\d_]+(?:[-'][^\W\d_]+)*$",
+    re.UNICODE,
+)
+
+
+def is_author_shorthand(name: str | None) -> bool:
+    """Is this the ``N.Surname`` form that marks a SURVEY AUTHOR in SB?
+
+    The `Autori nacrta ili izvor` cell mixes two groups (user, 2026-08-30):
+    survey authors — who need an izjava — are consistently written
+    initial·dot·surname (``L.Kukuljan``, ``S.Kapidžić-Antolič``), while cave
+    finders/sources are written every other way (bare first names, full names,
+    phrases) and need none. This predicate is the single criterion: only names
+    it accepts go through the statement gates and the registry sweep.
+    """
+    if not name:
+        return False
+    cleaned = name.strip()
+    if not _AUTHOR_SHORTHAND_RE.match(cleaned):
+        return False
+    # The regex is case-blind by construction; the convention is not.
+    surname = cleaned.rsplit(".", 1)[-1].strip()
+    return cleaned[0].isupper() and bool(surname) and surname[0].isupper()

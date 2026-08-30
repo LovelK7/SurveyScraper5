@@ -123,6 +123,10 @@ cavedossier people check                   # audit: people without an izjava · 
                                            #   signer is not in the registry · SB author names
                                            #   the registry cannot resolve; also writes the
                                            #   person↔izjava JSON to runs/people/
+# Author vs finder: in `Autori nacrta ili izvor` only names written N.Prezime
+# (L.Kukuljan) are survey authors and get statement-checked; everything else
+# (bare first names, full names) is a cave finder/source — no izjava needed,
+# so they are exempt from the gates and from the section-3 sweep.
 # The registry is data/people/registry.json (committed, hand-curated). Full
 # "First Last" names derive their aliases automatically (L.Kukuljan,
 # LKukuljan, Lovel K., …); entries still in token form (ABahović) match SB

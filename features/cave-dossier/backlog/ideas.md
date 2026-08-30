@@ -93,9 +93,11 @@ when an idea's time comes. Nothing here is a commitment.
   registry (`people/`, `data/people/registry.json`).
 - 2026-08-30 — upgrade token-form registry entries (`ABahović`) to full `First Last`
   names as they are learned — full names are what match an OSZ's spelling. `people
-  check` list 3 is the standing worklist; likely curated-alias candidates seen on the
-  first run: `S.Antolič` (→ `SKapidžić-Antolič`?), bare first names (`Tin` 89×,
-  `Dino` 64×, `Lovel` 32×) that only a person can bind to people.
+  check` section 3 (SB autori izvan registra) is the standing worklist: 28 real
+  `N.Surname` authors after the author-vs-finder criterion landed (finders — bare
+  first names, full names — are exempt from izjave and not swept). Top candidates:
+  `S.Antolič` 21× (curated alias for `SKapidžić-Antolič`?), `Z.Gal` 6×,
+  `B.Tadić` 2× (the SUE 575 case).
 - 2026-08-26 — ~~two staged photos match no SB row~~ → resolved 2026-08-28: `rubinija` is a
   transposition of *Rubijina jama* (1214, now in `photos.manual_matches`), `kostrčani` was
   removed by the user as unidentifiable. The folder now matches 52 of 52.

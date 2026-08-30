@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from cave_dossier.core.config import Settings
-from cave_dossier.core.people import is_placeholder, split_authors
+from cave_dossier.core.people import is_author_shorthand, is_placeholder, split_authors
 from cave_dossier.dossier.model import LifecycleState
 from cave_dossier.dossier.sb_mapper import (
     derive_lifecycle,
@@ -158,19 +158,22 @@ def audit_unclassified(reader: SBReader, settings: Settings) -> list[Unclassifie
 
 
 def iter_author_names(reader: SBReader, settings: Settings):
-    """``(CaveRow, parsed author names)`` for every named row with real authors.
+    """``(CaveRow, survey-author names)`` for every named row that has any.
 
-    The people-registry sweep (`cavedossier people check`): placeholder cells
-    and literature citations are skipped — they name sources, not people whose
-    aliases the registry should resolve.
+    The people-registry sweep (`cavedossier people check`). Skipped on purpose:
+    placeholder cells, literature citations, and — per the user's single
+    criterion (2026-08-30) — every name NOT in the ``N.Surname`` shorthand,
+    because in this cell only that form marks a survey author; everything else
+    is a cave finder/source, who needs no izjava and no registry entry.
     """
     for cave in _iter_caves(reader, settings):
         raw = _cell(cave.values, settings.sb_drawing_authors_column)
         if raw is None or is_placeholder(raw) or _CITATION_RE.search(raw):
             continue
         names, _societies = split_authors(raw)
-        if names:
-            yield cave, names
+        authors = [name for name in names if is_author_shorthand(name)]
+        if authors:
+            yield cave, authors
 
 
 # ── Shared helpers ────────────────────────────────────────────────────
