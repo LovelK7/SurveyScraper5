@@ -481,7 +481,7 @@ def save_png_under_limit(image: Image.Image, path, *, max_bytes: int = MAX_EXCER
     current = image
     while True:
         last = None
-        for candidate in (current, current.convert("RGB").quantize(colors=256)):
+        for candidate in (current, _quantize_keeping_marker_red(current)):
             buffer = BytesIO()
             candidate.save(buffer, format="PNG", optimize=True)
             last = buffer
@@ -495,6 +495,40 @@ def save_png_under_limit(image: Image.Image, path, *, max_bytes: int = MAX_EXCER
             (int(current.width * 0.85), int(current.height * 0.85)),
             Image.LANCZOS,
         )
+
+
+def _quantize_keeping_marker_red(image: Image.Image) -> Image.Image:
+    """256-color adaptive palette that cannot lose the red map pin.
+
+    A naive `quantize(colors=256)` merges the pin into the surroundings —
+    it is a few hundred red pixels against a million map pixels, so
+    median-cut spends no palette entry on it (seen live 2026-08-30: the
+    pin came out green-grey).  So: quantize to 255 colors, reserve the
+    256th palette slot for the marker's own mean red, and re-stamp every
+    strongly-red source pixel onto that slot.
+    """
+    import numpy
+
+    rgb = image.convert("RGB")
+    quantized = rgb.quantize(colors=255)
+
+    source = numpy.asarray(rgb, dtype=numpy.int16)
+    r, g, b = source[..., 0], source[..., 1], source[..., 2]
+    marker_mask = (r > 140) & (r - g > 50) & (r - b > 50)
+    if not marker_mask.any():
+        return quantized
+
+    marker_color = source[marker_mask].mean(axis=0).astype(int)
+    indexed = numpy.asarray(quantized, dtype=numpy.uint8).copy()
+    indexed[marker_mask] = 255
+
+    palette = quantized.getpalette()
+    palette = (palette + [0] * 768)[:768]
+    palette[765:768] = [int(marker_color[0]), int(marker_color[1]), int(marker_color[2])]
+
+    result = Image.fromarray(indexed, mode="P")
+    result.putpalette(palette)
+    return result
 
 
 def _set_overlay_visibility(page: object, *, visible: bool) -> None:

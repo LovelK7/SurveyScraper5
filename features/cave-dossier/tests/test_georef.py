@@ -115,6 +115,32 @@ def test_save_png_under_limit_downscales_to_fit(tmp_path: Path) -> None:
     assert min(Image.open(target).size) >= 512  # floor respected
 
 
+def test_quantization_keeps_the_marker_red() -> None:
+    # Regression (2026-08-30): a plain 256-color quantize merged the tiny red
+    # pin into the map palette — it came out green-grey. The reserved-slot
+    # quantizer must keep it unmistakably red.
+    pytest.importorskip("PIL")
+    pytest.importorskip("playwright")
+    from PIL import Image
+
+    from cave_dossier.georef.flows import _quantize_keeping_marker_red
+
+    # A green map-like field with a small red pin: a naive median-cut spends
+    # every palette entry on the green gradient.
+    image = Image.new("RGB", (400, 400))
+    pixels = image.load()
+    for y in range(400):
+        for x in range(400):
+            pixels[x, y] = (x % 60, 120 + (y % 90), x % 40)
+    for y in range(190, 210):
+        for x in range(195, 205):
+            pixels[x, y] = (220, 20, 30)
+
+    quantized = _quantize_keeping_marker_red(image).convert("RGB")
+    r, g, b = quantized.getpixel((200, 200))
+    assert r > 180 and r - g > 100 and r - b > 100
+
+
 # ── Selectors parser ───────────────────────────────────────────────
 
 
