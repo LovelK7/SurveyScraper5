@@ -24,10 +24,18 @@ others.
 | Feature | Pipeline part | What it is |
 |---|---|---|
 | [features/csx-to-survey-pipeline/](features/csx-to-survey-pipeline/README.md) | 2.1a | Migrated 2026-08-16 from `cSurvey/dev/`: the TopoDroid → finished-map (Nacrt) pipeline — architecture knowledge base, the operational TDX→CSX processing toolkit, project work items, and decision/session logs. Start at its [README.md](features/csx-to-survey-pipeline/README.md). |
-| [features/cave-dossier/](features/cave-dossier/README.md) | 2.1, 2.1b, 2.1c, 2.2 | Python package `cave_dossier` (CLI `cavedossier`): SB (Speleo baza) communication, per-cave dossier builder with warning/blocker gating, OSZ builder, isječak karte. |
+| [features/cave-dossier/](features/cave-dossier/_INDEX.md) | 2.1, 2.1b, 2.1c, 2.2 | Python package `cave_dossier` (CLI `cavedossier`): SB (Speleo baza) communication, per-cave dossier builder with warning/blocker gating, OSZ prefill, isječak karte, locality/elevation finders. **Agents start at [_INDEX.md](features/cave-dossier/_INDEX.md)** (module + docs map); the human operator's view is its [README.md](features/cave-dossier/README.md); settled rationale is [docs/design-decisions.md](features/cave-dossier/docs/design-decisions.md). |
 
 Room for more features later — add new folders under `features/`, one per module.
 Features integrate via **artifacts** (files), never cross-feature imports.
+
+**Documentation audience split** (user, 2026-08-30): each feature separates the
+**agent/developer map** (`_INDEX.md` — modules, docs, data locations), the
+**human operator's view** (`README.md` — setup, commands, troubleshooting; no
+design history), and the **decision record** (`docs/design-decisions.md` — what
+was settled once and why). Keep new documentation in the right bucket: when a
+session settles a design question, it goes into the decision record, not the
+README; large documents get a linkable table of contents at the top.
 
 ## Read-only reference repos (HARD RULE)
 

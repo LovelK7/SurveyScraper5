@@ -5,6 +5,15 @@ use them in docs, STATUS.md, session logs, and conversation ("2.1b" always means
 the OSZ builder). This is an early-stage plan: parts get built step by step, details
 firm up as real usage accumulates.
 
+## Contents
+
+- [What the app produces](#what-the-app-produces)
+- [The two main parts](#the-two-main-parts)
+- [Part map](#part-map)
+- [Key facts that shape the design](#key-facts-that-shape-the-design)
+- [Dev vs prod — a duality to design for](#dev-vs-prod--a-duality-to-design-for-noted-2026-08-30-unscheduled)
+- [Milestones (stage 2)](#milestones-stage-2)
+
 ## What the app produces
 
 From raw cave-exploration data to two final products per cave:

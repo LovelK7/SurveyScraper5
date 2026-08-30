@@ -159,6 +159,11 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-30 — the three karta re-runs this session each allocated a fresh
   georef.hr point ID for the same caves (format migration) — the
   detect-existing-point idea above (2026-08-30, `--force` litter) got more urgent.
+- 2026-08-30 — extend the documentation audience split (agent `_INDEX.md` /
+  operator `README.md` / `docs/design-decisions.md`) to
+  `features/csx-to-survey-pipeline` — done for cave-dossier this session; the
+  csx feature's README + reference/ tree grew the same way and would benefit
+  from the same operator-vs-agent separation.
 - 2026-08-30 — **productionization** (user): dev is this repo on the personal
   PC, prod is the registry Drive where non-developer users work — eventually
   the tools must run FROM the prod side: distributable entry points (scripts /
