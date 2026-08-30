@@ -48,6 +48,9 @@ EXIT_ERROR = 99
 
 def _print_banner(settings: Settings) -> None:
     print(f"SB mode: {settings.sb_mode} ({settings.sb_workbook_path})")
+    if settings.sb_mode == "FALLBACK":
+        print(f"⚠ {settings.sb_mode_reason} — čita se zadnja dobra lokalna kopija;")
+        print("  podaci mogu kasniti za live SB. Ponovi kad SB bude slobodan.")
     print()
 
 
@@ -579,8 +582,8 @@ def cmd_karta(settings: Settings, serial: int, debug: bool, force: bool) -> int:
         print("`archive.map_excerpts_dir` in config.yaml.", file=sys.stderr)
         return EXIT_ERROR
 
-    if settings.sb_mode == "SANDBOX":
-        print("⚠ SANDBOX workbook: Redni broj and coordinates come from the local copy,")
+    if settings.sb_mode != "LIVE":
+        print(f"⚠ {settings.sb_mode} workbook: Redni broj and coordinates come from a local copy,")
         print("  which may lag the live SB. Verify before trusting the excerpt.")
         print()
 
@@ -592,9 +595,16 @@ def cmd_karta(settings: Settings, serial: int, debug: bool, force: bool) -> int:
           + (f" (SUE {cave.sue_number})" if cave.sue_number else ""))
 
     if paths.png.exists() and not force:
-        print(f"Already collected: {paths.png}")
-        print("Re-run with --force to refresh it (e.g. after a coordinate fix).")
-        return 0
+        # A rename invalidates the collection: the name is typed into the
+        # georef point and embedded in the zapis, so a stale name means the
+        # point itself must be re-made — not just the CSV row edited.
+        reason = georef.refresh_reason(settings, serial, cave.object_name or "")
+        if reason is None:
+            print(f"Already collected: {paths.png}")
+            print("Re-run with --force to refresh it (e.g. after a coordinate fix).")
+            return 0
+        print(f"Collected excerpt is STALE: {reason}")
+        print("Re-running the georef flow to refresh the point, excerpt and record …")
 
     georef_input = georef.build_input(cave, settings)
     if georef_input.x_htrs is None or georef_input.y_htrs is None:

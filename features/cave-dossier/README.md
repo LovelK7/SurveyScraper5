@@ -136,7 +136,8 @@ not fail — they report as *not checked yet*.
 ## What `cavedossier report --cave 570` actually does
 
 1. [core/config.py](src/cave_dossier/core/config.py) reads `config.yaml` +
-   `.env` into a `Settings` object and decides SANDBOX vs LIVE. The banner you
+   `.env` into a `Settings` object and resolves the workbook — LIVE by default,
+   FALLBACK onto the local copy on conflict, SANDBOX when forced. The banner you
    see first is printed from this.
 2. [sb/loader.py](src/cave_dossier/sb/loader.py) opens the workbook read-only
    (openpyxl), finds the header row by scoring rows against the configured
@@ -450,22 +451,27 @@ copy .env.example .env     # then fill in (see below)
 
 `.env` (gitignored, per-machine):
 
-- `SB_WORKBOOK_PATH` — path to a **sandbox copy** of the SB workbook
-  (recommended during development; relative paths resolve against this feature's
-  root, e.g. `example/sb-sandbox/!Speleo_baza_SUE_v3.0.xlsm`).
-- `LOCAL_DRIVE_ROOT` — the Drive Desktop mount of the society archive; used for
-  LIVE mode (workbook resolves as `<LOCAL_DRIVE_ROOT>/<sb.workbook_filename>`)
-  and, from M2 on, the archive dirs (nacrti, izjave, photos).
+- `LOCAL_DRIVE_ROOT` — the Drive Desktop mount of the society archive. The
+  **live workbook** resolves as `<LOCAL_DRIVE_ROOT>/<sb.workbook_filename>`
+  and is the default read target (user, 2026-08-30); the archive dirs
+  (nacrti, izjave, photos, isječci) resolve against it too.
+- `SB_SANDBOX_PATH` — local **fallback copy**, read automatically when the live
+  workbook is unreachable (Drive offline), open in someone's Excel, or
+  unreadable. While live is healthy the copy is auto-refreshed to match it, so
+  a fallback always reads the *last good* live state.
+- `SB_WORKBOOK_PATH` — optional override that **forces** a sandbox copy
+  (development / offline work); relative paths resolve against this feature's
+  root, e.g. `example/sb-sandbox/!Speleo_baza_SUE_v3.0.xlsm`.
 
-Every command prints `SB mode: SANDBOX (...)` or `SB mode: LIVE (...)` first —
-always check the banner.
+Every command prints the mode first — `SB mode: LIVE (...)`,
+`SB mode: FALLBACK (...)` (with the conflict reason), or
+`SB mode: SANDBOX (...)` (forced) — always check the banner.
 
-> **The sandbox goes stale the moment SB is edited.** On 2026-08-29 a run against
-> it reported a cave as missing that had just been added live (row 1311), because
-> the copy still ended at 1301. Refresh it after any SB edit —
-> `copy "<LOCAL_DRIVE_ROOT>\!Speleo_baza_SUE_v3.0.xlsm" example\sb-sandbox\` —
-> or clear `SB_WORKBOOK_PATH` for a one-off LIVE run. Anything that compares SB
-> against Drive (intake mapping, photo checks) wants LIVE or a fresh copy.
+> **A manual sandbox copy goes stale the moment SB is edited.** On 2026-08-29 a
+> run against one reported a cave as missing that had just been added live
+> (row 1311), because the copy still ended at 1301. The LIVE-first default with
+> auto-refreshed fallback (2026-08-30) exists precisely to close that hole; a
+> FALLBACK banner still means "data may lag — retry when SB is free".
 
 ### Two venvs exist — know which one you are in
 
@@ -517,6 +523,10 @@ cavedossier photos check-flag              # every staged photo's cave should sa
 cavedossier karta 1234                     # fetch the map excerpt for Redni broj 1234
 cavedossier karta 1234 --debug             # watch the browser do it (headed + screenshots)
 cavedossier karta 1234 --force             # refresh an excerpt already collected
+# Re-running an already-collected cave skips — UNLESS SB renamed it since: the
+# name is an integral part of the georef zapis (typed into the point, embedded
+# in the record), so a rename auto-triggers a fresh run (e.g. a field name like
+# "LiDAR Kristal 31" later becoming a synonym of the cave's real name).
 ```
 
 Exit codes (your convention): **1** = ready, **0** = not ready, **99** = error.
@@ -531,7 +541,7 @@ also self-reconfigures its output streams, so this is rarely needed).
 | Path | What | Runs |
 |---|---|---|
 | `src/cave_dossier/cli.py` | `cavedossier` entry point (argparse), mode banner, exit codes | every command |
-| `src/cave_dossier/core/config.py` | config.yaml + .env → `Settings`; SANDBOX/LIVE resolution | every command |
+| `src/cave_dossier/core/config.py` | config.yaml + .env → `Settings`; LIVE-first workbook resolution with fallback | every command |
 | `src/cave_dossier/core/normalization.py` | diacritic-insensitive matching keys (ported) | column + name matching |
 | `src/cave_dossier/core/people.py` | split an author cell into people; peel off the society bracket | SB mapping |
 | `src/cave_dossier/sb/safe_io.py` | workbook preflight/backup/COM-write safety (ported) | reads: preflight only; writes: M6 |

@@ -181,6 +181,44 @@ def deliver(settings: Settings, cave_name: str, serial: int | str, result: Geore
     return paths
 
 
+def read_records(csv_path: Path) -> dict[str, list[str]]:
+    """!georef_zapisi.csv as {padded Redni broj: row}; empty when absent."""
+    rows: dict[str, list[str]] = {}
+    if csv_path.exists():
+        with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.reader(handle)
+            for row in reader:
+                if not row or row[0] == RECORDS_CSV_COLUMNS[0]:
+                    continue
+                rows[row[0]] = (row + [""] * len(RECORDS_CSV_COLUMNS))[: len(RECORDS_CSV_COLUMNS)]
+    return rows
+
+
+def refresh_reason(settings: Settings, serial: int | str, current_name: str) -> str | None:
+    """Why an already-collected excerpt must be fetched AGAIN, or None if it is
+    current.
+
+    The cave name is an integral part of the georef zapis — it is typed into
+    the Naziv lokaliteta field and comes back inside the record — so when SB
+    renames a cave (a field name like `LiDAR Kristal 31` becoming a synonym of
+    the real name, user example SB 1320, 2026-08-30), the collected point and
+    record are stale and the flow has to run again under the new name.
+    A missing CSV row with the PNG present is the other refresh case: the
+    delivery is only complete as a pair.
+    """
+    paths = delivery_paths(settings, serial)
+    if paths is None or not paths.png.exists():
+        return None  # nothing collected yet — the normal fetch path handles it
+    stored = read_records(paths.records_csv).get(padded_serial(serial))
+    if stored is None:
+        return "excerpt PNG exists but !georef_zapisi.csv has no row — record lost"
+    stored_name = " ".join(stored[1].split())
+    if stored_name != " ".join(current_name.split()):
+        return (f"SB je preimenovao objekt: '{stored_name}' -> '{current_name}' — "
+                "ime je sastavni dio georef zapisa")
+    return None
+
+
 def upsert_record(csv_path: Path, serial_label: str, cave_name: str,
                   record: str, date_text: str) -> None:
     """One row per cave in !georef_zapisi.csv, keyed by (padded) Redni broj.
@@ -190,15 +228,7 @@ def upsert_record(csv_path: Path, serial_label: str, cave_name: str,
     The record itself is semicolon-joined, so commas/quoting stay safe, and
     it is flattened to one line — a cell spanning lines is miserable in Excel.
     """
-    rows: dict[str, list[str]] = {}
-    if csv_path.exists():
-        with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
-            reader = csv.reader(handle)
-            for row in reader:
-                if not row or row[0] == RECORDS_CSV_COLUMNS[0]:
-                    continue
-                rows[row[0]] = (row + [""] * len(RECORDS_CSV_COLUMNS))[: len(RECORDS_CSV_COLUMNS)]
-
+    rows = read_records(csv_path)
     flat = " ".join(record.split())
     rows[serial_label] = [serial_label, cave_name, flat, date_text]
 

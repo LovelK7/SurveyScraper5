@@ -128,6 +128,58 @@ def check_excel_not_open(path: Path) -> None:
         )
 
 
+def probe_live_workbook(path: Path) -> str | None:
+    """None when the live workbook is safely readable right now, else a short
+    human-readable reason (used to decide the LIVE → fallback switch).
+
+    Three conflicts, in the order they occur in practice:
+    - unreachable (Drive offline / shortcut unresolved / file missing),
+    - open in Excel (`~$` lock file) — reading would work physically, but the
+      data can be mid-edit, so the user chose fallback for this case too,
+    - unreadable (a permission/handle error from the Drive VFS).
+    """
+    try:
+        check_workbook_present(path)
+    except SBWorkbookUnreachable:
+        return "live SB nedostupan (Drive offline ili datoteka ne postoji)"
+    lock = path.with_name("~$" + path.name)
+    if lock.exists():
+        return f"netko ima SB otvoren u Excelu ({lock.name})"
+    try:
+        with path.open("rb") as handle:
+            handle.read(8)
+    except OSError as exc:
+        return f"live SB se ne može čitati ({exc.__class__.__name__})"
+    return None
+
+
+def refresh_fallback_copy(live_path: Path, fallback_path: Path) -> bool:
+    """Best-effort: keep the fallback copy identical to the live workbook.
+
+    Called only after ``probe_live_workbook`` said the live file is healthy,
+    so the fallback is always the *last good* live state — a stale manual
+    sandbox copy already caused one wrong "row missing" report (2026-08-29).
+    Copies only when size or mtime differ (``copy2`` preserves both, so an
+    unchanged workbook costs one ``stat``).  Never raises: a failed refresh
+    just means the existing copy stays.
+    """
+    try:
+        if fallback_path.exists():
+            live_stat, fallback_stat = live_path.stat(), fallback_path.stat()
+            if (
+                live_stat.st_size == fallback_stat.st_size
+                and int(live_stat.st_mtime) == int(fallback_stat.st_mtime)
+            ):
+                return False
+        fallback_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(live_path, fallback_path)
+        LOGGER.info("Refreshed SB fallback copy at %s", fallback_path)
+        return True
+    except OSError:
+        LOGGER.warning("Could not refresh SB fallback copy", exc_info=True)
+        return False
+
+
 # ── Backup helper ──────────────────────────────────────────────────
 
 

@@ -14,6 +14,8 @@ from cave_dossier.georef.worker import (
     find_by_serial,
     map_excerpts_dir,
     padded_serial,
+    read_records,
+    refresh_reason,
     run_for_cave,
 )
 
@@ -24,5 +26,7 @@ __all__ = [
     "find_by_serial",
     "map_excerpts_dir",
     "padded_serial",
+    "read_records",
+    "refresh_reason",
     "run_for_cave",
 ]

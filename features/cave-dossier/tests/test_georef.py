@@ -95,6 +95,35 @@ def test_upsert_record_creates_then_updates(tmp_path: Path) -> None:
     assert "star" not in lines[2]
 
 
+def test_rename_invalidates_a_collected_excerpt(settings: Settings, tmp_path: Path) -> None:
+    """The cave name is an integral part of the georef zapis (it is typed into
+    the point and comes back inside the record), so an SB rename — e.g. a field
+    name like 'LiDAR Kristal 31' becoming a synonym of the real name — must
+    trigger a re-run, not a skip (user, 2026-08-30)."""
+    configured = dataclasses.replace(
+        settings,
+        local_drive_root=tmp_path,
+        archive_dirs={"map_excerpts_dir": "!!Isječci karte"},
+    )
+    paths = worker.delivery_paths(configured, 1320)
+    paths.png.parent.mkdir(parents=True)
+    paths.png.write_bytes(b"png")
+    worker.upsert_record(paths.records_csv, "1320", "LiDAR Kristal 31",
+                         "999;LiDAR Kristal 31;1;2;0.7", "2026-08-30")
+
+    # Same name → current, skip stands.
+    assert worker.refresh_reason(configured, 1320, "LiDAR Kristal 31") is None
+    # Renamed in SB → stale, with both names in the reason.
+    reason = worker.refresh_reason(configured, 1320, "Jama Nova")
+    assert reason is not None and "LiDAR Kristal 31" in reason and "Jama Nova" in reason
+    # PNG without a CSV row → the pair is incomplete, also a refresh.
+    paths.records_csv.unlink()
+    assert worker.refresh_reason(configured, 1320, "LiDAR Kristal 31") is not None
+    # Nothing collected at all → not a refresh case (normal fetch path).
+    paths.png.unlink()
+    assert worker.refresh_reason(configured, 1320, "LiDAR Kristal 31") is None
+
+
 # ── Excerpt size budget ────────────────────────────────────────────
 
 

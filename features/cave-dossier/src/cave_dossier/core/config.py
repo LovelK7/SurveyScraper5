@@ -5,10 +5,14 @@ core/profile.py + core/config.py) is NOT ported — this tool serves one society
 Field names (``sb_sheet_name``, ``sb_object_name_column``, …) are kept identical
 to crospeleo's Settings so ported modules read naturally.
 
-Workbook resolution (the SANDBOX/LIVE switch):
-- ``SB_WORKBOOK_PATH`` set in .env  → that file, mode ``SANDBOX``
-- otherwise                         → ``LOCAL_DRIVE_ROOT / sb.workbook_filename``,
-                                      mode ``LIVE``
+Workbook resolution (the LIVE-first switch, user 2026-08-30):
+- ``SB_WORKBOOK_PATH`` set in .env  → that file, mode ``SANDBOX`` (explicit
+                                      override for development)
+- otherwise → the LIVE workbook ``LOCAL_DRIVE_ROOT / sb.workbook_filename`` is
+  probed first (reachable? open in Excel? readable?).  Healthy → mode ``LIVE``,
+  and the ``SB_SANDBOX_PATH`` copy is refreshed to match it.  In conflict →
+  mode ``FALLBACK`` reading that copy, with the reason on ``sb_mode_reason``.
+  No ``SB_SANDBOX_PATH`` configured → always LIVE (conflicts surface at read).
 """
 
 from __future__ import annotations
@@ -85,6 +89,9 @@ class Settings:
     georef_selectors_path: Path = FEATURE_ROOT / "config" / "selectors.yaml"
     playwright_browser: str = "chromium"
     playwright_slow_mo_ms: int = 0
+    # Why the workbook is not the live one (mode FALLBACK); None for LIVE and
+    # for an explicit SANDBOX override. Printed by the CLI banner.
+    sb_mode_reason: str | None = None
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -99,6 +106,29 @@ def _load_env_file(path: Path) -> dict[str, str]:
         key, _, value = line.partition("=")
         values[key.strip()] = value.strip().strip('"').strip("'")
     return values
+
+
+def resolve_live_workbook(
+    live_path: Path, fallback_path: Path | None
+) -> tuple[Path, str, str | None]:
+    """(workbook, mode, reason): LIVE when the live workbook is healthy,
+    FALLBACK onto the local copy when it is not (user, 2026-08-30).
+
+    While LIVE is healthy the fallback copy is refreshed to match it, so a
+    later fallback always reads the *last good* live state, not a stale
+    manual snapshot.  With no usable fallback the answer is LIVE regardless —
+    the conflict then surfaces at read time with the safe_io diagnosis.
+    """
+    from cave_dossier.sb.safe_io import probe_live_workbook, refresh_fallback_copy
+
+    reason = probe_live_workbook(live_path)
+    if reason is None:
+        if fallback_path is not None:
+            refresh_fallback_copy(live_path, fallback_path)
+        return live_path, "LIVE", None
+    if fallback_path is not None and fallback_path.exists():
+        return fallback_path, "FALLBACK", reason
+    return live_path, "LIVE", None
 
 
 def load_settings() -> Settings:
@@ -121,26 +151,31 @@ def load_settings() -> Settings:
     drive_root_raw = get_env("LOCAL_DRIVE_ROOT")
     local_drive_root = Path(drive_root_raw) if drive_root_raw else None
 
-    sandbox_raw = get_env("SB_WORKBOOK_PATH")
-    if sandbox_raw:
+    def _feature_relative(raw: str) -> Path:
         # Relative paths resolve against the feature root, so the sandbox
         # copy under example/ survives renames/moves of the repo folder.
-        workbook_path = Path(sandbox_raw)
-        if not workbook_path.is_absolute():
-            workbook_path = FEATURE_ROOT / workbook_path
+        path = Path(raw)
+        return path if path.is_absolute() else FEATURE_ROOT / path
+
+    mode_reason: str | None = None
+    sandbox_raw = get_env("SB_WORKBOOK_PATH")
+    if sandbox_raw:
+        workbook_path = _feature_relative(sandbox_raw)
         mode = "SANDBOX"
     else:
         workbook_filename = sb.get("workbook_filename")
         if not local_drive_root or not workbook_filename:
             raise ConfigError(
                 "No SB workbook configured.\n"
-                "  Either set SB_WORKBOOK_PATH in .env (sandbox copy — recommended\n"
-                "  during development), or set LOCAL_DRIVE_ROOT in .env so the live\n"
-                f"  workbook resolves as <LOCAL_DRIVE_ROOT>/{workbook_filename or '<sb.workbook_filename>'}.\n"
+                "  Set LOCAL_DRIVE_ROOT in .env so the live workbook resolves as\n"
+                f"  <LOCAL_DRIVE_ROOT>/{workbook_filename or '<sb.workbook_filename>'},\n"
+                "  or set SB_WORKBOOK_PATH to force a sandbox copy.\n"
                 f"  (.env template: {FEATURE_ROOT / '.env.example'})"
             )
-        workbook_path = local_drive_root / workbook_filename
-        mode = "LIVE"
+        live_path = local_drive_root / workbook_filename
+        fallback_raw = get_env("SB_SANDBOX_PATH")
+        fallback_path = _feature_relative(fallback_raw) if fallback_raw else None
+        workbook_path, mode, mode_reason = resolve_live_workbook(live_path, fallback_path)
 
     return Settings(
         sb_workbook_path=workbook_path,
@@ -194,4 +229,5 @@ def load_settings() -> Settings:
         georef_username=get_env("GEOREF_USERNAME"),
         georef_password=get_env("GEOREF_PASSWORD"),
         playwright_slow_mo_ms=int(get_env("PLAYWRIGHT_SLOW_MO_MS") or 0),
+        sb_mode_reason=mode_reason,
     )
