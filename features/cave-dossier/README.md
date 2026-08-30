@@ -7,8 +7,8 @@ per-cave **dossier** with warning/blocker gating, prefill the **OSZ**, produce t
 `cave_dossier`, CLI `cavedossier`. Run from VS Code — no GUI yet, function over
 form.
 
-This page is the **operator's view**: what the tools are, how to set them up,
-and every command you can run. Design rationale and settled decisions live in
+This page is the **operator's view**: what the tools are, every command you can
+run, and how to set a machine up. Design rationale and settled decisions live in
 [docs/design-decisions.md](docs/design-decisions.md); the module/docs map for
 agents and developers is [_INDEX.md](_INDEX.md).
 
@@ -16,13 +16,13 @@ agents and developers is [_INDEX.md](_INDEX.md).
 
 - [Where to look next](#where-to-look-next)
 - [What this does (orientation)](#what-this-does-orientation)
+- [Commands](#commands)
+- [Quick checks](#quick-checks)
 - [Setup (once)](#setup-once)
   - [.env — per-machine facts](#env--per-machine-facts)
   - [The SB mode banner](#the-sb-mode-banner)
   - [Dev vs prod — this setup is the DEV half](#dev-vs-prod--this-setup-is-the-dev-half)
   - [Two venvs exist](#two-venvs-exist)
-- [Commands](#commands)
-- [Quick checks](#quick-checks)
 - [Troubleshooting](#troubleshooting)
 - [Testing](#testing)
 
@@ -61,79 +61,11 @@ confused with "nobody looked". The full design (state derivation from SB's own
 Power Query, the rule table, §5.1 year exemptions, identity numbering) is in
 [docs/design-decisions.md](docs/design-decisions.md).
 
-## Setup (once)
-
-```powershell
-cd features/cave-dossier
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
-copy .env.example .env     # then fill in (see below)
-```
-
-Optional extras per tool: `[karta]` (playwright + Pillow; then run
-`playwright install chromium` once) for the isječak karte, `[osz]` (lxml) for
-the OSZ prefill, `[geo]` (requests, geopandas, shapely, pyproj, rapidfuzz,
-rasterio) for the locality/elevation finders — then a one-time
-`cavedossier geo fetch-data` to provision the geodata. `[sb-write]` (xlwings)
-stays dormant until M6.
-
-### .env — per-machine facts
-
-`.env` (gitignored, per-machine):
-
-- `LOCAL_DRIVE_ROOT` — the Drive Desktop mount of the society archive. The
-  **live workbook** resolves as `<LOCAL_DRIVE_ROOT>/<sb.workbook_filename>`
-  and is the default read target (user, 2026-08-30); the archive dirs
-  (nacrti, izjave, photos, isječci) resolve against it too.
-- `SB_SANDBOX_PATH` — local **fallback copy**, read automatically when the live
-  workbook is unreachable (Drive offline), open in someone's Excel, or
-  unreadable. While live is healthy the copy is auto-refreshed to match it, so
-  a fallback always reads the *last good* live state.
-- `SB_WORKBOOK_PATH` — optional override that **forces** a sandbox copy
-  (development / offline work); relative paths resolve against this feature's
-  root, e.g. `example/sb-sandbox/!Speleo_baza_SUE_v3.0.xlsm`.
-- `GEOREF_BASE_URL` / `GEOREF_USERNAME` / `GEOREF_PASSWORD` — georef.hr login
-  for the `karta` flow.
-
-### The SB mode banner
-
-Every command prints the mode first — `SB mode: LIVE (...)`,
-`SB mode: FALLBACK (...)` (with the conflict reason), or
-`SB mode: SANDBOX (...)` (forced) — always check the banner.
-
-> **A manual sandbox copy goes stale the moment SB is edited.** On 2026-08-29 a
-> run against one reported a cave as missing that had just been added live
-> (row 1311), because the copy still ended at 1301. The LIVE-first default with
-> auto-refreshed fallback (2026-08-30) exists precisely to close that hole; a
-> FALLBACK banner still means "data may lag — retry when SB is free".
-
-### Dev vs prod — this setup is the DEV half
-
-Everything on this page assumes the developer's PC. **Prod is the registry
-Drive** (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §Dev vs prod): the
-people who will eventually run these tools work in the shared Drive folders,
-not in a repo clone. Productionizing (a distributable entry point, cloud
-copies of `data/geo/` and the template, a non-developer setup guide) is
-noted but unscheduled — until then, keep the portability rules: one
-subcommand per tool, per-machine facts only in `.env`, every local dataset
-regenerable by one command, outputs delivered fail-soft into the hand-managed
-Drive dirs.
-
-### Two venvs exist
-
-| Venv | What it holds | Use it for |
-|---|---|---|
-| `SurveyScraper5/.venv` (repo root) | this package **plus every optional extra** (playwright, lxml, geopandas, xlwings, …) + pytest | day-to-day work across features |
-| `features/cave-dossier/.venv` | this package + `[dev]` only | isolated feature work / the setup above |
-
-Both provide the `cavedossier` command, so either is fine — just don't expect
-the optional extras in the feature-local one.
-
 ## Commands
 
 Exit codes: **1** = ready, **0** = not ready, **99** = error. `--gate` only
 chooses which gate the exit code reports on — both are always printed.
+First time on a machine? [Setup](#setup-once) below.
 
 ```powershell
 # ── Read-only SB inspection (part 2.2a) ────────────────────────────────
@@ -220,6 +152,75 @@ cavedossier geo locate 570                  # the locality finders vs the SB row
 cavedossier geo kota 570                    # DMV elevation vs the SB row's Z
 cavedossier osz prefill 570                 # the whole 2.1b chain for one cave
 ```
+
+## Setup (once)
+
+```powershell
+cd features/cave-dossier
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+copy .env.example .env     # then fill in (see below)
+```
+
+Optional extras per tool: `[karta]` (playwright + Pillow; then run
+`playwright install chromium` once) for the isječak karte, `[osz]` (lxml) for
+the OSZ prefill, `[geo]` (requests, geopandas, shapely, pyproj, rapidfuzz,
+rasterio) for the locality/elevation finders — then a one-time
+`cavedossier geo fetch-data` to provision the geodata. `[sb-write]` (xlwings)
+stays dormant until M6.
+
+### .env — per-machine facts
+
+`.env` (gitignored, per-machine):
+
+- `LOCAL_DRIVE_ROOT` — the Drive Desktop mount of the society archive. The
+  **live workbook** resolves as `<LOCAL_DRIVE_ROOT>/<sb.workbook_filename>`
+  and is the default read target (user, 2026-08-30); the archive dirs
+  (nacrti, izjave, photos, isječci) resolve against it too.
+- `SB_SANDBOX_PATH` — local **fallback copy**, read automatically when the live
+  workbook is unreachable (Drive offline), open in someone's Excel, or
+  unreadable. While live is healthy the copy is auto-refreshed to match it, so
+  a fallback always reads the *last good* live state.
+- `SB_WORKBOOK_PATH` — optional override that **forces** a sandbox copy
+  (development / offline work); relative paths resolve against this feature's
+  root, e.g. `example/sb-sandbox/!Speleo_baza_SUE_v3.0.xlsm`.
+- `GEOREF_BASE_URL` / `GEOREF_USERNAME` / `GEOREF_PASSWORD` — georef.hr login
+  for the `karta` flow.
+
+### The SB mode banner
+
+Every command prints the mode first — `SB mode: LIVE (...)`,
+`SB mode: FALLBACK (...)` (with the conflict reason), or
+`SB mode: SANDBOX (...)` (forced) — always check the banner.
+
+> **A manual sandbox copy goes stale the moment SB is edited.** On 2026-08-29 a
+> run against one reported a cave as missing that had just been added live
+> (row 1311), because the copy still ended at 1301. The LIVE-first default with
+> auto-refreshed fallback (2026-08-30) exists precisely to close that hole; a
+> FALLBACK banner still means "data may lag — retry when SB is free".
+
+### Dev vs prod — this setup is the DEV half
+
+Everything on this page assumes the developer's PC. **Prod is the registry
+Drive** (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §Dev vs prod): the
+people who will eventually run these tools work in the shared Drive folders,
+not in a repo clone. Productionizing (a distributable entry point, cloud
+copies of `data/geo/` and the template, a non-developer setup guide) is
+noted but unscheduled — until then, keep the portability rules: one
+subcommand per tool, per-machine facts only in `.env`, every local dataset
+regenerable by one command, outputs delivered fail-soft into the hand-managed
+Drive dirs.
+
+### Two venvs exist
+
+| Venv | What it holds | Use it for |
+|---|---|---|
+| `SurveyScraper5/.venv` (repo root) | this package **plus every optional extra** (playwright, lxml, geopandas, xlwings, …) + pytest | day-to-day work across features |
+| `features/cave-dossier/.venv` | this package + `[dev]` only | isolated feature work / the setup above |
+
+Both provide the `cavedossier` command, so either is fine — just don't expect
+the optional extras in the feature-local one.
 
 ## Troubleshooting
 
