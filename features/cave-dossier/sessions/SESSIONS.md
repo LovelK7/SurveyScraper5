@@ -6,6 +6,49 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-08-30 (late evening) — People registry + statement gates (agent) ✅
+
+- **Did:** (1) *`people/` package* (crospeleo ports, PORTING.md rows) —
+  `registry.py` (design port of `crospeleo_registry` + the alias *generator*:
+  aliases DERIVED at load from full "First Last" names with collision
+  detection, curated `aliases` win, `(SOV)`-bracket strip-retry, exact-key
+  resolution only), `name_resolver.py` (near-verbatim; NEW dual tokenization so
+  the hyphen in `SKapidžić-Antolič` is a name joiner), `statements.py`
+  (statement_checker restructured: stems go through `archive/izjave.py` so the
+  SCOPE survives; per-person `PersonStatementStatus`). (2) *Committed registry*
+  `data/people/registry.json` — 132 people seeded from the 133 real izjave
+  (gitignore exception à la crospeleo `curated/`); curated aliases added live:
+  `S.Antolič`→`SKapidžić-Antolič`, `R.Reš`→`RResch`; `V.Malnar` first
+  `deceased: true` (exempt — no blocker/warning/listing). (3) *Gates* — izjave
+  got their own gather step (`Source.STATEMENTS`; the dir is shared, so no
+  waiting on archive intake): gate 1 blocks per author, registry- and
+  scope-aware (scoped-elsewhere is its own blocker message); NEW gate-2
+  per-person warnings (missing izjava for recorder/team; `UNKNOWN_PERSON` for
+  names the registry can't resolve). (4) *Author-vs-finder criterion (user)* —
+  in `Autori nacrta ili izvor` only `N.Surname` marks a survey author
+  (`is_author_shorthand`); finders are fully exempt. (5) *CLI* —
+  `people list` / `people check` (audit + `runs/people/statements-index.json`
+  snapshot; caves + exploration years shown, sorted newest-first); `report`
+  runs the statements enrich with an `Osobe · izjave` block. Tests 183 → 198.
+- **Result:** Live `people check`: 133 izjave all linked, 0 orphans, 0 registry
+  people missing statements; unresolved SB authors 125 → 28 (criterion) → 24
+  (aliases + deceased), year-sorted so the chase-able top is F.Karabaić 2026 /
+  N.Grozić 2025 and the hard tail is the 2000-era SG caves. Konglomeratača
+  (SUE 570) report exercises the whole path (A.Lipovac → registry → universal
+  izjava → gate 1 pass).
+- **Learned:** (a) The izjava convention makes the hyphen load-bearing, so the
+  ported variant algorithm needed keys over BOTH tokenizations — crospeleo's
+  own resolver would miss `S.Kapidžić-Antolič` vs `SKapidžić-Antolič`.
+  (b) The single spelling criterion (`N.Surname` = author, else finder) beats
+  any scraping heuristic: it cut the unresolved list 125 → 28 with zero manual
+  triage. (c) Statements can gate BEFORE archive intake because the izjave dir
+  is flat and shared — modeling that as its own `Source` kept "not checked
+  yet" honest for the rest of `Source.ARCHIVE`. (d) Deceased authors are a
+  registry fact (`deceased: true`), not a warning to re-triage every run.
+- **Next:** work the 24-name worklist (add registry entries / upgrade token
+  names to full "First Last"); then the M2 tail — per-cave archive intake
+  (`drive_resolver` port).
+
 ### 2026-08-30 (evening) — 2.1b prefill slice: geo finders + OSZ writer + `osz prefill` (agent) ✅
 
 - **Did:** (1) *`geo/` package* — locality finder ported from crospeleo

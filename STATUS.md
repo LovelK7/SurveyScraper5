@@ -255,6 +255,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
+- 2026-08-30 (late evening) — people registry + statement gates: `people/` (crospeleo ports), committed `data/people/registry.json` (132 people), registry/scope-aware gate-1 izjava blocker + gate-2 per-person warning, `N.Surname` author-vs-finder criterion, deceased exemption, `people list/check` — unresolved SB authors 125 → 24 → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-30 (evening) — 2.1b prefill slice shipped: `geo/` finders (RGI + DGU boundaries + DMV elevation, offline-capable) + `osz/` writer/prefill, karta format → 5:4, LiDAR/GPS source flags, validated live on 3 caves + 24-cave sweep → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-30 — 2.1c shipped (georef port, live-validated) + `SB_` prefix convention rolled out across excerpts, intake folders and staged photos → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-08-29 — satellite hub (part 2.2b) built and run end to end: 126 Liburnija caves into SB, sync now idempotent → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
