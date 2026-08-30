@@ -51,12 +51,17 @@ class TileExtent:
 
 
 class ElevationFinder:
-    """Sample the EL-COV grid at an HTRS96 point."""
+    """Sample the EL-COV grid at an HTRS96 point.
 
-    def __init__(self, data_dir: Path, source_label: str) -> None:
+    ``offline=True`` (`--offline`) never downloads: only the cached GML
+    index and already-downloaded tiles under ``dem/`` answer.
+    """
+
+    def __init__(self, data_dir: Path, source_label: str, *, offline: bool = False) -> None:
         self.data_dir = data_dir
         self.dem_dir = data_dir / "dem"
         self.source_label = source_label
+        self.offline = offline
 
     def kota(self, x_htrs: float, y_htrs: float) -> ElevationFinding:
         finding = ElevationFinding()
@@ -101,6 +106,11 @@ class ElevationFinder:
     def _tile_index(self, finding: ElevationFinding) -> list[TileExtent]:
         cache = self.data_dir / _INDEX_CACHE_NAME
         if not cache.exists():
+            if self.offline:
+                finding.notes.append(
+                    "offline način: EL-COV indeks nije u predmemoriji — kota preskočena."
+                )
+                return []
             if not _download(ATOM_BASE_URL + INDEX_GML_NAME, cache, _INDEX_TIMEOUT_S):
                 finding.notes.append(
                     "EL-COV GML indeks nije dohvatljiv (mreža?) — kota preskočena."
@@ -121,6 +131,11 @@ class ElevationFinder:
         path = self.dem_dir / name
         if path.exists():
             return path
+        if self.offline:
+            finding.notes.append(
+                f"offline način: pločica {name} nije u predmemoriji — preskočena."
+            )
+            return None
         logger.info("Downloading EL-COV tile %s (~34 MB, one-time)…", name)
         print(f"  Preuzimam EL-COV pločicu {name} (~34 MB, jednokratno) …")
         if not _download(ATOM_BASE_URL + name, path, _DOWNLOAD_TIMEOUT_S):
@@ -129,8 +144,9 @@ class ElevationFinder:
         return path
 
 
-def build_finder(settings: Settings) -> ElevationFinder:
-    return ElevationFinder(settings.geo_data_dir, settings.geo_elevation_source_label)
+def build_finder(settings: Settings, *, offline: bool = False) -> ElevationFinder:
+    return ElevationFinder(settings.geo_data_dir, settings.geo_elevation_source_label,
+                           offline=offline)
 
 
 def parse_tile_index(gml_bytes: bytes) -> list[TileExtent]:

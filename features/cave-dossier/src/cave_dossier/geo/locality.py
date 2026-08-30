@@ -99,13 +99,18 @@ def is_topographic_locality_feature(vrsta: str | None) -> bool:
     return not any(kw in normalised for kw in _NON_LOCALITY_VRSTA_KEYWORDS)
 
 
-def build_finder(settings: Settings) -> "LocalityFinder":
-    """A LocalityFinder wired to the configured data dir and RGI radius."""
+def build_finder(settings: Settings, *, offline: bool = False) -> "LocalityFinder":
+    """A LocalityFinder wired to the configured data dir and RGI radius.
+
+    ``offline=True`` (`--offline`) never touches the RGI WFS — the local
+    ``rgi_named_places.gpkg`` answers instead (admin lookup is local anyway).
+    """
     return LocalityFinder(
         rgi_client=RGIClient(
             RGIClientConfig(
                 radius_m=settings.geo_rgi_radius_m,
                 offline_dir=settings.geo_data_dir,
+                offline=offline,
             )
         ),
         admin_lookup=AdminLookup(settings.geo_data_dir),
@@ -142,8 +147,10 @@ class LocalityFinder:
         finding.rgi_hits = hits
         finding.rgi_offline_fallback = self.rgi_client.used_offline_fallback
         if finding.rgi_offline_fallback:
+            reason = ("offline način" if self.rgi_client.config.offline
+                      else "RGI WFS nedostupan")
             finding.notes.append(
-                "RGI WFS nedostupan — korišten lokalni rgi_named_places.gpkg "
+                f"{reason} — korišten lokalni rgi_named_places.gpkg "
                 "(podaci mogu kasniti za registrom)."
             )
         elif not hits:

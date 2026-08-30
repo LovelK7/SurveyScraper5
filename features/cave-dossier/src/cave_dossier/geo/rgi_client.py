@@ -36,6 +36,9 @@ class RGIClientConfig:
     timeout_s: float = _DEFAULT_TIMEOUT_S
     # Directory holding rgi_named_places.gpkg; None disables the fallback.
     offline_dir: Path | None = None
+    # Forced-offline mode (`--offline`): never touch the WFS, answer from
+    # the local gpkg only.
+    offline: bool = False
 
 
 class RGIClient:
@@ -51,7 +54,7 @@ class RGIClient:
     def query_nearby(self, x_htrs: float, y_htrs: float) -> list[NamedPlaceHit]:
         """NamedPlaceHits within radius_m, closest first; [] on any failure."""
         self.used_offline_fallback = False
-        hits = self._query_wfs(x_htrs, y_htrs)
+        hits = None if self.config.offline else self._query_wfs(x_htrs, y_htrs)
         if hits is None:
             hits = self._query_offline(x_htrs, y_htrs)
             if hits:

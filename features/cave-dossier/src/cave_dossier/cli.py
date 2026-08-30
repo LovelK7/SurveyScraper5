@@ -651,7 +651,7 @@ def cmd_geo_fetch_data(settings: Settings, include_au: bool) -> int:
     return provision.fetch_data(settings, include_au=include_au)
 
 
-def cmd_geo_locate(settings: Settings, serial: int) -> int:
+def cmd_geo_locate(settings: Settings, serial: int, offline: bool = False) -> int:
     """Part 2.1b debug harness: the locality finder for one cave, verbose."""
     from cave_dossier.geo import locality as locality_mod
     from cave_dossier.georef.worker import _coordinate
@@ -670,7 +670,7 @@ def cmd_geo_locate(settings: Settings, serial: int) -> int:
     sb_najblize = None if _is_empty(sb_najblize) else str(sb_najblize).strip()
 
     print(f"Redni broj {serial}: {cave.object_name or '<no name>'}  (X {x:.0f} · Y {y:.0f})")
-    finding = locality_mod.build_finder(settings).locate(
+    finding = locality_mod.build_finder(settings, offline=offline).locate(
         x, y, sb_lokalitet=sb_lokalitet, sb_najblize_mjesto=sb_najblize
     )
     print(f"  Županija:        {finding.zupanija or '—'}")
@@ -691,7 +691,7 @@ def cmd_geo_locate(settings: Settings, serial: int) -> int:
     return 0
 
 
-def cmd_geo_kota(settings: Settings, serial: int) -> int:
+def cmd_geo_kota(settings: Settings, serial: int, offline: bool = False) -> int:
     """Part 2.1b debug harness: the elevation finder vs SB's Z, verbose."""
     from cave_dossier.core.normalization import parse_optional_float
     from cave_dossier.geo import elevation as elevation_mod
@@ -706,7 +706,7 @@ def cmd_geo_kota(settings: Settings, serial: int) -> int:
         print("SB row has no usable X HTRS / Y HTRS.", file=sys.stderr)
         return EXIT_ERROR
     print(f"Redni broj {serial}: {cave.object_name or '<no name>'}  (X {x:.0f} · Y {y:.0f})")
-    finding = elevation_mod.build_finder(settings).kota(x, y)
+    finding = elevation_mod.build_finder(settings, offline=offline).kota(x, y)
     z_column = settings.sb_field_columns.get("entrance_elevation_m", "Z")
     sb_z = parse_optional_float(SBReader._cell_as_text(cave.values, z_column))
     if finding.elevation_m is not None:
@@ -726,7 +726,8 @@ def cmd_geo_kota(settings: Settings, serial: int) -> int:
     return 0
 
 
-def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: bool) -> int:
+def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: bool,
+                    offline: bool = False) -> int:
     """Part 2.1b: SB row -> prefilled OSZ DOCX with the map excerpt embedded."""
     from cave_dossier.osz import prefill
 
@@ -735,7 +736,8 @@ def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: b
         print("  which may lag the live SB. Verify before distributing the zapisnik.")
         print()
     try:
-        outcome = prefill.run_prefill(settings, serial, debug=debug, force_karta=force_karta)
+        outcome = prefill.run_prefill(settings, serial, debug=debug,
+                                      force_karta=force_karta, offline=offline)
     except prefill.PrefillError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
@@ -910,16 +912,20 @@ def build_parser() -> argparse.ArgumentParser:
         dest="include_au",
         help="Skip the ~209 MB INSPIRE AU download when boundary files are missing",
     )
+    offline_help = ("Never touch the network: RGI answers from the local "
+                    "rgi_named_places.gpkg, elevation only from cached DEM tiles")
     geo_locate = geo_sub.add_parser(
         "locate",
         help="Županija / grad-općina / najbliže mjesto / lokalitet for one cave (debug)",
     )
     geo_locate.add_argument("redni_broj", type=int, help="SB Redni broj of the cave")
+    geo_locate.add_argument("--offline", action="store_true", help=offline_help)
     geo_kota = geo_sub.add_parser(
         "kota",
         help="Kota ulaza from the DGU elevation grid vs SB's Z for one cave (debug)",
     )
     geo_kota.add_argument("redni_broj", type=int, help="SB Redni broj of the cave")
+    geo_kota.add_argument("--offline", action="store_true", help=offline_help)
 
     osz = subparsers.add_parser(
         "osz",
@@ -945,6 +951,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--force-karta",
         action="store_true",
         help="Re-fetch the map excerpt even when one is already collected",
+    )
+    osz_prefill.add_argument(
+        "--offline",
+        action="store_true",
+        help="Never touch the network: local RGI gpkg + cached DEM tiles only, "
+             "and the georef.hr flow is skipped (an already-collected excerpt "
+             "is still embedded)",
     )
 
     photos = subparsers.add_parser(
@@ -1020,12 +1033,13 @@ def main(argv: list[str] | None = None) -> int:
             if args.geo_command == "fetch-data":
                 return cmd_geo_fetch_data(settings, args.include_au)
             if args.geo_command == "locate":
-                return cmd_geo_locate(settings, args.redni_broj)
+                return cmd_geo_locate(settings, args.redni_broj, args.offline)
             if args.geo_command == "kota":
-                return cmd_geo_kota(settings, args.redni_broj)
+                return cmd_geo_kota(settings, args.redni_broj, args.offline)
         if args.command == "osz":
             if args.osz_command == "prefill":
-                return cmd_osz_prefill(settings, args.redni_broj, args.debug, args.force_karta)
+                return cmd_osz_prefill(settings, args.redni_broj, args.debug,
+                                       args.force_karta, args.offline)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR

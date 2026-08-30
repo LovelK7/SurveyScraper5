@@ -63,6 +63,7 @@ def run_prefill(
     *,
     debug: bool = False,
     force_karta: bool = False,
+    offline: bool = False,
 ) -> PrefillOutcome:
     if not TEMPLATE_PATH.exists():
         raise PrefillError(f"OSZ template not found: {TEMPLATE_PATH}")
@@ -83,20 +84,20 @@ def run_prefill(
     y_htrs = _sb_float(cave, settings.sb_y_htrs_column)
 
     png_bytes = _ensure_karta(settings, cave, serial, result,
-                              debug=debug, force=force_karta,
+                              debug=debug, force=force_karta, offline=offline,
                               has_coords=x_htrs is not None and y_htrs is not None)
 
     finding = None
     kota_finding = None
     if x_htrs is not None and y_htrs is not None:
-        finding = locality_mod.build_finder(settings).locate(
+        finding = locality_mod.build_finder(settings, offline=offline).locate(
             x_htrs,
             y_htrs,
             sb_lokalitet=_sb_text(cave, _field_column(settings, "locality")),
             sb_najblize_mjesto=_sb_text(cave, _field_column(settings, "nearest_place")),
         )
         result.notes.extend(finding.notes)
-        kota_finding = elevation_mod.build_finder(settings).kota(x_htrs, y_htrs)
+        kota_finding = elevation_mod.build_finder(settings, offline=offline).kota(x_htrs, y_htrs)
         result.notes.extend(kota_finding.notes)
     else:
         result.notes.append(
@@ -111,12 +112,7 @@ def run_prefill(
     docx_path = run_dir / docx_name
     _write_docx(docx_path, result, png_bytes, serial)
 
-    delivered_path = _deliver(settings, docx_path, docx_name)
-    if delivered_path is None:
-        result.notes.append(
-            "Nije konfiguriran archive.osz_prefill_dir / LOCAL_DRIVE_ROOT — "
-            "dokument je ostao samo lokalno."
-        )
+    delivered_path = _deliver(settings, docx_path, docx_name, result)
 
     sidecar_path = run_dir / "prefill.json"
     sidecar_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
@@ -144,6 +140,7 @@ def _ensure_karta(
     *,
     debug: bool,
     force: bool,
+    offline: bool,
     has_coords: bool,
 ) -> bytes | None:
     paths = georef.delivery_paths(settings, serial)
@@ -159,7 +156,28 @@ def _ensure_karta(
         if reason is None:
             result.karta_status = "reused"
             return paths.png.read_bytes()
+        if offline:
+            # Can't refresh without georef.hr — the stale excerpt is still
+            # better than an empty frame; the note says why.
+            result.notes.append(
+                f"offline način: isječak karte je zastario ({reason}) — "
+                "ugrađen postojeći, osvježi kad bude mreže."
+            )
+            result.karta_status = "reused"
+            return paths.png.read_bytes()
         result.notes.append(f"Isječak karte je zastario ({reason}) — dohvaćam ponovno.")
+
+    if offline:
+        if paths.png.exists():  # --force-karta while offline: keep what exists
+            result.notes.append(
+                "offline način: --force-karta zanemaren, ugrađen postojeći isječak."
+            )
+            result.karta_status = "reused"
+            return paths.png.read_bytes()
+        result.notes.append(
+            "offline način: isječak karte nije prikupljen, georef.hr tijek preskočen."
+        )
+        return None
 
     if not has_coords:
         return None
@@ -297,13 +315,28 @@ def _write_docx(target: Path, result: PrefillResult, png_bytes: bytes | None,
     doc.save(target)
 
 
-def _deliver(settings: Settings, docx_path: Path, docx_name: str) -> Path | None:
+def _deliver(settings: Settings, docx_path: Path, docx_name: str,
+             result: PrefillResult) -> Path | None:
+    """Copy to the Drive dir; fail-soft — the run-dir copy is always the
+    fallback (target open in Word, Drive mount offline, …)."""
     subdir = settings.archive_dirs.get("osz_prefill_dir")
     if not settings.local_drive_root or not subdir:
+        result.notes.append(
+            "Nije konfiguriran archive.osz_prefill_dir / LOCAL_DRIVE_ROOT — "
+            "dokument je ostao samo lokalno."
+        )
         return None
     target = settings.local_drive_root / subdir / docx_name
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(docx_path, target)
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(docx_path, target)
+    except OSError as exc:
+        result.notes.append(
+            f"Isporuka na Drive nije uspjela ({exc.__class__.__name__}: {exc}) — "
+            f"dokument je ostao lokalno; zatvori {docx_name} u Wordu / pričekaj "
+            "mrežu i ponovi."
+        )
+        return None
     return target
 
 

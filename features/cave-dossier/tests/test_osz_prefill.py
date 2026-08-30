@@ -61,11 +61,11 @@ def geo_stubs(monkeypatch):
     )
     monkeypatch.setattr(
         prefill.locality_mod, "build_finder",
-        lambda settings: StubLocalityFinder(locality_finding),
+        lambda settings, **kwargs: StubLocalityFinder(locality_finding),
     )
     monkeypatch.setattr(
         prefill.elevation_mod, "build_finder",
-        lambda settings: StubElevationFinder(elevation_finding),
+        lambda settings, **kwargs: StubElevationFinder(elevation_finding),
     )
 
 
@@ -205,6 +205,36 @@ def test_prefill_without_coordinates_degrades(settings, geo_stubs, run_dir, monk
     assert "kota_ulaza" not in result.fields
     assert any("koordinate" in note.lower() for note in result.notes)
     assert outcome.docx_path.exists()  # the document is still produced
+
+
+def test_prefill_offline_reuses_karta_and_skips_flow(settings, geo_stubs, run_dir,
+                                                    collected_karta, monkeypatch):
+    _template_guard()
+
+    def boom(*args, **kwargs):
+        raise AssertionError("offline mode must not run the georef flow")
+
+    monkeypatch.setattr(prefill.georef, "run_for_cave", boom)
+    outcome = prefill.run_prefill(settings, 1, offline=True)
+    assert outcome.result.karta_status == "reused"
+    with zipfile.ZipFile(outcome.docx_path) as zin:
+        assert "word/media/SB_0001.png" in zin.namelist()
+
+
+def test_prefill_offline_without_karta_degrades(settings, geo_stubs, run_dir, monkeypatch):
+    _template_guard()
+    from cave_dossier.georef.worker import DeliveryPaths as DP
+
+    missing = DP(png=run_dir / "nema.png", records_csv=run_dir / "nema.csv")
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: missing)
+    monkeypatch.setattr(
+        prefill.georef, "run_for_cave",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not run")),
+    )
+    outcome = prefill.run_prefill(settings, 1, offline=True)
+    assert outcome.result.karta_status == "missing"
+    assert any("offline" in note for note in outcome.result.notes)
+    assert outcome.docx_path.exists()
 
 
 def test_prefill_unknown_serial_raises(settings, geo_stubs, run_dir):

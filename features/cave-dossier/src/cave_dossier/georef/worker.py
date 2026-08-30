@@ -181,16 +181,33 @@ def deliver(settings: Settings, cave_name: str, serial: int | str, result: Geore
     return paths
 
 
+def record_key(value: int | str) -> str:
+    """Normalised lookup key for a Redni broj cell.
+
+    The collation CSV round-trips through Excel (people open and edit it),
+    and Excel strips the leading zeros from ``0651`` on save — so keys are
+    matched numerically when possible, and rows are stored back padded.
+    Seen live 2026-08-30: an Excel-saved file also grows blank ``,,,`` rows.
+    """
+    text = str(value).strip()
+    try:
+        return str(int(text))
+    except ValueError:
+        return text
+
+
 def read_records(csv_path: Path) -> dict[str, list[str]]:
-    """!georef_zapisi.csv as {padded Redni broj: row}; empty when absent."""
+    """!georef_zapisi.csv as {record_key(Redni broj): row}; empty when absent."""
     rows: dict[str, list[str]] = {}
     if csv_path.exists():
         with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
             reader = csv.reader(handle)
             for row in reader:
-                if not row or row[0] == RECORDS_CSV_COLUMNS[0]:
+                if not row or not row[0].strip() or row[0] == RECORDS_CSV_COLUMNS[0]:
                     continue
-                rows[row[0]] = (row + [""] * len(RECORDS_CSV_COLUMNS))[: len(RECORDS_CSV_COLUMNS)]
+                rows[record_key(row[0])] = (
+                    row + [""] * len(RECORDS_CSV_COLUMNS)
+                )[: len(RECORDS_CSV_COLUMNS)]
     return rows
 
 
@@ -209,7 +226,7 @@ def refresh_reason(settings: Settings, serial: int | str, current_name: str) -> 
     paths = delivery_paths(settings, serial)
     if paths is None or not paths.png.exists():
         return None  # nothing collected yet — the normal fetch path handles it
-    stored = read_records(paths.records_csv).get(padded_serial(serial))
+    stored = read_records(paths.records_csv).get(record_key(serial))
     if stored is None:
         return "excerpt PNG exists but !georef_zapisi.csv has no row — record lost"
     stored_name = " ".join(stored[1].split())
@@ -230,10 +247,15 @@ def upsert_record(csv_path: Path, serial_label: str, cave_name: str,
     """
     rows = read_records(csv_path)
     flat = " ".join(record.split())
-    rows[serial_label] = [serial_label, cave_name, flat, date_text]
+    # Keyed by the normalised broj (an Excel edit unpads it), written back
+    # padded — one upsert also repairs Excel's formatting drift on that row.
+    rows[record_key(serial_label)] = [serial_label, cave_name, flat, date_text]
+
+    def _order(key: str):
+        return (0, int(key)) if key.isdigit() else (1, key)
 
     with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.writer(handle, lineterminator="\r\n")
         writer.writerow(RECORDS_CSV_COLUMNS)
-        for key in sorted(rows):
+        for key in sorted(rows, key=_order):
             writer.writerow(rows[key])

@@ -103,6 +103,16 @@ def test_rgi_offline_without_gpkg_returns_empty(tmp_path):
     assert client._query_offline(0.0, 0.0) == []
 
 
+def test_rgi_forced_offline_never_touches_wfs(tmp_path, monkeypatch):
+    client = RGIClient(RGIClientConfig(offline_dir=tmp_path, offline=True))
+
+    def boom(*args, **kwargs):
+        raise AssertionError("WFS must not be called in offline mode")
+
+    monkeypatch.setattr(client, "_query_wfs", boom)
+    assert client.query_nearby(0.0, 0.0) == []  # empty gpkg dir → just empty
+
+
 # ── synthesizer: empty SB row gets filled ────────────────────────────
 def test_locate_fills_empty_sb_row():
     finder = LocalityFinder(

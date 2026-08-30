@@ -70,6 +70,55 @@ def test_kota_without_pyproj_or_data_is_failsoft(tmp_path, monkeypatch):
     assert finding.notes  # says WHY it has no answer
 
 
+def test_kota_offline_without_cache_says_so(tmp_path, monkeypatch):
+    import cave_dossier.geo.elevation as elevation_mod
+
+    def boom(*args, **kwargs):
+        raise AssertionError("offline mode must not download")
+
+    monkeypatch.setattr(elevation_mod, "_download", boom)
+    finding = ElevationFinder(tmp_path, "DMV", offline=True).kota(450123.0, 5023456.0)
+    if finding.notes and "pyproj" in finding.notes[0]:
+        pytest.skip("pyproj not installed")
+    assert finding.elevation_m is None
+    assert any("offline" in note for note in finding.notes)
+
+
+def test_kota_offline_with_cached_tile_works(tmp_path, monkeypatch):
+    rasterio = pytest.importorskip("rasterio")
+    pyproj = pytest.importorskip("pyproj")
+    from rasterio.transform import from_origin
+    import numpy as np
+    import cave_dossier.geo.elevation as elevation_mod
+
+    def boom(*args, **kwargs):
+        raise AssertionError("offline mode must not download")
+
+    monkeypatch.setattr(elevation_mod, "_download", boom)
+
+    x_htrs, y_htrs = 450123.0, 5023456.0
+    transformer = pyproj.Transformer.from_crs("EPSG:3765", "EPSG:3045", always_xy=True)
+    easting, northing = transformer.transform(x_htrs, y_htrs)
+    dem_dir = tmp_path / "dem"
+    dem_dir.mkdir()
+    with rasterio.open(
+        dem_dir / "RH_ELEV_7.tif", "w", driver="GTiff", height=4, width=4, count=1,
+        dtype="float32", crs="EPSG:3045",
+        transform=from_origin(easting - 50, northing + 50, 25, 25), nodata=-9999.0,
+    ) as dst:
+        dst.write(np.full((1, 4, 4), 321.0, dtype="float32"))
+    (tmp_path / "el_cov_index.gml").write_text(
+        f"""<?xml version="1.0"?><root xmlns:gml="http://www.opengis.net/gml/3.2">
+<gml:lowerCorner>{northing - 50:.0f} {easting - 50:.0f}</gml:lowerCorner>
+<gml:upperCorner>{northing + 50:.0f} {easting + 50:.0f}</gml:upperCorner>
+<file>RH_ELEV_7.tif</file></root>""",
+        encoding="utf-8",
+    )
+
+    finding = ElevationFinder(tmp_path, "DMV", offline=True).kota(x_htrs, y_htrs)
+    assert finding.elevation_m == 321
+
+
 def test_kota_samples_local_tile(tmp_path):
     rasterio = pytest.importorskip("rasterio")
     pyproj = pytest.importorskip("pyproj")

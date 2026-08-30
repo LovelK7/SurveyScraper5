@@ -95,6 +95,37 @@ def test_upsert_record_creates_then_updates(tmp_path: Path) -> None:
     assert "star" not in lines[2]
 
 
+def test_excel_mangled_csv_still_matches(settings: Settings, tmp_path: Path) -> None:
+    """The collation CSV round-trips through Excel (seen live 2026-08-30):
+    leading zeros stripped ('0651' → '651'), local date format, blank ',,,'
+    rows appended. The lookup must still find the row, and an upsert must
+    repair the padding instead of duplicating."""
+    csv_path = tmp_path / "!georef_zapisi.csv"
+    csv_path.write_text(
+        "Redni broj,Ime objekta,Georef zapis,Datum\r\n"
+        ",,,\r\n"
+        "651,Jama na Globoko,999;Jama na Globoko;1;2;0.7,30.8.2026\r\n",
+        encoding="utf-8-sig",
+    )
+    rows = worker.read_records(csv_path)
+    assert worker.record_key("0651") in rows  # unpadded row found via the key
+    assert len(rows) == 1                     # blank ',,,' row skipped
+
+    configured = dataclasses.replace(
+        settings, local_drive_root=tmp_path, archive_dirs={"map_excerpts_dir": "."},
+    )
+    paths = worker.delivery_paths(configured, 651)
+    paths.png.write_bytes(b"png")
+    assert worker.refresh_reason(configured, 651, "Jama na Globoko") is None
+
+    # Upsert re-pads the Excel-stripped row rather than adding a second one.
+    worker.upsert_record(csv_path, "0651", "Jama na Globoko",
+                         "999;Jama na Globoko;1;2;0.7", "2026-08-30")
+    lines = csv_path.read_text(encoding="utf-8-sig").splitlines()
+    assert len(lines) == 2  # header + the one cave
+    assert lines[1].startswith("0651")
+
+
 def test_rename_invalidates_a_collected_excerpt(settings: Settings, tmp_path: Path) -> None:
     """The cave name is an integral part of the georef zapis (it is typed into
     the point and comes back inside the record), so an SB rename — e.g. a field
