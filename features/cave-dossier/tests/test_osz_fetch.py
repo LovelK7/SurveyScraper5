@@ -76,6 +76,86 @@ def test_reader_roundtrip(tmp_path):
     assert values["dubina"] is None
 
 
+# ── filled-OSZ discovery in the intake tree ──────────────────────────
+def _intake_settings(settings, tmp_path):
+    import dataclasses
+
+    return dataclasses.replace(
+        settings,
+        local_drive_root=tmp_path,
+        archive_dirs={"intake_dir": "!Za digitalizirat",
+                      "osz_prefill_dir": "OSZ prefill"},
+    )
+
+
+def test_locate_filled_osz_in_intake_dir(settings, tmp_path):
+    from cave_dossier.osz.backfill import locate_filled_osz
+
+    cave_dir = tmp_path / "!Za digitalizirat" / "Veprinac" / "SB_764_Piccolo_orig"
+    cave_dir.mkdir(parents=True)
+    (cave_dir / "opis terena.txt").write_text("x", encoding="utf-8")
+    target = cave_dir / "SB_0764_OSZ.docx"
+    target.write_bytes(b"docx")
+    (cave_dir / "~$SB_0764_OSZ.docx").write_bytes(b"lock")  # Word lock file
+
+    location = locate_filled_osz(_intake_settings(settings, tmp_path), 764)
+    assert location.path == target
+
+
+def test_locate_filled_osz_prefers_osz_named_docx(settings, tmp_path):
+    from cave_dossier.osz.backfill import locate_filled_osz
+
+    cave_dir = tmp_path / "!Za digitalizirat" / "SB_15_Volarova"
+    cave_dir.mkdir(parents=True)
+    (cave_dir / "biljeske.docx").write_bytes(b"x")
+    target = cave_dir / "zapisnik Volarova.docx"
+    target.write_bytes(b"x")
+    location = locate_filled_osz(_intake_settings(settings, tmp_path), 15)
+    assert location.path == target
+
+
+def test_locate_filled_osz_ambiguous_reports_candidates(settings, tmp_path):
+    from cave_dossier.osz.backfill import locate_filled_osz
+
+    cave_dir = tmp_path / "!Za digitalizirat" / "SB_20_Blazici"
+    cave_dir.mkdir(parents=True)
+    (cave_dir / "prva.docx").write_bytes(b"x")
+    (cave_dir / "druga.docx").write_bytes(b"x")
+    location = locate_filled_osz(_intake_settings(settings, tmp_path), 20)
+    assert location.path is None
+    assert any("kandidata" in note for note in location.notes)
+
+
+def test_locate_filled_osz_falls_back_to_prefill_dir(settings, tmp_path):
+    from cave_dossier.osz.backfill import locate_filled_osz
+
+    (tmp_path / "!Za digitalizirat").mkdir()
+    prefill_dir = tmp_path / "OSZ prefill"
+    prefill_dir.mkdir()
+    target = prefill_dir / "SB_0764_OSZ.docx"
+    target.write_bytes(b"docx")
+    location = locate_filled_osz(_intake_settings(settings, tmp_path), 764)
+    assert location.path == target
+    assert any("prefill" in note for note in location.notes)
+
+
+def test_locate_filled_osz_override_dir(settings, tmp_path):
+    from cave_dossier.osz.backfill import locate_filled_osz
+
+    cave_dir = tmp_path / "negdje" / "SB_99_Proba"
+    cave_dir.mkdir(parents=True)
+    target = cave_dir / "SB_99_OSZ.docx"
+    target.write_bytes(b"docx")
+    # Pointing at the parent...
+    location = locate_filled_osz(_intake_settings(settings, tmp_path), 99,
+                                 override_dir=tmp_path / "negdje")
+    assert location.path == target
+    # ...or straight at the cave's own dir both work.
+    location = locate_filled_osz(_intake_settings(settings, tmp_path), 99,
+                                 override_dir=cave_dir)
+    assert location.path == target
+
+
 # ── backfill rules over the mini SB fixture ──────────────────────────
 def _cave(reader: SBReader, settings, serial: int):
     from cave_dossier.georef.worker import find_by_serial

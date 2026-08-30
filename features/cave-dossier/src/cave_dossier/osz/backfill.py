@@ -41,6 +41,91 @@ BACKFILL_CSV_COLUMNS = (
 
 _YEAR_RE = re.compile(r"\b(1[89]\d{2}|20\d{2})\b")
 
+# An intake leaf dir names the cave by its pre-SUE id: SB_<Redni broj>_…
+# (unpadded there; the excerpt/zapisnik files pad to 4 — accept both).
+_SB_DIR_RE = re.compile(r"^SB_0*(\d+)[_.]", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class OszLocation:
+    """Where the filled OSZ was (or was not) found."""
+
+    path: Path | None
+    notes: tuple[str, ...] = ()
+
+
+def locate_filled_osz(settings: Settings, serial: int,
+                      override_dir: Path | None = None) -> OszLocation:
+    """Find the cave's filled zapisnik (user, 2026-08-30).
+
+    Default search: the intake tree (``archive.intake_dir`` —
+    `!!!Digitalizacija/!Za digitalizirat`), where each cave's field material
+    lives in an ``SB_<Redni broj>_…`` dir — the OSZ is the DOCX inside it
+    (preferring a filename that says osz/zapisnik when several exist).
+    ``--osz-dir`` overrides the search root. Falls back to the prefilled
+    ``SB_<broj>_OSZ.docx`` in ``archive.osz_prefill_dir``.
+    """
+    notes: list[str] = []
+    roots: list[Path] = []
+    if override_dir is not None:
+        roots.append(override_dir)
+    elif settings.local_drive_root:
+        intake = settings.archive_dirs.get("intake_dir")
+        if intake:
+            roots.append(settings.local_drive_root / intake)
+
+    for root in roots:
+        if not root.is_dir():
+            notes.append(f"dir ne postoji: {root}")
+            continue
+        cave_dirs = [d for d in root.rglob("SB_*") if d.is_dir() and _dir_serial(d.name) == serial]
+        if override_dir is not None and not cave_dirs and _dir_serial(root.name) == serial:
+            cave_dirs = [root]  # --osz-dir pointed straight at the cave's dir
+        if not cave_dirs:
+            notes.append(f"nema SB_{serial}_… mape pod {root}")
+            continue
+        for cave_dir in cave_dirs:
+            docx = _pick_docx(cave_dir, notes)
+            if docx is not None:
+                return OszLocation(path=docx, notes=tuple(notes))
+            notes.append(f"mapa {cave_dir.name} nema (jednoznačan) OSZ .docx")
+
+    # Fallback: the prefilled document delivered by `osz prefill`.
+    subdir = settings.archive_dirs.get("osz_prefill_dir")
+    if settings.local_drive_root and subdir:
+        prefilled = (settings.local_drive_root / subdir
+                     / f"SB_{str(serial).zfill(4)}_OSZ.docx")
+        if prefilled.exists():
+            notes.append("nađen samo prefill primjerak u osz_prefill_dir — "
+                         "provjeri je li stvarno ispunjen")
+            return OszLocation(path=prefilled, notes=tuple(notes))
+        notes.append(f"ni prefill primjerka nema: {prefilled}")
+    return OszLocation(path=None, notes=tuple(notes))
+
+
+def _dir_serial(name: str) -> int | None:
+    match = _SB_DIR_RE.match(name.strip())
+    return int(match.group(1)) if match else None
+
+
+def _pick_docx(cave_dir: Path, notes: list[str]) -> Path | None:
+    """The dir's OSZ: prefer a name saying osz/zapisnik; else a lone DOCX."""
+    candidates = [f for f in cave_dir.rglob("*.docx")
+                  if not f.name.startswith("~$")]
+    if not candidates:
+        return None
+    preferred = [f for f in candidates
+                 if "osz" in f.name.lower() or "zapisnik" in normalize_lookup_key(f.name)]
+    if len(preferred) == 1:
+        return preferred[0]
+    if len(candidates) == 1:
+        return candidates[0]
+    pool = preferred or candidates
+    if len(pool) > 1:
+        notes.append("više .docx kandidata: " + ", ".join(f.name for f in pool))
+        return None
+    return pool[0]
+
 
 @dataclass(frozen=True)
 class BackfillProposal:

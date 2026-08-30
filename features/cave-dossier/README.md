@@ -142,9 +142,13 @@ cavedossier osz prefill 1234 --offline     # never touch the network; an already
 # nothing writes to SB automatically.
 
 # ── OSZ fetch → SB backfill (part 2.1b — reads a FILLED zapisnik back) ──
-cavedossier osz fetch 1234                 # read SB_<broj>_OSZ.docx from the prefill Drive
-                                           #   dir and propose the SB backfill
-cavedossier osz fetch 1234 --osz FILE      # point at any filled v10 DOCX instead
+cavedossier osz fetch 1234                 # find the cave's SB_<broj>_… dir in the intake
+                                           #   tree (!Za digitalizirat), read the OSZ DOCX
+                                           #   inside it (prefers osz/zapisnik-named files;
+                                           #   falls back to the prefill copy) and propose
+                                           #   the SB backfill
+cavedossier osz fetch 1234 --osz-dir DIR   # search a different root for the SB_<broj>_… dir
+cavedossier osz fetch 1234 --osz FILE      # point at an exact filled v10 DOCX instead
 # Proposes for EMPTY SB cells: Broj pločice, Duljina, Dubina, Godina/period
 # (cropped out of the OSZ's free-form Datum: "10.05.2025." -> "2025",
 # two visits -> "2025-2026"), Autori nacrta (OSZ full names -> SB shorthand,

@@ -486,6 +486,12 @@ same day the prefill shipped; enforced in `osz/reader.py` + `osz/backfill.py`:
   holds the finder/source, and a later survey legitimately adds people.
 - **A control still showing its placeholder reads as EMPTY** (`w:showingPlcHdr`,
   or a literal `⟨…⟩` in the Docs variant) — the grey hint text is not a value.
+- **Where the zapisnik lives** (user, 2026-08-30): a cave's filled OSZ is
+  filed with its field material — the `SB_<Redni broj>_…` dir in the intake
+  tree (`!Za digitalizirat`). `osz fetch` searches there by default
+  (preferring a DOCX whose name says osz/zapisnik, refusing to guess among
+  several), `--osz-dir` overrides the search root, `--osz` names an exact
+  file; the prefilled copy in `osz_prefill_dir` is only a flagged fallback.
 - **No writes**: the output is `dopune-sb-iz-osz.csv` under `runs/osz/<broj>/`,
   carried into Excel by hand. Exit 1 = something to carry over.
 - **Validated** against `osz-template/mockups/v10.2_primjer_811.docx` vs SB 764

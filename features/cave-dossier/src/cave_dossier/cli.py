@@ -763,12 +763,16 @@ def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: b
     return 0
 
 
-def cmd_osz_fetch(settings: Settings, serial: int, osz_path_arg: str | None) -> int:
+def cmd_osz_fetch(settings: Settings, serial: int, osz_path_arg: str | None,
+                  osz_dir_arg: str | None) -> int:
     """Part 2.1b fetcher: read a FILLED OSZ and propose the SB backfill.
 
-    Never writes SB — proposals land in dopune-sb-iz-osz.csv for a person
-    to carry into Excel (write-back is M6). Exit 1 when there is something
-    to carry over, 0 when SB already holds everything, 99 on errors.
+    The zapisnik is found in the cave's SB_<broj>_… intake dir by default
+    (user, 2026-08-30); --osz-dir overrides the search root, --osz points
+    at an exact file. Never writes SB — proposals land in
+    dopune-sb-iz-osz.csv for a person to carry into Excel (write-back is
+    M6). Exit 1 when there is something to carry over, 0 when SB already
+    holds everything, 99 on errors.
     """
     from cave_dossier.osz import backfill as backfill_mod
     from cave_dossier.osz import prefill as prefill_mod
@@ -779,19 +783,21 @@ def cmd_osz_fetch(settings: Settings, serial: int, osz_path_arg: str | None) -> 
         return EXIT_ERROR
 
     if osz_path_arg:
-        osz_path = Path(osz_path_arg)
-    else:
-        subdir = settings.archive_dirs.get("osz_prefill_dir")
-        if not settings.local_drive_root or not subdir:
-            print("No default OSZ location (LOCAL_DRIVE_ROOT / archive.osz_prefill_dir "
-                  "unset) — pass --osz <file>.", file=sys.stderr)
+        osz_path = Path(osz_path_arg).resolve()
+        if not osz_path.exists():
+            print(f"Filled OSZ not found: {osz_path}", file=sys.stderr)
             return EXIT_ERROR
-        osz_path = (settings.local_drive_root / subdir
-                    / f"SB_{georef.padded_serial(serial)}_OSZ.docx")
-    if not osz_path.exists():
-        print(f"Filled OSZ not found: {osz_path}\nPass --osz <file> to point at it.",
-              file=sys.stderr)
-        return EXIT_ERROR
+    else:
+        override = Path(osz_dir_arg).resolve() if osz_dir_arg else None
+        location = backfill_mod.locate_filled_osz(settings, serial, override_dir=override)
+        for note in location.notes:
+            print(f"  ! {note}")
+        if location.path is None:
+            print(f"Nema ispunjenog OSZ-a za Redni broj {serial} — "
+                  "predaj ga u SB_<broj>_… mapu ili pokaži s --osz / --osz-dir.",
+                  file=sys.stderr)
+            return EXIT_ERROR
+        osz_path = location.path
 
     print(f"Redni broj {serial}: {cave.object_name or '<no name>'}"
           + (f" (SUE {cave.sue_number})" if cave.sue_number else ""))
@@ -1039,11 +1045,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="SB Redni broj of the cave the zapisnik belongs to",
     )
     osz_fetch.add_argument(
+        "--osz-dir",
+        dest="osz_dir",
+        metavar="DIR",
+        help="Where to look for the cave's SB_<broj>_… dir holding the filled "
+             "OSZ (default: the intake dir, !!!Digitalizacija/!Za digitalizirat)",
+    )
+    osz_fetch.add_argument(
         "--osz",
         dest="osz_path",
         metavar="FILE",
-        help="Path to the filled OSZ DOCX (default: SB_<broj>_OSZ.docx in "
-             "archive.osz_prefill_dir)",
+        help="Exact filled OSZ DOCX, skipping the dir search entirely",
     )
 
     photos = subparsers.add_parser(
@@ -1127,7 +1139,7 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_osz_prefill(settings, args.redni_broj, args.debug,
                                        args.force_karta, args.offline)
             if args.osz_command == "fetch":
-                return cmd_osz_fetch(settings, args.redni_broj, args.osz_path)
+                return cmd_osz_fetch(settings, args.redni_broj, args.osz_path, args.osz_dir)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR
