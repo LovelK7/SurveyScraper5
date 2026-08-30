@@ -6,6 +6,52 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-08-30 — isječak karte (2.1c / M3) shipped + `SB_` prefix convention (agent) ✅
+
+- **Did:** (1) *Port* — `cave_dossier/georef/` from crospeleo-automation
+  (`models` · `selectors` · `client` · `flows` near-verbatim with every timing
+  calibration kept; `artifacts` relaid to gitignored `runs/georef/<padded>/`;
+  `worker` new) + `config/selectors.yaml`; all logged in docs/PORTING.md.
+  (2) *CLI* — `cavedossier karta <Redni broj>` (`--debug` headed, `--force`
+  refresh): SB row → HTRS96 → georef.hr point → record copy → marker-centered
+  TK25 crop → delivery to the shared `!!Isječci karte` Drive folder as
+  `SB_<4-digit padded broj>.png` plus an upserted row in `!georef_zapisi.csv`
+  (comma/CRLF/BOM, same dialect as `sat sync`). (3) *Live validation* — caves
+  764 (Piccolo Bertarelli) and 651 (Jama na Globoko) end to end, all three CLI
+  paths (fetch / skip-if-collected / unknown broj). (4) *Quality* — capture
+  window raised to 2560×1600 (the crop is 1:1 screen pixels, so window size IS
+  resolution) with a 1 MB budget: truecolor → 256-color palette → 15 % downscale
+  as last resort; a reserved palette slot keeps the red pin from being quantized
+  away. (5) *`SB_` convention* (user, 2026-08-30) — shared matcher now proposes
+  `SB_<broj>_…`, treats bare `<broj>_` as a one-time upgrade and `SB_<broj>_` as
+  the fixed point; migrated in place: 2 excerpts, 34 intake folders
+  (`intake map --apply`), 62 staged photos (`photos match-queued --apply`), all
+  idempotent on re-run. Tests 124 → 135.
+- **Result:** 2.1c operational. Excerpts are 1017×1017 at ~880 KB with a clearly
+  red pin (verified visually); `!georef_zapisi.csv` carries both validation
+  records. One bug found by the live run (missing `deliver` export) — fixed, the
+  captured run was delivered from persisted artifacts without re-hitting the
+  site. Limits: SANDBOX workbook lags live SB (banner warns); headed `--debug`
+  clamps the window to the display, so full-res captures are headless-only.
+- **Learned:**
+  - **Every georef.hr save allocates a new server-side point ID** (321725→321732
+    across the test runs) — the flow validates coordinates, not identity. Re-runs
+    litter the registry a little; same behavior crospeleo has always had.
+  - **PNG-24 was the resolution bottleneck, not the site**: the TK25 scan
+    compresses poorly in truecolor (527 px ≈ 668 KB) but quantizes almost for
+    free — palette PNG is what buys 1017 px under 1 MB. The catch: median-cut
+    spends no palette entry on a few hundred pin pixels, so the marker came out
+    green-grey until a slot was reserved for it.
+  - **`Image.quantize` + a reserved index** is a clean pattern for "compress the
+    map, never lose the overlay" — worth reusing for any future map artifact.
+  - The Drive folder URL the user shares resolves via `get_file_metadata` to a
+    name that already exists under `LOCAL_DRIVE_ROOT` — no Google API needed at
+    runtime, consistent with the no-API rule.
+- **Next:** wire `Isječak karte` / `Georef zapis` presence into the CroSpeleo
+  gate rules (they still report *not checked yet*); a `karta --missing` batch
+  sweep; decide `Jama Petrci` (new intake leaf, closest *Jama kod Petrci* 1043 —
+  user says leave as is for now).
+
 ### 2026-08-29 — satellite hub (part 2.2b): Liburnija ↔ SB, end to end (agent) ✅
 
 - **Did:** turned the read-only Liburnija bridge into a real two-way hub.

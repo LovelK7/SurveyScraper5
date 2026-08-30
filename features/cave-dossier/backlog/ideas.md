@@ -119,3 +119,22 @@ when an idea's time comes. Nothing here is a commitment.
   `out_of_scope`). Types in `satellites/model.py` are already shaped for it.
 - 2026-08-29 — `Literatura` (45 rows) is the cheap second satellite: same protocol,
   its own coordinate calibration run before its tolerances are trusted.
+- 2026-08-30 — `karta --missing`: sweep SB for rows that have coordinates but no
+  `SB_<broj>.png` in `!!Isječci karte` and fetch them one by one (rate-limited —
+  each run is a server-side save on georef.hr).
+- 2026-08-30 — wire 2.1c outputs into gating: the CroSpeleo-gate rules for
+  `Isječak karte` / `Georef zapis` can now check `!!Isječci karte` +
+  `!georef_zapisi.csv` instead of reporting *not checked yet*.
+- 2026-08-30 — every georef.hr save allocates a new point ID (`--force` re-runs
+  litter the registry); investigate whether the flow can detect and validate an
+  existing point at the same coordinates instead of re-saving.
+- 2026-08-30 — downstream adapter: crospeleo-automation discovers
+  `georef_record.txt` + `map_screenshot.png` in its own run dirs; a small shim
+  reading `!!Isječci karte`/`!georef_zapisi.csv` would let it skip its own
+  (headed) georef run for caves this tool already covered.
+- 2026-08-30 — `Jama Petrci` intake leaf is unresolved (closest: *Jama kod
+  Petrci*, Redni broj 1043 at 0.87) — user says leave as is; revisit when the
+  folder's cave gets its SB row or the match is confirmed.
+- 2026-08-30 — headed `--debug` runs clamp the capture window to the physical
+  display, so their excerpts are lower-res than headless ones; if a verified-by-eye
+  full-res capture is ever needed, verify headed first, then re-run headless.

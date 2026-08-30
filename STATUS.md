@@ -1,6 +1,6 @@
 # STATUS
 
-Updated: 2026-08-29 (maintained by `/wrap-up` at the end of each session)
+Updated: 2026-08-30 (maintained by `/wrap-up` at the end of each session)
 
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -12,7 +12,7 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 | 1 — field mobile app | PARKED (manual workflow; revisit after stage 2 works) |
 | 2.1a — csx-to-survey | OPERATIONAL (own feature, semi-manual 4-step pipeline) |
 | 2.1b — OSZ builder | NOT STARTED — **OSZ v10 template distributed to recorders 2026-08-25** (Word `.dotx` + Google-Docs `.docx`); M4 ungated. Reading filled zapisnici needs a `w:sdt`-aware parser for the Word form and a `[ ]`/`⟨ ⟩` text parser for the Docs form |
-| 2.1c — isječak karte | NOT STARTED (port planned, M3) |
+| 2.1c — isječak karte | **OPERATIONAL (M3 done 2026-08-30)** — `cavedossier karta <Redni broj>` runs the ported georef.hr Playwright flow and delivers `SB_<padded broj>.png` (1017 px, ≤1 MB) + a row in `!georef_zapisi.csv` to the shared `!!Isječci karte` Drive folder. Validated live on caves 764 and 651; skip-if-collected, `--force` refreshes, `--debug` headed |
 | 2.1d — fotografije ulaza | **new part, added 2026-08-26**. Matcher + staleness guard DONE (2026-08-28); downsizing not started. Staged photos are keyed by Redni broj in `…za istražit` (a queue, not a repo) and move to `!!Fotografije ulaza` as `<padded SUE>_…` when the cave is explored. Downsizing rides along with M6 |
 | 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` (SB-only) done; archive intake next |
 | 2.2a — SB (master registry) | **M1 ✅ DONE** (read-only, live SB v3.0). Live workbook now **1438 rows**; write-back still M6 |
@@ -122,6 +122,18 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
   Word, one from Google Docs) as parser fixtures before M4 starts.
 - Mobile-app context material (parked with part 1)
 
+### Settled 2026-08-30
+
+- **Redni-broj prefixes are marked `SB_`** (`SB_1234_…`): a bare number reads
+  like a katastarski broj, and both numberings coexist in the archive. Applied
+  everywhere at once — map excerpts (`SB_0764.png`), the 34 intake folders, the
+  62 staged photos. The matcher treats a bare `<broj>_` prefix as an upgrade
+  proposal and `SB_<broj>_` as the fixed point; SUE prefixes stay bare.
+- **Georef record collation**: one `!georef_zapisi.csv` at the top of
+  `!!Isječci karte` (upserted by Redni broj), not per-cave text files.
+- Each georef.hr save allocates a **new server-side point ID** — `--force`
+  re-runs litter the registry a little; acceptable, same as crospeleo re-runs.
+
 ### Settled 2026-08-26 (details in the feature README)
 
 - **Pre-SUE ID = `Redni broj`** (SB column). `sue_number` takes over at gate 1;
@@ -176,7 +188,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
+- 2026-08-30 — 2.1c shipped (georef port, live-validated, 1 MB/1017 px excerpts) + `SB_` prefix convention rolled out across excerpts, intake folders and staged photos → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-29 — satellite hub (part 2.2b) built and run end to end: 126 Liburnija caves into SB, sync now idempotent → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-25 — OSZ v10 shipped (Google-Docs variant, `.dotx` lock, distributed) + SB v3.0 adopted, M1 closed → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-08-23 — project renamed SurveyScraper4 → SurveyScraper5 (complete: folder, Claude key, venv re-verified) → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-08-23 — OSZ v10 template finalised: placeholders, checkbox vocabularies, workbench + conformance tooling → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
