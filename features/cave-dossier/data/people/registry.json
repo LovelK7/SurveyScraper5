@@ -182,13 +182,13 @@
       "name": "LIvančić"
     },
     {
-      "name": "Lovel Kukuljan"
-    },
-    {
       "name": "LLugar"
     },
     {
       "name": "LMarot"
+    },
+    {
+      "name": "Lovel Kukuljan"
     },
     {
       "name": "LPeloza"
@@ -323,7 +323,10 @@
       "name": "RNovak"
     },
     {
-      "name": "RResch"
+      "name": "RResch",
+      "aliases": [
+        "R.Reš"
+      ]
     },
     {
       "name": "SAntić"
@@ -332,7 +335,10 @@
       "name": "SGotić"
     },
     {
-      "name": "SKapidžić-Antolič"
+      "name": "SKapidžić-Antolič",
+      "aliases": [
+        "S.Antolič"
+      ]
     },
     {
       "name": "SKlešin"
@@ -366,6 +372,10 @@
     },
     {
       "name": "TTepavac"
+    },
+    {
+      "name": "V.Malnar",
+      "deceased": true
     },
     {
       "name": "VBožić"

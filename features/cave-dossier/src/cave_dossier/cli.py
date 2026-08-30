@@ -9,6 +9,7 @@ workbook is being read.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -876,6 +877,8 @@ def cmd_people_list(settings: Settings) -> int:
         linked = index.statements_for(person.name) if index else []
         mark = "✓" if linked else ("·" if index is None else "✗")
         extras = []
+        if person.deceased:
+            extras.append("† (izjava nije potrebna)")
         if person.aliases:
             extras.append(f"alias: {', '.join(person.aliases)}")
         if person.society:
@@ -930,11 +933,64 @@ def cmd_people_check(settings: Settings, limit: int) -> int:
         for key in registry.stats.collisions:
             print(f"    {key}")
 
+    # SB sweep runs FIRST so both people-lists can carry the caves and their
+    # exploration years — an old year is the signal a statement will be hard to
+    # get (user, 2026-08-30). Deduped on the normalized key so "R.Reš" and
+    # "R. Reš" are one row (first-seen spelling kept).
+    from cave_dossier.core.normalization import normalize_lookup_key
+
+    year_pattern = re.compile(r"(?:19|20)\d{2}")
+
+    def cave_year(cave) -> int | None:
+        raw = cave.values.get(settings.sb_exploration_period_column)
+        if raw is None or _is_empty(raw):
+            return None
+        years = year_pattern.findall(str(raw))
+        return min(int(year) for year in years) if years else None
+
+    unresolved: dict[str, list[tuple[str, int | None]]] = {}
+    authored: dict[str, list[tuple[str, int | None]]] = {}  # registry name -> caves
+    spelling: dict[str, str] = {}
+    row_count = 0
+    for cave, names in iter_author_names(SBReader(settings), settings):
+        row_count += 1
+        entry = (cave.object_name or f"r{cave.row_number}", cave_year(cave))
+        for name in names:
+            person = registry.resolve(name)
+            if person is None:
+                key = normalize_lookup_key(name)
+                spelling.setdefault(key, name)
+                unresolved.setdefault(spelling[key], []).append(entry)
+            else:
+                authored.setdefault(person.name, []).append(entry)
+
+    def year_span(caves: list[tuple[str, int | None]]) -> str:
+        years = sorted({year for _label, year in caves if year is not None})
+        if not years:
+            return "god. ?"
+        return str(years[0]) if len(years) == 1 else f"{years[0]}–{years[-1]}"
+
+    def latest_year(caves: list[tuple[str, int | None]]) -> int:
+        years = [year for _label, year in caves if year is not None]
+        return max(years) if years else 0
+
+    def cave_list(caves: list[tuple[str, int | None]], shown: int = 3) -> str:
+        parts = [f"{label} ({year or '?'})" for label, year in caves[:shown]]
+        return ", ".join(parts) + (" …" if len(caves) > shown else "")
+
     missing = index.missing_statement_people()
+    # Newest activity first: a recent author is chase-able, an old one is the
+    # hard case — and pokojni (deceased: true) are exempt and not listed at all.
+    missing.sort(key=lambda person: -latest_year(authored.get(person.name, [])))
     print()
     print(f"1 · BEZ IZJAVE — {len(missing)} osoba iz registra nema nijednu izjavu")
     for person in missing[:limit]:
-        print(f"    ✗ {person.name}")
+        caves = authored.get(person.name, [])
+        if caves:
+            print(f"    ✗ {person.name:<26} {len(caves)}× autor, {year_span(caves):<10} "
+                  f"({cave_list(caves)})")
+        else:
+            print(f"    ✗ {person.name:<26} (nije autor nijednog SB retka)")
     if len(missing) > limit:
         print(f"    … {len(missing) - limit} more (raise --limit)")
     findings = findings or bool(missing)
@@ -946,29 +1002,16 @@ def cmd_people_check(settings: Settings, limit: int) -> int:
         print(f"    ? {izjava.path.name}   → dodaj {{\"name\": \"{izjava.person}\"}} u registry.json")
     findings = findings or bool(orphans)
 
-    # SB sweep: every author name anywhere in the workbook, through the
-    # registry. Deduped on the normalized key so "R.Reš" and "R. Reš" are one
-    # row (first-seen spelling kept).
-    from cave_dossier.core.normalization import normalize_lookup_key
-
-    unresolved: dict[str, list[str]] = {}
-    spelling: dict[str, str] = {}
-    row_count = 0
-    for cave, names in iter_author_names(SBReader(settings), settings):
-        row_count += 1
-        for name in names:
-            if registry.resolve(name) is None:
-                label = cave.object_name or f"r{cave.row_number}"
-                key = normalize_lookup_key(name)
-                spelling.setdefault(key, name)
-                unresolved.setdefault(spelling[key], []).append(label)
     print()
     print(f"3 · SB AUTORI IZVAN REGISTRA — {len(unresolved)} imena "
           f"(pregledano {row_count} redaka; broje se samo autori u obliku "
           f"N.Prezime — sve ostalo su pronalazači, bez obveze izjave)")
-    for name, caves in sorted(unresolved.items(), key=lambda item: -len(item[1]))[:limit]:
-        examples = ", ".join(caves[:3]) + (" …" if len(caves) > 3 else "")
-        print(f"    ? {name:<26} {len(caves)}×   ({examples})")
+    ordered = sorted(
+        unresolved.items(),
+        key=lambda item: (-latest_year(item[1]), -len(item[1])),
+    )
+    for name, caves in ordered[:limit]:
+        print(f"    ? {name:<26} {len(caves)}×  {year_span(caves):<10} ({cave_list(caves)})")
     if len(unresolved) > limit:
         print(f"    … {len(unresolved) - limit} more (raise --limit)")
     findings = findings or bool(unresolved)

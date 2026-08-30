@@ -49,12 +49,18 @@ _TRAILING_PAREN_RE = re.compile(r"\s*\([^)]*\)\s*$")
 
 @dataclass(frozen=True)
 class Person:
-    """One registry entry. ``society=None`` means the society's own member."""
+    """One registry entry. ``society=None`` means the society's own member.
+
+    ``deceased=True`` exempts the person from the izjava requirement entirely
+    (user, 2026-08-30): no gate blocker, no warning, never listed as missing
+    a statement — a statement cannot be obtained.
+    """
 
     name: str
     aliases: tuple[str, ...] = ()
     society: str | None = None
     note: str | None = None
+    deceased: bool = False
 
     @property
     def key(self) -> str:
@@ -105,6 +111,7 @@ class PersonRegistry:
                         aliases=tuple(str(a) for a in entry.get("aliases", []) if a),
                         society=entry.get("society") or None,
                         note=entry.get("note") or None,
+                        deceased=bool(entry.get("deceased", False)),
                     )
                 )
         registry = cls.from_people(people)

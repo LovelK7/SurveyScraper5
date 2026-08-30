@@ -111,6 +111,22 @@ def test_curated_alias_wins_over_derived_keys() -> None:
     assert registry.resolve("SM").name == "Sara Mikičić"
 
 
+def test_deceased_people_are_exempt_from_the_izjava_requirement() -> None:
+    """A statement cannot be obtained from a deceased author (user, 2026-08-30):
+    no gate-1 blocker, no gate-2 warning, never listed as missing a statement."""
+    registry = _registry(Person(name="V.Malnar", deceased=True), Person(name="I.Ivić"))
+    dossier = _dossier(drawing_authors=["V.Malnar", "I.Ivić"])
+    dossier.person_statements = link_person_statements(dossier, registry=registry)
+    assert [entry.name for entry in dossier.person_statements] == ["I.Ivić"]
+
+    report = evaluate(dossier)
+    blockers = [i for i in report.issues if i.code is IssueCode.MISSING_STATEMENT]
+    assert len(blockers) == 1 and "I.Ivić" in blockers[0].message
+
+    index = StatementIndex([], registry)
+    assert [p.name for p in index.missing_statement_people()] == ["I.Ivić"]
+
+
 def test_surname_alone_never_resolves_globally() -> None:
     """Singleton keys collide across a real registry — per-row matching only."""
     registry = _registry(Person(name="Lovel Kukuljan"))

@@ -111,11 +111,19 @@ class StatementIndex:
         return [izjava for izjava in self.izjave if self.owners.get(izjava.path) is None]
 
     def missing_statement_people(self) -> list[Person]:
-        """Registry people with NO izjava on file — the registry-wide warning."""
+        """Registry people with NO izjava on file — the registry-wide warning.
+
+        Deceased people are exempt (user, 2026-08-30): a statement cannot be
+        obtained, so their absence is a fact, not a finding.
+        """
         if not self.registry:
             return []
         owned = {person.name for person in self.owners.values() if person is not None}
-        return [person for person in self.registry.people if person.name not in owned]
+        return [
+            person
+            for person in self.registry.people
+            if person.name not in owned and not person.deceased
+        ]
 
 
 def link_person_statements(
@@ -162,6 +170,10 @@ def link_person_statements(
                 continue
             seen.add(key)
             person = registry.resolve(cleaned) if registry else None
+            if person is not None and person.deceased:
+                # Deceased people are exempt from the izjava requirement
+                # (user, 2026-08-30) — no entry, so no blocker and no warning.
+                continue
             linked = index.statements_for(cleaned)
             covering = [
                 izjava
@@ -237,14 +249,15 @@ def write_index_json(index: StatementIndex, path: Path, *, source_dir: Path) -> 
             for izjava in index.izjave
             if index.owners.get(izjava.path) is person
         ]
-        people.append(
-            {
-                "name": person.name,
-                "society": person.society,
-                "izjave": izjave,
-                "has_statement": bool(izjave),
-            }
-        )
+        row = {
+            "name": person.name,
+            "society": person.society,
+            "izjave": izjave,
+            "has_statement": bool(izjave),
+        }
+        if person.deceased:
+            row["deceased"] = True  # exempt from the izjava requirement
+        people.append(row)
     payload = {
         "_note": (
             "Derived person <-> izjava linkage. Regenerate with `cavedossier "

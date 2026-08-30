@@ -422,6 +422,13 @@ on the first live run: the unresolved-SB-authors list dropped from 125 noisy
 names to **28 real authors**. (The rule applies to that SB cell only —
 recorder/team names come from the OSZ, where everyone listed took part.)
 
+**Deceased people are exempt** (user, 2026-08-30): `"deceased": true` on a
+registry entry means a statement cannot be obtained, so the person gets no
+gate blocker, no warning, and is never listed as missing an izjava — their
+absence is a fact, not a finding. First entry: V.Malnar. `people check`
+sorts its people-lists by the caves' exploration years, newest first,
+because a recent author is chase-able and an old one is the hard case.
+
 **The two statement gates.**
 
 | Gate | Severity | Rule |
