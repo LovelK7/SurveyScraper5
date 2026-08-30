@@ -1,4 +1,4 @@
-# cave-dossier configuration (committed; per-machine values go in .env).
+﻿# cave-dossier configuration (committed; per-machine values go in .env).
 #
 # SB column names seeded from crospeleo-automation profiles/estavela/profile.yaml
 # (the same society, the same workbook) — keeping the names identical means SB
@@ -69,12 +69,12 @@ archive:
   queued_photos_dir: "!!Fotografije ulaza/!!Fotografije ulaza za istražit"
 
   # Field-data intake (M2): raw material per cave before anything is filed.
-  # Leaf folders here get a Redni broj prefix — see cave_dossier/intake/.
+  # Leaf folders here get an SB_<Redni broj> prefix — see cave_dossier/intake/.
   intake_dir: "!!!Digitalizacija/!Za digitalizirat"
 
   # Part 2.1c — shared collection folder for georef.hr map excerpts
   # (Drive folder 1vGy0XN6wFsnwdhiGFpMEVK7jV_CUMMvo, created 2026-08-29).
-  # Holds <zero-padded Redni broj>.png per cave plus !georef_zapisi.csv, the
+  # Holds SB_<zero-padded Redni broj>.png per cave plus !georef_zapisi.csv, the
   # collated record texts ("Georef zapis"). See cave_dossier/georef/worker.py.
   map_excerpts_dir: "!!Isječci karte"
 

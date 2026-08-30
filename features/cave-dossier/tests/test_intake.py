@@ -1,4 +1,4 @@
-"""Field-data intake: leaf discovery and folder→SB mapping.
+﻿"""Field-data intake: leaf discovery and folder→SB mapping.
 
 The intake tree is 1–3 levels deep and its folder names carry local ids (LIDAR
 points, expedition sequences) that must never be read as SB numbers.
@@ -64,7 +64,7 @@ def test_proposal_prepends_and_never_strips(tmp_path: Path) -> None:
     _tree(tmp_path)
     leaves = [leaf for leaf in find_leaf_folders(tmp_path) if leaf.path.name == "Sik Šits_Sara"]
     match = match_leaves(leaves, CANDIDATES)[0]
-    assert match.proposed_name == "1035_Sik Šits_Sara"
+    assert match.proposed_name == "SB_1035_Sik Šits_Sara"
 
 
 def test_word_order_difference_still_resolves(tmp_path: Path) -> None:
@@ -73,7 +73,7 @@ def test_word_order_difference_still_resolves(tmp_path: Path) -> None:
     leaves = [leaf for leaf in find_leaf_folders(tmp_path) if leaf.path.name == "Grotta possibile"]
     match = match_leaves(leaves, CANDIDATES)[0]
     assert match.cave.serial_number == 811
-    assert match.proposed_name == "811_Grotta possibile"
+    assert match.proposed_name == "SB_811_Grotta possibile"
 
 
 def test_suggestions_rank_a_spelling_variant_first() -> None:
@@ -87,7 +87,7 @@ def test_manual_mapping_resolves_a_folder_with_no_cave_name(tmp_path: Path) -> N
     leaves = [leaf for leaf in find_leaf_folders(tmp_path) if leaf.path.name == "108_Renata"]
     match = match_leaves(leaves, CANDIDATES, {"108_Renata": 752})[0]
     assert match.cave.object_name == "Malenica"
-    assert match.proposed_name == "752_Malenica_108_Renata"
+    assert match.proposed_name == "SB_752_Malenica_108_Renata"
 
 
 # ── The Liburnija sheet bridge ────────────────────────────────────────
@@ -161,4 +161,4 @@ def test_folder_named_after_a_sheet_row_maps_through_the_sheet(tmp_path: Path) -
     match = match_leaves(leaves, [kristal], sheet_rows=_sheet(tmp_path))[0]
     assert match.cave.serial_number == 1257
     assert match.sheet_number == "43"
-    assert match.proposed_name == "1257_LiDAR Kristal 43_Jasna"
+    assert match.proposed_name == "SB_1257_LiDAR Kristal 43_Jasna"

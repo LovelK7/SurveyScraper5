@@ -1,4 +1,4 @@
-"""Match free-form filenames and folder names back to SB rows.
+﻿"""Match free-form filenames and folder names back to SB rows.
 
 Shared by part 2.1d (staged entrance photos) and the field-data intake scan:
 both face the same problem — a human-named path (`Sik Šits_Sara`,
@@ -36,6 +36,12 @@ from cave_dossier.core.normalization import normalize_lookup_key, split_semicolo
 from cave_dossier.dossier.sb_mapper import parse_queue_flag
 from cave_dossier.sb.loader import SBReader
 
+#: Redni-broj prefixes are marked ``SB_`` (user, 2026-08-30): a bare number
+#: reads like a katastarski broj to anyone who does not know the convention,
+#: and the two numberings coexist in the archive.  ``SB_`` = Speleo baza.
+SB_PREFIX = "SB_"
+#: Leading "SB_123_" — always OUR convention, never a local id.
+SB_SERIAL_RE = re.compile(r"^SB_(\d{1,4})(?=[_\s.-]|$)")
 #: Leading "123_" / "123 " — meaning depends on the folder, see ``use_numbers``.
 LEADING_NUMBER_RE = re.compile(r"^(\d{1,4})(?=[_\s.-])")
 #: Plaque numbers appear as "051-550" or "051 418". Underscore is a word
@@ -87,14 +93,22 @@ class PathMatch:
 
     @property
     def stale_prefix(self) -> str | None:
-        """A leading number that is NOT this cave's Redni broj.
+        """A leading number (bare or ``SB_``-marked) that is NOT this cave's
+        Redni broj.
 
         A leading number that is really the first half of a plaque
         (`051-550_Goli breg`) is left alone: stripping it would leave a dangling
         `550_`, and the plaque is worth keeping in the name.
         """
+        if self.cave is None:
+            return None
+        marked = SB_SERIAL_RE.match(self.path.name)
+        if marked:
+            if self.cave.serial_number is not None and marked.group(1) == str(self.cave.serial_number):
+                return None
+            return self.path.name[: marked.end()]
         leading = LEADING_NUMBER_RE.match(self.path.name)
-        if not leading or self.cave is None:
+        if not leading:
             return None
         plaque = PLAQUE_RE.search(self.path.name)
         if plaque and plaque.start() == 0:
@@ -104,14 +118,36 @@ class PathMatch:
         return leading.group(1)
 
     @property
-    def already_correct(self) -> bool:
-        """The path already starts with this cave's Redni broj."""
+    def own_prefix(self) -> str | None:
+        """A leading ``SB_<Redni broj>`` or bare ``<Redni broj>`` that IS this
+        cave's number — ours from a previous rename, safe to strip before
+        re-prefixing. The bare form is the pre-2026-08-30 convention; finding
+        one is what turns into an upgrade proposal instead of already-correct."""
+        if self.cave is None or self.cave.serial_number is None:
+            return None
+        serial = str(self.cave.serial_number)
+        marked = SB_SERIAL_RE.match(self.path.name)
+        if marked and marked.group(1) == serial:
+            return self.path.name[: marked.end()]
         leading = LEADING_NUMBER_RE.match(self.path.name)
+        if leading and leading.group(1) == serial:
+            return serial
+        return None
+
+    @property
+    def already_correct(self) -> bool:
+        """The path already starts with ``SB_<Redni broj>`` for this cave.
+
+        A bare ``<Redni broj>`` prefix no longer counts: it is what the
+        pre-2026-08-30 renames produced, and it reads like a katastarski broj —
+        such a path gets an upgrade proposal to the ``SB_`` form instead.
+        """
+        marked = SB_SERIAL_RE.match(self.path.name)
         return bool(
-            leading
+            marked
             and self.cave is not None
             and self.cave.serial_number is not None
-            and leading.group(1) == str(self.cave.serial_number)
+            and marked.group(1) == str(self.cave.serial_number)
         )
 
     def rest(self, *, strip_stale: bool = True, insert_name: bool = True) -> str:
@@ -130,7 +166,13 @@ class PathMatch:
         * otherwise → the SB name is prepended and nothing is lost
         """
         rest = self.path.name
-        if strip_stale:
+        own = self.own_prefix
+        if own:
+            # Our own prefix (bare or SB_-marked) always comes off before
+            # re-prefixing — regardless of strip_stale, which is about
+            # FOREIGN numbers (local ids, old queue brojevi).
+            rest = rest[len(own) :].lstrip("_ -.")
+        elif strip_stale:
             stale = self.stale_prefix
             if stale:
                 rest = rest[len(stale) :].lstrip("_ -.")
@@ -151,12 +193,12 @@ class PathMatch:
 
     @property
     def proposed_name(self) -> str | None:
-        """``<Redni broj>_<rest>``, or None when there is nothing to propose."""
+        """``SB_<Redni broj>_<rest>``, or None when there is nothing to propose."""
         if self.cave is None or self.cave.serial_number is None:
             return None
         if self.confidence == "conflict" or self.already_correct:
             return None
-        return f"{self.cave.serial_number}_{self.rest()}"
+        return f"{SB_PREFIX}{self.cave.serial_number}_{self.rest()}"
 
 
 def sanitize_for_filename(name: str | None) -> str:
@@ -243,10 +285,20 @@ def match_paths(
             label = "ime" if named_key == named.name_key else "sinonim"
             evidence.append((f"{label} '{named.object_name}'{how}", named))
 
+        # An `SB_<n>_` prefix is always our own convention — never a local id —
+        # so it counts as evidence even where bare numbers are distrusted
+        # (use_numbers=False). This is what keeps a renamed path matching on
+        # re-runs in the intake tree.
+        marked = SB_SERIAL_RE.match(stem)
+        if marked:
+            candidate = by_serial.get(int(marked.group(1)))
+            if candidate:
+                evidence.append((f"SB prefiks {marked.group(1)}", candidate))
+
         if use_numbers:
             leading = LEADING_NUMBER_RE.match(stem)
             if leading:
-                # A path already renamed to `<Redni broj>_…` must keep matching,
+                # A path renamed under the OLD bare `<Redni broj>_…` convention must keep matching,
                 # or re-running after an apply would report it as unmatched.
                 current = by_serial.get(int(leading.group(1)))
                 if current:
@@ -439,6 +491,7 @@ __all__ = [
     "CaveCandidate",
     "PathMatch",
     "RenameOutcome",
+    "SB_PREFIX",
     "apply_renames",
     "build_candidates",
     "match_paths",

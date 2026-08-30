@@ -1,4 +1,4 @@
-"""Field-data intake — the folders under `!!!Digitalizacija/!Za digitalizirat`.
+﻿"""Field-data intake — the folders under `!!!Digitalizacija/!Za digitalizirat`.
 
 Each **leaf** folder there holds one cave's raw material (survey files, photos,
 notes). They are named by whoever collected the data, so they carry a cave name,
@@ -19,7 +19,7 @@ surfaced for a human to accept, and never turned into a rename by itself; a
 folder with nothing but a number stays unresolved, which is the honest answer.
 
 **Nothing is stripped.** The local id is information the user still needs, so a
-proposal only ever prepends: `<Redni broj>_<Ime objekta>_<original name>`.
+proposal only ever prepends: `SB_<Redni broj>_<Ime objekta>_<original name>`.
 Inserting the cave name is also what keeps a second run idempotent, since the
 name is then the signal that matches.
 """
@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from cave_dossier.core.config import Settings
-from cave_dossier.core.matching import CaveCandidate, PathMatch, match_paths
+from cave_dossier.core.matching import SB_PREFIX, CaveCandidate, PathMatch, match_paths
 from cave_dossier.core.normalization import normalize_lookup_key
 from cave_dossier.intake import liburnija
 
@@ -56,17 +56,19 @@ class IntakeMatch(PathMatch):
 
     @property
     def proposed_name(self) -> str | None:
-        """``<Redni broj>_<Ime objekta>_<original folder name>``.
+        """``SB_<Redni broj>_<Ime objekta>_<original folder name>``.
 
-        Unlike the photo path, a leading number is never stripped: in these
-        folders it is a LIDAR point or an expedition sequence the user still
-        needs, not a stale SB id.
+        Unlike the photo path, a foreign leading number is never stripped: in
+        these folders it is a LIDAR point or an expedition sequence the user
+        still needs, not a stale SB id. (The cave's OWN previous prefix does
+        come off — that is what upgrades a pre-2026-08-30 ``<broj>_…`` rename
+        to the ``SB_``-marked form instead of stacking the number twice.)
         """
         if self.is_new_entry or self.cave is None or self.cave.serial_number is None:
             return None
         if self.confidence == "conflict" or self.already_correct:
             return None
-        return f"{self.cave.serial_number}_{self.rest(strip_stale=False)}"
+        return f"{SB_PREFIX}{self.cave.serial_number}_{self.rest(strip_stale=False)}"
 
 
 @dataclass

@@ -1,4 +1,4 @@
-"""Workbook-wide audits (`sb audit-authors`, `sb unclassified`) and the 2.1d
+﻿"""Workbook-wide audits (`sb audit-authors`, `sb unclassified`) and the 2.1d
 staged-photo matcher.
 
 The photo tests use synthetic filenames modelled on the real staging folder:
@@ -77,14 +77,14 @@ def test_stale_old_queue_prefix_is_replaced_by_redni_broj() -> None:
     assert match.cave.serial_number == 954
     # Name AND old number agree — the strongest signal available.
     assert match.confidence == "high"
-    assert match.proposed_name == "954_Podbudišinac_SKnaus.jpg"
+    assert match.proposed_name == "SB_954_Podbudišinac_SKnaus.jpg"
 
 
 def test_old_number_alone_still_resolves() -> None:
     match = match_photos([Path("479 (1).jpg")], _candidates())[0]
     assert match.cave.serial_number == 955
     assert match.stale_prefix == "479"
-    assert match.proposed_name == "955_Puhalica kod Breškog dola_(1).jpg"
+    assert match.proposed_name == "SB_955_Puhalica kod Breškog dola_(1).jpg"
 
 
 def test_plaque_number_is_not_mistaken_for_a_stale_prefix() -> None:
@@ -92,7 +92,7 @@ def test_plaque_number_is_not_mistaken_for_a_stale_prefix() -> None:
     match = match_photos([Path("051-550_Goli breg 4.jpg")], _candidates())[0]
     assert match.cave.object_name == "Sik Šits"
     assert match.stale_prefix is None
-    assert match.proposed_name == "1035_Sik Šits_051-550_Goli breg 4.jpg"
+    assert match.proposed_name == "SB_1035_Sik Šits_051-550_Goli breg 4.jpg"
 
 
 def test_plaque_with_a_space_matches_and_corroborates_the_name() -> None:
@@ -104,7 +104,7 @@ def test_plaque_with_a_space_matches_and_corroborates_the_name() -> None:
 def test_free_form_name_match() -> None:
     match = match_photos([Path("Poljička Kosa_SKnaus_246165741_n.jpg")], _candidates())[0]
     assert match.cave.serial_number == 879
-    assert match.proposed_name.startswith("879_")
+    assert match.proposed_name.startswith("SB_879_")
 
 
 def test_conflicting_evidence_proposes_nothing() -> None:
@@ -115,10 +115,18 @@ def test_conflicting_evidence_proposes_nothing() -> None:
     assert match.proposed_name is None
 
 
-def test_already_correct_prefix_is_left_alone() -> None:
-    match = match_photos([Path("954_Podbudišinac_SKnaus.jpg")], _candidates())[0]
+def test_already_correct_sb_prefix_is_left_alone() -> None:
+    match = match_photos([Path("SB_954_Podbudišinac_SKnaus.jpg")], _candidates())[0]
     assert match.already_correct is True
     assert match.proposed_name is None
+
+
+def test_bare_redni_broj_prefix_upgrades_to_sb_form() -> None:
+    """The pre-2026-08-30 renames stamped a bare number — it reads like a
+    katastarski broj, so it gets an upgrade proposal, not left alone."""
+    match = match_photos([Path("954_Podbudišinac_SKnaus.jpg")], _candidates())[0]
+    assert match.already_correct is False
+    assert match.proposed_name == "SB_954_Podbudišinac_SKnaus.jpg"
 
 
 def test_unmatched_file_is_reported_not_guessed() -> None:
@@ -166,7 +174,7 @@ def test_manual_mapping_wins_over_everything() -> None:
     match = match_photos([Path("Jama GB 1.jpg")], [goli], {"Jama GB 1": 812})[0]
     assert match.cave.serial_number == 812
     assert match.confidence == "high"
-    assert match.proposed_name == "812_Goli breg 1_Jama GB 1.jpg"
+    assert match.proposed_name == "SB_812_Goli breg 1_Jama GB 1.jpg"
 
 
 # ── Lifecycle: sudjelovanje ───────────────────────────────────────────
@@ -210,7 +218,7 @@ def test_queued_cave_photo_is_not_flagged_for_promotion() -> None:
     match = match_photos([Path("478_Podbudišinac_SKnaus.jpg")], _candidates())[0]
     assert match.needs_promotion is False
     assert match.promoted_name is None
-    assert match.proposed_name == "954_Podbudišinac_SKnaus.jpg"
+    assert match.proposed_name == "SB_954_Podbudišinac_SKnaus.jpg"
 
 
 def test_apply_skips_photos_awaiting_promotion() -> None:
@@ -226,12 +234,12 @@ def test_apply_skips_photos_awaiting_promotion() -> None:
 
 def test_cave_name_is_inserted_after_the_number() -> None:
     match = match_photos([Path("479 (1).jpg")], _candidates())[0]
-    assert match.proposed_name == "955_Puhalica kod Breškog dola_(1).jpg"
+    assert match.proposed_name == "SB_955_Puhalica kod Breškog dola_(1).jpg"
 
 
 def test_cave_name_is_not_duplicated_when_the_file_already_has_it() -> None:
     match = match_photos([Path("478_Podbudišinac_SKnaus.jpg")], _candidates())[0]
-    assert match.proposed_name == "954_Podbudišinac_SKnaus.jpg"
+    assert match.proposed_name == "SB_954_Podbudišinac_SKnaus.jpg"
 
 
 def test_promoted_name_carries_the_cave_name_too() -> None:
@@ -247,7 +255,7 @@ def test_illegal_filename_characters_in_a_cave_name_are_replaced() -> None:
         normalize_lookup_key("Jama pod/nad cestom: gornja"),
     )
     proposed = match_photos([Path("neka slika.jpg")], [awkward], {"neka slika": 700})[0].proposed_name
-    assert proposed == "700_Jama pod-nad cestom- gornja_neka slika.jpg"
+    assert proposed == "SB_700_Jama pod-nad cestom- gornja_neka slika.jpg"
     assert not set(proposed) & set(r'\/:*?"<>|')
 
 
@@ -263,8 +271,13 @@ def test_already_renamed_file_still_matches_its_cave() -> None:
     ak = CaveCandidate(770, "AK-47", None, None, None, normalize_lookup_key("AK-47"))
     match = match_photos([Path("770_ak 47.jpg")], [ak])[0]
     assert match.cave is not None
-    assert match.already_correct is True
-    assert match.proposed_name is None
+    # The bare form still resolves but is no longer final — it upgrades once.
+    assert match.proposed_name == "SB_770_ak 47.jpg"
+    # And the SB_ form is the fixed point: matched via its own prefix, no proposal.
+    upgraded = match_photos([Path("SB_770_ak 47.jpg")], [ak])[0]
+    assert upgraded.cave is not None
+    assert upgraded.already_correct is True
+    assert upgraded.proposed_name is None
 
 
 def test_jfif_counts_as_a_photo(tmp_path: Path) -> None:

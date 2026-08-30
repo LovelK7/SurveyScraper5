@@ -247,11 +247,11 @@ Recorded so the next session — human or agent — does not have to re-ask.
 | C1 | The SUE number is the filename key across nacrt / OSZ / photos; `_A` was *dopunski zapisnik*, now superseded by updating the OSZ in place | Intake will resolve by `Link Nacrt` / `Link Zapisnik` first, then padded SUE; `_A` files count as the same cave and get flagged as legacy |
 | C2 | `Izjava_<Initial><Prezime>[_<Lokalitet>].pdf`; a locality-scoped izjava does **not** cover caves outside that locality; the `!!!` text files are the missing-izjava lists | Locality scope becomes a gate-1 rule at intake; the person registry comes from the crospeleo port |
 | C3 | One photo suffices; the *za istražit* photo folder is a **staging queue**, not a repo — photos move into `!!Fotografije ulaza` and take the SUE prefix when the cave earns its number | Modelled as part 2.1d; the mover becomes a delivery action at M6 |
-| C4 / 1 | Before a SUE number exists the cave's ID is its **Redni broj** | `dossier.serial_number` + `working_id`; the staged-photo matcher proposes `<Redni broj>_…` |
+| C4 / 1 | Before a SUE number exists the cave's ID is its **Redni broj** | `dossier.serial_number` + `working_id`; the staged-photo matcher proposes `SB_<Redni broj>_…` |
 | 2 | Photo budget: cut 7 MB down to 1–2 MB, "resize to screen size" (FastStone) | Gate warns above **2 MB**; the processing targets (1920 px long edge, 1.5 MB) are in `config.yaml` under `photos:` |
 | 4 | The column is now **`Autori nacrta ili izvor`** — for queued caves it holds the finder/source, not a survey author | Config renamed, with `sb.column_aliases` so the old spelling still reads; the gating label follows; `sb audit-authors` flags citation-shaped values |
 | 5 | List the unclassified rows | `cavedossier sb unclassified` |
-| 6 | Staged photos keep free names but gain a Redni broj prefix; needs a name-matching exercise | `cavedossier photos match-queued` — 44 of 53 matched |
+| 6 | Staged photos keep free names but gain an SB_<Redni broj> prefix; needs a name-matching exercise | `cavedossier photos match-queued` — 44 of 53 matched |
 | — | **2.1d entrance-photo processing** is a missing pipeline part | Added to [ARCHITECTURE.md](../../ARCHITECTURE.md) as part 2.1d, plus `Source.PHOTOS`, a gate-1 warning for oversized / unrenamed photos, and the `photos/` module |
 
 ## Identity: which number names a cave
@@ -283,7 +283,7 @@ Excel. These commands are read-only worklists for exactly that.
 ```powershell
 cavedossier sb audit-authors      # cells the name splitter cannot read confidently
 cavedossier sb unclassified       # rows in none of SB's three views
-cavedossier photos match-queued   # 2.1d: propose a Redni broj prefix per staged photo
+cavedossier photos match-queued   # 2.1d: propose an SB_<Redni broj> prefix per staged photo
 ```
 
 `sb audit-authors` currently reports **483 rows** across six flags:
@@ -293,7 +293,7 @@ the halves are two people), `empty` 49, `citation` 2 (a literature source such
 as `Malez, M. (1960)`, not a survey author).
 
 `photos match-queued` matches the free-form files in the staging folder against
-SB and proposes `<Redni broj>_<rest>`, replacing a stale old-number prefix where
+SB and proposes `SB_<Redni broj>_<rest>`, replacing a stale old-number prefix where
 there is one. **52 of 52 matched.** Evidence, weighed rather than ranked — two
 independent signals agreeing is the strongest result:
 
@@ -304,7 +304,7 @@ independent signals agreeing is the strongest result:
 | old Za-istražit broj | `478_…`, `479 (1)` | the number the file already carries — stale since the v3.0 renumbering, so it is *replaced*, not kept |
 | manual mapping | `Jama GB 1` → 812 | `photos.manual_matches` in config.yaml, for abbreviations no rule can reach |
 
-The proposed name is **`<Redni broj>_<Ime objekta>_<sve ostalo>`** — the number
+The proposed name is **`SB_<Redni broj>_<Ime objekta>_<sve ostalo>`** (the `SB_` marker keeps the number from reading as a katastarski broj — user, 2026-08-30) — the number
 alone is unreadable in a folder listing, and most of these filenames already
 carry an author or a description worth keeping after it. The cave name is only
 inserted when the filename does not already contain it, illegal filename
@@ -367,7 +367,7 @@ intake lands.
 
 `!!!Digitalizacija/!Za digitalizirat` holds the raw material per cave. Its
 **leaf** folders (any depth — the tree runs 1–3 levels) each get a **Redni broj**
-prefix: `<Redni broj>_<Ime objekta>_<original name>`. Nothing is ever stripped,
+prefix: `SB_<Redni broj>_<Ime objekta>_<original name>`. Nothing is ever stripped,
 because the original name carries the collector and the local id.
 
 **Numbers in these folder names are a suggestion, never evidence.** They are old
@@ -509,7 +509,7 @@ cavedossier intake map --unmatched-only    # just the ones that need a human
 cavedossier intake map --apply             # rename the folders in place
 
 # Part 2.1d — staged entrance photos
-cavedossier photos match-queued            # DRY RUN: propose <Redni broj>_… per staged photo
+cavedossier photos match-queued            # DRY RUN: propose SB_<Redni broj>_… per staged photo
 cavedossier photos match-queued --apply    # perform the proposed renames in place
 cavedossier photos check-flag              # every staged photo's cave should say Fotografija ulaza = DA
 
@@ -538,8 +538,8 @@ also self-reconfigures its output streams, so this is rarely needed).
 | `src/cave_dossier/sb/loader.py` | `SBReader`: header autodetect, column aliases, `find_caves` | `sb *`, `report` |
 | `src/cave_dossier/sb/audit.py` | workbook-wide data-quality sweeps (authors, unclassified rows) | `sb audit-authors`, `sb unclassified` |
 | `src/cave_dossier/core/matching.py` | the shared name/plaque/number matcher behind both photo and folder mapping | `photos *`, `intake *` |
-| `src/cave_dossier/intake/scanner.py` | field-data leaf folders → SB rows, `<Redni broj>_<Ime>_…` proposals | `intake map` |
-| `src/cave_dossier/photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `<Redni broj>_…`, cross-check the SB flag | `photos match-queued`, `photos check-flag` |
+| `src/cave_dossier/intake/scanner.py` | field-data leaf folders → SB rows, `SB_<Redni broj>_<Ime>_…` proposals | `intake map` |
+| `src/cave_dossier/photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `SB_<Redni broj>_…`, cross-check the SB flag | `photos match-queued`, `photos check-flag` |
 | `src/cave_dossier/archive/izjave.py` | izjava filenames: person, scope, and what a scope covers | intake (next) |
 | `src/cave_dossier/dossier/model.py` | `CaveDossier`, `Source`, `GateLevel`, `LifecycleState`, files, issues, readiness | the shared object |
 | `src/cave_dossier/dossier/sb_mapper.py` | SB row → dossier; queue flag + lifecycle derivation | `report` |

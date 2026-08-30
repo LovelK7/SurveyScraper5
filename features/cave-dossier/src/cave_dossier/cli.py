@@ -207,7 +207,7 @@ def cmd_sb_unclassified(settings: Settings, limit: int) -> int:
 
 
 def cmd_photos_match_queued(settings: Settings, limit: int, apply: bool) -> int:
-    """Propose (and with --apply, perform) a Redni broj prefix for staged photos (2.1d)."""
+    """Propose (and with --apply, perform) an SB_<Redni broj> prefix for staged photos (2.1d)."""
     directory = staged_photo_dir(settings)
     if directory is None:
         print("No staged-photo dir configured: set LOCAL_DRIVE_ROOT in .env and")
@@ -568,7 +568,7 @@ def cmd_sat_sync(
 def cmd_karta(settings: Settings, serial: int, debug: bool, force: bool) -> int:
     """Part 2.1c: fetch the georef.hr map excerpt for ONE cave by Redni broj.
 
-    Delivers ``<padded Redni broj>.png`` into the shared ``!!Isječci karte``
+    Delivers ``SB_<padded Redni broj>.png`` into the shared ``!!Isječci karte``
     Drive folder and upserts the cave's row in ``!georef_zapisi.csv`` there.
     NOTE this WRITES to georef.hr (creates/validates the point server-side)
     — same operation crospeleo-automation performs, one cave per run.
@@ -692,7 +692,7 @@ def build_parser() -> argparse.ArgumentParser:
     intake_sub = intake.add_subparsers(dest="intake_command", required=True)
     intake_map = intake_sub.add_parser(
         "map",
-        help="Map each leaf folder to its SB row and propose a Redni broj prefix",
+        help="Map each leaf folder to its SB row and propose an SB_<Redni broj> prefix",
     )
     intake_map.add_argument("--limit", type=int, default=80, help="How many folders to print")
     intake_map.add_argument(

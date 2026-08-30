@@ -6,7 +6,8 @@ submission dossier — here the products are collected per cave instead):
 - input comes from ONE thing, the SB **Redni broj** (the pre-SUE identity,
   user decision 2026-08-26);
 - the map excerpt PNG is delivered into the shared ``!!Isječci karte`` Drive
-  folder as ``<zero-padded Redni broj>.png``;
+  folder as ``SB_<zero-padded Redni broj>.png`` — the ``SB_`` marker keeps the
+  number from reading as a katastarski broj (user, 2026-08-30);
 - the georef record texts ("Georef zapis" in crospeleo's readiness terms)
   are collated into ONE ``!georef_zapisi.csv`` at the top of that folder,
   one row per cave, upserted by Redni broj — re-running a cave updates its
@@ -22,6 +23,7 @@ from datetime import date
 from pathlib import Path
 
 from cave_dossier.core.config import Settings
+from cave_dossier.core.matching import SB_PREFIX
 from cave_dossier.core.normalization import parse_optional_float
 from cave_dossier.georef.artifacts import build_georef_artifacts, persist_georef_result
 from cave_dossier.georef.models import GeorefInput, GeorefResult, GeorefStatus
@@ -63,7 +65,7 @@ def delivery_paths(settings: Settings, serial: int | str) -> DeliveryPaths | Non
     if directory is None:
         return None
     return DeliveryPaths(
-        png=directory / f"{padded_serial(serial)}.png",
+        png=directory / f"{SB_PREFIX}{padded_serial(serial)}.png",
         records_csv=directory / RECORDS_CSV_NAME,
     )
 

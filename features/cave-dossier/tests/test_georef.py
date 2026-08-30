@@ -65,7 +65,7 @@ def test_delivery_paths_use_padded_serial(settings: Settings, tmp_path: Path) ->
         archive_dirs={"map_excerpts_dir": "!!Isječci karte"},
     )
     paths = worker.delivery_paths(configured, 17)
-    assert paths.png == tmp_path / "!!Isječci karte" / "0017.png"
+    assert paths.png == tmp_path / "!!Isječci karte" / "SB_0017.png"
     assert paths.records_csv == tmp_path / "!!Isječci karte" / "!georef_zapisi.csv"
 
 
