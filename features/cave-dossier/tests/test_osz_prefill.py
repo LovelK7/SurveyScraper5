@@ -305,6 +305,185 @@ def test_prefill_offline_without_karta_degrades(settings, geo_stubs, run_dir, mo
     assert outcome.docx_path.exists()
 
 
+def test_intake_folder_name_components_and_sanitization(settings):
+    from cave_dossier.osz.prefill import _intake_folder_name
+    from cave_dossier.sb.loader import CaveRow
+
+    cave = CaveRow(row_number=1, object_name="Špilja Testovka", sue_number="001",
+                   values={"Sinonimi": "Testovka mala; druga",
+                           "Autori nacrta ili izvor": "Ana Anić"})
+    name = _intake_folder_name(cave, 1, settings)
+    assert name == "SB_1_Špilja Testovka_Testovka mala, druga_Ana Anić"
+
+    # Illegal filesystem characters are stripped, empties skipped.
+    cave = CaveRow(row_number=1, object_name='Jama "X/Y"?', sue_number=None,
+                   values={})
+    assert _intake_folder_name(cave, 42, settings) == "SB_42_Jama X Y"
+
+
+def test_find_intake_folder_matches_nested_and_padded(tmp_path):
+    from cave_dossier.osz.prefill import _find_intake_folder
+
+    (tmp_path / "!!Container" / "SB_0001_stara mapa").mkdir(parents=True)
+    (tmp_path / "SB_12_druga").mkdir()
+    found = _find_intake_folder(tmp_path, 1)
+    assert found is not None and found.name == "SB_0001_stara mapa"
+    assert _find_intake_folder(tmp_path, 2) is None       # SB_12 must not match 2
+    assert _find_intake_folder(tmp_path, 12).name == "SB_12_druga"
+
+
+def test_prefill_delivers_into_intake_folder(settings, geo_stubs, run_dir,
+                                             collected_karta, tmp_path):
+    _template_guard()
+    intake_root = tmp_path / "drive" / "!Za digitalizirat"
+    intake_root.mkdir(parents=True)
+    settings = dataclasses.replace(
+        settings,
+        local_drive_root=tmp_path / "drive",
+        archive_dirs={"intake_dir": "!Za digitalizirat"},
+    )
+
+    # First run: no folder for cave 1 → created with the identity components.
+    outcome = prefill.run_prefill(settings, 1)
+    assert outcome.delivered_path is not None
+    folder = outcome.delivered_path.parent
+    assert folder.parent == intake_root
+    assert folder.name.startswith("SB_1_Špilja Testovka")
+    assert outcome.delivered_path.name == "SB_0001_OSZ.docx"
+    assert any("Stvorena intake mapa" in note for note in outcome.result.notes)
+
+    # Second run: the existing folder is reused, no sibling appears.
+    outcome2 = prefill.run_prefill(settings, 1)
+    assert outcome2.delivered_path.parent == folder
+    assert len([d for d in intake_root.iterdir() if d.is_dir()]) == 1
+
+
+# ── migration of an older OSZ found in the intake leaf ───────────────
+def _make_old_osz(path):
+    """A 'previously filled' v10 document with human content the fresh
+    prefill cannot know."""
+    from cave_dossier.osz.writer import OszDocument
+
+    doc = OszDocument(TEMPLATE)
+    doc.fill_plain(1, 0, 1, "Špilja Testovka")                # same name as SB
+    doc.fill_sdt_cell(4, 7, 0, ["Prvi red opisa.", "Drugi red opisa."])  # opis
+    doc.fill_sdt_inline(6, 4, 0, ["Istraženo davne 1987."])   # povijest
+    doc.fill_plain(6, 14, 1, "Ana Anić")                      # crtali
+    doc.fill_plain(4, 3, 0, "40")                             # duljina
+    doc.fill_plain(6, 8, 1, "10.05.2015.")                    # datum
+    doc.tick({"špilja"})
+    path.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(path)
+
+
+@pytest.fixture()
+def intake_settings(settings, tmp_path):
+    (tmp_path / "drive" / "!Za digitalizirat").mkdir(parents=True)
+    return dataclasses.replace(
+        settings,
+        local_drive_root=tmp_path / "drive",
+        archive_dirs={"intake_dir": "!Za digitalizirat"},
+    )
+
+
+def test_prefill_migrates_old_osz(intake_settings, geo_stubs, run_dir, monkeypatch):
+    _template_guard()
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+    intake_root = intake_settings.local_drive_root / "!Za digitalizirat"
+    old_path = intake_root / "SB_1_Špilja Testovka_stara" / "Zapisnik_stari.docx"
+    _make_old_osz(old_path)
+
+    outcome = prefill.run_prefill(intake_settings, 1)
+    result = outcome.result
+
+    assert result.migrated_from == "Zapisnik_stari.docx"
+    # Human content carried into fields the fresh prefill leaves empty.
+    assert result.fields["opis"].source == "stari-osz"
+    assert "Prvi red opisa." in result.fields["opis"].value
+    assert result.fields["povijest"].value == "Istraženo davne 1987."
+    assert result.fields["crtali"].value == "Ana Anić"
+    assert result.fields["duljina"].value == "40"
+    assert result.fields["datum_istrazivanja"].value == "10.05.2015."
+    assert result.ticked_checkboxes == ["špilja"]
+    # SB still wins identity fields.
+    assert result.fields["ime_objekta"].value == "Špilja Testovka"
+
+    # Delivered as the canonical name; the old file became a _stari backup.
+    assert outcome.delivered_path.name == "SB_0001_OSZ.docx"
+    folder = old_path.parent
+    backups = list(folder.glob("Zapisnik_stari_stari_*.docx"))
+    assert len(backups) == 1
+    assert not old_path.exists()
+    assert (run_dir / "runs" / "osz" / "0001" / "stari_osz.json").exists()
+
+    # The new document really carries the content, ticks included.
+    from cave_dossier.osz.reader import read_osz_content
+
+    content = read_osz_content(outcome.delivered_path)
+    assert content.fields["opis"] == "Prvi red opisa.\nDrugi red opisa."
+    assert content.fields["povijest"] == "Istraženo davne 1987."
+    assert "špilja" in content.ticked
+
+
+def test_prefill_migration_is_idempotent(intake_settings, geo_stubs, run_dir, monkeypatch):
+    """Re-running on an already-migrated document must not grow backups."""
+    _template_guard()
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+    intake_root = intake_settings.local_drive_root / "!Za digitalizirat"
+    old_path = intake_root / "SB_1_Špilja Testovka_stara" / "Zapisnik_stari.docx"
+    _make_old_osz(old_path)
+
+    first = prefill.run_prefill(intake_settings, 1)
+    second = prefill.run_prefill(intake_settings, 1)
+
+    folder = old_path.parent
+    assert len(list(folder.glob("*_stari_*.docx"))) == 1  # only the first backup
+    assert second.delivered_path == first.delivered_path
+    assert any("ostavljen netaknut" in note for note in second.result.notes)
+
+
+def test_prefill_migration_recorded_source_beats_default(intake_settings, geo_stubs,
+                                                         run_dir, monkeypatch):
+    """The GPS default and inferred source labels yield to what the old
+    OSZ actually recorded (the 764/811 live lesson, 2026-08-31)."""
+    _template_guard()
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+    from cave_dossier.osz.writer import OszDocument
+
+    intake_root = intake_settings.local_drive_root / "!Za digitalizirat"
+    old_path = intake_root / "SB_1_x" / "Zapisnik ispunjen.docx"
+    old_path.parent.mkdir(parents=True)
+    doc = OszDocument(TEMPLATE)
+    doc.fill_plain(2, 5, 4, "LIDAR")   # izvor_koordinata, recorded
+    doc.fill_plain(2, 4, 4, "HOK")     # izvor_kote, recorded
+    doc.save(old_path)
+
+    result = prefill.run_prefill(intake_settings, 1).result
+    assert result.fields["izvor_koordinata"].value == "LIDAR"
+    assert result.fields["izvor_koordinata"].source == "stari-osz"
+    assert result.fields["izvor_kote"].value == "HOK"
+    assert result.fields["izvor_kote"].source == "stari-osz"
+
+
+def test_prefill_migration_conflict_keeps_new_value(intake_settings, geo_stubs,
+                                                    run_dir, monkeypatch):
+    _template_guard()
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+    from cave_dossier.osz.writer import OszDocument
+
+    intake_root = intake_settings.local_drive_root / "!Za digitalizirat"
+    old_path = intake_root / "SB_1_x" / "Zapisnik_stari.docx"
+    old_path.parent.mkdir(parents=True)
+    doc = OszDocument(TEMPLATE)
+    doc.fill_plain(1, 0, 1, "Sasvim drugo ime")  # conflicts with SB's name
+    doc.save(old_path)
+
+    result = prefill.run_prefill(intake_settings, 1).result
+    assert result.fields["ime_objekta"].value == "Špilja Testovka"  # SB wins
+    assert any("Sasvim drugo ime" in note and "zadržana nova" in note
+               for note in result.notes)
+
+
 def test_prefill_unknown_serial_raises(settings, geo_stubs, run_dir):
     _template_guard()
     with pytest.raises(prefill.PrefillError):

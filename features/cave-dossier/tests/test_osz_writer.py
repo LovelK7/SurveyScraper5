@@ -62,6 +62,8 @@ def test_fill_all_v10_addresses(tmp_path, template_exists):
     for key, addr in V10.items():
         if addr.kind == "sdt_cell":
             doc.fill_sdt_cell(addr.table, addr.row, addr.cell, [values[key]])
+        elif addr.kind == "sdt_inline":
+            doc.fill_sdt_inline(addr.table, addr.row, addr.cell, [values[key]])
         else:
             doc.fill_plain(addr.table, addr.row, addr.cell, values[key])
     out = tmp_path / "filled.docx"

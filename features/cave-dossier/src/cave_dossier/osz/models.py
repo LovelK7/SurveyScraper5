@@ -32,6 +32,11 @@ class PrefillResult(BaseModel):
     template_version: str = "v10"
     fields: dict[str, FieldValue] = Field(default_factory=dict)
     karta_status: str = "missing"  # "reused" | "fetched" | "missing"
+    # Migration of an older OSZ found in the intake leaf (user, 2026-08-30):
+    # the file the useful content was lifted from, and the checkbox labels
+    # carried into the fresh document.
+    migrated_from: str | None = None
+    ticked_checkboxes: list[str] = Field(default_factory=list)
     mismatches: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     sb_updates: list[SBUpdate] = Field(default_factory=list)
