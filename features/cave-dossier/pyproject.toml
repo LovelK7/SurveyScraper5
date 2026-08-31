@@ -21,10 +21,12 @@ dev = ["pytest>=8"]
 sb-write = ["xlwings>=0.30"]
 # Isječak karte (georef.hr headed browser flow) — M3
 karta = ["playwright>=1.40", "Pillow>=10"]
-# OSZ DOCX builder — M4. lxml directly, NOT python-docx: the template's w:sdt
-# content controls are invisible to python-docx, so every OSZ tool (the
-# osz-template workbench included) works on word/document.xml through lxml.
-osz = ["lxml>=4.9"]
+# OSZ DOCX builder + legacy parser — M4/2.1b. The v10 writer/reader use lxml
+# directly (the template's w:sdt content controls are invisible to
+# python-docx); the LEGACY zapisnik parser (osz/legacy.py, ported from
+# crospeleo's OSZParser) needs python-docx — old documents have no controls,
+# and selections live in run-level bold that python-docx exposes cleanly.
+osz = ["lxml>=4.9", "python-docx>=1.1"]
 # Locality + elevation finders (part 2.1b prefill) — RGI WFS, DGU admin
 # boundaries, INSPIRE EL-COV sampling. All imports are lazy: the base install
 # works without this extra, the finders just report "unavailable".

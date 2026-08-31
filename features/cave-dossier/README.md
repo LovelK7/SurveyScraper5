@@ -187,15 +187,19 @@ cavedossier osz prefill 1234 --offline     # never touch the network; an already
 # produced by the LiDAR analysis, so Izvor koordinata AND Izvor kote ulaza
 # are prefilled as "LiDAR" — known in advance, even when the DMV grid
 # disagrees (the warning then stays advisory).
-# Migration: an OSZ already in the cave's intake leaf (an older prefill
-# someone filled in, a hand-made zapisnik in the v10 layout) is read first —
-# every filled cell, narrative control and ticked checkbox — and its content
-# carries into the fresh document (dumped to runs/osz/<broj>/stari_osz.json).
-# Recorded content beats prefill ASSUMPTIONS (GPS default, pristup template,
-# inferred source labels); SB + finder FACTS still win, differences become
-# notes. The old file survives as <ime>_stari_<datum>.docx beside the new
-# one; a re-run that changes nothing leaves everything untouched. A non-v10
-# document is reported for manual migration, never guessed at.
+# Migration: an OSZ already in the cave's intake leaf is read first and its
+# content carries into the fresh document (dump: runs/osz/<broj>/stari_osz.json).
+# TWO readers, tried in order: the v10 address reader (an older prefill someone
+# filled in), then the LEGACY parser ported from crospeleo's OSZParser
+# (osz/legacy.py) — it reads every pre-v10 zapisnik generation in the archive
+# (the 2019 Gauss-Krüger layout, the 2025 "kamp" layout), including the choice
+# fields whose selection lives in BOLD formatting, and maps everything onto the
+# v10 template + checkbox ticks. Recorded content beats prefill ASSUMPTIONS
+# (GPS default, pristup template, inferred source labels); SB + finder FACTS
+# still win, differences become notes. The old file survives as
+# <ime>_stari_<datum>.docx beside the new one; a re-run that changes nothing
+# leaves everything untouched. Only a binary .doc needs a manual save-as-docx
+# first — the tool says so.
 # Pristup prefill: caves around one trailhead share the approach road, so
 # config/pristupi.yaml maps a (Najbliže mjesto, Lokalitet) pair to a shared
 # "Položaj i pristup objektu" text the recorder continues from "Od tuda

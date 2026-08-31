@@ -432,22 +432,42 @@ def _find_old_osz(folder: Path, result: PrefillResult) -> Path | None:
 
 def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
     """Lift the old document's content into the result; returns the
-    extracted ``OszContent`` (None when the file is not a v10 document)."""
+    extracted ``OszContent`` (None when nothing could be read).
+
+    Two readers, tried in order: the v10 address reader (an older prefill
+    someone filled in), then the LEGACY parser ported from crospeleo's
+    OSZParser — the pre-v10 zapisnici that make up the actual archive
+    (user, 2026-08-31). The legacy path maps canonical keys onto v10
+    fields and turns bold-marked selections into checkbox ticks.
+    """
     from cave_dossier.osz import reader as reader_mod
 
+    raw_dump: dict = {}
     try:
         content = reader_mod.read_osz_content(old_path)
-    except reader_mod.OszReadError as exc:
-        result.notes.append(
-            f"Postojeći OSZ ({old_path.name}) nije čitljiv v10 dokument — "
-            f"migracija preskočena ({exc}). Migriraj ručno."
-        )
-        return None
+        raw_dump = {"reader": "v10", "fields": content.fields,
+                    "ticked": list(content.ticked)}
+    except reader_mod.OszReadError:
+        from cave_dossier.osz import legacy as legacy_mod
+
+        try:
+            legacy_content = legacy_mod.parse_legacy_osz(old_path)
+        except legacy_mod.LegacyParseError as exc:
+            result.notes.append(
+                f"Postojeći OSZ ({old_path.name}) nije čitljiv ni kao v10 ni kao "
+                f"legacy zapisnik — migracija preskočena ({exc}). Migriraj ručno."
+            )
+            return None
+        fields, ticks, legacy_notes = legacy_mod.to_v10_fields(legacy_content)
+        result.notes.extend(legacy_notes)
+        content = reader_mod.OszContent(fields=fields, ticked=tuple(ticks))
+        raw_dump = {"reader": "legacy", "fields": fields, "ticked": ticks,
+                    "canonical": legacy_content.fields,
+                    "bold_selections": legacy_content.bold_selections}
 
     result.migrated_from = old_path.name
     (run_dir / "stari_osz.json").write_text(
-        json.dumps({"file": str(old_path), "fields": content.fields,
-                    "ticked": list(content.ticked)},
+        json.dumps({"file": str(old_path), **raw_dump},
                    ensure_ascii=False, indent=2),
         encoding="utf-8",
     )

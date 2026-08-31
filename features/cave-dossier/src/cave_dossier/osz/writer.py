@@ -109,15 +109,27 @@ class OszDocument:
     # ── checkboxes ───────────────────────────────────────────────────
     def tick(self, labels: set[str]) -> set[str]:
         """Tick every checkbox whose trailing label is in labels; returns
-        the labels that were NOT found (caller decides how loud to be)."""
+        the labels that were NOT found (caller decides how loud to be).
+
+        Matching is exact first, then diacritic/case-folded — legacy
+        zapisnici capitalize option words ("Jama") that v10 lowercases.
+        """
+        from cave_dossier.core.normalization import normalize_lookup_key
+
+        requested_norm = {normalize_lookup_key(label): label for label in labels}
         hit: set[str] = set()
         for sdt in self._doc_root.iter(W + "sdt"):
             pr = sdt.find(W + "sdtPr")
             if pr is None or pr.find(W14 + "checkbox") is None:
                 continue
             label = _checkbox_label(sdt)
-            if label not in labels:
-                continue
+            if label in labels:
+                requested = label
+            else:
+                requested = requested_norm.get(normalize_lookup_key(label))
+                if requested is None:
+                    continue
+            label = requested
             chk = pr.find(W14 + "checkbox")
             checked = chk.find(W14 + "checked")
             if checked is None:
