@@ -1,0 +1,20 @@
+# Prefilled "Položaj i pristup objektu" texts (part 2.1b, user 2026-08-30).
+#
+# Many caves share the same approach road up to the last few turns, so the
+# common part can be prefilled and the recorder continues from "Od tuda
+# nastaviti…". QUICK FIX: the rule is a (Najbliže mjesto, Lokalitet) pair
+# match on the values the prefill resolved. The smarter version — picking
+# the approach geographically (e.g. a geoclustering model trained on the
+# archive's existing approach texts) — is a logged backlog idea.
+#
+# Matching is diacritic- and case-insensitive; `lokalitet` matches any
+# comma/semicolon-separated token of the cave's Lokalitet ("Ćićarija, Slum"
+# still matches "Ćićarija"). First matching rule wins.
+
+- match:
+    najblize_mjesto: "Veprinac"
+    lokalitet: "Ćićarija"
+  text: |
+    Položaj:
+    Pristup:
+    Iz Kastva voziti prema prijevoju Poklon (PP Učka) starom cestom preko Veprinca. Otprilike 3.5 km nakon centra Veprinca (Tumpići) odnosno 3.5 km prije Poklona skrenuti desno na „Veprinačku cestu“. Voziti po makadamu oko 2.7 km do lovačke kuće Brdo te nastaviti ravno 2.1 km do lugarnice Pilarna. Od tuda nastaviti...

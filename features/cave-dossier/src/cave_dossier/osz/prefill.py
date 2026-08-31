@@ -33,6 +33,7 @@ from cave_dossier.core.config import FEATURE_ROOT, Settings
 from cave_dossier.core.normalization import normalize_lookup_key, parse_optional_float
 from cave_dossier.geo import elevation as elevation_mod
 from cave_dossier.geo import locality as locality_mod
+from cave_dossier.osz import pristupi
 from cave_dossier.osz.addresses import KARTA_FRAME, TEMPLATE_VERSION, V10
 from cave_dossier.osz.models import FieldValue, PrefillResult, SBUpdate
 from cave_dossier.osz.writer import OszDocument
@@ -278,6 +279,21 @@ def _resolve_fields(
                 ))
 
     _resolve_kota(settings, cave, result, kota_finding, lidar)
+    _resolve_pristup(result)
+
+
+def _resolve_pristup(result: PrefillResult) -> None:
+    """Shared approach text when a config/pristupi.yaml rule matches the
+    RESOLVED Najbliže mjesto + Lokalitet (post-precedence, so an SB value
+    and a finder-filled one behave the same)."""
+    najblize = result.fields.get("najblize_mjesto")
+    lokalitet = result.fields.get("lokalitet")
+    text = pristupi.find_pristup(
+        najblize.value if najblize else None,
+        lokalitet.value if lokalitet else None,
+    )
+    if text:
+        result.fields["polozaj_pristup"] = FieldValue(value=text, source="pristup-template")
 
 
 def _is_lidar_derived(cave: CaveRow, settings: Settings) -> bool:
@@ -353,7 +369,10 @@ def _write_docx(target: Path, result: PrefillResult, png_bytes: bytes | None,
         if addr is None or field_value.value is None:
             continue
         if addr.kind == "sdt_cell":
-            doc.fill_sdt_cell(addr.table, addr.row, addr.cell, [field_value.value])
+            # Multi-line values become <w:br/>-separated lines — a control
+            # must stay single-paragraph (see osz/writer.py).
+            doc.fill_sdt_cell(addr.table, addr.row, addr.cell,
+                              field_value.value.split("\n"))
         else:
             doc.fill_plain(addr.table, addr.row, addr.cell, field_value.value)
     if png_bytes is not None:

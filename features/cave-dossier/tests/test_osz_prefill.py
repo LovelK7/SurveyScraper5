@@ -241,6 +241,40 @@ def test_prefill_lidar_flag_sets_both_sources(settings, geo_stubs, run_dir, monk
     assert any("LiDAR" in m for m in result.mismatches)  # advisory, not blank
 
 
+def test_prefill_pristup_rule_fills_the_narrative(settings, geo_stubs, run_dir, monkeypatch):
+    """Resolved Veprinac + Ćićarija triggers the shared-approach text into
+    the Položaj i pristup control, <w:br/>-joined (single paragraph)."""
+    _template_guard()
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+    monkeypatch.setattr(
+        prefill.pristupi, "find_pristup",
+        lambda nm, lok, path=None: ("Položaj:\nPristup:\nZajednički pristup."
+                                    if (nm, lok) == ("Testno Selo", "Testni kras") else None),
+    )
+    outcome = prefill.run_prefill(settings, 1)  # SB row: Testno Selo / Testni kras
+    fv = outcome.result.fields["polozaj_pristup"]
+    assert fv.source == "pristup-template"
+    assert _docx_texts(outcome.docx_path).count("Zajednički pristup.") == 1
+
+    from lxml import etree
+
+    with zipfile.ZipFile(outcome.docx_path) as zin:
+        root = etree.fromstring(zin.read("word/document.xml"))
+    tbl = root.find(W + "body").findall(W + "tbl")[3]
+    tr = tbl.findall(W + "tr")[0]
+    sdt = [n for n in tr if n.tag in (W + "tc", W + "sdt")][1]
+    holder = sdt.find(W + "sdtContent").find(W + "tc")
+    assert len(holder.findall(W + "p")) == 1  # the single-paragraph invariant
+    assert len(holder.findall(".//" + W + "br")) == 2  # three lines
+
+
+def test_prefill_no_pristup_rule_leaves_placeholder(settings, geo_stubs, run_dir, monkeypatch):
+    _template_guard()
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+    outcome = prefill.run_prefill(settings, 1)  # Testno Selo matches no real rule
+    assert "polozaj_pristup" not in outcome.result.fields
+
+
 def test_prefill_offline_reuses_karta_and_skips_flow(settings, geo_stubs, run_dir,
                                                     collected_karta, monkeypatch):
     _template_guard()

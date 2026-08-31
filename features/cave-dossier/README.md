@@ -184,7 +184,12 @@ cavedossier osz prefill 1234 --offline     # never touch the network; an already
 # "LiDAR Kristal N" Liburnija convention, …) had its coordinates and Z
 # produced by the LiDAR analysis, so Izvor koordinata AND Izvor kote ulaza
 # are prefilled as "LiDAR" — known in advance, even when the DMV grid
-# disagrees (the warning then stays advisory). Any other cave with
+# disagrees (the warning then stays advisory).
+# Pristup prefill: caves around one trailhead share the approach road, so
+# config/pristupi.yaml maps a (Najbliže mjesto, Lokalitet) pair to a shared
+# "Položaj i pristup objektu" text the recorder continues from "Od tuda
+# nastaviti…" (first rule: Veprinac + Ćićarija). Add rules by editing the
+# YAML — no code change; the geographic/clustering successor is a backlog idea. Any other cave with
 # coordinates gets Izvor koordinata = "GPS", the most common source —
 # the recorder corrects the rare exception by hand.
 # Never prefilled by design: Katastarski broj (the archivist's manual final

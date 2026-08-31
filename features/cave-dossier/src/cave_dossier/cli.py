@@ -759,7 +759,10 @@ def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: b
     filled = {k: v for k, v in result.fields.items() if v.value is not None}
     print(f"Popunjeno {len(filled)} polja; isječak karte: {result.karta_status}")
     for key, fv in filled.items():
-        print(f"  {key:<18} {fv.value}" + (f"  [{fv.source}]" if fv.source and fv.source != "sb" else ""))
+        value = " ".join(fv.value.split())  # narrative fields span lines
+        if len(value) > 70:
+            value = value[:67] + "…"
+        print(f"  {key:<18} {value}" + (f"  [{fv.source}]" if fv.source and fv.source != "sb" else ""))
     for mismatch in result.mismatches:
         print(f"  ⚠ {mismatch}")
     for note in result.notes:

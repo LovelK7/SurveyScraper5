@@ -162,6 +162,13 @@ when an idea's time comes. Nothing here is a commitment.
   Breza` as a naselje (it IS the nearest settlement, 1.26 km away) — a
   `sb audit-lokalitet` sweep over all rows would list every Lokalitet cell holding
   a settlement name, for one cleaning pass in Excel.
+- 2026-08-30 — **Pristup prefill, the smart successor** (user): today's
+  `config/pristupi.yaml` matches on a hardcoded (Najbliže mjesto, Lokalitet)
+  pair (first rule: Veprinac/Ćićarija). The real solution is geographic —
+  e.g. cluster the archive's existing OSZ approach texts by entrance
+  coordinates (geoclustering model over parsed `Položaj i pristup` sections)
+  so a new cave inherits the shared approach of its cluster automatically,
+  with the last-turns part left to the recorder.
 - 2026-08-30 — promote the session's scratch sweep harness (loads SB once, runs
   both geo finders over a stratified cave sample, prints a compact table + notes)
   into a real `cavedossier geo sweep [--limit N]` command — it found three real

@@ -46,6 +46,9 @@ V10: dict[str, CellAddr] = {
     "duljina": CellAddr(4, 3, 0),
     "dubina": CellAddr(4, 3, 2),
     "datum_istrazivanja": CellAddr(6, 8, 1),
+    # The "Položaj i pristup objektu" narrative — a cell-level content
+    # control; prefilled from config/pristupi.yaml when a rule matches.
+    "polozaj_pristup": CellAddr(3, 0, 1, kind="sdt_cell"),
     # Read-only for the fetcher (osz/reader.py) — prefill never writes them:
     "crtali": CellAddr(6, 14, 1),
     "mjerili": CellAddr(6, 15, 1),
