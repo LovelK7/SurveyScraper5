@@ -350,7 +350,7 @@ def cmd_photos_check_flag(settings: Settings, limit: int) -> int:
     return EXIT_NOT_READY
 
 
-def cmd_photos_process(settings: Settings, serial: int, apply: bool,
+def cmd_photos_process(settings: Settings, serial: int, dry_run: bool,
                        from_dir: str | None, author_arg: str | None,
                        osz_path_arg: str | None, long_edge: int | None,
                        max_bytes: int | None, overwrite: bool) -> int:
@@ -362,6 +362,13 @@ def cmd_photos_process(settings: Settings, serial: int, apply: bool,
     fotografije ulaza"; the originals are never touched, and nothing is moved
     into `!!Fotografije ulaza` — that (and the SB→katastarski renumbering) is
     the later filing step.
+
+    **Writes by default** (user, 2026-09-01): unlike every other `--apply`
+    command in this tool, this one only ever ADDS files — the originals stay
+    byte-for-byte, an existing copy is skipped rather than overwritten, and
+    nothing leaves the folder. There is nothing for a dry run to protect, so
+    requiring one was friction and no safety. `--dry-run` still prints the plan
+    for anyone who wants to look first.
     """
     from cave_dossier.photos import process as process_mod
 
@@ -386,6 +393,7 @@ def cmd_photos_process(settings: Settings, serial: int, apply: bool,
     for note in job.notes:
         print(f"  ! {note}")
     if job.folder is None:
+        _print_staged_hint(job, serial)
         return EXIT_ERROR
     print(f"Mapa:  {job.folder}")
     if job.osz_path:
@@ -395,17 +403,21 @@ def cmd_photos_process(settings: Settings, serial: int, apply: bool,
     print(f"Cilj:  duga stranica {long_edge_px} px, do "
           f"{budget_bytes / 1_000_000:.1f} MB po datoteci")
 
+    for path in job.ignored:
+        print(f"  – preskačem {path.name} (nije fotografija ulaza — "
+              "photos.ignore_filenames)")
     if not job.plans:
         print("Nema neobrađenih fotografija u mapi "
               f"(datoteke koje već počinju s SB_{serial}_ su rezultat prijašnjeg "
               "pokretanja).")
+        _print_staged_hint(job, serial)
         return EXIT_NOT_READY
 
     print(f"Fotografija za obradu: {len(job.plans)}")
     print(
-        "OBRAĐUJEM — kopije se zapisuju uz originale."
-        if apply
-        else "PROBNI RUN — ništa se ne zapisuje; ponovi s --apply."
+        "PROBNI RUN — ništa se ne zapisuje (--dry-run)."
+        if dry_run
+        else "OBRAĐUJEM — kopije se zapisuju uz originale; originali ostaju netaknuti."
     )
     print()
     for plan in job.plans:
@@ -415,7 +427,7 @@ def cmd_photos_process(settings: Settings, serial: int, apply: bool,
               + ("   (format traži pillow-heif)" if plan.unsupported else "")
               + ("   (postoji)" if plan.target_exists and not plan.unsupported else ""))
 
-    if not apply:
+    if dry_run:
         return EXIT_NOT_READY
 
     print()
@@ -439,6 +451,85 @@ def cmd_photos_process(settings: Settings, serial: int, apply: bool,
     if oversized:
         print(f"⚠ {len(oversized)} kopija je i dalje iznad budžeta na najnižoj "
               "kvaliteti — snizi --long-edge ako smeta.")
+    _print_staged_hint(job, serial)
+    return EXIT_ERROR if problems else EXIT_NOT_READY
+
+
+def _print_staged_hint(job, serial: int, limit: int = 8) -> None:
+    """The cave's photos may not be in its leaf at all — they may still be
+    queued in `…za istražit`, which is invisible from the leaf alone and is
+    exactly how a cave gets processed with half its photos missing.
+
+    Printed on every exit of `photos process`, including the ones that found
+    nothing to do: "no photos here" plus "four are sitting in the queue" is the
+    single most useful thing the command can say.
+    """
+    if not job.staged:
+        return
+    print()
+    print(f"⚠ {len(job.staged)} fotografija ove jame još stoji u redu čekanja "
+          "(!!Fotografije ulaza za istražit):")
+    for path in job.staged[:limit]:
+        print(f"      {path.name}")
+    if len(job.staged) > limit:
+        print(f"      … još {len(job.staged) - limit}")
+    print("  Prebaci ih u intake mapu pa ponovno pokreni obradu:")
+    print(f"      cavedossier photos pull-staged {serial} --apply")
+
+
+def cmd_photos_pull_staged(settings: Settings, serial: int, apply: bool) -> int:
+    """Move a cave's queued photos out of `…za istražit` into its intake leaf.
+
+    Dry run by default — unlike `photos process`, this one MOVES files and
+    creates a folder, so it follows the same `--apply` guard as `photos
+    match-queued` and `intake map`. The `SB_<broj>_` prefix is dropped on the
+    way in: inside the cave's own leaf it is redundant, and `photos process`
+    reads that prefix as "already processed output".
+    """
+    from cave_dossier.photos import process as process_mod
+
+    cave = _find_serial_or_exit(settings, serial)
+    if cave is None:
+        return EXIT_ERROR
+
+    plan = process_mod.plan_pull(settings, cave, serial)
+    print(f"Redni broj {serial}: {cave.object_name or '<no name>'}")
+    for note in plan.notes:
+        print(f"  ! {note}")
+    if plan.folder is None:
+        return EXIT_ERROR
+    if not plan.moves:
+        print("Nema fotografija ove jame u redu čekanja "
+              "(!!Fotografije ulaza za istražit) — nema što prebaciti.")
+        return EXIT_NOT_READY
+
+    print(f"Odredište: {plan.folder}"
+          + ("" if plan.folder_exists else "   (bit će stvorena)"))
+    print(f"Fotografija za prebacivanje: {len(plan.moves)}")
+    print(
+        "PREBACUJEM — datoteke se MIČU iz reda čekanja."
+        if apply
+        else "PROBNI RUN — ništa se ne miče; ponovi s --apply."
+    )
+    print()
+    for move in plan.moves:
+        print(f"  {move.source.name}")
+        print(f"      → {move.target.name}"
+              + ("   (postoji)" if move.target.exists() else ""))
+
+    if not apply:
+        return EXIT_NOT_READY
+
+    outcomes = process_mod.apply_pull(plan)
+    moved = [o for o in outcomes if o.status == "moved"]
+    problems = [o for o in outcomes if o.status == "error"]
+    print()
+    for outcome in problems:
+        print(f"  {outcome.status}: {outcome.move.source.name}  ({outcome.detail})")
+    print(f"Prebačeno {len(moved)} fotografija.")
+    if moved:
+        print("  Sad ih obradi:")
+        print(f"      cavedossier photos process {serial}")
     return EXIT_ERROR if problems else EXIT_NOT_READY
 
 
@@ -1401,10 +1492,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="The cave's Redni broj — its SB_<broj>_… intake folder holds the raw photos",
     )
     photos_process.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Only print the plan. The command writes by default — it never "
+             "touches the originals, so there is nothing to guard against.",
+    )
+    # Accepted silently so an --apply still in someone's shell history keeps
+    # working; writing is the default now, so it is a no-op.
+    photos_process.add_argument("--apply", action="store_true", help=argparse.SUPPRESS)
+
+    pull_staged = photos_sub.add_parser(
+        "pull-staged",
+        help="Move a cave's photos out of the za-istražit queue into its "
+             "SB_<broj>_… intake folder (creating it if needed)",
+    )
+    pull_staged.add_argument("redni_broj", type=int, help="The cave's Redni broj")
+    pull_staged.add_argument(
         "--apply",
         action="store_true",
-        help="Write the copies (default is a dry run). Originals are never "
-             "touched either way.",
+        help="Perform the moves (default is a dry run). Unlike `photos "
+             "process`, this MOVES files out of the queue and may create a "
+             "folder, so it is guarded. An existing target is never overwritten.",
     )
     photos_process.add_argument(
         "--from",
@@ -1479,9 +1587,11 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_photos_match_queued(settings, args.limit, args.apply)
             if args.photos_command == "check-flag":
                 return cmd_photos_check_flag(settings, args.limit)
+            if args.photos_command == "pull-staged":
+                return cmd_photos_pull_staged(settings, args.redni_broj, args.apply)
             if args.photos_command == "process":
                 return cmd_photos_process(
-                    settings, args.redni_broj, args.apply, args.from_dir,
+                    settings, args.redni_broj, args.dry_run, args.from_dir,
                     args.author, args.osz_path, args.long_edge, args.max_bytes,
                     args.overwrite,
                 )

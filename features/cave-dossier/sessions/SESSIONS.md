@@ -6,6 +6,66 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-09-01 — 2.1d entrance-photo processor + queue pull (agent) ✅
+
+- **Did:** (1) *`photos/process.py` + `cavedossier photos process <Redni broj>`* —
+  the standing 2.1d step: a cave's raw photos out of its `SB_<broj>_…` intake leaf
+  into downsized `SB_<broj>_<Ime objekta>_<Autor>_<n>.jpg` **copies** beside the
+  originals (config `photos:` targets, 1920 px / 1.5 MB; `--long-edge`,
+  `--max-bytes`, `--author`, `--from`, `--osz`, `--overwrite`, `--dry-run`). Author
+  read from the OSZ cell *Autor fotografije ulaza* and converted to the archive's
+  filename spelling (`Lovel Kukuljan` → `LKukuljan` — no dot, unlike SB's
+  `L.Kukuljan`); several people join with `-`, a missing author drops the component.
+  (2) *`photos pull-staged <broj>`* — MOVES a cave's photos out of the
+  `…za istražit` queue into its intake leaf, creating the leaf when the cave has
+  none (`prefill.intake_folder_name`, made public and now shared); every `photos
+  process` exit ends with a queue check that prints this command. (3) *`STATS.png`
+  ignore list* — `photos.ignore_filenames` in config.yaml (fnmatch patterns),
+  matches listed as skipped, removed before the numbering. (4) *Shared
+  `intake.find_cave_leaf`*, replacing prefill's private copy. (5) *Fixed
+  `locate_filled_osz`*: `backfill._pick_docx` and `prefill._find_old_osz` had
+  drifted apart — unified into `backfill.pick_osz_docx`. (6) *`[photos]` extra*.
+  290 tests (was 224), doctor 0 fail.
+- **Result:** Live end to end. SB 1238: 6.92 MB / 3468×4624 → 1.23 MB / 1440×1920,
+  the same result as the manual FastStone "resize to screen size". SB 1250: OSZ
+  author `Renata Jerković` → `RJerković`, STATS.png skipped. SB 811 full loop:
+  4 queued photos pulled in, queue emptied for that cave, processed to
+  `SB_811_Possibile Grotta_1..4.jpg`. `photos match-queued` is retired (its sweep
+  is finished) but kept; the mover into `!!Fotografije ulaza` under the katastarski
+  broj is still the open last step of 2.1d.
+- **Learned:**
+  - **The fetcher went blind on exactly the leaves prefill had touched.** A
+    migrated leaf holds both `SB_<broj>_OSZ.docx` and prefill's own
+    `<ime>_stari_<datum>.docx` backup. `prefill._find_old_osz` excluded that
+    marker and preferred the canonical name; `backfill._pick_docx` did neither, so
+    every such leaf read as "no unambiguous OSZ" — affecting `osz fetch`, not just
+    the new command. Two functions answering the same question is the bug; one
+    (`pick_osz_docx`) is the fix.
+  - **A locator's notes ARE the answer.** Taking only `.path` and discarding
+    `location.notes` turned "two candidates, pick one" into a flat, wrong "no OSZ".
+    Anything consuming that API has to print them.
+  - **Re-encoding an already-small JPEG GROWS it.** SB 1250's phone photos
+    (900×1600, already compressed) went 0.25 MB → 0.35 MB at quality 92, plus a
+    generation of loss. A JPEG within both the pixel target and the size budget is
+    now copied byte-for-byte.
+  - **A leaf cannot tell you what is missing from it.** SB 811 processed
+    "successfully" with nothing to do while four entrance photos sat in the queue —
+    the worst answer, because it looks like success. Hence the queue check on
+    *every* exit, the empty ones most of all.
+  - **The `SB_<broj>_` prefix collides with itself.** It is what marks a queued
+    photo, and also what `source_photos` reads as "already my output" — so pulled
+    photos must lose it, or the next `process` cannot see them.
+  - **Dry-run-by-default is not free.** It protects files a command CHANGES;
+    `photos process` only adds (originals byte-for-byte, existing copies skipped),
+    so `--apply` was friction with no safety behind it (user). `pull-staged`, which
+    moves files, keeps the guard.
+- **Next:** the 2.1d **mover** — file the processed copies into `!!Fotografije
+  ulaza` and swap `SB_<Redni broj>` for the katastarski broj (rides with M6, since
+  that number only exists then). Before that, settle the output resolution: the
+  copies exist precisely so 1920 px stays revisable.
+
+---
+
 ### 2026-08-30 (late evening) — People registry + statement gates (agent) ✅
 
 - **Did:** (1) *`people/` package* (crospeleo ports, PORTING.md rows) —

@@ -629,7 +629,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
             return None
         folder = intake_folder or _find_intake_folder(intake_root, serial)
         if folder is None:
-            folder = intake_root / _intake_folder_name(cave, serial, settings)
+            folder = intake_root / intake_folder_name(cave, serial, settings)
             folder.mkdir(parents=True, exist_ok=True)
             result.notes.append(f"Stvorena intake mapa: {folder.name}")
         target = folder / docx_name
@@ -673,10 +673,14 @@ def _find_intake_folder(intake_root: Path, serial: int) -> Path | None:
     return find_cave_leaf(intake_root, serial)
 
 
-def _intake_folder_name(cave: CaveRow, serial: int, settings: Settings) -> str:
+def intake_folder_name(cave: CaveRow, serial: int, settings: Settings) -> str:
     """``SB_<broj>_<Ime>[_<Sinonimi>][_<Autori>]`` — the components the user
     listed (2026-08-30), sanitized for Windows/Drive, empties skipped.
-    Serial stays unpadded, matching the existing intake folders."""
+    Serial stays unpadded, matching the existing intake folders.
+
+    Public because every step that may have to CREATE a cave's leaf must name
+    it identically — `osz prefill` delivering a zapisnik, `photos pull-staged`
+    pulling queued photos in."""
     parts = [f"{SB_PREFIX}{serial}", cave.object_name or ""]
     parts.append(_sb_text(cave, _field_column(settings, "synonyms")) or "")
     parts.append(_sb_text(cave, settings.sb_drawing_authors_column) or "")

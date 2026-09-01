@@ -1,6 +1,6 @@
 # STATUS
 
-Updated: 2026-08-30 (maintained by `/wrap-up` at the end of each session)
+Updated: 2026-09-01 (maintained by `/wrap-up` at the end of each session)
 
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -114,8 +114,13 @@ Scope per [ARCHITECTURE.md](ARCHITECTURE.md) §Milestones. **Draft — confirm a
       from the OSZ cell *Autor fotografije ulaza* (`Lovel Kukuljan` → `LKukuljan`, the
       archive's spelling), and writes downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg`
       **copies** next to the originals (config `photos:` targets, 1920 px / 1.5 MB;
-      `--long-edge` / `--max-bytes` / `--author` / `--from` / `--overwrite`). Dry run by
-      default; a run never re-processes its own output. Validated live: 6.92 MB /
+      `--long-edge` / `--max-bytes` / `--author` / `--from` / `--overwrite`). Writes
+      straight away — no `--apply`, since it only ever adds files; a run never
+      re-processes its own output. Every run also checks the za-istražit queue for
+      that cave and prints `photos pull-staged <broj> --apply`, which MOVES the
+      queued photos into the intake leaf (creating it if needed, dropping the
+      `SB_<broj>_` prefix) — the SB 811 case, where the leaf looked empty while
+      four entrance photos sat in the queue. Validated live: 6.92 MB /
       3468×4624 → 1.23 MB / 1440×1920, matching the manual FastStone result.
 - [x] **Satellite hub shipped (2026-08-29)** — `cave_dossier/satellites/`
       (`model` · `liburnija` · `resolver` · `sync`) plus `cavedossier sat sync`.
@@ -197,6 +202,10 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 - First filled zapisnici coming back from recorders — collect 2–3 (ideally one from
   Word, one from Google Docs) as parser fixtures before M4 starts.
 - Mobile-app context material (parked with part 1)
+- **Optimal entrance-photo resolution** (new 2026-09-01): `photos process` ships at
+  1920 px / 1.5 MB and writes COPIES precisely so this stays revisable —
+  `--long-edge N --overwrite` re-cuts a cave. Once the number is settled, the copies
+  can replace the originals instead of sitting beside them.
 
 ### Settled 2026-08-30
 
@@ -265,6 +274,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
+- 2026-09-01 — 2.1d photo processor shipped: `photos process <broj>` (intake leaf → downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` copies, author from the OSZ) + `photos pull-staged` (queue → intake leaf, creates the folder); fixed the OSZ locator going ambiguous on every prefill-migrated leaf → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-30 (late evening) — people registry + statement gates: `people/` (crospeleo ports), committed `data/people/registry.json` (132 people), registry/scope-aware gate-1 izjava blocker + gate-2 per-person warning, `N.Surname` author-vs-finder criterion, deceased exemption, `people list/check` — unresolved SB authors 125 → 24 → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-30 (evening) — 2.1b prefill slice shipped: `geo/` finders (RGI + DGU boundaries + DMV elevation, offline-capable) + `osz/` writer/prefill, karta format → 5:4, LiDAR/GPS source flags, validated live on 3 caves + 24-cave sweep → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-08-30 — 2.1c shipped (georef port, live-validated) + `SB_` prefix convention rolled out across excerpts, intake folders and staged photos → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)

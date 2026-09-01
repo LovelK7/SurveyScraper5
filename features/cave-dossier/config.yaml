@@ -195,6 +195,13 @@ photos:
   target_long_edge_px: 1920
   target_max_bytes: 1500000
 
+  # Image files that live in an intake leaf but are NOT entrance photos, so
+  # `photos process` must not turn them into archive copies (user, 2026-09-01).
+  # fnmatch patterns, matched case-insensitively against the filename; they are
+  # listed as skipped on every run, never dropped in silence.
+  ignore_filenames:
+    - "STATS.png"          # the cSurvey survey-statistics screenshot
+
   # Staged photos the automatic evidence (plaque / name / old queue broj) cannot
   # reach: filename fragment -> Redni broj. Supplied by the user 2026-08-26.
   manual_matches:

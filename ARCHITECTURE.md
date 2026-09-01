@@ -218,7 +218,7 @@ What each label actually runs. One line here; flags and details in the
 | <a name="b5"></a>**B5** | `cavedossier geo locate/kota <broj>` | `data/geo` + RGI ↔ one SB row | verifying what the finders would say — feeds nothing |
 | <a name="b6"></a>**B6** | `cavedossier osz prefill <broj>` | SB + excerpt + geo → prefilled DOCX (+ `dopune-sb.csv`) | a queued cave is about to be explored, or an explored one needs its zapisnik started |
 | <a name="b7"></a>**B7** | `cavedossier osz fetch <broj>` | filled zapisnik → `dopune-sb-iz-osz.csv` | a completed zapisnik landed in the cave's intake dir |
-| <a name="b8"></a>**B8** | `cavedossier photos process` (per cave) · `photos check-flag` · `photos match-queued` (one-off staging sweep, finished) | intake photos → archive-ready copies; staged photos ↔ SB | a cave's field photos arrived in its intake leaf |
+| <a name="b8"></a>**B8** | `cavedossier photos process` (per cave) · `photos pull-staged` (queue → intake leaf) · `photos check-flag` · `photos match-queued` (one-off staging sweep, finished) | intake photos → archive-ready copies; staged photos ↔ SB | a cave's field photos arrived in its intake leaf |
 | <a name="b9"></a>**B9** | `cavedossier report --cave <x>` | gathered sources → gate verdicts | any time — it never changes anything |
 | <a name="b10"></a>**B10** | *(M5, planned)* | 2.1a Nacrt + dimensions → dossier | — |
 | <a name="b11"></a>**B11** | *(M6, planned)* | dossier → SB write-back + archive delivery | — |

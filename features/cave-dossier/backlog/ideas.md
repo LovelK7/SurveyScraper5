@@ -227,3 +227,22 @@ when an idea's time comes. Nothing here is a commitment.
     national park implies permit/reporting obligations) — worth exposing on
     `LocalityFinding` as its own field rather than only folding it into the
     Lokalitet string.
+
+- 2026-09-01 — **settle the entrance-photo output resolution.** `photos process` ships at
+  1920 px / 1.5 MB and writes copies precisely so this stays open; `--long-edge N
+  --overwrite` re-cuts a cave for comparison. Once settled, decide whether the copies
+  replace the originals in the intake leaf instead of sitting beside them.
+- 2026-09-01 — **`photos process --all` / batch sweep**: process every cave whose intake
+  leaf holds unprocessed photos, and every cave with something still in the za-istražit
+  queue. Today it is one Redni broj at a time; the queue check already knows how to spot
+  the second group.
+- 2026-09-01 — **HEIC support** (`pillow-heif`): `.heic` sources are reported and skipped
+  today. Not a dependency on purpose — add it if phone photos start arriving that way.
+- 2026-09-01 — `locate_filled_osz` says "nema (jednoznačan) OSZ .docx" even when the leaf
+  has NO .docx at all (seen on SB 811). Harmless but reads oddly next to the ambiguity
+  note — split the two messages.
+- 2026-09-01 — the entrance-photo author currently comes only from the OSZ. When a cave has
+  no zapisnik, `Fotografirali` in a legacy zapisnik and the intake folder's own author
+  suffix (`SB_1220_…_Flavio`) are both plausible fallbacks — but both are guesses, so this
+  needs the user's rule before it is wired.
+

@@ -143,14 +143,25 @@ cavedossier sat sync                       # Liburnija sheet vs SB: four review 
 cavedossier sat sync --coords --out        # + coordinate proximity, lists written to sb-sync/
 
 # ── Entrance photos (part 2.1d) ────────────────────────────────────────
-cavedossier photos process 1220            # DRY RUN: plan the archive-ready copies for one cave
-cavedossier photos process 1220 --apply    # write SB_<broj>_<Ime>_<Autor>_<n>.jpg beside the originals
+cavedossier photos process 1220            # write SB_<broj>_<Ime>_<Autor>_<n>.jpg beside the originals
+cavedossier photos process 1220 --dry-run  # just print the plan first
+cavedossier photos pull-staged 811         # DRY RUN: queued photos → the cave's intake folder
+cavedossier photos pull-staged 811 --apply # move them in (creates the folder if needed)
 cavedossier photos check-flag              # staged photos vs SB's "Fotografija ulaza = DA"
 # `process` reads the cave's SB_<broj>_… intake folder, takes the author from the
 # OSZ cell "Autor fotografije ulaza", and downsizes to the config.yaml `photos:`
 # targets (1920 px long edge / 1.5 MB). It only ever writes COPIES — the originals
 # stay put, and nothing is moved into !!Fotografije ulaza (that, and the
-# SB_<broj> → katastarski broj rename, is the later filing step).
+# SB_<broj> → katastarski broj rename, is the later filing step). A JPEG that is
+# already small enough is copied verbatim rather than re-encoded, and images
+# listed in `photos.ignore_filenames` (STATS.png) are skipped and reported.
+# It writes straight away — no --apply: it only ever ADDS files, and an existing
+# copy is skipped rather than overwritten (use --overwrite to re-cut).
+# Every `process` run ends by checking the za-istražit queue for this cave and,
+# if anything is still sitting there, prints the pull-staged command to run.
+# `pull-staged` MOVES the files (the queue is a staging area, not a repo), drops
+# the SB_<broj>_ prefix on the way in, and creates the intake folder when the
+# cave has none — so it keeps its --apply guard.
 cavedossier photos process 1220 --author "Lovel Kukuljan"   # no OSZ yet / override it
 cavedossier photos process 1220 --from DIR                  # photos outside the intake leaf
 cavedossier photos process 1220 --long-edge 2560 --overwrite  # re-cut at another resolution

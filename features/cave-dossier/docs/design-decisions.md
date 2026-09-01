@@ -28,6 +28,7 @@ keeps the chronology.
   - [Cross-check against SB's Fotografija ulaza](#cross-check-against-sbs-fotografija-ulaza)
   - [The staleness guard](#the-staleness-guard)
 - [Per-cave photo processing — `photos process`](#per-cave-photo-processing--photos-process)
+  - [The queue is invisible from the leaf](#the-queue-is-invisible-from-the-leaf--so-every-run-says-so)
 - [Izjava za katastar — filename scheme](#izjava-za-katastar--filename-scheme)
 - [People registry and the statement gates (2026-08-30)](#people-registry-and-the-statement-gates-2026-08-30)
 - [Field-data intake — matching design](#field-data-intake--matching-design)
@@ -377,6 +378,7 @@ downsized to the `photos:` targets in config.yaml (1920 px long edge, 1.5 MB).
 | Decision | Why |
 |---|---|
 | **Copies, never in-place edits** | The optimal output resolution is not settled yet (user, 2026-09-01), so the originals stay untouched and a re-cut at another `--long-edge` is free. `--overwrite` re-writes existing copies; without it they are skipped. |
+| **No `--apply` — it writes** | The dry-run-by-default habit the rest of the tool follows exists to protect files a command would *change*. This one only ever ADDS: originals stay byte-for-byte, an existing copy is skipped rather than overwritten, nothing leaves the folder. So there was nothing to protect and the flag was pure friction (user, 2026-09-01). `--dry-run` still prints the plan; a stale `--apply` is accepted as a silent no-op. `photos match-queued`, which renames in place, keeps its `--apply`. |
 | **Copies land beside the originals** | Chosen over a `obrađene/` subfolder: one flat leaf is what the operator already browses, and the `SB_<broj>` prefix is enough to tell input from output. |
 | **A run never eats its own output** | `source_photos` excludes anything already prefixed `SB_<this cave's broj>`, so a second run is a no-op rather than squaring the file count. Another cave's `SB_<broj>` prefix is still treated as raw material — it means a photo landed in the wrong folder, not that it is processed. |
 | **Author from the OSZ cell `Autor fotografije ulaza`** | The zapisnik is where the society records it; nothing else on Drive knows it. `--author` overrides for caves with no OSZ yet. A full name becomes the archive's own spelling — `Lovel Kukuljan` → `LKukuljan`, matching `MDevcic` / `TMarkanjević` / `SClashin` in `!!Fotografije ulaza` (note: **no dot**, unlike SB's `L.Kukuljan` shorthand). Several people join with `-`. |
@@ -385,11 +387,45 @@ downsized to the `photos:` targets in config.yaml (1920 px long edge, 1.5 MB).
 | **Output is always JPEG** | The archive is uniformly `.jpg`, and these are photographs. `.heic` is *reported*, not silently dropped — Pillow needs `pillow-heif`, which is not a dependency. |
 | **Quality descends, size never wins over sharpness** | Qualities 92→70 are tried until the file fits the budget; the floor is kept even when it still misses. An honestly oversized copy is a visible fact the gate already warns about (`gating.MAX_ENTRANCE_PHOTO_BYTES`, 2 MB), a mushy one is a silent loss. |
 | **Never upscales** | A photo already under the long-edge target is copied at its own resolution. |
+| **A JPEG that needs nothing is copied byte-for-byte** | Within the long-edge target *and* within the budget → `shutil.copy2`, no re-encode. Every re-encode is generational loss, and on an already-compressed phone photo it actually *grows* the file (0.25 MB → 0.35 MB, observed on SB 1250). |
+| **`STATS.png` and friends are skipped** | An intake leaf holds images that are not entrance photos — chiefly the cSurvey stats screenshot, which recurs leaf after leaf (user, 2026-09-01). The list is config (`photos.ignore_filenames`), entries are fnmatch patterns, and matches are **listed as skipped on every run**: quietly dropping files by name is how four `.jfif` photos went uncounted for two years. They are removed before the numbering, so a `STATS.png` never shifts a photo's index. |
 | **Not the filing step** | Moving the copies into `!!Fotografije ulaza` and renaming `SB_<Redni broj>` → katastarski broj happens when the cave earns its SUE number — still manual, still a separate step (the 2.1d mover, backlog). |
 
 Fail-soft as everywhere: a missing OSZ, a missing `lxml`, an unreadable zapisnik
 or a missing intake leaf each become a printed note, never an exception — losing
 the author costs one filename component, not the run.
+
+### The queue is invisible from the leaf — so every run says so
+
+Settled 2026-09-01, from the real SB 811. A cave's photos can be in two places:
+its intake leaf, and the `…za istražit` staging queue. `photos process` only
+reads the leaf, so a cave whose photos are all still queued processes cleanly
+and reports *nothing to do* — the worst possible answer, because it looks like
+success. SB 811 was exactly that: an intake leaf with survey files and no
+photos, four entrance photos sitting in the queue.
+
+So **every exit of `photos process` ends with a queue check** — including the
+"nothing to do" and "no intake folder" exits, which are the ones that need it
+most — and prints the command that fixes it:
+
+```
+⚠ 4 fotografije ove jame još stoji u redu čekanja (!!Fotografije ulaza za istražit):
+      SB_811_Possibile Grotta_13 ulaz 051 418 (1 of 1) sz.jpg
+      …
+  Prebaci ih u intake mapu pa ponovno pokreni obradu:
+      cavedossier photos pull-staged 811 --apply
+```
+
+| Decision | Why |
+|---|---|
+| **Matched on the `SB_<broj>_` prefix alone** | The 2026-08-28 sweep named all 52 staged files, so the prefix *is* the queue's index — re-running the name/plaque matcher to learn what a filename already states would be a needless SB read. A staged photo that lost its prefix is not found here; `photos check-flag` still surfaces those. |
+| **`pull-staged` MOVES, it does not copy** | The queue is a staging area, not a repository (decision C3) — a photo that stayed in both places is the leak the staleness guard exists to catch. |
+| **The `SB_<broj>_` prefix is dropped on the way in** | Inside the cave's own `SB_<broj>_…` leaf it is redundant — and it *must* go: `source_photos` reads that prefix as "already processed output", so a pulled photo would otherwise be invisible to the very command meant to process it next. |
+| **It creates the leaf when the cave has none** | A queued cave routinely has no intake folder yet — that is precisely why its photos are still queued. Named by `prefill.intake_folder_name`, the one function every step that may create a leaf now shares. |
+| **`pull-staged` keeps `--apply`** | Unlike `process`, it moves files out of one folder and creates another — the guard `photos match-queued` and `intake map` use is the right one here. The hint prints the `--apply` form, so it is still one paste. |
+
+Ran on SB 811 end to end (2026-09-01): 4 photos pulled, queue left empty for
+that cave, then processed to `SB_811_Possibile Grotta_1..4.jpg`.
 
 First live run (2026-09-01, on copies of real field photos): 6.92 MB /
 3468×4624 → 1.23 MB / 1440×1920, which is the same result the manual FastStone

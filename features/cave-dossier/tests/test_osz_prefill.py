@@ -314,19 +314,19 @@ def test_prefill_offline_without_karta_degrades(settings, geo_stubs, run_dir, mo
 
 
 def test_intake_folder_name_components_and_sanitization(settings):
-    from cave_dossier.osz.prefill import _intake_folder_name
+    from cave_dossier.osz.prefill import intake_folder_name
     from cave_dossier.sb.loader import CaveRow
 
     cave = CaveRow(row_number=1, object_name="Špilja Testovka", sue_number="001",
                    values={"Sinonimi": "Testovka mala; druga",
                            "Autori nacrta ili izvor": "Ana Anić"})
-    name = _intake_folder_name(cave, 1, settings)
+    name = intake_folder_name(cave, 1, settings)
     assert name == "SB_1_Špilja Testovka_Testovka mala, druga_Ana Anić"
 
     # Illegal filesystem characters are stripped, empties skipped.
     cave = CaveRow(row_number=1, object_name='Jama "X/Y"?', sue_number=None,
                    values={})
-    assert _intake_folder_name(cave, 42, settings) == "SB_42_Jama X Y"
+    assert intake_folder_name(cave, 42, settings) == "SB_42_Jama X Y"
 
 
 def test_find_intake_folder_matches_nested_and_padded(tmp_path):

@@ -61,6 +61,11 @@ class Settings:
     # filename-fragment -> Redni broj map for photos automatic evidence cannot reach.
     photo_targets: dict[str, int] = field(default_factory=dict)
     photo_manual_matches: dict[str, int] = field(default_factory=dict)
+    # Image files that sit in an intake leaf but are NOT entrance photos
+    # (`STATS.png`, the cSurvey stats screenshot). fnmatch patterns, matched
+    # case-insensitively against the filename; reported as skipped, never
+    # silently dropped.
+    photo_ignore_names: list[str] = field(default_factory=list)
     # Field-data intake: folder-name fragment -> Redni broj, for leaves whose
     # name carries no cave name at all (a LIDAR id, a surveyor first name).
     intake_manual_matches: dict[str, int] = field(default_factory=dict)
@@ -224,6 +229,10 @@ def load_settings() -> Settings:
             for key, value in ((raw.get("photos") or {}).get("manual_matches") or {}).items()
             if value is not None
         },
+        photo_ignore_names=[
+            str(name) for name in ((raw.get("photos") or {}).get("ignore_filenames") or [])
+            if name
+        ],
         intake_manual_matches={
             str(key): int(value)
             for key, value in ((raw.get("intake") or {}).get("manual_matches") or {}).items()
