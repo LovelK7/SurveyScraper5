@@ -94,6 +94,23 @@ def intake_root(settings: Settings) -> Path | None:
     return settings.local_drive_root / relative
 
 
+def find_cave_leaf(root: Path, serial: int) -> Path | None:
+    """The cave's existing ``SB_<Redni broj>_…`` folder anywhere under ``root``.
+
+    The leaf is the cave's pre-SUE working identity, so every per-cave step
+    (OSZ prefill/fetch, photo processing) resolves it the same way: the
+    serial is matched padded or not, since the folders are unpadded while
+    the files delivered into them pad to four digits.
+    """
+    pattern = re.compile(rf"^SB_0*{serial}(_|$)", re.IGNORECASE)
+    if not root.is_dir():
+        return None
+    for candidate in sorted(root.rglob("SB_*")):
+        if candidate.is_dir() and pattern.match(candidate.name):
+            return candidate
+    return None
+
+
 def find_leaf_folders(root: Path) -> list[LeafFolder]:
     """Every folder under ``root`` that contains no further folders.
 

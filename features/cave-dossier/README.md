@@ -181,7 +181,10 @@ cavedossier osz prefill 1234 --force-karta # re-fetch the excerpt first (server-
 cavedossier osz prefill 1234 --offline     # never touch the network; an already-collected
                                            #   excerpt is still embedded, georef.hr is skipped
 # Precedence: SB wins — computed values only fill EMPTY cells; disagreements
-# (e.g. kota vs the DMV grid beyond 10 m) are warnings, never overrides.
+# (e.g. kota vs the DMV grid beyond 10 m) are warnings, never overrides. On
+# such a kota disagreement the Izvor kote defaults to GPS (a hand-entered Z
+# that contradicts the grid was most likely GPS-measured); an old OSZ's
+# recorded source still overrides the assumption.
 # LiDAR flag: a cave whose name or synonym carries "lidar" (Lidarka, the
 # "LiDAR Kristal N" Liburnija convention, …) had its coordinates and Z
 # produced by the LiDAR analysis, so Izvor koordinata AND Izvor kote ulaza

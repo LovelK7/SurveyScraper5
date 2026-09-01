@@ -1,8 +1,11 @@
 """Part 2.1d — entrance-photo processing.
 
-Today: matching the free-form staged photos back to SB rows (read-only
-proposals). Later: the downsize + rename step itself, which turns a 7 MB field
-photo into the ~1 MB archive copy named after the cave's SUE number.
+``matcher`` is the one-off sweep that gave the free-form staged photos an
+``SB_<Redni broj>`` prefix (read-only proposals; not run any more).
+``process`` is the standing per-cave step: raw photos out of the cave's intake
+leaf into archive-ready ``SB_<broj>_<Ime>_<Autor>_<n>.jpg`` copies, downsized
+to screen size. Filing them into `!!Fotografije ulaza` under the katastarski
+broj stays a later, separate step.
 """
 
 from cave_dossier.photos.matcher import (
@@ -16,15 +19,41 @@ from cave_dossier.photos.matcher import (
     match_photos,
     staged_photo_dir,
 )
+from cave_dossier.photos.process import (
+    PhotoJob,
+    PhotoPlan,
+    ProcessedPhoto,
+    author_filename_token,
+    build_job,
+    entrance_photo_author,
+    plan_photos,
+    process_job,
+    process_photo,
+    resolve_targets,
+    source_photos,
+    target_name,
+)
 
 __all__ = [
     "CaveCandidate",
+    "PhotoJob",
     "PhotoMatch",
+    "PhotoPlan",
+    "ProcessedPhoto",
     "RenameOutcome",
     "apply_renames",
+    "author_filename_token",
     "build_candidates",
+    "build_job",
+    "entrance_photo_author",
     "list_other_files",
     "list_photos",
     "match_photos",
+    "plan_photos",
+    "process_job",
+    "process_photo",
+    "resolve_targets",
+    "source_photos",
     "staged_photo_dir",
+    "target_name",
 ]

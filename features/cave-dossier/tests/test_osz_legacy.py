@@ -96,15 +96,17 @@ def test_bold_selection_becomes_tick(tmp_path):
     assert "Jama" in ticks
 
 
-def test_no_content_sentinels_and_signature_drop(tmp_path):
+def test_sentinels_kept_but_signature_footer_dropped(tmp_path):
+    """'/' means the recorder explicitly recorded 'none' — it migrates
+    (user, 2026-09-01, SB 1252); only a leaked signature footer is dropped."""
     path = _paragraph_doc([
         "Povijesni podaci: /",
         "Literatura: nepoznato",
         "Napomene: Kastav, dne 1.1.2020. Zapisnik ispunio: Netko",
     ], tmp_path / "sentinels.docx")
     fields, _, _ = to_v10_fields(parse_legacy_osz(path))
-    assert "povijest" not in fields
-    assert "literatura" not in fields
+    assert fields["povijest"] == "/"
+    assert fields["literatura"] == "nepoznato"
     assert "napomene" not in fields  # signature footer dropped
 
 
@@ -120,6 +122,27 @@ def test_elevation_split_both_generations():
     assert _split_entrance_elevation_parts("680 Izvor kote ulaza: LiDAR") == ("680", "LiDAR")
     assert _split_entrance_elevation_parts("535 Odr. po: TK") == ("535", "TK")
     assert _split_entrance_elevation_parts("612") == ("612", None)
+
+
+def test_stacked_value_with_inline_colon_is_kept(tmp_path):
+    """SB 1249's Mikroklimatski: measurement prose containing colons
+    ("Zapadni krak verikale: Temp 7.7 cels.; Rh 94.5 %") must still count
+    as the label's spilled value — only a RECOGNISED label stops the walk."""
+    document = docx.Document()
+    table = document.add_table(rows=4, cols=1)
+    table.cell(0, 0).text = "Mikroklimatski:"
+    table.cell(1, 0).text = "Zapadni krak verikale: Temp 7.7 cels.; Rh 94.5 %"
+    table.cell(2, 0).text = "Biospeleološki:"
+    table.cell(3, 0).text = "Viđena jedinka iz skupine Pseudoscorpiones"
+    path = tmp_path / "stacked.docx"
+    document.save(str(path))
+
+    fields, _, _ = to_v10_fields(parse_legacy_osz(path))
+    assert "Temp 7.7" in fields["mikroklima"]
+    assert "Rh 94.5" in fields["mikroklima"]
+    # …and the walk still stopped at the next section.
+    assert "Pseudoscorpiones" not in fields["mikroklima"]
+    assert "Pseudoscorpiones" in fields["biospeleologija"]
 
 
 def test_signature_row_place_and_date(tmp_path):

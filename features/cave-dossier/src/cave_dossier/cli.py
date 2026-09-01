@@ -350,6 +350,106 @@ def cmd_photos_check_flag(settings: Settings, limit: int) -> int:
     return EXIT_NOT_READY
 
 
+def cmd_photos_process(settings: Settings, serial: int, apply: bool,
+                       from_dir: str | None, author_arg: str | None,
+                       osz_path_arg: str | None, long_edge: int | None,
+                       max_bytes: int | None, overwrite: bool) -> int:
+    """Part 2.1d — archive-ready copies of ONE cave's entrance photos.
+
+    Reads the raw photos from the cave's ``SB_<broj>_…`` intake leaf and writes
+    ``SB_<broj>_<Ime objekta>_<Autor>_<n>.jpg`` copies beside them, downsized to
+    the config's screen-size targets. The author is the OSZ cell "Autor
+    fotografije ulaza"; the originals are never touched, and nothing is moved
+    into `!!Fotografije ulaza` — that (and the SB→katastarski renumbering) is
+    the later filing step.
+    """
+    from cave_dossier.photos import process as process_mod
+
+    cave = _find_serial_or_exit(settings, serial)
+    if cave is None:
+        return EXIT_ERROR
+
+    job = process_mod.build_job(
+        settings,
+        serial,
+        cave.object_name,
+        folder=Path(from_dir).resolve() if from_dir else None,
+        author_override=author_arg,
+        osz_path=Path(osz_path_arg).resolve() if osz_path_arg else None,
+    )
+    config_long_edge, config_max_bytes = process_mod.resolve_targets(settings)
+    long_edge_px = long_edge or config_long_edge
+    budget_bytes = max_bytes or config_max_bytes
+
+    print(f"Redni broj {serial}: {cave.object_name or '<no name>'}"
+          + (f" (SUE {cave.sue_number})" if cave.sue_number else ""))
+    for note in job.notes:
+        print(f"  ! {note}")
+    if job.folder is None:
+        return EXIT_ERROR
+    print(f"Mapa:  {job.folder}")
+    if job.osz_path:
+        print(f"OSZ:   {job.osz_path.name}")
+    print(f"Autor: {job.author or '(prazno)'}"
+          + (f"   ← '{job.author_source}'" if job.author_source else ""))
+    print(f"Cilj:  duga stranica {long_edge_px} px, do "
+          f"{budget_bytes / 1_000_000:.1f} MB po datoteci")
+
+    if not job.plans:
+        print("Nema neobrađenih fotografija u mapi "
+              f"(datoteke koje već počinju s SB_{serial}_ su rezultat prijašnjeg "
+              "pokretanja).")
+        return EXIT_NOT_READY
+
+    print(f"Fotografija za obradu: {len(job.plans)}")
+    print(
+        "OBRAĐUJEM — kopije se zapisuju uz originale."
+        if apply
+        else "PROBNI RUN — ništa se ne zapisuje; ponovi s --apply."
+    )
+    print()
+    for plan in job.plans:
+        marker = "!" if plan.unsupported else ("=" if plan.target_exists else " ")
+        print(f"  {marker} {plan.source.name}")
+        print(f"      → {plan.target.name}"
+              + ("   (format traži pillow-heif)" if plan.unsupported else "")
+              + ("   (postoji)" if plan.target_exists and not plan.unsupported else ""))
+
+    if not apply:
+        return EXIT_NOT_READY
+
+    print()
+    outcomes = process_mod.process_job(
+        job, long_edge_px=long_edge_px, max_bytes=budget_bytes, overwrite=overwrite
+    )
+    written = [o for o in outcomes if o.status == "written"]
+    problems = [o for o in outcomes if o.status not in ("written", "exists")]
+    for outcome in outcomes:
+        if outcome.status == "written":
+            print(f"  ✓ {outcome.plan.target.name}   "
+                  f"{_mb(outcome.source_bytes)} → {_mb(outcome.target_bytes)}"
+                  f"   {_px(outcome.source_px)} → {_px(outcome.target_px)}")
+        else:
+            print(f"  {outcome.status}: {outcome.plan.source.name}"
+                  + (f"  ({outcome.detail})" if outcome.detail else ""))
+    print()
+    print(f"Zapisano {len(written)} kopija; originali su netaknuti.")
+    oversized = [o for o in written
+                 if o.target_bytes is not None and o.target_bytes > budget_bytes]
+    if oversized:
+        print(f"⚠ {len(oversized)} kopija je i dalje iznad budžeta na najnižoj "
+              "kvaliteti — snizi --long-edge ako smeta.")
+    return EXIT_ERROR if problems else EXIT_NOT_READY
+
+
+def _mb(size_bytes: int | None) -> str:
+    return "?" if size_bytes is None else f"{size_bytes / 1_000_000:.2f} MB"
+
+
+def _px(size: tuple[int, int] | None) -> str:
+    return "?" if size is None else f"{size[0]}×{size[1]}"
+
+
 def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: bool) -> int:
     """Map each field-data leaf folder to its SB row (M2, field-data intake).
 
@@ -1268,7 +1368,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     photos = subparsers.add_parser(
         "photos",
-        help="Part 2.1d — entrance-photo processing (read-only for now)",
+        help="Part 2.1d — entrance-photo processing (rename + downsize)",
     )
     photos_sub = photos.add_subparsers(dest="photos_command", required=True)
     match_queued = photos_sub.add_parser(
@@ -1288,6 +1388,59 @@ def build_parser() -> argparse.ArgumentParser:
         help="Perform the proposed renames in place (default is a dry run). "
              "Conflicts, unmatched files and already-correct names are never touched, "
              "and an existing target is never overwritten.",
+    )
+
+    photos_process = photos_sub.add_parser(
+        "process",
+        help="Archive-ready copies of one cave's entrance photos: downsize to "
+             "screen size and name them SB_<broj>_<Ime>_<Autor>_<n>.jpg",
+    )
+    photos_process.add_argument(
+        "redni_broj",
+        type=int,
+        help="The cave's Redni broj — its SB_<broj>_… intake folder holds the raw photos",
+    )
+    photos_process.add_argument(
+        "--apply",
+        action="store_true",
+        help="Write the copies (default is a dry run). Originals are never "
+             "touched either way.",
+    )
+    photos_process.add_argument(
+        "--from",
+        dest="from_dir",
+        metavar="DIR",
+        help="Read the raw photos from this folder instead of the cave's intake leaf",
+    )
+    photos_process.add_argument(
+        "--author",
+        metavar="NAME",
+        help="Use this photo author instead of the OSZ's 'Autor fotografije ulaza' "
+             "(a full name is abbreviated the archive's way: Lovel Kukuljan -> LKukuljan)",
+    )
+    photos_process.add_argument(
+        "--osz",
+        dest="osz_path",
+        metavar="FILE",
+        help="Read the author from this exact OSZ DOCX, skipping the folder search",
+    )
+    photos_process.add_argument(
+        "--long-edge",
+        type=int,
+        metavar="PX",
+        help="Long-edge target in pixels (default: photos.target_long_edge_px in config.yaml)",
+    )
+    photos_process.add_argument(
+        "--max-bytes",
+        type=int,
+        metavar="N",
+        help="Per-file size budget (default: photos.target_max_bytes in config.yaml)",
+    )
+    photos_process.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Rewrite copies that already exist (default is to skip them) — use "
+             "after changing --long-edge",
     )
 
     return parser
@@ -1326,6 +1479,12 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_photos_match_queued(settings, args.limit, args.apply)
             if args.photos_command == "check-flag":
                 return cmd_photos_check_flag(settings, args.limit)
+            if args.photos_command == "process":
+                return cmd_photos_process(
+                    settings, args.redni_broj, args.apply, args.from_dir,
+                    args.author, args.osz_path, args.long_edge, args.max_bytes,
+                    args.overwrite,
+                )
         if args.command == "sat":
             if args.sat_command == "sync":
                 return cmd_sat_sync(

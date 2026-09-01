@@ -188,3 +188,35 @@ when an idea's time comes. Nothing here is a commitment.
   and a non-developer setup guide. Consideration documented in ARCHITECTURE.md
   §"Dev vs prod" (with the portability rules to keep NOW); promote to a real
   work item when its time comes.
+- 2026-09-01 — **Zaštićena područja layer → Lokalitet from protected-area
+  containment** (user): add Croatian protected-area polygons (nacionalni
+  parkovi, parkovi prirode, regionalni parkovi, značajni krajobrazi, park-šume,
+  posebni rezervati, spomenici prirode + Natura 2000 if useful) to
+  `data/geo/` as a `zasticena_podrucja.gpkg` (EPSG:3765 like every other vector
+  layer), and let `geo locate` do a point-in-polygon of the entrance against it.
+  When the entrance falls **inside** a protected area, that area's name becomes
+  (or annotates) `Lokalitet` — e.g. an entrance inside PP Učka yields
+  `Lokalitet = Park prirode Učka` — so `cavedossier osz prefill` writes it
+  instead of falling back to the nearest RGI toponym.
+  Open points to settle when this is picked up:
+  * **Source + licence.** Bioportal / Zavod za zaštitu okoliša i prirode
+    (Ministarstvo) publishes the registry of protected areas + Natura 2000 as
+    WFS/SHP; needs the same provenance + attribution row in `data/README.md`
+    that DGU layers have, and a branch in `geo/provision.py::fetch_data`
+    (local copy → download → skip fail-soft), since it is a **different
+    publisher than DGU** and cannot ride the existing AU/RGI paths.
+  * **Precedence.** Must respect the standing 2.1b rule (design-decisions):
+    **SB wins** — never overwrite a filled `Lokalitet`, only annotate when the
+    containment disagrees. For an empty cell, decide the order between the
+    protected area (containment, 0 m) and today's `geo-rgi` nearest-toponym
+    fill (`_LOCALITY_APPEND_RADIUS_M = 1500`); containment is the stronger
+    evidence and should probably win, with a new source label (`geo-zasticeno`)
+    so `osz prefill` can show provenance the way it does for `geo-rgi`.
+  * **Overlaps.** Protected areas nest (a spomenik prirode inside a park
+    prirode; Natura 2000 sites overlap everything) — pick a category ranking
+    or emit the most specific hit and list the rest as a note.
+  * **Beyond Lokalitet.** Containment is also directly useful for the OSZ /
+    CroSpeleo `Zaštita` question and for the dossier gating (a cave in a
+    national park implies permit/reporting obligations) — worth exposing on
+    `LocalityFinding` as its own field rather than only folding it into the
+    Lokalitet string.

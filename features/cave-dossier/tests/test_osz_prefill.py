@@ -113,9 +113,11 @@ def test_prefill_full_row_sb_wins(settings, geo_stubs, run_dir, collected_karta)
     assert fields["kota_ulaza"].value == "500" and fields["kota_ulaza"].source == "sb"
     assert fields["najblize_mjesto"].value == "Testno Selo"
     assert fields["lokalitet"].value == "Testni kras"
-    # 680 vs 500 exceeds the 10 m tolerance → flagged, not overridden, and
-    # claiming a DMV source for a contradicted number would be false.
-    assert "izvor_kote" not in fields
+    # 680 vs 500 exceeds the 10 m tolerance → flagged, not overridden; a
+    # hand-entered Z that contradicts the grid is most likely GPS-measured
+    # (user, 2026-09-01, SB 1255) — assumed, and overridable by an old OSZ.
+    assert fields["izvor_kote"].value == "GPS"
+    assert fields["izvor_kote"].source == "default"
     assert any("Kota ulaza" in m for m in result.mismatches)
     # Always computed (SB has no columns for them).
     assert fields["zupanija"].value == "Istarska"
@@ -463,6 +465,34 @@ def test_prefill_migration_recorded_source_beats_default(intake_settings, geo_st
     assert result.fields["izvor_koordinata"].source == "stari-osz"
     assert result.fields["izvor_kote"].value == "HOK"
     assert result.fields["izvor_kote"].source == "stari-osz"
+
+
+def test_merge_locality_sb_first_dedup():
+    from cave_dossier.osz.prefill import merge_locality
+
+    assert merge_locality("Ćićarija", "Ćićarija, Mela sapca, PP Učka") == \
+        "Ćićarija, Mela sapca, PP Učka"
+    assert merge_locality("Učka", "Ćićarija, Mela sapca") == "Učka, Ćićarija, Mela sapca"
+    assert merge_locality("Ćićarija", "CICARIJA") == "Ćićarija"  # fold-dedup
+
+
+def test_prefill_migration_merges_localities(intake_settings, geo_stubs, run_dir, monkeypatch):
+    """SB holds ONE locality by convention; the old OSZ's extra localities
+    must survive into the new document (user, 2026-09-01, SB 1252)."""
+    _template_guard()
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+    from cave_dossier.osz.writer import OszDocument
+
+    intake_root = intake_settings.local_drive_root / "!Za digitalizirat"
+    old_path = intake_root / "SB_1_x" / "Zapisnik_star.docx"
+    old_path.parent.mkdir(parents=True)
+    doc = OszDocument(TEMPLATE)
+    doc.fill_plain(1, 6, 1, "Testni kras, Mela sapca, PP Učka")  # lokalitet
+    doc.save(old_path)
+
+    result = prefill.run_prefill(intake_settings, 1).result  # SB: "Testni kras"
+    assert result.fields["lokalitet"].value == "Testni kras, Mela sapca, PP Učka"
+    assert result.fields["lokalitet"].source == "sb+stari-osz"
 
 
 def test_prefill_migration_conflict_keeps_new_value(intake_settings, geo_stubs,

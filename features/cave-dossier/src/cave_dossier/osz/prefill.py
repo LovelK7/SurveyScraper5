@@ -37,6 +37,7 @@ from cave_dossier.core.matching import SB_PREFIX
 from cave_dossier.core.normalization import normalize_lookup_key, parse_optional_float
 from cave_dossier.geo import elevation as elevation_mod
 from cave_dossier.geo import locality as locality_mod
+from cave_dossier.intake.scanner import find_cave_leaf
 from cave_dossier.osz import pristupi
 from cave_dossier.osz.addresses import KARTA_FRAME, TEMPLATE_VERSION, V10
 from cave_dossier.osz.models import FieldValue, PrefillResult, SBUpdate
@@ -350,14 +351,16 @@ def _resolve_kota(settings: Settings, cave: CaveRow, result: PrefillResult,
                 )
             return
         if computed is not None and abs(computed - sb_z) > settings.geo_elevation_tolerance_m:
-            # Disagreement: SB's value stands, but claiming a DMV source
-            # for a number the DMV grid contradicts would be false — leave
-            # Izvor kote to the recorder and warn.
+            # Disagreement: SB's value stands, and a hand-entered Z that
+            # contradicts the DMV grid most likely came off a GPS device —
+            # default the source to GPS (user, 2026-09-01, SB 1255) and warn.
+            # source="default" keeps it overridable by a recorded old-OSZ value.
+            result.fields["izvor_kote"] = FieldValue(value="GPS", source="default")
             result.mismatches.append(
                 f"Kota ulaza: SB kaže {_format_number(sb_z)} m, "
                 f"{label} kaže {_format_number(computed)} m "
                 f"(razlika > {_format_number(settings.geo_elevation_tolerance_m)} m). "
-                "SB vrijednost je zadržana, Izvor kote ostaje prazan."
+                "SB vrijednost je zadržana, Izvor kote pretpostavljen kao GPS."
             )
             return
         # The society's Z values are DMV/LiDAR-derived (user, 2026-08-30) —
@@ -480,6 +483,14 @@ def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
         if existing is None or not existing.value:
             result.fields[key] = FieldValue(value=value, source="stari-osz")
             carried += 1
+        elif key == "lokalitet":
+            # SB carries ONE locality by convention; the OSZ keeps multiple
+            # (user, 2026-09-01, SB 1252). Merge: SB's value is always in,
+            # the old document's additional localities survive.
+            merged = merge_locality(existing.value, value)
+            if _canon(merged) != _canon(existing.value):
+                result.fields[key] = FieldValue(value=merged, source="sb+stari-osz")
+                carried += 1
         elif _old_osz_wins(key, existing):
             # Recorded content beats what the fresh prefill merely assumed:
             # the GPS default, the shared pristup template, and the inferred
@@ -503,6 +514,20 @@ def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
         f"{len(content.ticked)} kućica."
     )
     return content
+
+
+def merge_locality(sb_value: str, osz_value: str) -> str:
+    """SB's locality tokens first, then the old OSZ's additional ones —
+    diacritic-fold deduplicated, comma-joined."""
+    tokens: list[str] = []
+    seen: set[str] = set()
+    for raw in re.split(r"[,;/]+", sb_value) + re.split(r"[,;/]+", osz_value):
+        token = raw.strip()
+        key = normalize_lookup_key(token)
+        if token and key not in seen:
+            seen.add(key)
+            tokens.append(token)
+    return ", ".join(tokens)
 
 
 def _old_osz_wins(key: str, existing: FieldValue) -> bool:
@@ -648,11 +673,7 @@ def _backup_path(old_path: Path) -> Path:
 def _find_intake_folder(intake_root: Path, serial: int) -> Path | None:
     """The cave's existing ``SB_<broj>_…`` leaf, padded or not, anywhere in
     the intake tree; None when the cave has no folder yet."""
-    pattern = re.compile(rf"^SB_0*{serial}(_|$)")
-    for candidate in sorted(intake_root.rglob("SB_*")):
-        if candidate.is_dir() and pattern.match(candidate.name):
-            return candidate
-    return None
+    return find_cave_leaf(intake_root, serial)
 
 
 def _intake_folder_name(cave: CaveRow, serial: int, settings: Settings) -> str:

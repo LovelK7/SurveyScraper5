@@ -155,7 +155,6 @@ _LABEL_PREFIX_FALLBACKS = (
     ("polozajipristup", "location_access_text"),
     ("pristup", "location_access_text"),
 )
-_NO_CONTENT_SENTINELS = {"/", "nije poznato", "nepoznato"}
 _LEADING_INDEX_PREFIX_RE = re.compile(r"^\s*\d+\s*[)\].\-:]\s*")
 _LEADING_ORPHAN_COLON_RE = re.compile(r"^:\s*")
 
@@ -412,6 +411,14 @@ def _row_has_no_keys(row) -> bool:
 
 
 def _row_is_value_carrier(row) -> bool:
+    """Whether a row below a label-only row is that label's spilled value.
+
+    Softened vs crospeleo (2026-08-31, SB 1249's Mikroklimatski): their
+    rule stops on ANY colon without sentence punctuation before it, which
+    threw away real measurement prose like "Zapadni krak verikale: Temp
+    7.7 cels.; Rh 94.5 %". Here a colon only stops the walk when its
+    prefix is a RECOGNISED label — i.e. the next section actually began.
+    """
     segments = _row_segments(row)
     if not segments:
         return False
@@ -421,7 +428,7 @@ def _row_is_value_carrier(row) -> bool:
         stripped = _LEADING_ORPHAN_COLON_RE.sub(
             "", _LEADING_INDEX_PREFIX_RE.sub("", segment))
         colon = stripped.find(":")
-        if colon >= 0 and not re.search(r"[.!?]", stripped[:colon]):
+        if colon >= 0 and _canonical_key(stripped[:colon], allow_prefix_fallback=True):
             return False
     return True
 
@@ -532,9 +539,10 @@ def _normalize_parsed(parsed: dict[str, str]) -> None:
         parsed["entrance_elevation_m"] = elevation
     if source:
         parsed["entrance_elevation_source"] = source
-    for key in ("historical_data", "literature", "object_note"):
-        if key in parsed and _is_no_content(parsed[key]):
-            parsed.pop(key)
+    # Unlike crospeleo, the "/" / "nije poznato" sentinels are KEPT (user,
+    # 2026-09-01, SB 1252): the recorder explicitly wrote "none known", and
+    # the migrated v10 should say so instead of leaving the placeholder.
+    # Only a signature footer that leaked into Napomene is still dropped.
     note = parsed.get("object_note")
     if note and re.search(r"zapisni(k ispunio|čar|car)", note, re.IGNORECASE):
         parsed.pop("object_note")
@@ -553,10 +561,6 @@ def _split_entrance_elevation_parts(value: str | None) -> tuple[str | None, str 
         if len(parts) == 2:
             return cleanup_whitespace(parts[0]), cleanup_whitespace(parts[1])
     return cleaned, None
-
-
-def _is_no_content(value: str) -> bool:
-    return value.strip().rstrip(".,;").lower() in _NO_CONTENT_SENTINELS
 
 
 # The CroSpeleo Izvor koordinata vocabulary (crospeleo _COORD_SOURCE_OPTIONS)

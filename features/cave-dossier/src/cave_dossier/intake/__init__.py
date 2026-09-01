@@ -9,6 +9,7 @@ from cave_dossier.intake import liburnija
 from cave_dossier.intake.scanner import (
     IntakeMatch,
     LeafFolder,
+    find_cave_leaf,
     find_leaf_folders,
     intake_root,
     match_leaves,
@@ -21,6 +22,7 @@ __all__ = [
     "IntakeMatch",
     "liburnija",
     "LeafFolder",
+    "find_cave_leaf",
     "find_leaf_folders",
     "intake_root",
     "match_leaves",
