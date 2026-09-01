@@ -108,23 +108,53 @@ def _dir_serial(name: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def _pick_docx(cave_dir: Path, notes: list[str]) -> Path | None:
-    """The dir's OSZ: prefer a name saying osz/zapisnik; else a lone DOCX."""
-    candidates = [f for f in cave_dir.rglob("*.docx")
-                  if not f.name.startswith("~$")]
+#: ``<ime>_stari_<datum>.docx`` — the backup `osz prefill` leaves behind when it
+#: migrates an older zapisnik (``prefill._backup_path``). Only OUR dated form is
+#: excluded: a human's own "Zapisnik_stari.docx" may well be the real document.
+BACKUP_MARKER_RE = re.compile(r"_stari_\d{4}-\d{2}-\d{2}(_\d+)?$", re.IGNORECASE)
+#: What `osz prefill` delivers, and therefore the document to prefer outright.
+CANONICAL_OSZ_RE = re.compile(r"SB_\d+_OSZ\.docx$", re.IGNORECASE)
+
+
+def pick_osz_docx(folder: Path) -> tuple[Path | None, tuple[Path, ...]]:
+    """The folder's OSZ, or the pool that made the choice ambiguous.
+
+    Shared by the fetcher (`locate_filled_osz`) and the prefill migration
+    (`prefill._find_old_osz`) so both answer "which document IS this cave's
+    zapisnik" identically — they diverged until 2026-09-01, and the fetcher's
+    laxer version went ambiguous on every leaf prefill had already migrated,
+    where its own ``_stari_<datum>`` backup sits beside the delivered
+    ``SB_<broj>_OSZ.docx``.
+
+    In order: the canonical ``SB_<broj>_OSZ.docx``; else a lone name saying
+    osz/zapisnik; else a lone DOCX. Word lock files and our dated backups never
+    count. Returns ``(None, pool)`` when the pool is still ambiguous and
+    ``(None, ())`` when the folder has no DOCX at all — each caller words its
+    own note, since "no zapisnik to read" and "no zapisnik to migrate" are
+    different messages.
+    """
+    candidates = [
+        f for f in sorted(folder.rglob("*.docx"))
+        if not f.name.startswith("~$") and not BACKUP_MARKER_RE.search(f.stem)
+    ]
     if not candidates:
-        return None
-    preferred = [f for f in candidates
-                 if "osz" in f.name.lower() or "zapisnik" in normalize_lookup_key(f.name)]
-    if len(preferred) == 1:
-        return preferred[0]
-    if len(candidates) == 1:
-        return candidates[0]
-    pool = preferred or candidates
-    if len(pool) > 1:
+        return None, ()
+    canonical = [f for f in candidates if CANONICAL_OSZ_RE.fullmatch(f.name)]
+    if len(canonical) == 1:
+        return canonical[0], ()
+    named = [f for f in candidates
+             if "osz" in f.name.lower() or "zapisnik" in normalize_lookup_key(f.name)]
+    pool = named or candidates
+    if len(pool) == 1:
+        return pool[0], ()
+    return None, tuple(pool)
+
+
+def _pick_docx(cave_dir: Path, notes: list[str]) -> Path | None:
+    path, pool = pick_osz_docx(cave_dir)
+    if pool:
         notes.append("više .docx kandidata: " + ", ".join(f.name for f in pool))
-        return None
-    return pool[0]
+    return path
 
 
 @dataclass(frozen=True)

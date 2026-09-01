@@ -23,8 +23,9 @@ Two deliberate limits (user, 2026-09-01):
   `SB_<Redni broj>` → `<Katastarski broj>` happens when the cave earns its SUE
   number, and is still a separate, later step.
 
-Needs Pillow (the ``[karta]`` extra). Without it the planning half still works
-— the dry run prints the full rename plan and only the writing fails.
+Needs Pillow (the ``[photos]`` extra, also pulled in by ``[karta]``) to write,
+and ``lxml`` (``[osz]``) to read the author. Without either, the planning half
+still works — the dry run prints the full plan and only that step degrades.
 """
 
 from __future__ import annotations
@@ -247,7 +248,13 @@ def _author_from_osz(
     from cave_dossier.osz import backfill as backfill_mod
 
     if osz_path is None:
-        osz_path = backfill_mod.locate_filled_osz(settings, serial).path
+        location = backfill_mod.locate_filled_osz(settings, serial)
+        osz_path = location.path
+        if osz_path is None:
+            # The locator's own notes say WHY (no leaf, several .docx
+            # candidates, …). Swallowing them left the user with a flat "no
+            # OSZ" for a cave whose zapisnik was sitting right there.
+            notes.extend(location.notes)
     if osz_path is None:
         notes.append(
             "Nema ispunjenog OSZ-a — 'Autor fotografije ulaza' ostaje prazan "
@@ -291,7 +298,7 @@ def process_photo(
         from PIL import Image, ImageOps
     except ImportError:
         return ProcessedPhoto(
-            plan, "error", "nedostaje Pillow — instaliraj extra `karta`", source_bytes
+            plan, "error", "nedostaje Pillow — instaliraj extra `photos`", source_bytes
         )
 
     try:

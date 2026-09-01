@@ -281,11 +281,24 @@ def _resolve_fields(
                 value=finding.najblize_mjesto, source=finding.najblize_mjesto_source
             )
             if finding.najblize_mjesto_source == "geo-admin":
-                result.sb_updates.append(SBUpdate(
-                    column=_field_column(settings, "nearest_place") or "Najbliže mjesto",
-                    value=finding.najblize_mjesto,
-                    source="DGU naselja (točka ulaza)",
-                ))
+                # Geo-admin wins this field outright (user, 2026-09-01):
+                # an empty SB cell gets a fill proposal, a DIFFERING one a
+                # correction proposal — both via the review CSV, never
+                # written automatically.
+                sb_current = _sb_text(cave, _field_column(settings, "nearest_place"))
+                if not sb_current:
+                    result.sb_updates.append(SBUpdate(
+                        column=_field_column(settings, "nearest_place") or "Najbliže mjesto",
+                        value=finding.najblize_mjesto,
+                        source="DGU naselja (točka ulaza)",
+                    ))
+                elif normalize_lookup_key(sb_current) != normalize_lookup_key(finding.najblize_mjesto):
+                    result.sb_updates.append(SBUpdate(
+                        column=_field_column(settings, "nearest_place") or "Najbliže mjesto",
+                        value=finding.najblize_mjesto,
+                        source="DGU naselja (točka ulaza)",
+                        note=f"ispravak — SB kaže '{sb_current}'",
+                    ))
         if finding.lokalitet:
             fields["lokalitet"] = FieldValue(
                 value=finding.lokalitet, source=finding.lokalitet_source
@@ -404,33 +417,17 @@ def _existing_intake_folder(settings: Settings, serial: int) -> Path | None:
 
 
 def _find_old_osz(folder: Path, result: PrefillResult) -> Path | None:
-    """The OSZ document already in the leaf: the canonical
-    ``SB_*_OSZ.docx`` when present, else a docx whose name says
-    osz/zapisnik, else a lone docx. ``*_stari*`` backups and Word lock
-    files never count; an ambiguous set is reported and skipped."""
-    # Only OUR dated backups are excluded — a human's old file may well be
-    # named "Zapisnik_stari.docx" and must still count as the old OSZ.
-    backup_marker = re.compile(r"_stari_\d{4}-\d{2}-\d{2}(_\d+)?$", re.IGNORECASE)
-    candidates = [
-        f for f in sorted(folder.rglob("*.docx"))
-        if not f.name.startswith("~$") and not backup_marker.search(f.stem)
-    ]
-    if not candidates:
-        return None
-    canonical = [f for f in candidates if re.fullmatch(r"SB_\d+_OSZ\.docx", f.name)]
-    if len(canonical) == 1:
-        return canonical[0]
-    named = [f for f in candidates
-             if "osz" in f.name.lower()
-             or "zapisnik" in normalize_lookup_key(f.name)]
-    pool = named or candidates
-    if len(pool) == 1:
-        return pool[0]
-    result.notes.append(
-        "Više OSZ kandidata u intake mapi — migracija preskočena: "
-        + ", ".join(f.name for f in pool)
-    )
-    return None
+    """The OSZ document already in the leaf, by the shared selection rules
+    (`backfill.pick_osz_docx`); an ambiguous set is reported and skipped."""
+    from cave_dossier.osz.backfill import pick_osz_docx
+
+    path, pool = pick_osz_docx(folder)
+    if pool:
+        result.notes.append(
+            "Više OSZ kandidata u intake mapi — migracija preskočena: "
+            + ", ".join(f.name for f in pool)
+        )
+    return path
 
 
 def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):

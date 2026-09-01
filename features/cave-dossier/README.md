@@ -86,7 +86,7 @@ current state per milestone: [STATUS.md](../../STATUS.md#milestone-ladder)):
 | M3 | isječak karte (`karta`) |
 | M4 | OSZ both ways: `osz prefill` + `osz fetch` (+ the CroSpeleo-field fetcher, still open) |
 | M5 | consume the 2.1a survey artifacts (Nacrt + dimensions) |
-| M6 | the only WRITE step: SB write-back + archive delivery (+ 2.1d photo processing) |
+| M6 | the only WRITE step: SB write-back + archive delivery (+ the 2.1d mover) |
 
 Until M6, every tool that "changes" SB really emits a **review list** a person
 carries into Excel — that is why so many outputs are `dopune-*.csv` files.
@@ -142,10 +142,23 @@ cavedossier intake map --apply             # rename the folders in place
 cavedossier sat sync                       # Liburnija sheet vs SB: four review lists (read-only)
 cavedossier sat sync --coords --out        # + coordinate proximity, lists written to sb-sync/
 
-# ── Staged entrance photos (part 2.1d) ─────────────────────────────────
+# ── Entrance photos (part 2.1d) ────────────────────────────────────────
+cavedossier photos process 1220            # DRY RUN: plan the archive-ready copies for one cave
+cavedossier photos process 1220 --apply    # write SB_<broj>_<Ime>_<Autor>_<n>.jpg beside the originals
+cavedossier photos check-flag              # staged photos vs SB's "Fotografija ulaza = DA"
+# `process` reads the cave's SB_<broj>_… intake folder, takes the author from the
+# OSZ cell "Autor fotografije ulaza", and downsizes to the config.yaml `photos:`
+# targets (1920 px long edge / 1.5 MB). It only ever writes COPIES — the originals
+# stay put, and nothing is moved into !!Fotografije ulaza (that, and the
+# SB_<broj> → katastarski broj rename, is the later filing step).
+cavedossier photos process 1220 --author "Lovel Kukuljan"   # no OSZ yet / override it
+cavedossier photos process 1220 --from DIR                  # photos outside the intake leaf
+cavedossier photos process 1220 --long-edge 2560 --overwrite  # re-cut at another resolution
+
+# One-off, kept for reference — the staged-photo sweep is finished and is not
+# run any more (it named the unidentified photos in …za istražit):
 cavedossier photos match-queued            # DRY RUN: propose SB_<Redni broj>_… per staged photo
 cavedossier photos match-queued --apply    # perform the proposed renames in place
-cavedossier photos check-flag              # staged photos vs SB's "Fotografija ulaza = DA"
 
 # ── Isječak karte (part 2.1c — WRITES to georef.hr: creates the point) ──
 cavedossier karta 1234                     # fetch the map excerpt for Redni broj 1234
@@ -185,6 +198,10 @@ cavedossier osz prefill 1234 --offline     # never touch the network; an already
 # such a kota disagreement the Izvor kote defaults to GPS (a hand-entered Z
 # that contradicts the grid was most likely GPS-measured); an old OSZ's
 # recorded source still overrides the assumption.
+# EXCEPTION — Najbliže mjesto: geo-admin wins outright (geocoding beats human
+# intuition; user 2026-09-01, SB 1220). The DGU naselje of the entrance point
+# goes into the OSZ; a differing SB value becomes a CORRECTION row in
+# dopune-sb.csv. SB's value is only used when the boundary data is unavailable.
 # LiDAR flag: a cave whose name or synonym carries "lidar" (Lidarka, the
 # "LiDAR Kristal N" Liburnija convention, …) had its coordinates and Z
 # produced by the LiDAR analysis, so Izvor koordinata AND Izvor kote ulaza
@@ -256,11 +273,12 @@ copy .env.example .env     # then fill in (see below)
 ```
 
 Optional extras per tool: `[karta]` (playwright + Pillow; then run
-`playwright install chromium` once) for the isječak karte, `[osz]` (lxml) for
-the OSZ prefill, `[geo]` (requests, geopandas, shapely, pyproj, rapidfuzz,
-rasterio) for the locality/elevation finders — then a one-time
-`cavedossier geo fetch-data` to provision the geodata. `[sb-write]` (xlwings)
-stays dormant until M6.
+`playwright install chromium` once) for the isječak karte, `[photos]` (Pillow)
+for `photos process`, `[osz]` (lxml) for the OSZ prefill and for reading the
+photo author out of a filled zapisnik, `[geo]` (requests, geopandas, shapely,
+pyproj, rapidfuzz, rasterio) for the locality/elevation finders — then a
+one-time `cavedossier geo fetch-data` to provision the geodata. `[sb-write]`
+(xlwings) stays dormant until M6.
 
 ### .env — per-machine facts
 

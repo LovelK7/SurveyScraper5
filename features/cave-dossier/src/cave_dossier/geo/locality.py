@@ -197,22 +197,31 @@ class LocalityFinder:
         admin_naselje: str | None,
         nearby_naselja: list[str],
     ) -> None:
+        """Geo-admin WINS here (user, 2026-09-01, SB 1220): the DGU naselje
+        of the entrance point is more certain than a hand-entered guess —
+        the one field where the SB-wins precedence is reversed. SB's value
+        is only the fallback when the boundary data is unavailable."""
+        if admin_naselje:
+            finding.najblize_mjesto = admin_naselje
+            finding.najblize_mjesto_source = "geo-admin"
+            if sb_value and normalize_for_matching(sb_value) != normalize_for_matching(admin_naselje):
+                finding.notes.append(
+                    f"Najbliže mjesto: SB kaže {sb_value!r}, geokodirano naselje "
+                    f"ulazne točke je {admin_naselje!r} — upisano geokodirano "
+                    "(geo-admin ima prednost)."
+                )
+            return
         if sb_value:
             finding.najblize_mjesto = sb_value
             finding.najblize_mjesto_source = "sb"
             if nearby_naselja and fuzzy_best_match(
                 sb_value, nearby_naselja, score_cutoff=_NEAREST_PLACE_MATCH_CUTOFF
             ) is None:
-                alternative = f"; DGU naselje ulazne točke: {admin_naselje!r}" if admin_naselje else ""
                 finding.notes.append(
                     f"Najbliže mjesto (SB) {sb_value!r} ne odgovara nijednom naselju "
-                    f"unutar {_NASELJE_SCREEN_RADIUS_M / 1000:.0f} km{alternative}. "
-                    "SB vrijednost je zadržana."
+                    f"unutar {_NASELJE_SCREEN_RADIUS_M / 1000:.0f} km (DGU granice "
+                    "nedostupne za provjeru). SB vrijednost je zadržana."
                 )
-            return
-        if admin_naselje:
-            finding.najblize_mjesto = admin_naselje
-            finding.najblize_mjesto_source = "geo-admin"
 
     def _resolve_lokalitet(
         self,

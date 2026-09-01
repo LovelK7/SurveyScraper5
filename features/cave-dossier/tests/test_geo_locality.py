@@ -63,18 +63,20 @@ def test_vrsta_screening():
     assert not is_topographic_locality_feature("parkiralište")
 
 
-def test_locate_sb_hamlet_recognised_via_rgi_zaselak():
-    """SB's Najbliže mjesto is often a hamlet that is no official DGU
-    naselje but IS an RGI 'zaselak' point — it must validate silently
-    (the 2026-08-30 sweep flagged every such value before this)."""
+def test_locate_sb_hamlet_recognised_when_admin_unavailable():
+    """With DGU boundaries unavailable, SB's hamlet still validates via an
+    RGI 'zaselak' point (silent keep) — the geo-admin override only applies
+    when there IS an admin answer."""
     finder = LocalityFinder(
         rgi_client=StubRGI([hit("Pavletići", "zaselak", 400.0)]),
-        admin_lookup=StubAdmin(),
+        admin_lookup=StubAdmin(naselje=None, opcina=None, zupanija=None,
+                               nearby=(), available=False),
     )
     finding = finder.locate(0.0, 0.0, sb_najblize_mjesto="Pavletići")
     assert finding.najblize_mjesto == "Pavletići"
-    assert finding.notes == []
-    # ...and the same zaselak never fills an empty Lokalitet.
+    assert finding.najblize_mjesto_source == "sb"
+    assert not any("Pavletići" in note for note in finding.notes)
+    # ...and a zaselak never fills an empty Lokalitet.
     finding = finder.locate(0.0, 0.0)
     assert finding.lokalitet is None
 
@@ -146,19 +148,24 @@ def test_locate_keeps_matching_sb_values_silently():
     finding = finder.locate(
         0.0, 0.0, sb_lokalitet="Testni kras", sb_najblize_mjesto="Testno Selo"
     )
+    # Najbliže mjesto is geo-admin's answer; SB agreeing means no note.
     assert finding.najblize_mjesto == "Testno Selo"
-    assert finding.najblize_mjesto_source == "sb"
+    assert finding.najblize_mjesto_source == "geo-admin"
     assert finding.lokalitet == "Testni kras"
     assert finding.lokalitet_source == "sb"
     assert finding.notes == []
 
 
-def test_locate_flags_alien_sb_nearest_place_but_keeps_it():
+def test_locate_geo_admin_overrides_sb_nearest_place():
+    """Geo-admin WINS Najbliže mjesto (user, 2026-09-01, SB 1220): the DGU
+    naselje of the entrance point replaces a differing hand-entered value,
+    with a note naming both."""
     finder = LocalityFinder(rgi_client=StubRGI(), admin_lookup=StubAdmin())
-    finding = finder.locate(0.0, 0.0, sb_najblize_mjesto="Zzzz Nigdjezemska")
-    assert finding.najblize_mjesto == "Zzzz Nigdjezemska"  # SB wins regardless
-    assert finding.najblize_mjesto_source == "sb"
-    assert any("Nigdjezemska" in note for note in finding.notes)
+    finding = finder.locate(0.0, 0.0, sb_najblize_mjesto="Mali Platak")
+    assert finding.najblize_mjesto == "Testno Selo"  # the containing naselje
+    assert finding.najblize_mjesto_source == "geo-admin"
+    assert any("Mali Platak" in note and "Testno Selo" in note
+               for note in finding.notes)
 
 
 def test_locate_flags_settlement_inside_sb_lokalitet():

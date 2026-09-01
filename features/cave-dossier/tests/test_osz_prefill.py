@@ -29,10 +29,9 @@ class StubLocalityFinder:
         self._finding = finding
 
     def locate(self, x, y, sb_lokalitet=None, sb_najblize_mjesto=None):
-        # Mimic the real finder's SB-wins contract for the fields SB supplies.
+        # Mimic the real finder's contract: Lokalitet is SB-wins, but
+        # Najbliže mjesto is geo-admin-wins (user, 2026-09-01).
         f = self._finding.model_copy(deep=True)
-        if sb_najblize_mjesto:
-            f.najblize_mjesto, f.najblize_mjesto_source = sb_najblize_mjesto, "sb"
         if sb_lokalitet:
             f.lokalitet, f.lokalitet_source = sb_lokalitet, "sb"
         return f
@@ -109,9 +108,11 @@ def test_prefill_full_row_sb_wins(settings, geo_stubs, run_dir, collected_karta)
     assert result.karta_status == "reused"
 
     fields = result.fields
-    # SB supplies these; the stubs' computed values must NOT override them.
+    # SB supplies these; the stubs' computed values must NOT override them —
+    # EXCEPT Najbliže mjesto, where geo-admin wins (user, 2026-09-01).
     assert fields["kota_ulaza"].value == "500" and fields["kota_ulaza"].source == "sb"
-    assert fields["najblize_mjesto"].value == "Testno Selo"
+    assert fields["najblize_mjesto"].value == "Računato Selo"
+    assert fields["najblize_mjesto"].source == "geo-admin"
     assert fields["lokalitet"].value == "Testni kras"
     # 680 vs 500 exceeds the 10 m tolerance → flagged, not overridden; a
     # hand-entered Z that contradicts the grid is most likely GPS-measured
@@ -119,6 +120,11 @@ def test_prefill_full_row_sb_wins(settings, geo_stubs, run_dir, collected_karta)
     assert fields["izvor_kote"].value == "GPS"
     assert fields["izvor_kote"].source == "default"
     assert any("Kota ulaza" in m for m in result.mismatches)
+    # The differing SB Najbliže mjesto becomes a CORRECTION proposal.
+    corrections = [u for u in result.sb_updates if "ispravak" in u.note]
+    assert len(corrections) == 1
+    assert corrections[0].value == "Računato Selo"
+    assert "Testno Selo" in corrections[0].note
     # Always computed (SB has no columns for them).
     assert fields["zupanija"].value == "Istarska"
     assert fields["grad_opcina"].value == "Lanišće"
@@ -133,13 +139,13 @@ def test_prefill_full_row_sb_wins(settings, geo_stubs, run_dir, collected_karta)
     # and the fields other processes supply.
     for never in ("katastarski_broj", "duljina", "dubina", "datum_istrazivanja"):
         assert never not in fields, never
-    # Every SB cell was filled → nothing to propose back.
-    assert result.sb_updates == []
-    assert outcome.sb_updates_path is None
+    # Every SB cell was filled → the only proposal is the correction above.
+    assert len(result.sb_updates) == 1
+    assert outcome.sb_updates_path is not None
 
     # The document really carries the values + the embedded excerpt.
     text = _docx_texts(outcome.docx_path)
-    for expected in ("Špilja Testovka", "Istarska", "Testno Selo", "500", "450123"):
+    for expected in ("Špilja Testovka", "Istarska", "Računato Selo", "500", "450123"):
         assert expected in text
     with zipfile.ZipFile(outcome.docx_path) as zin:
         assert "word/media/SB_0001.png" in zin.namelist()
@@ -251,7 +257,7 @@ def test_prefill_pristup_rule_fills_the_narrative(settings, geo_stubs, run_dir, 
     monkeypatch.setattr(
         prefill.pristupi, "find_pristup",
         lambda nm, lok, path=None: ("Položaj:\nPristup:\nZajednički pristup."
-                                    if (nm, lok) == ("Testno Selo", "Testni kras") else None),
+                                    if (nm, lok) == ("Računato Selo", "Testni kras") else None),
     )
     outcome = prefill.run_prefill(settings, 1)  # SB row: Testno Selo / Testni kras
     fv = outcome.result.fields["polozaj_pristup"]

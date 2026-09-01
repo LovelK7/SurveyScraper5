@@ -79,13 +79,20 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-26 — 2.1d mover: at SUE assignment, propose renaming the cave's photos in
   `!!Fotografije ulaza za istražit` to `<padded SUE>_…` and moving them into the main folder.
   The staging folder is free-form named (59 files, cave-name based), so the match has to be by
-  cave name, not by number.
+  cave name, not by number. **Widened 2026-09-01**: `photos process` now also produces
+  `SB_<broj>_…` copies inside the intake leaves, so the mover has two sources and one job —
+  move into `!!Fotografije ulaza` and swap the `SB_<Redni broj>` prefix for the katastarski
+  broj. That is the last step of 2.1d.
 - 2026-08-26 — ~~give **sudjelovanje** its own Power Query view~~ → done by the user
   2026-08-28 (`S_v2_1`, sheet *Sudjelovanje*, same keyword the tool matches). Still open from
   that idea: tighten the Nesređeni filter to a word-boundary match on "ponor", which today
   drags in 8 unrelated rows.
-- 2026-08-26 — the 2.1d processor itself (downsize to ~1920 px / ~1.5 MB) is still to be
-  written; `photos match-queued --apply` only renames. Pillow is already an optional extra.
+- 2026-08-26 — ~~the 2.1d processor itself (downsize to ~1920 px / ~1.5 MB) is still to be
+  written~~ → done 2026-09-01: `cavedossier photos process <Redni broj>` works per cave off
+  its intake leaf and writes downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` COPIES (Pillow, the
+  `karta` extra). Still open from it: settle the **optimal output resolution** — the command
+  writes copies precisely so 1920 px can be revisited (`--long-edge N --overwrite` re-cuts),
+  and once it is settled the copies can replace the originals instead.
 - 2026-08-26 — ~~once intake lands, wire `archive/izjave.py` scope rules into gating: a
   locality-scoped izjava must not satisfy a cave outside that Lokalitet~~ → done
   2026-08-30, without waiting on intake: the izjave dir got its own gather step

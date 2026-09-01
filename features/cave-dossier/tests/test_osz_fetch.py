@@ -126,6 +126,40 @@ def test_locate_filled_osz_ambiguous_reports_candidates(settings, tmp_path):
     assert any("kandidata" in note for note in location.notes)
 
 
+def test_locate_filled_osz_ignores_the_prefill_backup_beside_the_delivered_osz(
+    settings, tmp_path
+):
+    """The leaf a prefill migration has touched holds BOTH the delivered
+    `SB_<broj>_OSZ.docx` and the `_stari_<datum>` backup of what was there
+    before. Until 2026-09-01 the fetcher counted the backup as a rival
+    candidate and reported the cave as having no zapisnik at all (found via
+    `photos process 1250`, whose author lookup went empty)."""
+    from cave_dossier.osz.backfill import locate_filled_osz
+
+    cave_dir = tmp_path / "!Za digitalizirat" / "Veprinac" / "SB_1250_LiDAR Kristal 304"
+    cave_dir.mkdir(parents=True)
+    target = cave_dir / "SB_1250_OSZ.docx"
+    target.write_bytes(b"docx")
+    (cave_dir / "Zapisnik 304_stari_2026-09-01.docx").write_bytes(b"docx")
+
+    location = locate_filled_osz(_intake_settings(settings, tmp_path), 1250)
+    assert location.path == target
+    assert not any("kandidata" in note for note in location.notes)
+
+
+def test_a_humans_own_stari_file_still_counts(settings, tmp_path):
+    """Only OUR dated backup marker is excluded — someone's hand-named
+    "Zapisnik_stari.docx" may well be the real document."""
+    from cave_dossier.osz.backfill import locate_filled_osz
+
+    cave_dir = tmp_path / "!Za digitalizirat" / "SB_21_Kosa"
+    cave_dir.mkdir(parents=True)
+    target = cave_dir / "Zapisnik_stari.docx"
+    target.write_bytes(b"docx")
+
+    assert locate_filled_osz(_intake_settings(settings, tmp_path), 21).path == target
+
+
 def test_locate_filled_osz_falls_back_to_prefill_dir(settings, tmp_path):
     from cave_dossier.osz.backfill import locate_filled_osz
 

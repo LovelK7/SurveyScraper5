@@ -17,6 +17,7 @@
 > - **OSZ template writing + prefill** → `osz/` — cell addresses per template version in `osz/addresses.py`
 > - **Satellite tables (Liburnija sheet ↔ SB)** → `satellites/`
 > - **Name/plaque/number matching shared by photos + intake** → `core/matching.py`
+> - **Entrance-photo downsize + rename for one cave** → `photos/process.py`
 > - **People: the author registry, aliases, izjava linkage** → `people/` + `data/people/registry.json`
 > - **Why a rule/heuristic exists** → [docs/design-decisions.md](docs/design-decisions.md)
 > - **Where a ported file came from** → [docs/PORTING.md](docs/PORTING.md)
@@ -42,9 +43,10 @@
 | `geo/` | 2.1b finders: `locality` (SB-wins synthesizer), `admin_lookup` (DGU PIP), `rgi_client` (WFS + offline gpkg), `toponym_matcher`, `elevation` (INSPIRE DMV grid, 3765→3045), `provision` (`fetch-data`), `models` | `geo *`, `osz prefill` |
 | `osz/` | 2.1b: `writer` (lxml on word/document.xml — cell-own styles, `embed_png`), `addresses` (v10 table coordinates), `prefill` (orchestrator + sidecar + dopune-sb.csv), `reader` (filled-document cells; placeholders read as empty), `backfill` (OSZ vs SB → review proposals), `models` | `osz prefill`, `osz fetch` |
 | `satellites/` | 2.2b: `model` · `liburnija` · `resolver` (ranked keys, never local row ids) · `sync` (four review lists) | `sat sync` |
-| `intake/scanner.py` | field-data leaf folders → SB rows, `SB_<Redni broj>_<Ime>_…` proposals | `intake map` |
+| `intake/scanner.py` | field-data leaf folders → SB rows, `SB_<Redni broj>_<Ime>_…` proposals; `find_cave_leaf` (a cave's `SB_<broj>_…` folder, shared by every per-cave step) | `intake map`, `osz prefill`, `photos process` |
 | `intake/liburnija.py` | read-only bridge over the cached Liburnija sheet CSV | `intake map` |
-| `photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `SB_<Redni broj>_…`, staleness guard | `photos *` |
+| `photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `SB_<Redni broj>_…`, staleness guard | `photos match-queued` (one-off, finished), `photos check-flag` |
+| `photos/process.py` | 2.1d: one cave's photos out of its intake leaf → downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` COPIES; author from the OSZ cell "Autor fotografije ulaza" | `photos process` |
 | `archive/izjave.py` | izjava filenames: person, scope, and what a scope covers | `people *`, `report` |
 | `people/registry.py` | the people registry: canonical names + curated aliases (`data/people/registry.json`), derived alias keys with collision detection, exact-key resolution (ported design) | `people *`, `report` |
 | `people/name_resolver.py` | comparison keys for a name as written anywhere (full / shorthand / 3+ tokens / hyphenated double surname; đ-fold) (ported) | statement matching |
@@ -53,8 +55,9 @@
 Planned modules: `dossier/intake.py` (rest of M2 — resolve a cave's files on
 Drive), the CroSpeleo half of the OSZ fetcher (checkbox groups + narrative
 controls + the Google-Docs text variant — `osz/reader.py` covers the
-identity/metadata cells the SB backfill needs), the downsize/rename half of
-`photos/` (2.1d).
+identity/metadata cells the SB backfill needs), and 2.1d's last step — the
+**mover** that files the processed copies into `!!Fotografije ulaza` and
+renames `SB_<Redni broj>` to the katastarski broj once the cave earns one.
 
 ## Docs map
 

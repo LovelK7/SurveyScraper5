@@ -27,6 +27,7 @@ keeps the chronology.
 - [Workbook-wide audits — design](#workbook-wide-audits--design)
   - [Cross-check against SB's Fotografija ulaza](#cross-check-against-sbs-fotografija-ulaza)
   - [The staleness guard](#the-staleness-guard)
+- [Per-cave photo processing — `photos process`](#per-cave-photo-processing--photos-process)
 - [Izjava za katastar — filename scheme](#izjava-za-katastar--filename-scheme)
 - [People registry and the statement gates (2026-08-30)](#people-registry-and-the-statement-gates-2026-08-30)
 - [Field-data intake — matching design](#field-data-intake--matching-design)
@@ -138,7 +139,7 @@ the applied *exclude za-istražit from Nesređeni* edit are in
    survey from 2.1a     ·······························  handoff     (M5)
    filled zapisnik      ·······························  OSZ fetcher (M4)
    isječak karte        ·······························  georef      (M3 ✅)
-   processed photos     ·······························  2.1d        (with M6)
+   processed photos     ·······························  2.1d  ✅  (mover: M6)
                                                                              │
                                                                              ▼
                                                           evaluate()   dossier/gating.py
@@ -310,9 +311,12 @@ flags: `single_name` 172 (a bare first name like "Renata"), `society` 108,
 verify the halves are two people), `empty` 49, `citation` 2 (a literature
 source such as `Malez, M. (1960)`, not a survey author).
 
-`photos match-queued` matches the free-form files in the staging folder against
-SB and proposes `SB_<Redni broj>_<rest>`, replacing a stale old-number prefix
-where there is one (**52 of 52 matched**, 2026-08-28). Evidence, weighed rather
+`photos match-queued` matched the free-form files in the staging folder against
+SB and proposed `SB_<Redni broj>_<rest>`, replacing a stale old-number prefix
+where there was one (**52 of 52 matched**, 2026-08-28). It was a **one-off
+sweep** — it existed to name the unidentified entrance photos already sitting in
+the queue, that job is finished, and it is not run any more (user, 2026-09-01);
+the standing per-cave step is `photos process` below. Evidence, weighed rather
 than ranked — two independent signals agreeing is the strongest result:
 
 | Evidence | Example | Note |
@@ -358,6 +362,38 @@ never touches those files; promoting or deleting is the operator's call.
 
 As of 2026-08-28 the folder is clean: **0 of 52** staged photos belong to an
 explored cave. The check is a standing guard, not a cleanup.
+
+## Per-cave photo processing — `photos process`
+
+Settled 2026-09-01. The standing 2.1d step works on **one cave at a time**, from
+the cave's `SB_<Redni broj>_…` **intake leaf** under `!Za digitalizirat` — the
+same folder `osz prefill` / `osz fetch` already use, so a cave's survey files,
+its zapisnik and its photos are resolved from one place. It produces
+
+    SB_<Redni broj>_<Ime objekta>_<Autor>_<n>.jpg
+
+downsized to the `photos:` targets in config.yaml (1920 px long edge, 1.5 MB).
+
+| Decision | Why |
+|---|---|
+| **Copies, never in-place edits** | The optimal output resolution is not settled yet (user, 2026-09-01), so the originals stay untouched and a re-cut at another `--long-edge` is free. `--overwrite` re-writes existing copies; without it they are skipped. |
+| **Copies land beside the originals** | Chosen over a `obrađene/` subfolder: one flat leaf is what the operator already browses, and the `SB_<broj>` prefix is enough to tell input from output. |
+| **A run never eats its own output** | `source_photos` excludes anything already prefixed `SB_<this cave's broj>`, so a second run is a no-op rather than squaring the file count. Another cave's `SB_<broj>` prefix is still treated as raw material — it means a photo landed in the wrong folder, not that it is processed. |
+| **Author from the OSZ cell `Autor fotografije ulaza`** | The zapisnik is where the society records it; nothing else on Drive knows it. `--author` overrides for caves with no OSZ yet. A full name becomes the archive's own spelling — `Lovel Kukuljan` → `LKukuljan`, matching `MDevcic` / `TMarkanjević` / `SClashin` in `!!Fotografije ulaza` (note: **no dot**, unlike SB's `L.Kukuljan` shorthand). Several people join with `-`. |
+| **A missing author drops the component** | `SB_1220_Hrđava špilja_1.jpg` — never a placeholder, never a guess from `Fotografirali` or the SB author column. |
+| **Always a numeric suffix** | Caves routinely have several entrance photos; a bare `<broj>_<ime>_<autor>` would collide on the second one. |
+| **Output is always JPEG** | The archive is uniformly `.jpg`, and these are photographs. `.heic` is *reported*, not silently dropped — Pillow needs `pillow-heif`, which is not a dependency. |
+| **Quality descends, size never wins over sharpness** | Qualities 92→70 are tried until the file fits the budget; the floor is kept even when it still misses. An honestly oversized copy is a visible fact the gate already warns about (`gating.MAX_ENTRANCE_PHOTO_BYTES`, 2 MB), a mushy one is a silent loss. |
+| **Never upscales** | A photo already under the long-edge target is copied at its own resolution. |
+| **Not the filing step** | Moving the copies into `!!Fotografije ulaza` and renaming `SB_<Redni broj>` → katastarski broj happens when the cave earns its SUE number — still manual, still a separate step (the 2.1d mover, backlog). |
+
+Fail-soft as everywhere: a missing OSZ, a missing `lxml`, an unreadable zapisnik
+or a missing intake leaf each become a printed note, never an exception — losing
+the author costs one filename component, not the run.
+
+First live run (2026-09-01, on copies of real field photos): 6.92 MB /
+3468×4624 → 1.23 MB / 1440×1920, which is the same result the manual FastStone
+"resize to screen size" workflow produced.
 
 ## Izjava za katastar — filename scheme
 
@@ -556,6 +592,20 @@ same day the prefill shipped; enforced in `osz/reader.py` + `osz/backfill.py`:
   (preferring a DOCX whose name says osz/zapisnik, refusing to guess among
   several), `--osz-dir` overrides the search root, `--osz` names an exact
   file; the prefilled copy in `osz_prefill_dir` is only a flagged fallback.
+- **Which DOCX *is* the zapisnik** — one rule, one function
+  (`backfill.pick_osz_docx`, unified 2026-09-01): the canonical
+  `SB_<broj>_OSZ.docx` outright, else a lone name saying osz/zapisnik, else a
+  lone DOCX; Word lock files and prefill's own `_stari_<datum>` backups never
+  count, and only *our* dated marker is excluded (a human's hand-named
+  `Zapisnik_stari.docx` may be the real document). The fetcher and the prefill
+  migration had grown separate versions of this, and the fetcher's lacked both
+  the backup filter and the canonical preference — so **every leaf a prefill
+  migration had touched read as ambiguous**, the backup standing beside the
+  delivered document as a rival candidate. Found via `photos process 1250`,
+  which reported the cave as having no zapisnik while `SB_1250_OSZ.docx` sat in
+  the folder. Whatever consumes the locator must also **print its notes**: the
+  reason lives there, and swallowing them turns "two candidates, pick one" into
+  a flat, wrong "no OSZ".
 - **No writes**: the output is `dopune-sb-iz-osz.csv` under `runs/osz/<broj>/`,
   carried into Excel by hand. Exit 1 = something to carry over.
 - **Validated** against `osz-template/mockups/v10.2_primjer_811.docx` vs SB 764

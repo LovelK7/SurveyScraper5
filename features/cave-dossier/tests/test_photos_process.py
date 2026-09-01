@@ -211,6 +211,22 @@ def test_job_resolves_the_leaf_and_notes_the_missing_osz(drive_settings: Setting
     ]
 
 
+def test_the_locators_reason_reaches_the_user(drive_settings: Settings, leaf: Path) -> None:
+    """When the OSZ cannot be resolved, WHY must survive into the notes.
+
+    Swallowing them (fixed 2026-09-01) reported a flat "no OSZ" for SB 1250,
+    whose zapisnik was sitting in the leaf — the locator had rejected it as
+    ambiguous and only its own note said so.
+    """
+    (leaf / "prva.docx").write_bytes(b"docx")
+    (leaf / "druga.docx").write_bytes(b"docx")
+
+    job = process_mod.build_job(drive_settings, 1220, "Hrđava špilja")
+
+    assert job.author is None
+    assert any("kandidata" in note for note in job.notes)
+
+
 def test_author_override_skips_the_osz_entirely(drive_settings: Settings) -> None:
     job = process_mod.build_job(
         drive_settings, 1220, "Hrđava špilja", author_override="Lovel Kukuljan"

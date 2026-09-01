@@ -21,6 +21,12 @@ dev = ["pytest>=8"]
 sb-write = ["xlwings>=0.30"]
 # Isječak karte (georef.hr headed browser flow) — M3
 karta = ["playwright>=1.40", "Pillow>=10"]
+# Entrance-photo downsizing (`photos process`) — 2.1d. Pillow only; `karta`
+# already pulls it in, so this extra is for a machine that processes photos
+# without ever running the browser flow. HEIC sources would additionally need
+# pillow-heif, which is deliberately not a dependency (they are reported, not
+# converted) — see photos/process.py.
+photos = ["Pillow>=10"]
 # OSZ DOCX builder + legacy parser — M4/2.1b. The v10 writer/reader use lxml
 # directly (the template's w:sdt content controls are invisible to
 # python-docx); the LEGACY zapisnik parser (osz/legacy.py, ported from
