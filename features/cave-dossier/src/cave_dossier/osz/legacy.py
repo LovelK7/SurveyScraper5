@@ -331,7 +331,50 @@ def _extract_row_matches(row) -> dict[str, str]:
             if normalize_lookup_key(row_text).startswith(normalize_lookup_key(prefix)):
                 _merge_field(matches, "technical_description", _strip_label_prefix(row_text))
                 break
+    _extract_signature_row(segments, row_text, matches)
     return matches
+
+
+# "U | Kastvu | , dne | 15. 06. 2025. | Zapisnik ispunio/la: | …" — the
+# place and date of filling out the form. No crospeleo counterpart (their
+# parser drops both; user asked for them 2026-08-31). The 2019 generation
+# omits the "U" cell ("Postojna | , dne | 12.03.2019. | …").
+_SIGNATURE_INLINE_RE = re.compile(
+    r"(?:\bU\s+)?(?P<place>[^,|]{2,40}?)\s*,?\s*\bdne\b\s*(?P<date>[\d][\d. ]*\d\.?)",
+    re.IGNORECASE,
+)
+
+
+def _extract_signature_row(segments: list[str], row_text: str,
+                           matches: dict[str, str]) -> None:
+    if "record_place" in matches or not re.search(r"\bdne\b", row_text, re.IGNORECASE):
+        return
+    dne_index = next(
+        (i for i, s in enumerate(segments)
+         if normalize_lookup_key(s) in ("dne", "udne")), None,
+    )
+    if dne_index is not None:
+        # Segment layout: place before "dne" (skipping a bare "U"), the
+        # first digit-bearing segment after it is the date.
+        place = next(
+            (segments[i] for i in range(dne_index - 1, -1, -1)
+             if normalize_lookup_key(segments[i]) not in ("u", "") and ":" not in segments[i]),
+            None,
+        )
+        date = next(
+            (s for s in segments[dne_index + 1:] if re.search(r"\d", s)), None,
+        )
+        if place:
+            matches.setdefault("record_place", place.strip(" ,"))
+        if date:
+            matches.setdefault("record_date", date.strip())
+        if place or date:
+            return
+    # Single-cell variant: "U Kastvu, dne 15.06.2025. Zapisnik ispunio…"
+    inline = _SIGNATURE_INLINE_RE.search(row_text)
+    if inline:
+        matches.setdefault("record_place", inline.group("place").strip(" ,"))
+        matches.setdefault("record_date", inline.group("date").strip())
 
 
 def _row_segments(row) -> list[str]:
@@ -585,6 +628,8 @@ _DIRECT_V10 = {
     "photographed_by": "fotografirali",
     "entrance_photo_author": "autor_fotografije_ulaza",
     "recorder": "zapisnicar",
+    "record_place": "mjesto_zapisnika",
+    "record_date": "datum_zapisnika",
 }
 _NUMERIC_V10 = {
     "length_m": "duljina",

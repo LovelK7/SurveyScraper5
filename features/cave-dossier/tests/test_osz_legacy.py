@@ -122,6 +122,50 @@ def test_elevation_split_both_generations():
     assert _split_entrance_elevation_parts("612") == ("612", None)
 
 
+def test_signature_row_place_and_date(tmp_path):
+    """'U | Kastvu | , dne | 15. 06. 2025. | Zapisnik ispunio/la: | X' →
+    mjesto_zapisnika + datum_zapisnika (crospeleo drops both; we keep)."""
+    document = docx.Document()
+    table = document.add_table(rows=1, cols=6)
+    for index, text in enumerate(
+        ["U", "Kastvu", ", dne", "15. 06. 2025.", "Zapisnik ispunio/la:", "Mile Milić"]
+    ):
+        table.cell(0, index).text = text
+    path = tmp_path / "sig.docx"
+    document.save(str(path))
+
+    fields, _, _ = to_v10_fields(parse_legacy_osz(path))
+    assert fields["mjesto_zapisnika"] == "Kastvu"
+    assert fields["datum_zapisnika"] == "15. 06. 2025."
+    assert fields["zapisnicar"] == "Mile Milić"
+
+
+def test_signature_row_2019_generation_without_u(tmp_path):
+    document = docx.Document()
+    table = document.add_table(rows=1, cols=4)
+    for index, text in enumerate(
+        ["Postojna", ", dne", "12.03.2019.", "Zapisničar: Lovel Kukuljan"]
+    ):
+        table.cell(0, index).text = text
+    path = tmp_path / "sig2.docx"
+    document.save(str(path))
+
+    fields, _, _ = to_v10_fields(parse_legacy_osz(path))
+    assert fields["mjesto_zapisnika"] == "Postojna"
+    assert fields["datum_zapisnika"] == "12.03.2019."
+
+
+def test_signature_inline_single_cell(tmp_path):
+    document = docx.Document()
+    table = document.add_table(rows=1, cols=1)
+    table.cell(0, 0).text = "U Kastvu, dne 1.2.2020."
+    path = tmp_path / "sig3.docx"
+    document.save(str(path))
+    fields, _, _ = to_v10_fields(parse_legacy_osz(path))
+    assert fields["mjesto_zapisnika"] == "Kastvu"
+    assert fields["datum_zapisnika"] == "1.2.2020."
+
+
 def test_non_docx_is_reported(tmp_path):
     bad = tmp_path / "old.doc"
     bad.write_bytes(b"\xd0\xcf\x11\xe0 pretend OLE2")
