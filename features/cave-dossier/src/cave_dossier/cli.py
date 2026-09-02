@@ -968,7 +968,7 @@ def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: b
     return 0
 
 
-def cmd_osz_fetch(settings: Settings, serial: int, osz_path_arg: str | None,
+def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
                   osz_dir_arg: str | None) -> int:
     """Part 2.1b fetcher: read a FILLED OSZ and propose the SB backfill.
 
@@ -1417,24 +1417,24 @@ def build_parser() -> argparse.ArgumentParser:
              "and the georef.hr flow is skipped (an already-collected excerpt "
              "is still embedded)",
     )
-    osz_fetch = osz_sub.add_parser(
-        "fetch",
+    osz_backfill = osz_sub.add_parser(
+        "backfill",
         help="Read a FILLED OSZ and propose the SB backfill (pločica, ime/sinonimi, "
              "duljina/dubina, godina, autori) — review CSV, never writes SB",
     )
-    osz_fetch.add_argument(
+    osz_backfill.add_argument(
         "redni_broj",
         type=int,
         help="SB Redni broj of the cave the zapisnik belongs to",
     )
-    osz_fetch.add_argument(
+    osz_backfill.add_argument(
         "--osz-dir",
         dest="osz_dir",
         metavar="DIR",
         help="Where to look for the cave's SB_<broj>_… dir holding the filled "
              "OSZ (default: the intake dir, !!!Digitalizacija/!Za digitalizirat)",
     )
-    osz_fetch.add_argument(
+    osz_backfill.add_argument(
         "--osz",
         dest="osz_path",
         metavar="FILE",
@@ -1620,8 +1620,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.osz_command == "prefill":
                 return cmd_osz_prefill(settings, args.redni_broj, args.debug,
                                        args.force_karta, args.offline)
-            if args.osz_command == "fetch":
-                return cmd_osz_fetch(settings, args.redni_broj, args.osz_path, args.osz_dir)
+            if args.osz_command == "backfill":
+                return cmd_osz_backfill(settings, args.redni_broj, args.osz_path, args.osz_dir)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate)
         return EXIT_ERROR
