@@ -747,3 +747,18 @@ the user this session; built by `tools/build_prod.py` + `tools/prod_templates/`:
   correctly. The ASCII enforcement stays for `.bat`/`.ps1` only, where
   cmd/PS 5.1 encoding is the actual hazard; console messages in the
   bootstrap deliberately stay diacritic-free ASCII.
+
+**v1.3 (same day, user: "nothing seems to be going on after inserting the
+number"):**
+
+- **The silence had two causes.** The waiting indicator was the visible ask —
+  but the real regression was that v1.1's logging redirects the CLI's
+  streams, so Python switched to block buffering and held ALL output until
+  exit; v1.0 had streamed because it wrote straight to the console.
+  `PYTHONUNBUFFERED=1` (set once, so pip streams too) restores live lines.
+- **The waiting snake**: `Run-Logged` now runs commands via
+  `System.Diagnostics.Process` with polled `ReadLineAsync` readers (no PS 5.1
+  eventing); whenever no line has arrived it animates an ASCII `~~o>` crawl
+  in place and wipes it the moment real output (or the end) comes. Every
+  line still reaches both the console and the run log; the snake itself is
+  never logged.

@@ -1,4 +1,4 @@
-﻿# cave-dossier — SB communication + cave dossier builder
+# cave-dossier — SB communication + cave dossier builder
 
 Pipeline parts **2.1 / 2.1b / 2.1c / 2.1d / 2.2** ([ARCHITECTURE.md](../../ARCHITECTURE.md)):
 talk to **SB** (Speleo baza, the society's cave-registry Excel workbook), build a
@@ -342,11 +342,11 @@ The two operator commands (`osz prefill`, `photos process`) are published as
 
 ```text
 SurveyScraper5/
-├─ cavedossier_osz_prefill_v1.2.bat      ← operators double-click these
-├─ cavedossier_photos_process_v1.2.bat
+├─ cavedossier_osz_prefill_v1.3.bat      ← operators double-click these
+├─ cavedossier_photos_process_v1.3.bat
 ├─ PROCITAJ_ME.txt                        ← operator setup/troubleshooting guide
 ├─ VERZIJE.txt                            ← publish log, one line per release
-├─ v1.2/                                  ← bootstrap.ps1 + bundle.zip
+├─ v1.3/                                  ← bootstrap.ps1 + bundle.zip
 ├─ podaci/geo/                            ← cloud copy of data/geo (~280 MB)
 └─ _arhiva/                               ← superseded versions
 ```

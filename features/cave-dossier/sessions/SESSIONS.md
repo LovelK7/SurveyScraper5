@@ -6,6 +6,52 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-09-02 — prod launchers on the Drive, v1.0 → v1.3 in one evening (agent) ✅
+
+- **Did:** (1) *First productionization slice* (ARCHITECTURE §Dev vs prod):
+  `tools/build_prod.py --version X.Y --publish` + `tools/prod_templates/`
+  (launcher.bat / bootstrap.ps1 / PROCITAJ_ME.txt) generate versioned
+  double-click launchers for `osz prefill` and `photos process` in the
+  dedicated Drive folder `!!!Digitalizacija/SurveyScraper5/` (user-chosen
+  layout: launchers + `v<X>/` bundle.zip+bootstrap + `podaci/geo/` cloud copy
+  ~280 MB + `_arhiva/` + VERZIJE.txt publish log). First double-click
+  self-installs to `%LOCALAPPDATA%\CaveDossier\v<X>` — guided Python 3.11+
+  check, venv + pip extras, geo robocopy, `.env` generated with
+  `LOCAL_DRIVE_ROOT` derived by probing upward for the SB workbook.
+  (2) *Three same-evening iterations driven by the user's real first runs*:
+  v1.1 per-run logs (`%LOCALAPPDATA%\CaveDossier\logs\`, tee of every stream
+  incl. setup/pip) + Consolas-20 console font via `SetCurrentConsoleFontEx`;
+  v1.2 operator-side karta (setup installs `[karta]` + Chromium, shared
+  georef login injected at build time from dev `.env`) + PROCITAJ_ME in real
+  Croatian (UTF-8 BOM); v1.3 waiting snake `~~o>` (async-polled
+  `ReadLineAsync` runner) + `PYTHONUNBUFFERED=1`. (3) *Two prefill fixes*:
+  playwright-probe note naming the dev step instead of a Python import error,
+  and `_karta_newly_embedded` — "unchanged" no longer leaves an old document
+  holding the placeholder when this run has an excerpt to embed. Tests
+  197→305 (build_prod suite + embed regression).
+- **Result:** v1.3 live on the Drive; every version validated end-to-end on
+  this machine as the operator (photos 1220 dry-run; prefill 1320 and 1087 —
+  1087's excerpt fetched from georef.hr *by the prod install itself* and
+  embedded on re-run). User ran v1.0 for real on 1087; each complaint became
+  the next version within the hour.
+- **Learned:** (1) Redirecting a Python CLI's streams (for logging) flips it
+  to block buffering — v1.1 silently broke live output, and the user's
+  "nothing is going on" was that, not just a missing spinner;
+  `PYTHONUNBUFFERED=1` is part of any tee-style runner. (2) A conhost window
+  that opens with a raster font both shrinks text and mangles UTF-8 glyphs —
+  one `SetCurrentConsoleFontEx` call fixes both. (3) `_content_unchanged`
+  compared text cells only, so an excerpt arriving after first delivery left
+  the doc "netaknut" with the 1.5 KB placeholder — found only because live
+  validation re-ran a real cave. (4) PS 5.1 + `$ErrorActionPreference=Stop`
+  turns redirected native stderr into terminating NativeCommandError — the
+  logging runner must run at EA Continue. (5) The 1087 first run delivered
+  into `SB_1087_Božur_Frustuck` — that folder carried the wrong prefix for a
+  *different* cave (config `intake.new_entries` knew it); user corrected the
+  folder, prefill then created the proper leaf.
+- **Next:** test the launchers on a second (non-dev) computer — the logs dir
+  is built for exactly that; backlog holds bundled-runtime / wheel-cache /
+  update-notice / old-install-cleanup ideas when friction shows up.
+
 ### 2026-09-01 — 2.1d entrance-photo processor + queue pull (agent) ✅
 
 - **Did:** (1) *`photos/process.py` + `cavedossier photos process <Redni broj>`* —

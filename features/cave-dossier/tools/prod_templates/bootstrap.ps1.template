@@ -40,26 +40,68 @@ function W([string]$Text) {
     }
 }
 
+# The waiting snake (user, 2026-09-02): crawls whenever the running command
+# goes quiet, erased the moment a real output line arrives.
+$script:SnakeFrames = @('~~o>      ', ' ~~o>     ', '  ~~o>    ', '   ~~o>   ',
+                        '    ~~o>  ', '     ~~o> ', '      ~~o>', '     ~~o> ',
+                        '    ~~o>  ', '   ~~o>   ', '  ~~o>    ', ' ~~o>     ')
+
 function Run-Logged([string]$Exe, [string[]]$Arguments) {
-    # Merge stderr and tee every line to the log. EA must be Continue here:
-    # under Stop, PS 5.1 turns redirected native stderr into terminating
-    # NativeCommandError records.
-    $prev = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    & $Exe @Arguments 2>&1 | ForEach-Object {
-        if ($_ -is [System.Management.Automation.ErrorRecord]) {
-            $line = $_.Exception.Message
-        } else {
-            $line = [string]$_
+    # Runs the command with redirected streams so every line can be shown AND
+    # written to the log; between lines the snake animates on its own line.
+    # Async stream readers, polled - no PS eventing (unreliable in 5.1).
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $Exe
+    $psi.Arguments = ($Arguments | ForEach-Object {
+        if ($_ -match '\s') { '"' + $_ + '"' } else { $_ }
+    }) -join ' '
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+    $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+    $psi.WorkingDirectory = (Get-Location).ProviderPath
+    $proc = New-Object System.Diagnostics.Process
+    $proc.StartInfo = $psi
+    $proc.Start() | Out-Null
+
+    $outTask = $proc.StandardOutput.ReadLineAsync()
+    $errTask = $proc.StandardError.ReadLineAsync()
+    $outDone = $false; $errDone = $false
+    $frame = 0; $snakeShown = $false
+    $wipe = "`r" + (' ' * 12) + "`r"
+
+    while (-not ($outDone -and $errDone)) {
+        $gotLine = $false
+        foreach ($stream in 'out', 'err') {
+            $task = if ($stream -eq 'out') { $outTask } else { $errTask }
+            $done = if ($stream -eq 'out') { $outDone } else { $errDone }
+            if ($done -or -not $task.IsCompleted) { continue }
+            $line = $null
+            try { $line = $task.Result } catch { $line = $null }
+            if ($null -eq $line) {
+                if ($stream -eq 'out') { $outDone = $true } else { $errDone = $true }
+                continue
+            }
+            if ($snakeShown) { Write-Host $wipe -NoNewline; $snakeShown = $false }
+            Write-Host $line
+            if ($script:LogFile) {
+                try { Add-Content -LiteralPath $script:LogFile -Value $line -Encoding UTF8 } catch { }
+            }
+            if ($stream -eq 'out') { $outTask = $proc.StandardOutput.ReadLineAsync() }
+            else { $errTask = $proc.StandardError.ReadLineAsync() }
+            $gotLine = $true
         }
-        Write-Host $line
-        if ($script:LogFile) {
-            try { Add-Content -LiteralPath $script:LogFile -Value $line -Encoding UTF8 } catch { }
+        if (-not $gotLine) {
+            $frame = ($frame + 1) % $script:SnakeFrames.Count
+            Write-Host ("`r" + $script:SnakeFrames[$frame]) -NoNewline
+            $snakeShown = $true
+            Start-Sleep -Milliseconds 120
         }
     }
-    $code = $LASTEXITCODE
-    $ErrorActionPreference = $prev
-    return $code
+    if ($snakeShown) { Write-Host $wipe -NoNewline }
+    $proc.WaitForExit()
+    return $proc.ExitCode
 }
 
 function Pause-Exit([int]$Code) {
@@ -114,6 +156,12 @@ public static class CaveDossierConsoleFont {
 
 try {
     Set-ConsoleFont 'Consolas' 20
+
+    # Streams are redirected for logging, so Python would block-buffer its
+    # output and the window would sit silent until the very end - unbuffered
+    # keeps the lines flowing (and the snake only fills the real pauses).
+    $env:PYTHONUNBUFFERED = '1'
+    $env:PYTHONIOENCODING = 'utf-8'
 
     # Command id -> cavedossier argv + operator label. A new prod command needs
     # a branch here AND an entry in build_prod.py PROD_COMMANDS.
@@ -212,7 +260,11 @@ try {
 
         if (-not (Test-Path $venvPy)) {
             W 'Stvaram Python okruzenje (.venv)...'
-            $venvExit = Run-Logged 'cmd' @('/c', "$python -m venv ""$installDir\.venv""")
+            # $python is "exe [arg]" ('py -3.11' / 'python') - split for Run-Logged
+            $pyParts = $python -split ' '
+            $pyArgs = @()
+            if ($pyParts.Count -gt 1) { $pyArgs = $pyParts[1..($pyParts.Count - 1)] }
+            $venvExit = Run-Logged $pyParts[0] ($pyArgs + @('-m', 'venv', "$installDir\.venv"))
             if ($venvExit -ne 0) {
                 W 'GRESKA: stvaranje .venv nije uspjelo.'
                 Pause-Exit 1
@@ -301,7 +353,6 @@ try {
         $cliArgs = @($broj)
     }
 
-    $env:PYTHONIOENCODING = 'utf-8'
     W ''
     Push-Location $installDir
     $code = Run-Logged $cli ($cliVerb + $cliArgs)

@@ -74,6 +74,10 @@ def test_bootstrap_logs_and_sets_console_font(staged):
     assert "CaveDossier\\logs" in text
     assert "function Run-Logged" in text and "Run-Logged $cli" in text
     assert "SetCurrentConsoleFontEx" in text
+    # Redirected streams block-buffer Python output — without this the window
+    # sits silent until the end (the very complaint the snake answers).
+    assert "PYTHONUNBUFFERED" in text
+    assert "~~o>" in text, "waiting snake missing"
 
 
 def test_bootstrap_installs_karta_flow(staged):

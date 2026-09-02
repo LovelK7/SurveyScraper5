@@ -1,6 +1,6 @@
 # STATUS
 
-Updated: 2026-09-01 (maintained by `/wrap-up` at the end of each session)
+Updated: 2026-09-02 (maintained by `/wrap-up` at the end of each session)
 
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -288,6 +288,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
+- 2026-09-02 — **first productionization slice, v1.0→v1.3 the same evening**: `tools/build_prod.py` + templates generate versioned double-click launchers for `osz prefill` / `photos process` on the Drive (`!!!Digitalizacija/SurveyScraper5/`, self-installing to `%LOCALAPPDATA%\CaveDossier`); iterated on the user's real first runs — per-run logs + console font (v1.1), operator-side karta flow + Croatian PROCITAJ_ME (v1.2, caught+fixed the `_karta_newly_embedded` re-delivery bug), waiting snake + `PYTHONUNBUFFERED` streaming fix (v1.3) → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-09-01 — 2.1d photo processor shipped: `photos process <broj>` (intake leaf → downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` copies, author from the OSZ) + `photos pull-staged` (queue → intake leaf, creates the folder); fixed the OSZ locator going ambiguous on every prefill-migrated leaf → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-08-30 (late evening) — people registry + statement gates: `people/` (crospeleo ports), committed `data/people/registry.json` (132 people), registry/scope-aware gate-1 izjava blocker + gate-2 per-person warning, `N.Surname` author-vs-finder criterion, deceased exemption, `people list/check` — unresolved SB authors 125 → 24 → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-08-30 (evening) — 2.1b prefill slice shipped: `geo/` finders (RGI + DGU boundaries + DMV elevation, offline-capable) + `osz/` writer/prefill, karta format → 5:4, LiDAR/GPS source flags, validated live on 3 caves + 24-cave sweep → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
