@@ -1,0 +1,51 @@
+SurveyScraper5 - naredbe za obradu spiljskih objekata (verzija @VERSION@)
+=========================================================================
+
+Ova mapa sadrzi naredbe koje se pokrecu DVOKLIKOM. Svaka trazi samo
+Redni broj objekta iz Speleo baze (stupac "Redni broj").
+
+Naredbe
+-------
+cavedossier_osz_prefill_v@VERSION@.bat
+    Predispuni Osnovni speleoloski zapisnik (OSZ) za objekt: podaci iz SB,
+    isjecak karte, zupanija/grad-opcina/najblize mjesto, kota ulaza.
+    Gotov SB_<broj>_OSZ.docx sprema u mapu objekta pod
+    !!!Digitalizacija/!Za digitalizirat. Uz to ispise dopune-sb.csv -
+    popis vrijednosti koje bi covjek trebao prenijeti u SB (nista se u SB
+    ne upisuje automatski).
+
+cavedossier_photos_process_v@VERSION@.bat
+    Obradi fotografije ulaza objekta: iz mape objekta (SB_<broj>_...) napravi
+    smanjene KOPIJE nazvane SB_<broj>_<Ime>_<Autor>_<n>.jpg (autor se cita iz
+    OSZ polja "Autor fotografije ulaza"). Originali ostaju netaknuti.
+
+Prvo pokretanje na racunalu
+---------------------------
+1. Potreban je Python 3.11 ili noviji. Ako ga nema, naredba ce to reci i
+   ispisati upute (instalira se jednom, s www.python.org - obavezno kvacica
+   "Add python.exe to PATH").
+2. Prva priprema traje nekoliko minuta i treba internet (instalacija paketa
+   + kopiranje geopodataka). Sve se sprema lokalno u
+   %LOCALAPPDATA%\CaveDossier\ - ova mapa na Driveu se ne mijenja.
+3. Svako sljedece pokretanje krece odmah.
+
+Ceste situacije
+---------------
+- "SB mode: FALLBACK" na pocetku ispisa: netko ima Speleo bazu otvorenu u
+  Excelu ili Drive nije dostupan; naredba cita zadnju dobru lokalnu kopiju.
+  Podaci mogu kasniti - ponovi kad SB bude slobodan.
+- "nije uspjela (PermissionError...)": ciljna datoteka je otvorena u
+  Wordu/pregledniku - zatvori je i ponovi.
+- Isjecak karte nedostaje i ne moze se dohvatiti: prikupljanje isjecaka
+  (georef.hr) radi se na razvojnom racunalu - javi razvijatelju koji objekt
+  treba isjecak, pa ponovi prefill.
+- Prozor se odmah zatvori bez poruke: javi se razvijatelju.
+
+O ovoj mapi
+-----------
+- v@VERSION@\ i podaci\ su potporne datoteke - ne mijenjati i ne brisati.
+- _arhiva\ sadrzi starije verzije naredbi; koristi se uvijek najnovija
+  (broj verzije je u imenu .bat datoteke).
+- Sve ovdje je GENERIRANO iz razvojnog repozitorija SurveyScraper5
+  (features/cave-dossier/tools/build_prod.py); rucne izmjene se gube kod
+  sljedece objave. Novu verziju objavljuje razvijatelj.

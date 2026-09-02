@@ -23,6 +23,7 @@ agents and developers is [_INDEX.md](_INDEX.md).
   - [.env — per-machine facts](#env--per-machine-facts)
   - [The SB mode banner](#the-sb-mode-banner)
   - [Dev vs prod — this setup is the DEV half](#dev-vs-prod--this-setup-is-the-dev-half)
+  - [Prod launchers on the Drive](#prod-launchers-on-the-drive)
   - [Two venvs exist](#two-venvs-exist)
 - [Troubleshooting](#troubleshooting)
 - [Testing](#testing)
@@ -325,13 +326,55 @@ Every command prints the mode first — `SB mode: LIVE (...)`,
 
 Everything on this page assumes the developer's PC. **Prod is the registry
 Drive** (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §Dev vs prod): the
-people who will eventually run these tools work in the shared Drive folders,
-not in a repo clone. Productionizing (a distributable entry point, cloud
-copies of `data/geo/` and the template, a non-developer setup guide) is
-noted but unscheduled — until then, keep the portability rules: one
-subcommand per tool, per-machine facts only in `.env`, every local dataset
-regenerable by one command, outputs delivered fail-soft into the hand-managed
-Drive dirs.
+people who run these tools work in the shared Drive folders, not in a repo
+clone. Since 2026-09-02 the operator-facing commands ship there as versioned
+launchers — see [Prod launchers on the Drive](#prod-launchers-on-the-drive)
+just below. The standing portability rules stay in force for every new tool:
+one subcommand per tool, per-machine facts only in `.env`, every local
+dataset regenerable by one command, outputs delivered fail-soft into the
+hand-managed Drive dirs.
+
+### Prod launchers on the Drive
+
+The two operator commands (`osz prefill`, `photos process`) are published as
+**versioned, double-clickable launchers** in the dedicated Drive folder
+`!!!Digitalizacija/SurveyScraper5/`:
+
+```text
+SurveyScraper5/
+├─ cavedossier_osz_prefill_v1.0.bat      ← operators double-click these
+├─ cavedossier_photos_process_v1.0.bat
+├─ PROCITAJ_ME.txt                        ← operator setup/troubleshooting guide
+├─ VERZIJE.txt                            ← publish log, one line per release
+├─ v1.0/                                  ← bootstrap.ps1 + bundle.zip
+├─ podaci/geo/                            ← cloud copy of data/geo (~280 MB)
+└─ _arhiva/                               ← superseded versions
+```
+
+A launcher's first double-click installs everything to
+`%LOCALAPPDATA%\CaveDossier\v<X>` — Python 3.11+ check (with guided install
+instructions when missing), bundle extract, venv + `pip install
+.[osz,photos,geo]`, local copy of `podaci/geo`, and a generated `.env` whose
+`LOCAL_DRIVE_ROOT` is derived by probing upward from the launcher's own
+location for the SB workbook. Every later run starts immediately and only
+asks for the Redni broj. The `[karta]` browser flow deliberately stays
+dev-only: prefill embeds already-collected excerpts from `!!Isječci karte`
+and degrades with a note otherwise.
+
+Regenerate + publish from the dev machine (bump the version per release —
+the filename is the version indicator):
+
+```powershell
+python tools\build_prod.py --version 1.1 --publish    # stage + copy to Drive
+python tools\build_prod.py --version 1.1              # stage dist/prod/ only
+python tools\build_prod.py --version 1.1 --publish --skip-geo   # no geo sync
+```
+
+Launcher/bootstrap/guide templates live in `tools/prod_templates/` (ASCII
+only — the build fails loudly otherwise). Publishing moves superseded
+launchers and v-dirs into `_arhiva/`, so the newest version is the only one
+visible; a same-version republish is for dev iteration — bootstrap notices
+the newer `bundle.zip` and reinstalls on the operator's next run.
 
 ### Two venvs exist
 

@@ -1,0 +1,14 @@
+@echo off
+rem cavedossier @COMMAND_ID@ v@VERSION@ - PROD launcher, generirano alatom
+rem SurveyScraper5/features/cave-dossier/tools/build_prod.py. NE UREDJIVATI RUCNO -
+rem promjene idu u repo i objavljuju se novom verzijom.
+rem Dvoklik pokrece naredbu; prozor ostaje otvoren do Enter.
+setlocal
+chcp 65001 >nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0v@VERSION@\bootstrap.ps1" -Version "@VERSION@" -Command "@COMMAND_ID@" -ExtraArgs "%*"
+if errorlevel 1 (
+    echo.
+    echo Pokretanje nije uspjelo. Ako poruke iznad ne pomazu, javi se razvijatelju.
+    pause
+)
+endlocal

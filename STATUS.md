@@ -11,9 +11,9 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 |---|---|
 | 1 — field mobile app | PARKED (manual workflow; revisit after stage 2 works) |
 | 2.1a — csx-to-survey | OPERATIONAL (own feature, semi-manual 4-step pipeline) |
-| 2.1b — OSZ builder | **PREFILL SLICE OPERATIONAL (2026-08-30, evening)** — `cavedossier osz prefill <Redni broj>` fills the v10 template from SB + the new `geo/` finders (županija/grad-općina via DGU boundaries, najbliže mjesto/lokalitet via RGI, kota via open INSPIRE DMV grid), embeds the isječak karte, delivers `SB_<broj>_OSZ.docx` to `!!!Digitalizacija/Osnovni speleološki zapisnik`, and emits `dopune-sb.csv` (human-executed SB review list). SB wins on conflicts; LiDAR-named caves get Izvor koordinata/kote = LiDAR, others default GPS; Katastarski broj / Duljina / Dubina / Datum never prefilled (user rules). `--offline` works fully from local data. Validated live on 651, 764, 1320 + a 24-cave finder sweep. Still M4's other half: READING filled zapisnici back (`w:sdt` parser + Docs text parser) |
+| 2.1b — OSZ builder | **PREFILL SLICE OPERATIONAL (2026-08-30, evening)** — `cavedossier osz prefill <Redni broj>` fills the v10 template from SB + the new `geo/` finders (županija/grad-općina via DGU boundaries, najbliže mjesto/lokalitet via RGI, kota via open INSPIRE DMV grid), embeds the isječak karte, delivers `SB_<broj>_OSZ.docx` to `!!!Digitalizacija/Osnovni speleološki zapisnik`, and emits `dopune-sb.csv` (human-executed SB review list). SB wins on conflicts; LiDAR-named caves get Izvor koordinata/kote = LiDAR, others default GPS; Katastarski broj / Duljina / Dubina / Datum never prefilled (user rules). `--offline` works fully from local data. Validated live on 651, 764, 1320 + a 24-cave finder sweep. Still M4's other half: READING filled zapisnici back (`w:sdt` parser + Docs text parser). **Prod launcher shipped 2026-09-02** (see Productionization below) |
 | 2.1c — isječak karte | **OPERATIONAL (M3 done 2026-08-30)** — `cavedossier karta <Redni broj>` runs the ported georef.hr Playwright flow and delivers the excerpt + a row in `!georef_zapisi.csv` to the shared `!!Isječci karte` Drive folder. **Format changed same evening: landscape 5:4, ~1.5 km above/below the entrance** (was 1:1 / ~2.5 km); old-format or hand-deleted/mangled collections self-heal — refresh_reason detects wrong aspect, missing CSV rows, Excel-stripped padding |
-| 2.1d — fotografije ulaza | **PROCESSOR OPERATIONAL (2026-09-01)** — `cavedossier photos process <Redni broj>` takes a cave's photos out of its `SB_<broj>_…` intake leaf and writes downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` **copies** beside them (1920 px / 1.5 MB, author from the OSZ cell *Autor fotografije ulaza*); originals stay untouched until the resolution is settled. Live: 6.92 MB → 1.23 MB. The staging sweep (`photos match-queued`) is finished and no longer run; `photos check-flag` + the staleness guard stay. Remaining: the **mover** into `!!Fotografije ulaza` renaming `SB_<broj>` → katastarski broj (rides with M6) |
+| 2.1d — fotografije ulaza | **PROCESSOR OPERATIONAL (2026-09-01)** — `cavedossier photos process <Redni broj>` takes a cave's photos out of its `SB_<broj>_…` intake leaf and writes downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` **copies** beside them (1920 px / 1.5 MB, author from the OSZ cell *Autor fotografije ulaza*); originals stay untouched until the resolution is settled. Live: 6.92 MB → 1.23 MB. The staging sweep (`photos match-queued`) is finished and no longer run; `photos check-flag` + the staleness guard stay. Remaining: the **mover** into `!!Fotografije ulaza` renaming `SB_<broj>` → katastarski broj (rides with M6). **Prod launcher shipped 2026-09-02** (see Productionization below) |
 | 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` done; **people registry + statement gates live (2026-08-30)**: `data/people/registry.json` (131 people, seeded from the izjave dir), registry/scope-aware per-author izjava blocker at gate 1, per-person missing-izjava warning at gate 2, `cavedossier people list/check`. Per-cave archive intake (nacrt/OSZ/foto) still next |
 | 2.2a — SB (master registry) | **M1 ✅ DONE** (read-only, live SB v3.0). Live workbook now **1438 rows**; write-back still M6 |
 | 2.2b — satellite tables | **OPERATIONAL (new 2026-08-29)** — `cavedossier sat sync` compares a satellite against SB and emits four review lists; never writes to either side. Liburnija done end to end: **126 rows entered SB**, 7 synonyms added, run is idempotent. `Literatura` (45) and `Katastar RH` (4595) still untouched |
@@ -22,6 +22,16 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Definitions live in [ARCHITECTURE.md §Milestones](ARCHITECTURE.md#milestones-stage-2);
 this table is where each one STANDS. Detailed checklists follow below.
+
+**Productionization (outside the M-ladder, first slice 2026-09-02)** —
+`osz prefill` + `photos process` ship as versioned double-click launchers on
+the Drive (`!!!Digitalizacija/SurveyScraper5/`: launchers + versioned bundle +
+`podaci/geo` cloud copy + `_arhiva/`), generated/published by
+`features/cave-dossier/tools/build_prod.py --version X.Y --publish`. First run
+self-installs to `%LOCALAPPDATA%\CaveDossier\v<X>` (guided Python 3.11+ setup,
+venv+pip, geo copy, derived `.env`). Validated end-to-end on the dev machine as
+operator (photos 1220 dry-run, prefill 1320 delivered). `[karta]` stays
+dev-only. See ARCHITECTURE §Dev vs prod + the feature README §Prod launchers.
 
 | M | Name | Status |
 |---|---|---|

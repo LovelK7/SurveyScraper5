@@ -246,3 +246,19 @@ when an idea's time comes. Nothing here is a commitment.
   suffix (`SB_1220_…_Flavio`) are both plausible fallbacks — but both are guesses, so this
   needs the user's rule before it is wired.
 
+- 2026-09-02 - **prod: bundled Python runtime** (Windows embeddable + get-pip, or a frozen
+  build): removes the one-time "install Python 3.11+" step the launchers now guide the
+  operator through. Weigh against the maintenance cost per Python bump; today the guided
+  path is the deliberate choice.
+- 2026-09-02 - **prod: wheel cache on the Drive** so first-run setup works without PyPI
+  (fully offline machines). `pip download` per release into the version dir; setup falls
+  back to PyPI when absent.
+- 2026-09-02 - **prod: update notice in the launcher** - an old-version launcher (or a
+  desktop shortcut to one) could detect a newer `cavedossier_*_v*.bat` in its folder and
+  say so before running. Today the only signal is the filename in the folder.
+- 2026-09-02 - **prod: cleanup of superseded local installs** - each version installs to
+  its own `%LOCALAPPDATA%\CaveDossier\v<X>` and old ones linger (~1 GB each with venv +
+  geo data). A new version's setup could offer to delete older v-dirs.
+- 2026-09-02 - **prod: karta on operator machines?** Deliberately excluded from v1.0
+  (Playwright + shared georef.hr credentials + server-side saves). Revisit only if
+  excerpt collection ever becomes an operator task.

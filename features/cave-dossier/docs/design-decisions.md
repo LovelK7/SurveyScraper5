@@ -35,6 +35,7 @@ keeps the chronology.
   - [The third source: the Liburnija LIDAR sheet](#the-third-source-the-liburnija-lidar-sheet)
 - [2.1b prefill rules (2026-08-30)](#21b-prefill-rules-2026-08-30)
 - [OSZ fetch → SB backfill rules (2026-08-30)](#osz-fetch--sb-backfill-rules-2026-08-30)
+- [Prod launchers on the Drive (2026-09-02)](#prod-launchers-on-the-drive-2026-09-02)
 
 ---
 
@@ -648,3 +649,56 @@ same day the prefill shipped; enforced in `osz/reader.py` + `osz/backfill.py`:
   (all 7 fields confirmed identical across conventions) and a simulated
   completed zapisnik for queued SB 1320 (6 proposals incl. the name→synonym
   move; year conflict correctly surfaced, not overridden).
+
+## Prod launchers on the Drive (2026-09-02)
+
+The first productionization slice (ARCHITECTURE §Dev vs prod): `osz prefill`
+and `photos process` ship to operators as versioned launchers. Settled with
+the user this session; built by `tools/build_prod.py` + `tools/prod_templates/`:
+
+- **One dedicated Drive folder** (user): everything lives in
+  `!!!Digitalizacija/SurveyScraper5/` — the two `.bat` launchers, the
+  `v<X>/` support dir (`bootstrap.ps1` + `bundle.zip`), the `podaci/geo/`
+  cloud copy, `PROCITAJ_ME.txt`, `VERZIJE.txt` (publish log) and `_arhiva/`.
+  Contained on purpose: the tool never scatters into the archive root.
+- **Versioning is per release, in the filename**
+  (`cavedossier_osz_prefill_v1.0.bat`): both commands share one release
+  version because they run the same bundle. Publishing a new version moves
+  the superseded launchers and v-dirs into `_arhiva/`, so the newest is the
+  only one visible — "the latest version is whatever is in the folder".
+  A same-version republish is a dev iteration: bootstrap compares
+  `bundle.zip`'s mtime to its install stamp and reinstalls when newer.
+- **Everything on the Drive is generated** — templates live in the repo
+  (`tools/prod_templates/`, ASCII-enforced so cmd/PS 5.1 encoding can never
+  bite); hand edits on the Drive are lost by design at the next publish.
+- **Install is local, per machine**: `%LOCALAPPDATA%\CaveDossier\v<X>` holds
+  the extracted bundle (= FEATURE_ROOT, so `core/config.py`'s
+  feature-relative resolution works unchanged), the venv, `runs/`, the local
+  `data/geo` and the generated `.env`. A venv must never sit on the Drive
+  mount (absolute-path shims break; sync churn) — that rule already cost one
+  venv rebuild in dev.
+- **`LOCAL_DRIVE_ROOT` is derived, not asked for**: bootstrap probes upward
+  from its own location for `!Speleo_baza_SUE_*.xlsm` and writes the machine
+  `.env` (plus `SB_SANDBOX_PATH=sb-fallback/SB_kopija.xlsm`, so the LIVE-first
+  fallback copy works for operators too). Probing beats counting path levels
+  — it survives the SurveyScraper5 folder being moved within the archive.
+- **System Python, guided** (user): the launcher requires Python 3.11+ and,
+  when missing, prints the one-time install instructions (python.org /
+  winget) instead of bundling a runtime. Deps are pip-installed from PyPI at
+  first run — internet is needed once per machine, and the message says so.
+- **`[karta]` stays dev-only**: no Playwright, no shared georef.hr
+  credentials, no server-side saves from operator machines. Prefill embeds
+  an excerpt already collected in `!!Isječci karte` and otherwise degrades
+  with a note naming the missing step (collection remains a dev task).
+- **Geodata is a cloud copy, not a download** (ARCHITECTURE's own
+  suggestion): publish syncs the runtime subset of `data/geo` — the four
+  GeoPackages + `el_cov_index.gml` + `dem/` tiles, ~280 MB — into
+  `podaci/geo/`; setup robocopies it locally (`/XO`, so an interrupted copy
+  heals on the next run). `inspire_au/` + `INSPIRE_AU.zip` (~770 MB) are gpkg
+  build material and never ship.
+- **Validated live** (2026-09-02, this machine as the operator): first
+  double-click path end-to-end (Python detect → bundle extract → venv → pip →
+  geo copy → `.env`), then `photos process 1220 --dry-run` (correct plan, LIVE
+  banner, diacritics intact) and `osz prefill 1320` (11 fields, excerpt
+  reused, DOCX delivered to the intake leaf) — both through the published
+  bootstrap on the Drive, exit 0.

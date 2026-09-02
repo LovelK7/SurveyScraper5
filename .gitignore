@@ -37,6 +37,11 @@ features/*/data/*
 !features/*/data/people/
 !features/*/data/people/**
 
+# === Prod build staging (features/*/tools/build_prod.py) ================
+# Rendered launchers + bundle zips; the published copy lives on the Drive
+# (!!!Digitalizacija/SurveyScraper5) and the templates in tools/ are tracked.
+features/*/dist/
+
 # === Secrets / per-machine config =======================================
 .env
 
