@@ -1,4 +1,4 @@
-"""The fetcher direction: person aliases, year cropping, reader round-trip,
+"""The backfill direction (`osz backfill`): person aliases, year cropping, reader round-trip,
 and the SB backfill rules (empty cells get proposals, conflicts get notes,
 authors merge across the full-name/shorthand conventions)."""
 
@@ -131,7 +131,7 @@ def test_locate_filled_osz_ignores_the_prefill_backup_beside_the_delivered_osz(
 ):
     """The leaf a prefill migration has touched holds BOTH the delivered
     `SB_<broj>_OSZ.docx` and the `_stari_<datum>` backup of what was there
-    before. Until 2026-09-01 the fetcher counted the backup as a rival
+    before. Until 2026-09-01 the backfill locator counted the backup as a rival
     candidate and reported the cave as having no zapisnik at all (found via
     `photos process 1250`, whose author lookup went empty)."""
     from cave_dossier.osz.backfill import locate_filled_osz

@@ -30,8 +30,8 @@
 | `cli.py` | `cavedossier` entry point (argparse), mode banner, exit codes (1 ready / 0 not / 99 error) | every command |
 | `core/config.py` | config.yaml + .env → `Settings`; LIVE-first workbook resolution with fallback; `geo.*` knobs | every command |
 | `core/normalization.py` | diacritic-insensitive matching keys (ported) | column + name matching |
-| `core/people.py` | split an author cell into people; peel off the society bracket | SB mapping, `osz fetch` |
-| `core/person_aliases.py` | "First Last" abbreviation variants (ported), `to_sb_shorthand` (`L.Kukuljan`), cross-convention `same_person` | `osz fetch` |
+| `core/people.py` | split an author cell into people; peel off the society bracket | SB mapping, `osz backfill` |
+| `core/person_aliases.py` | "First Last" abbreviation variants (ported), `to_sb_shorthand` (`L.Kukuljan`), cross-convention `same_person` | `osz backfill` |
 | `core/matching.py` | the shared name/plaque/number matcher behind photo and folder mapping; `SB_PREFIX` | `photos *`, `intake *` |
 | `sb/safe_io.py` | workbook preflight/backup/COM-write safety (ported) | reads: preflight only; writes: M6 |
 | `sb/loader.py` | `SBReader`: header autodetect, column aliases, `find_caves` | `sb *`, `report`, all serial lookups |
@@ -42,7 +42,7 @@
 | `dossier/report.py` | the text rendering behind `cavedossier report` | `report` |
 | `georef/` | 2.1c: georef.hr Playwright flow (ported) — `worker` (orchestration, delivery, `refresh_reason` self-healing, Excel-tolerant CSV), `flows` (5:4 marker-centered crop, PNG budget), `client`, `models`, `selectors`, `artifacts` | `karta`, `osz prefill` |
 | `geo/` | 2.1b finders: `locality` (SB-wins synthesizer), `admin_lookup` (DGU PIP), `rgi_client` (WFS + offline gpkg), `toponym_matcher`, `elevation` (INSPIRE DMV grid, 3765→3045), `provision` (`fetch-data`), `models` | `geo *`, `osz prefill` |
-| `osz/` | 2.1b: `writer` (lxml on word/document.xml — cell-own styles, `embed_png`), `addresses` (v10 table coordinates), `prefill` (orchestrator + sidecar + dopune-sb.csv), `reader` (filled-document cells; placeholders read as empty), `backfill` (OSZ vs SB → review proposals), `models` | `osz prefill`, `osz fetch` |
+| `osz/` | 2.1b: `writer` (lxml on word/document.xml — cell-own styles, `embed_png`), `addresses` (v10 table coordinates), `prefill` (orchestrator + sidecar + dopune-sb.csv), `reader` (filled-document cells; placeholders read as empty), `backfill` (OSZ vs SB → review proposals), `models` | `osz prefill`, `osz backfill` |
 | `satellites/` | 2.2b: `model` · `liburnija` · `resolver` (ranked keys, never local row ids) · `sync` (four review lists) | `sat sync` |
 | `intake/scanner.py` | field-data leaf folders → SB rows, `SB_<Redni broj>_<Ime>_…` proposals; `find_cave_leaf` (a cave's `SB_<broj>_…` folder, shared by every per-cave step) | `intake map`, `osz prefill`, `photos process` |
 | `intake/liburnija.py` | read-only bridge over the cached Liburnija sheet CSV | `intake map` |
@@ -54,8 +54,10 @@
 | `people/name_resolver.py` | comparison keys for a name as written anywhere (full / shorthand / 3+ tokens / hyphenated double surname; đ-fold) (ported) | statement matching |
 | `people/statements.py` | scan `!!Izjave za katastar RH`, link people ↔ izjave (scope-aware), fill `person_statements` + statement files on the dossier, JSON index snapshot (ported) | `people *`, `report` |
 
-Planned modules: `dossier/intake.py` (rest of M2 — resolve a cave's files on
-Drive), the CroSpeleo half of the OSZ fetcher (checkbox groups + narrative
+Planned modules: `delivery/` (M6 — the last gate: allocate the katastarski
+broj, rename + file every deliverable, write SB back; designed in
+[docs/m6-delivery-design.md](docs/m6-delivery-design.md)), `dossier/intake.py`
+(rest of M2 — resolve a cave's files on Drive), the CroSpeleo half of the OSZ reader (checkbox groups + narrative
 controls + the Google-Docs text variant — `osz/reader.py` covers the
 identity/metadata cells the SB backfill needs), and 2.1d's last step — the
 **mover** that files the processed copies into `!!Fotografije ulaza` and
@@ -72,7 +74,8 @@ renames `SB_<Redni broj>` to the katastarski broj once the cave earns one.
 | [docs/sb-liburnija-hub.md](docs/sb-liburnija-hub.md) | satellite-hub design (2.2b) | design |
 | [docs/sb-satellite-tables.md](docs/sb-satellite-tables.md) | why satellites join on shared keys, never local row ids (with measurements) | decision record |
 | [docs/sb-powerquery.md](docs/sb-powerquery.md) | SB's Power Query view filters (M code) + how to re-extract them | reference |
-| [docs/sb-write-back-design.md](docs/sb-write-back-design.md) | M6 write-back design (dormant) | design |
+| [docs/sb-write-back-design.md](docs/sb-write-back-design.md) | M6 write-back **mechanics** (COM, backup, rehearsal protocol) — dormant | design |
+| [docs/m6-delivery-design.md](docs/m6-delivery-design.md) | M6 **delivery**: the last gate — `deliver <broj>`, katastarski-broj allocation, rename + file into the archive dirs | design |
 | [docs/sb-restructure-excel-prompt.md](docs/sb-restructure-excel-prompt.md) | the prompt that drove the v3.0 workbook restructure | history |
 | [osz-template/README.md](osz-template/README.md) | the OSZ v10 template workbench (tools, audits, conformance) | living reference |
 | [data/README.md](data/README.md) | provenance + licences of the downloaded geodata | reference |

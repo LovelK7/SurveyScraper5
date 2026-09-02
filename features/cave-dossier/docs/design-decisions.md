@@ -34,7 +34,7 @@ keeps the chronology.
 - [Field-data intake — matching design](#field-data-intake--matching-design)
   - [The third source: the Liburnija LIDAR sheet](#the-third-source-the-liburnija-lidar-sheet)
 - [2.1b prefill rules (2026-08-30)](#21b-prefill-rules-2026-08-30)
-- [OSZ fetch → SB backfill rules (2026-08-30)](#osz-fetch--sb-backfill-rules-2026-08-30)
+- [OSZ backfill → SB rules (2026-08-30)](#osz-backfill--sb-rules-2026-08-30)
 - [Prod launchers on the Drive (2026-09-02)](#prod-launchers-on-the-drive-2026-09-02)
 
 ---
@@ -369,7 +369,7 @@ explored cave. The check is a standing guard, not a cleanup.
 
 Settled 2026-09-01. The standing 2.1d step works on **one cave at a time**, from
 the cave's `SB_<Redni broj>_…` **intake leaf** under `!Za digitalizirat` — the
-same folder `osz prefill` / `osz fetch` already use, so a cave's survey files,
+same folder `osz prefill` / `osz backfill` already use, so a cave's survey files,
 its zapisnik and its photos are resolved from one place. It produces
 
     SB_<Redni broj>_<Ime objekta>_<Autor>_<n>.jpg
@@ -596,9 +596,10 @@ Settled with the user during the prefill build; enforced in `osz/prefill.py`:
   (format migrations), missing CSV rows, unreadable PNGs all auto-refresh on
   the next run; nothing requires a manual cleanup ritual.
 
-## OSZ fetch → SB backfill rules (2026-08-30)
+## OSZ backfill → SB rules (2026-08-30)
 
-The fetcher direction (`cavedossier osz fetch`), settled with the user the
+The reverse direction (`cavedossier osz backfill`, renamed from `osz fetch`
+2026-09-02), settled with the user the
 same day the prefill shipped; enforced in `osz/reader.py` + `osz/backfill.py`:
 
 - **Scope**: only the SB-relevant cells — Broj pločice, Ime objekta/Sinonimi,
@@ -625,7 +626,7 @@ same day the prefill shipped; enforced in `osz/reader.py` + `osz/backfill.py`:
   or a literal `⟨…⟩` in the Docs variant) — the grey hint text is not a value.
 - **Where the zapisnik lives** (user, 2026-08-30): a cave's filled OSZ is
   filed with its field material — the `SB_<Redni broj>_…` dir in the intake
-  tree (`!Za digitalizirat`). `osz fetch` searches there by default
+  tree (`!Za digitalizirat`). `osz backfill` searches there by default
   (preferring a DOCX whose name says osz/zapisnik, refusing to guess among
   several), `--osz-dir` overrides the search root, `--osz` names an exact
   file; the prefilled copy in `osz_prefill_dir` is only a flagged fallback.

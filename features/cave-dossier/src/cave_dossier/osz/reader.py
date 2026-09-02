@@ -1,4 +1,5 @@
-"""Read a FILLED OSZ v10 document's addressable cells (the fetcher half).
+"""Read a FILLED OSZ v10 document's addressable cells (the reading half,
+behind `cavedossier osz backfill`).
 
 Counterpart of ``writer.py``: same lxml-on-``word/document.xml`` approach
 (Word ``w:sdt`` content controls are invisible to python-docx), same

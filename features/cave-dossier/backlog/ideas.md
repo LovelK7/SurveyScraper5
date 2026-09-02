@@ -262,3 +262,19 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-09-02 - ~~**prod: karta on operator machines?**~~ DONE the same day (v1.2,
   user decision): setup installs [karta] + Chromium, .env gets the shared login;
   see design-decisions "Prod launchers".
+- 2026-09-02 — `deliver --rollback <broj>` walking the `runs/deliver/<broj>/manifest.json`
+  undo list backwards (every src→dst move, every SB cell before→after, the backup
+  filename). Designed alongside the delivery step but only worth building once a
+  real delivery has failed halfway and shown which half actually breaks.
+- 2026-09-02 — an SB integrity check as its own command (`sb check-numbering`?):
+  `Katastarski broj SUE` is dense 1…885, so `max == count`, no gaps, no duplicates
+  is a cheap workbook-wide invariant. Delivery needs it as a pre-write guard, but it
+  is just as useful standing alone next to `sb audit-authors` / `sb unclassified`.
+- 2026-09-02 — `Arhiva` (451 loose entries under `!!!Digitalizacija/Arhiva`) has no
+  convention today. If delivery starts filing leaves there as `<broj>_<Ime>/`, a
+  one-off sweep proposing the same shape for the existing entries would make the
+  folder navigable — same dry-run/`--apply` shape as `intake map`.
+- 2026-09-02 — the OSZ v10 controls still carry no `w:tag`, so every field is
+  addressed positionally (`osz/addresses.py`). The checkbox-group manifest that the
+  delivery gate needs would be a second positional map; tagging the template once
+  would collapse both maps into names that survive a layout change.

@@ -6,6 +6,69 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-09-02 (later) — `osz fetch` → `osz backfill`, and the M6 delivery step designed (agent) ✅
+
+- **Did:** (1) *Rename*: `osz fetch` never fetched anything — it reads a filled
+  zapisnik and proposes SB updates — so it became **`cavedossier osz backfill
+  <broj>`**, the exact mirror of `osz prefill`, matching the module that always
+  was `osz/backfill.py` and the CSV that always was `dopune-sb-iz-osz.csv`.
+  Applied to `cli.py` (parser, dispatch, `cmd_osz_fetch` → `cmd_osz_backfill`,
+  help text), the `osz/backfill.py` + `osz/reader.py` docstrings, README,
+  `_INDEX`, design-decisions (incl. the section heading + its TOC anchor),
+  ARCHITECTURE (2.1b row, B7 row, and the B7 box inside the ASCII bridge
+  diagram), STATUS, and `tests/test_osz_fetch.py` → `test_osz_backfill.py`.
+  No alias: the old name now errors and names the replacement. SESSIONS left
+  verbatim (chronology), the rename recorded in the decision record instead.
+  (2) *Designed M6 delivery* — the step the M6 plan never had — as
+  [docs/m6-delivery-design.md](../docs/m6-delivery-design.md): `cavedossier
+  deliver <Redni broj>`, dry-run by default, six steps (OSZ completeness gate →
+  `/` filler → files present and nameable → allocate the katastarski broj →
+  printed approval → apply: rename, file into the three archive dirs, leaf into
+  `Arhiva`, SB write-back). Registered in `_INDEX`, ARCHITECTURE B11 and the
+  STATUS M6 row; the five open questions went to STATUS "Waiting on user".
+- **Result:** rename shipped and green — 300 passed / 5 skipped,
+  `pipeline_doctor` 0 fail (3 pre-existing WARNs in the other feature). The
+  delivery design is **paper only, nothing built**; it deliberately names its
+  own blockers rather than pretending M6 is a single sitting. Fixed a stale
+  STATUS claim the rename exposed: the 2.1b row still said "reading filled
+  zapisnici back" was M4's unbuilt half, three days after it shipped.
+- **Learned:** (all four from measuring the live workbook/Drive, not from docs)
+  - **Writing only the katastarski broj would put a row in two Power Query
+    views at once.** *Istraženi* is `[Katastarski broj SUE] <> null`, *Za
+    istražit* is `Napomena` containing `za istražit` — independent filters.
+    0 of 885 numbered rows currently hold a queue flag, i.e. the operator
+    clears it by hand today and `deliver` would be the first tool to break that
+    invariant. Clearing the flag is part of the same write, not a follow-up.
+  - **`Katastarski broj SUE` is dense**: ints 1…885, 885 rows filled, zero gaps
+    and zero duplicates. So `max + 1` is the next number *and* `max == count`
+    is a free corruption check — a mismatch means someone else's allocation is
+    half-finished, which is a refusal, not a guess. SB is shared, so `max` must
+    be re-read inside the same COM session as the write.
+  - **4 of the 11 obligatory OSZ fields are unreadable today.** Podrijetlo
+    imena, Vrsta objekta, Hidrogeološka funkcija and Hidrološka karakteristika
+    are *checkbox groups*: none is in `osz/addresses.py:V10`, and
+    `reader.read_osz_content()` returns a flat tuple of ticked labels with no
+    group membership, so "is Vrsta objekta answered?" is unanswerable. The
+    group→labels manifest (the "CroSpeleo-field reader") is the hard blocker
+    before any completeness gate can exist.
+  - **The `/` filler has an ordering trap.** Filling unused optional fields
+    with `/` must happen *after* the gate, or the filler satisfies the very
+    check meant to catch an unfinished zapisnik; and `/` must join
+    `reader.py`'s placeholder markers, or `osz backfill` starts proposing `/`
+    into SB cells and a re-delivery reads a filled document where there is
+    none.
+  - Archive conventions confirmed by looking: `!!Nacrti/<broj>.pdf` (927 files,
+    3-digit padded), `!!Osnovni zapisnici/<broj>.docx` (611), `!!Fotografije
+    ulaza/<broj>_<Ime>_<Autor>.jpg` — stated verbatim in that folder's own
+    `!!!UPUTE.txt` — and `!!!Digitalizacija/Arhiva` flat with 451 loose entries.
+- **Next:** answer the five delivery questions, then build the checkbox-group
+  manifest (M4 tail) — it unblocks both the CroSpeleo fetcher and the delivery
+  gate. A useful intermediate is `deliver` **gate-only** (dry run, `--apply`
+  refused) once that and `Source.OSZ` gathering land, so the gate is exercised
+  before any write exists.
+
+---
+
 ### 2026-09-02 — prod launchers on the Drive, v1.0 → v1.3 in one evening (agent) ✅
 
 - **Did:** (1) *First productionization slice* (ARCHITECTURE §Dev vs prod):

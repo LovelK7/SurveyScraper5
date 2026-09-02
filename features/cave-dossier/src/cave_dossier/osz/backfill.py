@@ -1,4 +1,5 @@
-"""SB backfill from a filled OSZ (part 2.1b/M4 — the fetcher direction).
+"""SB backfill from a filled OSZ (part 2.1b/M4 — `cavedossier osz backfill`,
+the reverse of `osz prefill`).
 
 Compares what a filled zapisnik says against the cave's SB row and proposes
 what to carry back (user, 2026-08-30):

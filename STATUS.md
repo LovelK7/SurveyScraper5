@@ -11,11 +11,11 @@ Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
 |---|---|
 | 1 — field mobile app | PARKED (manual workflow; revisit after stage 2 works) |
 | 2.1a — csx-to-survey | OPERATIONAL (own feature, semi-manual 4-step pipeline) |
-| 2.1b — OSZ builder | **PREFILL SLICE OPERATIONAL (2026-08-30, evening)** — `cavedossier osz prefill <Redni broj>` fills the v10 template from SB + the new `geo/` finders (županija/grad-općina via DGU boundaries, najbliže mjesto/lokalitet via RGI, kota via open INSPIRE DMV grid), embeds the isječak karte, delivers `SB_<broj>_OSZ.docx` to `!!!Digitalizacija/Osnovni speleološki zapisnik`, and emits `dopune-sb.csv` (human-executed SB review list). SB wins on conflicts; LiDAR-named caves get Izvor koordinata/kote = LiDAR, others default GPS; Katastarski broj / Duljina / Dubina / Datum never prefilled (user rules). `--offline` works fully from local data. Validated live on 651, 764, 1320 + a 24-cave finder sweep. Still M4's other half: READING filled zapisnici back (`w:sdt` parser + Docs text parser). **Prod launcher shipped 2026-09-02** (see Productionization below) |
+| 2.1b — OSZ builder | **PREFILL SLICE OPERATIONAL (2026-08-30, evening)** — `cavedossier osz prefill <Redni broj>` fills the v10 template from SB + the new `geo/` finders (županija/grad-općina via DGU boundaries, najbliže mjesto/lokalitet via RGI, kota via open INSPIRE DMV grid), embeds the isječak karte, delivers `SB_<broj>_OSZ.docx` to `!!!Digitalizacija/Osnovni speleološki zapisnik`, and emits `dopune-sb.csv` (human-executed SB review list). SB wins on conflicts; LiDAR-named caves get Izvor koordinata/kote = LiDAR, others default GPS; Katastarski broj / Duljina / Dubina / Datum never prefilled (user rules). `--offline` works fully from local data. Validated live on 651, 764, 1320 + a 24-cave finder sweep. The reading direction shipped 2026-08-30 as **`cavedossier osz backfill <broj>`** (renamed from `osz fetch` 2026-09-02) — `w:sdt`-aware reader + fill-missing/note-conflicts proposals into `dopune-sb-iz-osz.csv`; M4's remaining tail is the **CroSpeleo-field reader** (checkbox groups, narratives, the Docs text variant). **Prod launcher shipped 2026-09-02** (see Productionization below) |
 | 2.1c — isječak karte | **OPERATIONAL (M3 done 2026-08-30)** — `cavedossier karta <Redni broj>` runs the ported georef.hr Playwright flow and delivers the excerpt + a row in `!georef_zapisi.csv` to the shared `!!Isječci karte` Drive folder. **Format changed same evening: landscape 5:4, ~1.5 km above/below the entrance** (was 1:1 / ~2.5 km); old-format or hand-deleted/mangled collections self-heal — refresh_reason detects wrong aspect, missing CSV rows, Excel-stripped padding |
-| 2.1d — fotografije ulaza | **PROCESSOR OPERATIONAL (2026-09-01)** — `cavedossier photos process <Redni broj>` takes a cave's photos out of its `SB_<broj>_…` intake leaf and writes downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` **copies** beside them (1920 px / 1.5 MB, author from the OSZ cell *Autor fotografije ulaza*); originals stay untouched until the resolution is settled. Live: 6.92 MB → 1.23 MB. The staging sweep (`photos match-queued`) is finished and no longer run; `photos check-flag` + the staleness guard stay. Remaining: the **mover** into `!!Fotografije ulaza` renaming `SB_<broj>` → katastarski broj (rides with M6). **Prod launcher shipped 2026-09-02** (see Productionization below) |
+| 2.1d — fotografije ulaza | **PROCESSOR OPERATIONAL (2026-09-01)** — `cavedossier photos process <Redni broj>` takes a cave's photos out of its `SB_<broj>_…` intake leaf and writes downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` **copies** beside them (1920 px / 1.5 MB, author from the OSZ cell *Autor fotografije ulaza*); originals stay untouched until the resolution is settled. Live: 6.92 MB → 1.23 MB. The staging sweep (`photos match-queued`) is finished and no longer run; `photos check-flag` + the staleness guard stay. Remaining: the **mover** into `!!Fotografije ulaza` renaming `SB_<broj>` → katastarski broj (rides with M6; designed 2026-09-02 in [m6-delivery-design.md](features/cave-dossier/docs/m6-delivery-design.md) as one step of `deliver`). **Prod launcher shipped 2026-09-02** (see Productionization below) |
 | 2.1 — dossier builder | **M2 in progress** — dossier model + **two-gate** gating + lifecycle + `report` done; **people registry + statement gates live (2026-08-30)**: `data/people/registry.json` (131 people, seeded from the izjave dir), registry/scope-aware per-author izjava blocker at gate 1, per-person missing-izjava warning at gate 2, `cavedossier people list/check`. Per-cave archive intake (nacrt/OSZ/foto) still next |
-| 2.2a — SB (master registry) | **M1 ✅ DONE** (read-only, live SB v3.0). Live workbook now **1438 rows**; write-back still M6 |
+| 2.2a — SB (master registry) | **M1 ✅ DONE** (read-only, live SB v3.0). Live workbook now **1438 rows**; write-back still M6 — [mechanics](features/cave-dossier/docs/sb-write-back-design.md) + [what delivery writes](features/cave-dossier/docs/m6-delivery-design.md) both designed, neither built |
 | 2.2b — satellite tables | **OPERATIONAL (new 2026-08-29)** — `cavedossier sat sync` compares a satellite against SB and emits four review lists; never writes to either side. Liburnija done end to end: **126 rows entered SB**, 7 synonyms added, run is idempotent. `Literatura` (45) and `Katastar RH` (4595) still untouched |
 
 ## Milestone ladder
@@ -43,9 +43,9 @@ on the prod install, which also caught+fixed the "unchanged" re-delivery bug
 | M1 | SB read-only | ✅ done (2026-08-25) — live workbook, banner, sandbox fallback |
 | M2 | Dossier skeleton + `report` | ◐ in progress — model/gating/report + people registry & statement gates shipped; **per-cave archive intake is the open tail** |
 | M3 | Isječak karte | ✅ done (2026-08-30) — 5:4 format + self-healing collection same day |
-| M4 | OSZ builder | ◐ prefill + SB-backfill fetch shipped (2026-08-30); CroSpeleo-field fetcher + real-zapisnik validation open |
+| M4 | OSZ builder | ◐ `osz prefill` + `osz backfill` shipped (2026-08-30; the latter renamed from `osz fetch` 2026-09-02); the CroSpeleo-field reader (checkbox groups) + real-zapisnik validation open |
 | M5 | 2.1a artifact handoff | not started (blocked on the intake dir layout going live) |
-| M6 | SB write-back + delivery (+ the 2.1d mover) | not started — everything upstream feeds review lists until then |
+| M6 | SB write-back + delivery (+ the 2.1d mover) | not started — everything upstream feeds review lists until then. **Delivery designed 2026-09-02**: [m6-delivery-design.md](features/cave-dossier/docs/m6-delivery-design.md) (`deliver <broj>` — the last gate, katastarski-broj allocation, rename + file, SB write-back); write mechanics in [sb-write-back-design.md](features/cave-dossier/docs/sb-write-back-design.md) |
 
 ## M1 — SB read-only communication ✅ complete (2026-08-25)
 
@@ -191,7 +191,7 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 - [x] Live validation: 651 / 764 / 1320 delivered + Word-verified (81 controls,
       correct fonts, embedded 5:4 excerpt); 24-cave stratified finder sweep
       (Δkota ≤ 5 m for 20/24, admin fields 24/24 correct).
-- [x] **SB backfill fetcher shipped (2026-08-30, late)** — `cavedossier osz fetch
+- [x] **SB backfill fetcher shipped (2026-08-30, late)** — `cavedossier osz backfill
       <broj> [--osz FILE]`: `osz/reader.py` (w:sdt-aware, placeholders read as
       empty) + `osz/backfill.py` (fill-missing / note-conflicts; new OSZ name
       replaces SB's and the old name moves to Sinonimi; Datum cropped to SB's
@@ -200,9 +200,13 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
       drop) → `dopune-sb-iz-osz.csv` review list. Validated: mockup 811 vs SB 764
       (7/7 fields confirmed across conventions) + a simulated completed zapisnik
       for queued 1320 (6 proposals incl. the name→synonym move). Tests 183 → 193.
-- [ ] Validate `osz fetch` on the first REAL filled zapisnici from recorders;
-      then the CroSpeleo-field fetcher (checkbox groups, narrative controls,
+- [ ] Validate `osz backfill` on the first REAL filled zapisnici from recorders;
+      then the CroSpeleo-field reader (checkbox groups, narrative controls,
       Google-Docs text variant).
+- [x] **Renamed `osz fetch` → `osz backfill` (2026-09-02)** — it never fetched anything,
+      it proposes SB updates; now the exact mirror of `osz prefill`, matching the
+      module that always was `osz/backfill.py`. Code + all docs + the test file;
+      no alias, the old name errors and names the replacement.
 - [ ] Batch mode (`osz prefill --missing`-style sweep) — backlog.
 
 ## Waiting on user
@@ -216,6 +220,12 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 - First filled zapisnici coming back from recorders — collect 2–3 (ideally one from
   Word, one from Google Docs) as parser fixtures before M4 starts.
 - Mobile-app context material (parked with part 1)
+- **Five delivery questions** (new 2026-09-02, listed at the end of
+  [m6-delivery-design.md](features/cave-dossier/docs/m6-delivery-design.md)):
+  does the photo `_<n>` index survive into the archive name; does a multi-sheet
+  nacrt get a suffix; does the archived intake leaf take the katastarski broj or
+  keep its field name; is `deliver` dev-only at first (it needs Excel + xlwings);
+  does `Godina zadnjeg istraživanja` join the same SB write.
 - **Optimal entrance-photo resolution** (new 2026-09-01): `photos process` ships at
   1920 px / 1.5 MB and writes COPIES precisely so this stays revisable —
   `--long-edge N --overwrite` re-cuts a cave. Once the number is settled, the copies
@@ -288,6 +298,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
+- 2026-09-02 (later) — **`osz fetch` renamed to `osz backfill`** (code, all docs, test file; 300 tests green, doctor clean) and the **M6 delivery step designed** — [m6-delivery-design.md](features/cave-dossier/docs/m6-delivery-design.md): `deliver <broj>` as the last gate (OSZ completeness → `/` filler → files nameable → katastarski broj `max+1` → approval → rename/file/SB write-back). Measuring the live SB/Drive found the queue-flag double-view trap and the 4 checkbox-group fields no reader can see yet → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-09-02 — **first productionization slice, v1.0→v1.3 the same evening**: `tools/build_prod.py` + templates generate versioned double-click launchers for `osz prefill` / `photos process` on the Drive (`!!!Digitalizacija/SurveyScraper5/`, self-installing to `%LOCALAPPDATA%\CaveDossier`); iterated on the user's real first runs — per-run logs + console font (v1.1), operator-side karta flow + Croatian PROCITAJ_ME (v1.2, caught+fixed the `_karta_newly_embedded` re-delivery bug), waiting snake + `PYTHONUNBUFFERED` streaming fix (v1.3) → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-09-01 — 2.1d photo processor shipped: `photos process <broj>` (intake leaf → downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` copies, author from the OSZ) + `photos pull-staged` (queue → intake leaf, creates the folder); fixed the OSZ locator going ambiguous on every prefill-migrated leaf → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-08-30 (late evening) — people registry + statement gates: `people/` (crospeleo ports), committed `data/people/registry.json` (132 people), registry/scope-aware gate-1 izjava blocker + gate-2 per-person warning, `N.Surname` author-vs-finder criterion, deceased exemption, `people list/check` — unresolved SB authors 125 → 24 → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)

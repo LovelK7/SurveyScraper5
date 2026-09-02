@@ -970,7 +970,8 @@ def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: b
 
 def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
                   osz_dir_arg: str | None) -> int:
-    """Part 2.1b fetcher: read a FILLED OSZ and propose the SB backfill.
+    """Part 2.1b, the reverse of `osz prefill`: read a FILLED OSZ and
+    propose the SB backfill.
 
     The zapisnik is found in the cave's SB_<broj>_… intake dir by default
     (user, 2026-08-30); --osz-dir overrides the search root, --osz points
@@ -1419,8 +1420,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     osz_backfill = osz_sub.add_parser(
         "backfill",
-        help="Read a FILLED OSZ and propose the SB backfill (pločica, ime/sinonimi, "
-             "duljina/dubina, godina, autori) — review CSV, never writes SB",
+        help="The reverse of prefill: read a FILLED OSZ and propose the SB "
+             "backfill (pločica, ime/sinonimi, duljina/dubina, godina, autori) "
+             "— review CSV, never writes SB",
     )
     osz_backfill.add_argument(
         "redni_broj",

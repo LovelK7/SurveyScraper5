@@ -85,7 +85,7 @@ current state per milestone: [STATUS.md](../../STATUS.md#milestone-ladder)):
 | M1 | read SB (the live workbook) safely |
 | M2 | the dossier object + `report` (+ archive intake, still open) |
 | M3 | isječak karte (`karta`) |
-| M4 | OSZ both ways: `osz prefill` + `osz fetch` (+ the CroSpeleo-field fetcher, still open) |
+| M4 | OSZ both ways: `osz prefill` + `osz backfill` (+ the CroSpeleo-field reader, still open) |
 | M5 | consume the 2.1a survey artifacts (Nacrt + dimensions) |
 | M6 | the only WRITE step: SB write-back + archive delivery (+ the 2.1d mover) |
 
@@ -244,14 +244,14 @@ cavedossier osz prefill 1234 --offline     # never touch the network; an already
 # holds a year). dopune-sb.csv is a review list a person carries into Excel —
 # nothing writes to SB automatically.
 
-# ── OSZ fetch → SB backfill (part 2.1b — reads a FILLED zapisnik back) ──
-cavedossier osz fetch 1234                 # find the cave's SB_<broj>_… dir in the intake
-                                           #   tree (!Za digitalizirat), read the OSZ DOCX
-                                           #   inside it (prefers osz/zapisnik-named files;
-                                           #   falls back to the prefill copy) and propose
-                                           #   the SB backfill
-cavedossier osz fetch 1234 --osz-dir DIR   # search a different root for the SB_<broj>_… dir
-cavedossier osz fetch 1234 --osz FILE      # point at an exact filled v10 DOCX instead
+# ── OSZ backfill → SB (part 2.1b — reads a FILLED zapisnik back) ──
+cavedossier osz backfill 1234                # find the cave's SB_<broj>_… dir in the intake
+                                             #   tree (!Za digitalizirat), read the OSZ DOCX
+                                             #   inside it (prefers osz/zapisnik-named files;
+                                             #   falls back to the prefill copy) and propose
+                                             #   the SB backfill
+cavedossier osz backfill 1234 --osz-dir DIR  # search a different root for the SB_<broj>_… dir
+cavedossier osz backfill 1234 --osz FILE     # point at an exact filled v10 DOCX instead
 # Proposes for EMPTY SB cells: Broj pločice, Duljina, Dubina, Godina/period
 # (cropped out of the OSZ's free-form Datum: "10.05.2025." -> "2025",
 # two visits -> "2025-2026"), Autori nacrta (OSZ full names -> SB shorthand,
