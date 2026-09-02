@@ -259,6 +259,6 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-09-02 - **prod: cleanup of superseded local installs** - each version installs to
   its own `%LOCALAPPDATA%\CaveDossier\v<X>` and old ones linger (~1 GB each with venv +
   geo data). A new version's setup could offer to delete older v-dirs.
-- 2026-09-02 - **prod: karta on operator machines?** Deliberately excluded from v1.0
-  (Playwright + shared georef.hr credentials + server-side saves). Revisit only if
-  excerpt collection ever becomes an operator task.
+- 2026-09-02 - ~~**prod: karta on operator machines?**~~ DONE the same day (v1.2,
+  user decision): setup installs [karta] + Chromium, .env gets the shared login;
+  see design-decisions "Prod launchers".

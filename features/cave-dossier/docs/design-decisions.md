@@ -686,10 +686,9 @@ the user this session; built by `tools/build_prod.py` + `tools/prod_templates/`:
   when missing, prints the one-time install instructions (python.org /
   winget) instead of bundling a runtime. Deps are pip-installed from PyPI at
   first run — internet is needed once per machine, and the message says so.
-- **`[karta]` stays dev-only**: no Playwright, no shared georef.hr
-  credentials, no server-side saves from operator machines. Prefill embeds
-  an excerpt already collected in `!!Isječci karte` and otherwise degrades
-  with a note naming the missing step (collection remains a dev task).
+- **`[karta]` stays dev-only** ~~(v1.0/v1.1)~~ — **superseded by v1.2 the
+  same day** (see below): the user chose operator self-sufficiency over the
+  lighter setup.
 - **Geodata is a cloud copy, not a download** (ARCHITECTURE's own
   suggestion): publish syncs the runtime subset of `data/geo` — the four
   GeoPackages + `el_cov_index.gml` + `dem/` tiles, ~280 MB — into
@@ -702,3 +701,49 @@ the user this session; built by `tools/build_prod.py` + `tools/prod_templates/`:
   banner, diacritics intact) and `osz prefill 1320` (11 fields, excerpt
   reused, DOCX delivered to the intake leaf) — both through the published
   bootstrap on the Drive, exit 0.
+
+**v1.1 (same day, after the user's first real operator run):**
+
+- **Per-run log** — every run mirrors all output (setup, pip, robocopy, the
+  command, stderr) into `%LOCALAPPDATA%\CaveDossier\logs\<command>_v<X>_<ts>.log`
+  and prints the path at the end; newest 60 kept. This is the debugging
+  channel for runs on other people's machines — the operator sends the file.
+  Native calls go through a tee helper with `$ErrorActionPreference =
+  'Continue'` (under `Stop`, PS 5.1 turns redirected native stderr into
+  terminating NativeCommandError).
+- **Console font** — the first run opened in a tiny raster font that also
+  mangles UTF-8 glyphs; bootstrap now sets Consolas 20 on its own window via
+  `SetCurrentConsoleFontEx` (fail-soft; ignored under Windows Terminal).
+- **Missing-excerpt message names the step, not the module** — without the
+  `[karta]` extra, prefill said "Georef tijek se srušio: No module named
+  'playwright'". It now skips the attempt and tells the operator to have the
+  dev run `cavedossier karta <broj>` and re-run prefill
+  (`osz/prefill.py::_ensure_karta` probes for playwright before starting).
+  With v1.2 installing `[karta]`, this path remains the degradation for a
+  machine whose browser download failed.
+
+**v1.2 (same day, user decision — karta on operator machines + diacritics):**
+
+- **Operators collect the isječak karte themselves**: setup installs
+  `[karta]` + Chromium (~150 MB, one-time; a failed download is a warning,
+  not fatal), and the generated `.env` carries the shared society georef.hr
+  login — injected into `bootstrap.ps1` at build time from the dev `.env`,
+  never committed. Rationale: prefill becomes fully self-sufficient (no
+  "javi razvijatelju" step); the server-side save cost is identical wherever
+  the flow runs; the per-run logs now make remote browser failures
+  debuggable. Validated live: v1.2 first run on this machine fetched SB
+  1087's excerpt from georef.hr and delivered it to `!!Isječci karte`.
+- **Regression found and fixed by that validation** (`_karta_newly_embedded`,
+  `osz/prefill.py`): `_content_unchanged` compares text cells only, so when
+  the excerpt arrived AFTER the first delivery, the re-run declared the old
+  document "netaknut" and left it holding the template's 1.5 KB placeholder
+  image. `unchanged` now also requires the old DOCX to carry an embedded
+  excerpt (any `word/media/*` member > 20 KB) whenever this run has one to
+  embed. Verified: re-run backed the old file up as `_stari` and delivered
+  the document with the real 410 KB `SB_1087.png`; the next re-run is
+  untouched again.
+- **`PROCITAJ_ME.txt` is real Croatian** (user: "does not contain
+  diacritical signs") — written as UTF-8 with BOM so Notepad reads č/ć/š/ž/đ
+  correctly. The ASCII enforcement stays for `.bat`/`.ps1` only, where
+  cmd/PS 5.1 encoding is the actual hazard; console messages in the
+  bootstrap deliberately stay diacritic-free ASCII.

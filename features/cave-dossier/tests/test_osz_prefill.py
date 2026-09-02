@@ -524,3 +524,21 @@ def test_prefill_unknown_serial_raises(settings, geo_stubs, run_dir):
     _template_guard()
     with pytest.raises(prefill.PrefillError):
         prefill.run_prefill(settings, 999)
+
+
+def test_karta_newly_embedded_detects_placeholder_only_doc(tmp_path):
+    # The SB 1087 regression (2026-09-02): excerpt fetched AFTER the first
+    # delivery must invalidate "unchanged" - the old doc holds only the
+    # template placeholder (~1.5 KB), a real excerpt is far larger.
+    old = tmp_path / "SB_0001_OSZ.docx"
+    with zipfile.ZipFile(old, "w") as zf:
+        zf.writestr("word/document.xml", "<w:document/>")
+        zf.writestr("word/media/image1.png", b"x" * 1_500)
+    assert prefill._karta_newly_embedded(old, b"png") is True
+    # ...and once a real excerpt is inside, re-runs are unchanged again.
+    with zipfile.ZipFile(old, "a") as zf:
+        zf.writestr("word/media/image2.png", b"x" * 400_000)
+    assert prefill._karta_newly_embedded(old, b"png") is False
+    # No excerpt to embed / no old doc -> never forces a re-delivery.
+    assert prefill._karta_newly_embedded(old, None) is False
+    assert prefill._karta_newly_embedded(None, b"png") is False

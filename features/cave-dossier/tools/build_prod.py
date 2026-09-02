@@ -110,6 +110,31 @@ def _render(template_name: str, **tokens: str) -> str:
     return text
 
 
+def _georef_env() -> dict[str, str]:
+    """The shared georef.hr login, read from the dev .env at build time.
+
+    Injected into bootstrap.ps1 so operator machines can run the karta flow
+    themselves (user decision 2026-09-02). Never committed — the values ride
+    only in the generated script on the society-internal Drive. Missing values
+    render as empty strings: bootstrap then skips the GEOREF lines and the
+    karta flow degrades with its note.
+    """
+    values = {"GEOREF_BASE_URL": "", "GEOREF_USERNAME": "", "GEOREF_PASSWORD": ""}
+    env_file = FEATURE_ROOT / ".env"
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            if key in values:
+                values[key] = value.strip().strip('"').strip("'")
+    if not all(values.values()):
+        print("WARN: GEOREF_* incomplete in .env — prod karta flow will be inert")
+    return values
+
+
 def _git_commit() -> str:
     try:
         out = subprocess.run(
@@ -168,7 +193,7 @@ def stage(version: str) -> Path:
         shutil.rmtree(out)
     (out / f"v{version}").mkdir(parents=True)
 
-    bootstrap = _render("bootstrap.ps1.template", version=version)
+    bootstrap = _render("bootstrap.ps1.template", version=version, **_georef_env())
     # PS 5.1 wants a BOM to read a script as UTF-8; content is ASCII anyway,
     # so write ASCII and let any future non-ASCII edit fail loudly here.
     (out / f"v{version}" / "bootstrap.ps1").write_text(bootstrap, encoding="ascii")
@@ -179,7 +204,8 @@ def stage(version: str) -> Path:
         (out / launcher_name(command_id, version)).write_text(bat, encoding="ascii", newline="\r\n")
 
     readme = _render("PROCITAJ_ME.txt.template", version=version)
-    (out / "PROCITAJ_ME.txt").write_text(readme, encoding="ascii", newline="\r\n")
+    # Real Croatian diacritics (user, 2026-09-02); UTF-8 BOM so Notepad is sure.
+    (out / "PROCITAJ_ME.txt").write_text(readme, encoding="utf-8-sig", newline="\r\n")
 
     members = build_bundle(out / f"v{version}" / "bundle.zip", version)
     print(f"staged {out}  (bundle: {members} members)")

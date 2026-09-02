@@ -30,8 +30,12 @@ the Drive (`!!!Digitalizacija/SurveyScraper5/`: launchers + versioned bundle +
 `features/cave-dossier/tools/build_prod.py --version X.Y --publish`. First run
 self-installs to `%LOCALAPPDATA%\CaveDossier\v<X>` (guided Python 3.11+ setup,
 venv+pip, geo copy, derived `.env`). Validated end-to-end on the dev machine as
-operator (photos 1220 dry-run, prefill 1320 delivered). `[karta]` stays
-dev-only. See ARCHITECTURE §Dev vs prod + the feature README §Prod launchers.
+operator (photos 1220 dry-run, prefill 1320 delivered). v1.1 same day after the
+first real operator run: per-run logs + console font; v1.2 (user decision):
+operators run the `[karta]` georef.hr flow themselves (Chromium in setup,
+shared login injected at build time) — validated by fetching SB 1087's excerpt
+on the prod install, which also caught+fixed the "unchanged" re-delivery bug
+(`_karta_newly_embedded`). See ARCHITECTURE §Dev vs prod + README §Prod launchers.
 
 | M | Name | Status |
 |---|---|---|

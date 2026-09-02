@@ -342,24 +342,35 @@ The two operator commands (`osz prefill`, `photos process`) are published as
 
 ```text
 SurveyScraper5/
-├─ cavedossier_osz_prefill_v1.0.bat      ← operators double-click these
-├─ cavedossier_photos_process_v1.0.bat
+├─ cavedossier_osz_prefill_v1.2.bat      ← operators double-click these
+├─ cavedossier_photos_process_v1.2.bat
 ├─ PROCITAJ_ME.txt                        ← operator setup/troubleshooting guide
 ├─ VERZIJE.txt                            ← publish log, one line per release
-├─ v1.0/                                  ← bootstrap.ps1 + bundle.zip
+├─ v1.2/                                  ← bootstrap.ps1 + bundle.zip
 ├─ podaci/geo/                            ← cloud copy of data/geo (~280 MB)
 └─ _arhiva/                               ← superseded versions
 ```
 
+Every run mirrors all its output (setup, pip, the command, stderr) into a
+per-run log under `%LOCALAPPDATA%\CaveDossier\logs\` and prints the path at
+the end — that file is what an operator sends when something fails on their
+machine (newest 60 kept). The bootstrap also switches its console window to
+a TrueType font (Consolas 20) so the text is readable and Croatian
+diacritics render.
+
 A launcher's first double-click installs everything to
 `%LOCALAPPDATA%\CaveDossier\v<X>` — Python 3.11+ check (with guided install
 instructions when missing), bundle extract, venv + `pip install
-.[osz,photos,geo]`, local copy of `podaci/geo`, and a generated `.env` whose
-`LOCAL_DRIVE_ROOT` is derived by probing upward from the launcher's own
-location for the SB workbook. Every later run starts immediately and only
-asks for the Redni broj. The `[karta]` browser flow deliberately stays
-dev-only: prefill embeds already-collected excerpts from `!!Isječci karte`
-and degrades with a note otherwise.
+.[osz,photos,geo,karta]` + the Playwright Chromium download (~150 MB), local
+copy of `podaci/geo`, and a generated `.env` whose `LOCAL_DRIVE_ROOT` is
+derived by probing upward from the launcher's own location for the SB
+workbook — plus the shared georef.hr login, injected into the bootstrap at
+build time from the dev `.env` (never committed). Every later run starts
+immediately and only asks for the Redni broj. Since v1.2 prefill collects a
+missing isječak karte itself on the operator machine (user decision
+2026-09-02); when the fetch cannot run (offline, browser missing) it
+degrades with a note and a later re-run embeds the excerpt into the already
+delivered document.
 
 Regenerate + publish from the dev machine (bump the version per release —
 the filename is the version indicator):

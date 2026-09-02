@@ -27,6 +27,7 @@ import csv
 import json
 import re
 import shutil
+import zipfile
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -139,10 +140,12 @@ def run_prefill(
     docx_path = run_dir / docx_name
     _write_docx(docx_path, result, png_bytes, serial)
 
+    unchanged = (_content_unchanged(old_content, result)
+                 and not _karta_newly_embedded(old_osz_path, png_bytes))
     delivered_path = _deliver(settings, cave, serial, docx_path, docx_name, result,
                               intake_folder=intake_folder,
                               old_osz_path=old_osz_path,
-                              unchanged=_content_unchanged(old_content, result))
+                              unchanged=unchanged)
 
     sidecar_path = run_dir / "prefill.json"
     sidecar_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
@@ -210,6 +213,19 @@ def _ensure_karta(
         return None
 
     if not has_coords:
+        return None
+
+    try:
+        import playwright  # noqa: F401 — probe: is the [karta] extra installed?
+    except ImportError:
+        # Prod machines deliberately ship without [karta] (no browser, no shared
+        # georef.hr credentials) — collection stays a dev step, so the note must
+        # name that step, not leak a Python import error.
+        result.notes.append(
+            "Isječak karte za ovaj objekt još nije prikupljen, a prikupljanje "
+            "nije dostupno na ovom računalu — javi razvijatelju da pokrene "
+            f"`cavedossier karta {serial}`, pa ponovi prefill."
+        )
         return None
 
     print("Isječak karte nedostaje — pokrećem georef.hr tijek (2.1c) …")
@@ -539,6 +555,27 @@ def _old_osz_wins(key: str, existing: FieldValue) -> bool:
     if existing.source in ("default", "pristup-template"):
         return True
     return key in ("izvor_kote", "izvor_koordinata") and existing.source != "lidar-flag"
+
+
+def _karta_newly_embedded(old_osz_path: Path | None, png_bytes: bytes | None) -> bool:
+    """True when this run embeds an excerpt the OLD document does not carry —
+    the one change ``_content_unchanged`` cannot see (it compares text cells).
+
+    Found live on SB 1087 (2026-09-02, prod v1.2): the first delivery ran
+    before the excerpt existed, the re-run fetched it — and then left the old
+    document "netaknut", still holding the template's placeholder image. The
+    placeholder is ~1.5 KB; a real excerpt is a few hundred KB, so any media
+    member above the threshold counts as an embedded karta.
+    """
+    if png_bytes is None or old_osz_path is None:
+        return False
+    try:
+        with zipfile.ZipFile(old_osz_path) as zf:
+            media = [info for info in zf.infolist()
+                     if info.filename.startswith("word/media/")]
+    except (OSError, zipfile.BadZipFile):
+        return True  # unreadable old document — deliver the fresh one
+    return not any(info.file_size > 20_000 for info in media)
 
 
 def _content_unchanged(old_content, result: PrefillResult) -> bool:

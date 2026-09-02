@@ -37,13 +37,21 @@ def test_stage_layout(staged):
 
 
 def test_launchers_are_ascii_and_fully_rendered(staged):
-    for path in list(staged.glob("*.bat")) + [
-        staged / "v9.9" / "bootstrap.ps1",
-        staged / "PROCITAJ_ME.txt",
-    ]:
+    for path in list(staged.glob("*.bat")) + [staged / "v9.9" / "bootstrap.ps1"]:
         text = path.read_bytes().decode("ascii")  # raises on any non-ASCII byte
         assert "@VERSION@" not in text and "@COMMAND_ID@" not in text, path.name
         assert "9.9" in text, path.name
+
+
+def test_procitaj_me_is_utf8_croatian(staged):
+    # The operator guide is real Croatian (user, 2026-09-02) — UTF-8 with BOM
+    # so Notepad can't misread it; only cmd/PS scripts stay ASCII.
+    raw = (staged / "PROCITAJ_ME.txt").read_bytes()
+    assert raw.startswith(b"\xef\xbb\xbf"), "missing UTF-8 BOM"
+    text = raw.decode("utf-8-sig")
+    assert "@VERSION@" not in text
+    assert "9.9" in text
+    assert any(ch in text for ch in "čćšžđ"), "diacritics stripped from the guide"
 
 
 def test_launcher_calls_its_own_version_bootstrap(staged):
@@ -56,6 +64,25 @@ def test_bootstrap_covers_every_prod_command(staged):
     text = (staged / "v9.9" / "bootstrap.ps1").read_text(encoding="ascii")
     for command_id in build_prod.PROD_COMMANDS:
         assert f"'{command_id}'" in text, f"bootstrap switch misses {command_id}"
+
+
+def test_bootstrap_logs_and_sets_console_font(staged):
+    # Every run must mirror output into the per-run log (that file is how a
+    # failing run on a remote operator machine reaches the dev) and set a TrueType
+    # console font (readability + Croatian glyphs).
+    text = (staged / "v9.9" / "bootstrap.ps1").read_text(encoding="ascii")
+    assert "CaveDossier\\logs" in text
+    assert "function Run-Logged" in text and "Run-Logged $cli" in text
+    assert "SetCurrentConsoleFontEx" in text
+
+
+def test_bootstrap_installs_karta_flow(staged):
+    # Since v1.2 operator machines collect the isječak karte themselves:
+    # the [karta] extra, the chromium download, and no unfilled GEOREF tokens.
+    text = (staged / "v9.9" / "bootstrap.ps1").read_text(encoding="ascii")
+    assert ".[osz,photos,geo,karta]" in text
+    assert "'playwright', 'install', 'chromium'" in text
+    assert "@GEOREF_" not in text
 
 
 def test_bundle_carries_the_runtime_tree(staged):

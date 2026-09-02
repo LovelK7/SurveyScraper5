@@ -4,11 +4,15 @@
 # new version. Shared by every cavedossier_*_v@VERSION@.bat launcher.
 #
 # What it does on each double-click:
-#   1. find the society archive root (probe upward for !Speleo_baza_SUE_*.xlsm)
-#   2. first run / newer bundle.zip: install to %LOCALAPPDATA%\CaveDossier\v@VERSION@
-#      (Python 3.11+ check, extract bundle, venv, pip install .[osz,photos,geo],
-#      copy podaci\geo locally, generate .env with the derived LOCAL_DRIVE_ROOT)
-#   3. ask for the Redni broj (unless arguments were passed) and run the command
+#   1. readable console (TrueType font - also fixes Croatian glyphs), run log
+#   2. find the society archive root (probe upward for !Speleo_baza_SUE_*.xlsm)
+#   3. first run / newer bundle.zip: install to %LOCALAPPDATA%\CaveDossier\v@VERSION@
+#      (Python 3.11+ check, extract bundle, venv, pip install
+#      .[osz,photos,geo,karta] + playwright chromium, copy podaci\geo locally,
+#      generate .env with the derived LOCAL_DRIVE_ROOT + shared georef login)
+#   4. ask for the Redni broj (unless arguments were passed) and run the command
+# Everything (setup steps, pip, the command, stderr) is mirrored into
+# %LOCALAPPDATA%\CaveDossier\logs\ - one file per run, path printed at the end.
 param(
     [Parameter(Mandatory=$true)][string]$Version,
     [Parameter(Mandatory=$true)][string]$Command,
@@ -17,13 +21,100 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# -- run log: everything W/Run-Logged emit lands here too ----------------
+$script:LogFile = $null
+try {
+    $logDir = Join-Path $env:LOCALAPPDATA 'CaveDossier\logs'
+    New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+    $script:LogFile = Join-Path $logDir ("{0}_v{1}_{2}.log" -f $Command, $Version, (Get-Date -Format 'yyyyMMdd_HHmmss'))
+    # keep the newest 60 logs so the folder never grows unbounded
+    Get-ChildItem -Path $logDir -Filter '*.log' -File |
+        Sort-Object LastWriteTime -Descending | Select-Object -Skip 60 |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+} catch { $script:LogFile = $null }
+
+function W([string]$Text) {
+    Write-Host $Text
+    if ($script:LogFile) {
+        try { Add-Content -LiteralPath $script:LogFile -Value $Text -Encoding UTF8 } catch { }
+    }
+}
+
+function Run-Logged([string]$Exe, [string[]]$Arguments) {
+    # Merge stderr and tee every line to the log. EA must be Continue here:
+    # under Stop, PS 5.1 turns redirected native stderr into terminating
+    # NativeCommandError records.
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & $Exe @Arguments 2>&1 | ForEach-Object {
+        if ($_ -is [System.Management.Automation.ErrorRecord]) {
+            $line = $_.Exception.Message
+        } else {
+            $line = [string]$_
+        }
+        Write-Host $line
+        if ($script:LogFile) {
+            try { Add-Content -LiteralPath $script:LogFile -Value $line -Encoding UTF8 } catch { }
+        }
+    }
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = $prev
+    return $code
+}
+
 function Pause-Exit([int]$Code) {
+    W ''
+    if ($script:LogFile) { W "Zapis ovog pokretanja: $script:LogFile" }
+    if ($Code -ne 0) { W 'Kod problema posalji tu datoteku razvijatelju.' }
     Write-Host ''
     Read-Host 'Pritisni Enter za izlaz' | Out-Null
     exit $Code
 }
 
+# -- readable console: a TrueType font also renders s/c/z with diacritics --
+# (a raster-font window shows tiny text AND mangles UTF-8 glyphs). Fail-soft:
+# inside Windows Terminal the call is simply ignored.
+function Set-ConsoleFont([string]$Face, [int]$Size) {
+    try {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class CaveDossierConsoleFont {
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct CONSOLE_FONT_INFO_EX {
+        public uint cbSize;
+        public uint nFont;
+        public short dwFontSizeX;
+        public short dwFontSizeY;
+        public int FontFamily;
+        public int FontWeight;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string FaceName;
+    }
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr GetStdHandle(int nStdHandle);
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern bool SetCurrentConsoleFontEx(
+        IntPtr hConsoleOutput, bool bMaximumWindow, ref CONSOLE_FONT_INFO_EX info);
+    public static void Apply(string face, short size) {
+        CONSOLE_FONT_INFO_EX info = new CONSOLE_FONT_INFO_EX();
+        info.cbSize = (uint)Marshal.SizeOf(info);
+        info.FaceName = face;
+        info.dwFontSizeX = 0;
+        info.dwFontSizeY = size;
+        info.FontFamily = 54;   // FF_MODERN | TMPF_TRUETYPE
+        info.FontWeight = 400;
+        SetCurrentConsoleFontEx(GetStdHandle(-11), false, ref info);
+    }
+}
+'@
+        [CaveDossierConsoleFont]::Apply($Face, [int16]$Size)
+    } catch { }
+}
+
 try {
+    Set-ConsoleFont 'Consolas' 20
+
     # Command id -> cavedossier argv + operator label. A new prod command needs
     # a branch here AND an entry in build_prod.py PROD_COMMANDS.
     switch ($Command) {
@@ -36,14 +127,15 @@ try {
             $label = 'Obrada fotografija ulaza - smanjene kopije SB_<broj>_<Ime>_<Autor>_<n>.jpg'
         }
         default {
-            Write-Host "GRESKA: nepoznata naredba '$Command'."
+            W "GRESKA: nepoznata naredba '$Command'."
             Pause-Exit 1
         }
     }
 
-    Write-Host "=== cavedossier $($cliVerb -join ' ')  (v$Version) ==="
-    Write-Host $label
-    Write-Host ''
+    W "=== cavedossier $($cliVerb -join ' ')  (v$Version) ==="
+    W $label
+    W ("racunalo: {0}  korisnik: {1}  vrijeme: {2}" -f $env:COMPUTERNAME, $env:USERNAME, (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))
+    W ''
 
     # -- locate the archive root -----------------------------------------
     # This script sits in <arhiva>\!!!Digitalizacija\SurveyScraper5\v<X>\.
@@ -58,9 +150,9 @@ try {
         $probe = Split-Path -Parent $probe
     }
     if (-not $driveRoot) {
-        Write-Host 'GRESKA: ne mogu pronaci korijen arhive (mapu koja sadrzi !Speleo_baza_SUE_*.xlsm).'
-        Write-Host "Trazio sam prema gore od: $ss5Dir"
-        Write-Host 'Je li Google Drive za radnu povrsinu pokrenut i sinkroniziran?'
+        W 'GRESKA: ne mogu pronaci korijen arhive (mapu koja sadrzi !Speleo_baza_SUE_*.xlsm).'
+        W "Trazio sam prema gore od: $ss5Dir"
+        W 'Je li Google Drive za radnu povrsinu pokrenut i sinkroniziran?'
         Pause-Exit 1
     }
 
@@ -71,7 +163,7 @@ try {
     $stampFile  = Join-Path $installDir '.installed_stamp'
 
     if (-not (Test-Path $bundleZip)) {
-        Write-Host "GRESKA: nedostaje $bundleZip - mapa v$Version na Driveu je nepotpuna."
+        W "GRESKA: nedostaje $bundleZip - mapa v$Version na Driveu je nepotpuna."
         Pause-Exit 1
     }
 
@@ -84,16 +176,16 @@ try {
     $needSetup = $false
     if (-not (Test-Path $cli)) {
         $needSetup = $true
-        Write-Host 'Prva priprema na ovom racunalu - jednokratno, traje nekoliko minuta'
-        Write-Host '(potreban je internet). Sljedeci put naredba krece odmah.'
+        W 'Prva priprema na ovom racunalu - jednokratno, traje nekoliko minuta'
+        W '(potreban je internet). Sljedeci put naredba krece odmah.'
     } elseif ($installedStamp -ne $bundleStamp) {
         $needSetup = $true
-        Write-Host 'Na Driveu je noviji paket ove verzije - obnavljam lokalnu instalaciju...'
+        W 'Na Driveu je noviji paket ove verzije - obnavljam lokalnu instalaciju...'
     }
 
     if ($needSetup) {
-        Write-Host "Instalacija: $installDir"
-        Write-Host ''
+        W "Instalacija: $installDir"
+        W ''
 
         # Python >= 3.11 (probes run through cmd so launcher noise stays quiet)
         $python = $null
@@ -102,60 +194,70 @@ try {
             if ($LASTEXITCODE -eq 0) { $python = $cand; break }
         }
         if (-not $python) {
-            Write-Host 'GRESKA: Python 3.11 ili noviji nije pronadjen na ovom racunalu.'
-            Write-Host ''
-            Write-Host 'Instaliraj ga jednom (bilo koja od ove dvije opcije):'
-            Write-Host '  1) https://www.python.org/downloads/  ->  Download Python'
-            Write-Host '     (u instalacijskom prozoru OBAVEZNO kvacica "Add python.exe to PATH")'
-            Write-Host '  2) ili u terminalu:  winget install -e --id Python.Python.3.12'
-            Write-Host ''
-            Write-Host 'Nakon instalacije ponovno dvoklikni ovu naredbu.'
+            W 'GRESKA: Python 3.11 ili noviji nije pronadjen na ovom racunalu.'
+            W ''
+            W 'Instaliraj ga jednom (bilo koja od ove dvije opcije):'
+            W '  1) https://www.python.org/downloads/  ->  Download Python'
+            W '     (u instalacijskom prozoru OBAVEZNO kvacica "Add python.exe to PATH")'
+            W '  2) ili u terminalu:  winget install -e --id Python.Python.3.12'
+            W ''
+            W 'Nakon instalacije ponovno dvoklikni ovu naredbu.'
             Pause-Exit 1
         }
-        Write-Host "Python: $python"
+        W "Python: $python"
 
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null
-        Write-Host 'Raspakiravam paket...'
+        W 'Raspakiravam paket...'
         Expand-Archive -Path $bundleZip -DestinationPath $installDir -Force
 
         if (-not (Test-Path $venvPy)) {
-            Write-Host 'Stvaram Python okruzenje (.venv)...'
-            cmd /c "$python -m venv ""$installDir\.venv"""
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host 'GRESKA: stvaranje .venv nije uspjelo.'
+            W 'Stvaram Python okruzenje (.venv)...'
+            $venvExit = Run-Logged 'cmd' @('/c', "$python -m venv ""$installDir\.venv""")
+            if ($venvExit -ne 0) {
+                W 'GRESKA: stvaranje .venv nije uspjelo.'
                 Pause-Exit 1
             }
         }
 
-        Write-Host 'Instaliram pakete (pip; ovo je najduzi korak)...'
+        W 'Instaliram pakete (pip; ovo je najduzi korak)...'
         Push-Location $installDir
-        & $venvPy -m pip install --disable-pip-version-check -e ".[osz,photos,geo]"
-        $pipExit = $LASTEXITCODE
+        $pipExit = Run-Logged $venvPy @('-m', 'pip', 'install', '--disable-pip-version-check', '-e', '.[osz,photos,geo,karta]')
         Pop-Location
         if ($pipExit -ne 0) {
-            Write-Host ''
-            Write-Host 'GRESKA: pip instalacija nije uspjela. Najcesci uzrok: nema interneta.'
-            Write-Host 'Provjeri vezu i ponovno dvoklikni naredbu - nastavlja gdje je stala.'
+            W ''
+            W 'GRESKA: pip instalacija nije uspjela. Najcesci uzrok: nema interneta.'
+            W 'Provjeri vezu i ponovno dvoklikni naredbu - nastavlja gdje je stala.'
             Pause-Exit 1
+        }
+
+        # Browser for the isjecak karte (georef.hr) flow - prod machines run it
+        # themselves since v1.2 (user, 2026-09-02). A failed download is not
+        # fatal: prefill degrades to its "excerpt not collected" note.
+        W 'Preuzimam preglednik za isjecak karte (~150 MB, jednokratno)...'
+        $pwExit = Run-Logged $venvPy @('-m', 'playwright', 'install', 'chromium')
+        if ($pwExit -ne 0) {
+            W 'UPOZORENJE: preuzimanje preglednika nije uspjelo - isjecak karte se'
+            W 'nece moci dohvacati s ovog racunala. Sve ostalo radi normalno;'
+            W 'sljedeca prva priprema (nova verzija) pokusat ce ponovno.'
         }
 
         # Local copy of the shared geodata (locality + elevation finders).
         # robocopy /XO = incremental; a rerun after an interrupted copy heals.
         $geoSrc = Join-Path $ss5Dir 'podaci\geo'
         if (Test-Path $geoSrc) {
-            Write-Host 'Kopiram geopodatke s Drivea (~280 MB, jednokratno)...'
-            robocopy $geoSrc (Join-Path $installDir 'data\geo') /E /XO /R:2 /W:5 /NJH /NJS /NDL /NFL /NP | Out-Null
-            if ($LASTEXITCODE -ge 8) {
-                Write-Host 'UPOZORENJE: kopiranje geopodataka nije proslo u cijelosti -'
-                Write-Host 'lokacija i kota mozda nece biti ispunjene. Ostalo radi normalno.'
+            W 'Kopiram geopodatke s Drivea (~280 MB, jednokratno)...'
+            $roboExit = Run-Logged 'robocopy' @($geoSrc, (Join-Path $installDir 'data\geo'), '/E', '/XO', '/R:2', '/W:5', '/NJH', '/NJS', '/NDL', '/NFL', '/NP')
+            if ($roboExit -ge 8) {
+                W 'UPOZORENJE: kopiranje geopodataka nije proslo u cijelosti -'
+                W 'lokacija i kota mozda nece biti ispunjene. Ostalo radi normalno.'
             }
         } else {
-            Write-Host "UPOZORENJE: $geoSrc ne postoji - preskacem geopodatke."
+            W "UPOZORENJE: $geoSrc ne postoji - preskacem geopodatke."
         }
 
         Set-Content -Path $stampFile -Value $bundleStamp -Encoding Ascii
-        Write-Host 'Priprema gotova.'
-        Write-Host ''
+        W 'Priprema gotova.'
+        W ''
     }
 
     # -- .env: per-machine facts, regenerated whenever missing -----------
@@ -168,6 +270,15 @@ try {
             '# Lokalna rezervna kopija SB - cita se kad je radna knjiga zauzeta/nedostupna.',
             'SB_SANDBOX_PATH=sb-fallback/SB_kopija.xlsm'
         )
+        # Shared society georef.hr login (injected at build time from the dev
+        # .env) so `osz prefill` can collect a missing isjecak karte itself.
+        $georefUrl = '@GEOREF_BASE_URL@'
+        if ($georefUrl.Length -gt 0) {
+            $envLines += '# georef.hr - zajednicki racun drustva (za isjecak karte).'
+            $envLines += "GEOREF_BASE_URL=$georefUrl"
+            $envLines += 'GEOREF_USERNAME=@GEOREF_USERNAME@'
+            $envLines += 'GEOREF_PASSWORD=@GEOREF_PASSWORD@'
+        }
         Set-Content -Path $envFile -Value $envLines -Encoding Ascii
     }
 
@@ -181,30 +292,32 @@ try {
         $broj = $broj.Trim()
         if ($broj -match '^(?i)SB[_ ]*(\d+)$') { $broj = $Matches[1] }
         if ($broj -notmatch '^\d+$') {
-            Write-Host "GRESKA: '$broj' nije Redni broj (ocekujem znamenke, npr. 1220)."
+            W "GRESKA: '$broj' nije Redni broj (ocekujem znamenke, npr. 1220)."
             Pause-Exit 1
+        }
+        if ($script:LogFile) {
+            try { Add-Content -LiteralPath $script:LogFile -Value "Redni broj: $broj" -Encoding UTF8 } catch { }
         }
         $cliArgs = @($broj)
     }
 
     $env:PYTHONIOENCODING = 'utf-8'
-    Write-Host ''
+    W ''
     Push-Location $installDir
-    & $cli @cliVerb @cliArgs
-    $code = $LASTEXITCODE
+    $code = Run-Logged $cli ($cliVerb + $cliArgs)
     Pop-Location
 
-    Write-Host ''
+    W ''
     if ($code -eq 99) {
-        Write-Host 'Naredba je zavrsila s GRESKOM (kod 99) - poruke su iznad.'
+        W 'Naredba je zavrsila s GRESKOM (kod 99) - poruke su iznad.'
     } else {
-        Write-Host "Gotovo (izlazni kod $code)."
+        W "Gotovo (izlazni kod $code)."
     }
     Pause-Exit $code
 }
 catch {
-    Write-Host ''
-    Write-Host "NEOCEKIVANA GRESKA: $($_.Exception.Message)"
-    Write-Host $_.ScriptStackTrace
+    W ''
+    W "NEOCEKIVANA GRESKA: $($_.Exception.Message)"
+    W $_.ScriptStackTrace
     Pause-Exit 1
 }

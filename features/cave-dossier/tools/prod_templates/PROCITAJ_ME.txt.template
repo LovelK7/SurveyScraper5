@@ -1,51 +1,61 @@
-SurveyScraper5 - naredbe za obradu spiljskih objekata (verzija @VERSION@)
-=========================================================================
+SurveyScraper5 - naredbe za obradu speleoloških objekata (verzija @VERSION@)
+=============================================================================
 
-Ova mapa sadrzi naredbe koje se pokrecu DVOKLIKOM. Svaka trazi samo
+Ova mapa sadrži naredbe koje se pokreću DVOKLIKOM. Svaka traži samo
 Redni broj objekta iz Speleo baze (stupac "Redni broj").
 
 Naredbe
 -------
 cavedossier_osz_prefill_v@VERSION@.bat
-    Predispuni Osnovni speleoloski zapisnik (OSZ) za objekt: podaci iz SB,
-    isjecak karte, zupanija/grad-opcina/najblize mjesto, kota ulaza.
+    Predispuni Osnovni speleološki zapisnik (OSZ) za objekt: podaci iz SB,
+    isječak karte (dohvaća se s georef.hr ako još nije prikupljen),
+    županija/grad-općina/najbliže mjesto, kota ulaza.
     Gotov SB_<broj>_OSZ.docx sprema u mapu objekta pod
-    !!!Digitalizacija/!Za digitalizirat. Uz to ispise dopune-sb.csv -
-    popis vrijednosti koje bi covjek trebao prenijeti u SB (nista se u SB
+    !!!Digitalizacija/!Za digitalizirat. Uz to ispiše dopune-sb.csv -
+    popis vrijednosti koje bi čovjek trebao prenijeti u SB (ništa se u SB
     ne upisuje automatski).
 
 cavedossier_photos_process_v@VERSION@.bat
     Obradi fotografije ulaza objekta: iz mape objekta (SB_<broj>_...) napravi
-    smanjene KOPIJE nazvane SB_<broj>_<Ime>_<Autor>_<n>.jpg (autor se cita iz
+    smanjene KOPIJE nazvane SB_<broj>_<Ime>_<Autor>_<n>.jpg (autor se čita iz
     OSZ polja "Autor fotografije ulaza"). Originali ostaju netaknuti.
 
-Prvo pokretanje na racunalu
+Prvo pokretanje na računalu
 ---------------------------
-1. Potreban je Python 3.11 ili noviji. Ako ga nema, naredba ce to reci i
-   ispisati upute (instalira se jednom, s www.python.org - obavezno kvacica
+1. Potreban je Python 3.11 ili noviji. Ako ga nema, naredba će to reći i
+   ispisati upute (instalira se jednom, s www.python.org - obavezno kvačica
    "Add python.exe to PATH").
-2. Prva priprema traje nekoliko minuta i treba internet (instalacija paketa
-   + kopiranje geopodataka). Sve se sprema lokalno u
-   %LOCALAPPDATA%\CaveDossier\ - ova mapa na Driveu se ne mijenja.
-3. Svako sljedece pokretanje krece odmah.
+2. Prva priprema traje nekoliko minuta i treba internet (instalacija paketa,
+   preglednik za isječak karte ~150 MB, kopiranje geopodataka ~280 MB). Sve
+   se sprema lokalno u %LOCALAPPDATA%\CaveDossier\ - ova mapa na Driveu se
+   ne mijenja.
+3. Svako sljedeće pokretanje kreće odmah.
 
-Ceste situacije
+Česte situacije
 ---------------
-- "SB mode: FALLBACK" na pocetku ispisa: netko ima Speleo bazu otvorenu u
-  Excelu ili Drive nije dostupan; naredba cita zadnju dobru lokalnu kopiju.
+- "SB mode: FALLBACK" na početku ispisa: netko ima Speleo bazu otvorenu u
+  Excelu ili Drive nije dostupan; naredba čita zadnju dobru lokalnu kopiju.
   Podaci mogu kasniti - ponovi kad SB bude slobodan.
 - "nije uspjela (PermissionError...)": ciljna datoteka je otvorena u
   Wordu/pregledniku - zatvori je i ponovi.
-- Isjecak karte nedostaje i ne moze se dohvatiti: prikupljanje isjecaka
-  (georef.hr) radi se na razvojnom racunalu - javi razvijatelju koji objekt
-  treba isjecak, pa ponovi prefill.
+- Isječak karte se ne može dohvatiti (nema mreže, georef.hr ne radi,
+  preglednik nije preuzet): zapisnik se svejedno napravi, samo okvir karte
+  ostane prazan - ponovi prefill kasnije i karta će se ugraditi.
 - Prozor se odmah zatvori bez poruke: javi se razvijatelju.
+
+Dnevnik pokretanja (za prijavu problema)
+----------------------------------------
+Svako pokretanje zapisuje sve poruke u datoteku u
+%LOCALAPPDATA%\CaveDossier\logs\ (puna putanja se ispiše na kraju svakog
+pokretanja). Ako nešto ne radi, pošalji razvijatelju NAJNOVIJU datoteku iz
+te mape - u njoj je sve što se vidjelo na ekranu, uključujući i greške
+instalacije. Čuva se zadnjih 60 zapisa, stariji se sami brišu.
 
 O ovoj mapi
 -----------
 - v@VERSION@\ i podaci\ su potporne datoteke - ne mijenjati i ne brisati.
-- _arhiva\ sadrzi starije verzije naredbi; koristi se uvijek najnovija
+- _arhiva\ sadrži starije verzije naredbi; koristi se uvijek najnovija
   (broj verzije je u imenu .bat datoteke).
 - Sve ovdje je GENERIRANO iz razvojnog repozitorija SurveyScraper5
-  (features/cave-dossier/tools/build_prod.py); rucne izmjene se gube kod
-  sljedece objave. Novu verziju objavljuje razvijatelj.
+  (features/cave-dossier/tools/build_prod.py); ručne izmjene se gube kod
+  sljedeće objave. Novu verziju objavljuje razvijatelj.
