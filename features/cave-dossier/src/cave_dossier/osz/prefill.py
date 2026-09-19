@@ -153,7 +153,7 @@ def run_prefill(
     sb_updates_path = None
     if result.sb_updates:
         sb_updates_path = run_dir / "dopune-sb.csv"
-        _write_sb_updates(sb_updates_path, serial, result.sb_updates)
+        write_sb_updates(sb_updates_path, serial, result.sb_updates)
 
     return PrefillOutcome(
         result=result,
@@ -732,7 +732,9 @@ def _sanitize_component(text: str) -> str:
     return " ".join(text.split()).strip("._ ")
 
 
-def _write_sb_updates(path: Path, serial: int, updates: list[SBUpdate]) -> None:
+def write_sb_updates(path: Path, serial: int, updates: list[SBUpdate]) -> None:
+    """The dopune-sb.csv review list. Public: the sastavnica prefill (2.1e)
+    writes the same list from the same finders."""
     # Same CSV dialect as satellites/sync and !georef_zapisi.csv: comma,
     # CRLF, BOM — Excel opens it right on this machine's list separator.
     with path.open("w", encoding="utf-8-sig", newline="") as handle:

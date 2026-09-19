@@ -1,6 +1,6 @@
 # cave-dossier — feature index
 <!-- Manually maintained map for agents and developers. Update when adding,
-     removing or renaming modules/docs. Last updated: 2026-09-02. -->
+     removing or renaming modules/docs. Last updated: 2026-09-19. -->
 <!-- LLM quick-find: this file is the map of the feature. Match the layer in
      the cheat-sheet, then the one-liner in the tables, then open the path.
      The operator-facing view is README.md; settled design rationale is
@@ -15,7 +15,7 @@
 > - **Isječak karte (georef.hr browser flow)** → `georef/` — staleness/self-healing in `georef/worker.refresh_reason`
 > - **Locality / elevation from coordinates** → `geo/`
 > - **OSZ template writing + prefill** → `osz/` — cell addresses per template version in `osz/addresses.py`
-> - **Sastavnica (Nacrt title block, Illustrator route)** → *not built* — [docs/sastavnica-design.md](docs/sastavnica-design.md) + [sastavnica-template/](sastavnica-template/README.md)
+> - **Sastavnica (Nacrt title block, Illustrator route)** → `sastavnica/` — cell geometry in `sastavnica/addresses.py`, template workbench in [sastavnica-template/](sastavnica-template/README.md)
 > - **Satellite tables (Liburnija sheet ↔ SB)** → `satellites/`
 > - **Name/plaque/number matching shared by photos + intake** → `core/matching.py`
 > - **Entrance-photo downsize + rename for one cave** → `photos/process.py`
@@ -31,8 +31,8 @@
 | `cli.py` | `cavedossier` entry point (argparse), mode banner, exit codes (1 ready / 0 not / 99 error) | every command |
 | `core/config.py` | config.yaml + .env → `Settings`; LIVE-first workbook resolution with fallback; `geo.*` knobs | every command |
 | `core/normalization.py` | diacritic-insensitive matching keys (ported) | column + name matching |
-| `core/people.py` | split an author cell into people; peel off the society bracket | SB mapping, `osz backfill` |
-| `core/person_aliases.py` | "First Last" abbreviation variants (ported), `to_sb_shorthand` (`L.Kukuljan`), cross-convention `same_person` | `osz backfill` |
+| `core/people.py` | split an author cell into people; peel off the society bracket | SB mapping, `osz backfill`, `sastavnica` |
+| `core/person_aliases.py` | "First Last" abbreviation variants (ported), `to_sb_shorthand` (`L.Kukuljan`), cross-convention `same_person` | `osz backfill`, `sastavnica` |
 | `core/matching.py` | the shared name/plaque/number matcher behind photo and folder mapping; `SB_PREFIX` | `photos *`, `intake *` |
 | `sb/safe_io.py` | workbook preflight/backup/COM-write safety (ported) | reads: preflight only; writes: M6 |
 | `sb/loader.py` | `SBReader`: header autodetect, column aliases, `find_caves` | `sb *`, `report`, all serial lookups |
@@ -42,10 +42,11 @@
 | `dossier/gating.py` | the rule table → blockers / warnings / unchecked, per gate | `report` |
 | `dossier/report.py` | the text rendering behind `cavedossier report` | `report` |
 | `georef/` | 2.1c: georef.hr Playwright flow (ported) — `worker` (orchestration, delivery, `refresh_reason` self-healing, Excel-tolerant CSV), `flows` (5:4 marker-centered crop, PNG budget), `client`, `models`, `selectors`, `artifacts` | `karta`, `osz prefill` |
-| `geo/` | 2.1b finders: `locality` (SB-wins synthesizer), `admin_lookup` (DGU PIP), `rgi_client` (WFS + offline gpkg), `toponym_matcher`, `elevation` (INSPIRE DMV grid, 3765→3045), `provision` (`fetch-data`), `models` | `geo *`, `osz prefill` |
+| `geo/` | 2.1b finders: `locality` (SB-wins synthesizer), `admin_lookup` (DGU PIP), `rgi_client` (WFS + offline gpkg), `toponym_matcher`, `elevation` (INSPIRE DMV grid, 3765→3045), `provision` (`fetch-data`), `models` | `geo *`, `osz prefill`, `sastavnica` |
 | `osz/` | 2.1b: `writer` (lxml on word/document.xml — cell-own styles, `embed_png`), `addresses` (v10 table coordinates), `prefill` (orchestrator + sidecar + dopune-sb.csv), `reader` (filled-document cells; placeholders read as empty), `backfill` (OSZ vs SB → review proposals), `models` | `osz prefill`, `osz backfill` |
+| `sastavnica/` | 2.1e: `addresses` (cell geometry + typesetting constants, measured off the template), `render` (blank PDF + values → filled PDF: centring, shrink-to-fit, no wrap), `fonts` (Myriad Pro → system fallback, Croatian coverage verified), `prefill` (orchestrator: SB + the leaf's filled OSZ + finders → deliver + sidecar), `models` | `sastavnica` |
 | `satellites/` | 2.2b: `model` · `liburnija` · `resolver` (ranked keys, never local row ids) · `sync` (four review lists) | `sat sync` |
-| `intake/scanner.py` | field-data leaf folders → SB rows, `SB_<Redni broj>_<Ime>_…` proposals; `find_cave_leaf` (a cave's `SB_<broj>_…` folder, shared by every per-cave step) | `intake map`, `osz prefill`, `photos process` |
+| `intake/scanner.py` | field-data leaf folders → SB rows, `SB_<Redni broj>_<Ime>_…` proposals; `find_cave_leaf` (a cave's `SB_<broj>_…` folder, shared by every per-cave step) | `intake map`, `osz prefill`, `photos process`, `sastavnica` |
 | `intake/liburnija.py` | read-only bridge over the cached Liburnija sheet CSV | `intake map` |
 | `photos/matcher.py` | 2.1d: match staged photos to SB rows, propose/apply `SB_<Redni broj>_…`, staleness guard | `photos match-queued` (one-off, finished), `photos check-flag` |
 | `photos/process.py` | 2.1d: one cave's photos out of its intake leaf → downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` COPIES; author from the OSZ cell "Autor fotografije ulaza"; plus the queue→leaf pull (`plan_pull`/`apply_pull`) and the standing "still queued" check | `photos process`, `photos pull-staged` |
@@ -57,9 +58,7 @@
 
 Planned modules: `delivery/` (M6 — the last gate: allocate the katastarski
 broj, rename + file every deliverable, write SB back; designed in
-[docs/m6-delivery-design.md](docs/m6-delivery-design.md)), `sastavnica/` (2.1e —
-the Nacrt title block prefilled into a PDF for the Illustrator route; designed
-in [docs/sastavnica-design.md](docs/sastavnica-design.md)), `dossier/intake.py`
+[docs/m6-delivery-design.md](docs/m6-delivery-design.md)), `dossier/intake.py`
 (rest of M2 — resolve a cave's files on Drive), the CroSpeleo half of the OSZ reader (checkbox groups + narrative
 controls + the Google-Docs text variant — `osz/reader.py` covers the
 identity/metadata cells the SB backfill needs), and 2.1d's last step — the
@@ -79,7 +78,7 @@ renames `SB_<Redni broj>` to the katastarski broj once the cave earns one.
 | [docs/sb-powerquery.md](docs/sb-powerquery.md) | SB's Power Query view filters (M code) + how to re-extract them | reference |
 | [docs/sb-write-back-design.md](docs/sb-write-back-design.md) | M6 write-back **mechanics** (COM, backup, rehearsal protocol) — dormant | design |
 | [docs/m6-delivery-design.md](docs/m6-delivery-design.md) | M6 **delivery**: the last gate — `deliver <broj>`, katastarski-broj allocation, rename + file into the archive dirs | design |
-| [docs/sastavnica-design.md](docs/sastavnica-design.md) | 2.1e **sastavnica prefill**: the Nacrt title block for the Illustrator route — measured template geometry, field map, typesetting + font rules, `sastavnica <broj>` | design |
+| [docs/sastavnica-design.md](docs/sastavnica-design.md) | 2.1e **sastavnica prefill**: the Nacrt title block for the Illustrator route — measured template geometry, field map, typesetting + font rules, the settled decisions | design + decision record |
 | [sastavnica-template/README.md](sastavnica-template/README.md) | the sastavnica template workbench (provenance, the planned blank builder) | living reference |
 | [docs/sb-restructure-excel-prompt.md](docs/sb-restructure-excel-prompt.md) | the prompt that drove the v3.0 workbook restructure | history |
 | [osz-template/README.md](osz-template/README.md) | the OSZ v10 template workbench (tools, audits, conformance) | living reference |
@@ -100,12 +99,13 @@ the dev cycle stands), [CLAUDE.md](../../CLAUDE.md) (agent orientation),
 | `.env` | per-machine: `LOCAL_DRIVE_ROOT`, `SB_*`, `GEOREF_*` | no (`.env.example` is) |
 | `config/selectors.yaml` | georef.hr DOM selectors (line-based, not real YAML) | yes |
 | `osz-template/templates/Zapisnik_OSZ_v10.docx` | the template `osz prefill` fills | yes |
-| `sastavnica-template/templates/!SUE_sastavnica.pdf` | the authored Nacrt title block, copied verbatim from Drive `!!!Digitalizacija/` (2.1e, design only) | yes |
+| `sastavnica-template/templates/!SUE_sastavnica.pdf` | the authored Nacrt title block, copied verbatim from Drive `!!!Digitalizacija/` (2.1e) | yes |
+| `sastavnica-template/templates/sastavnica_blank_v1.pdf` | the same page with the 15 example values stripped — what `sastavnica` fills; regenerate with `tools/build_blank.py` | yes |
 | `data/geo/` | boundary GeoPackages, RGI gazetteer, DEM tiles (`geo fetch-data`) | no (README is) |
 | `data/people/registry.json` | the people registry: canonical authors + curated aliases (hand-curated record) | **yes** |
 | `runs/people/statements-index.json` | derived person ↔ izjava linkage snapshot (`people check`) | no |
 | `example/` | sandbox workbook + real cave data (PII) | no |
-| `runs/georef/<broj>/`, `runs/osz/<broj>/` | per-cave run artifacts, overwritten on re-run | no |
+| `runs/georef/<broj>/`, `runs/osz/<broj>/`, `runs/sastavnica/<broj>/` | per-cave run artifacts, overwritten on re-run | no |
 | `dist/prod/v<X>/` | staged prod release (launchers + bundle.zip), regenerated by `tools/build_prod.py` | no (templates in `tools/prod_templates/` are) |
 | Drive `!!!Digitalizacija/SurveyScraper5/` | published prod launchers + `v<X>/` support + `podaci/geo/` cloud copy + `_arhiva/` | — (generated; VERZIJE.txt is the publish log) |
 | `%LOCALAPPDATA%\CaveDossier\v<X>\` (operator machines) | per-machine prod install: extracted bundle + `.venv` + generated `.env` + local `data/geo` + `runs/` | — |

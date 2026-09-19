@@ -114,6 +114,12 @@ class Settings:
     geo_rgi_radius_m: float = 2000.0
     geo_elevation_tolerance_m: float = 10.0
     geo_elevation_source_label: str = "DMV"
+    # Part 2.1e — sastavnica prefill (config.yaml `sastavnica`). The font the
+    # values are typeset in; unset means "find Myriad Pro, then fall back"
+    # (sastavnica/fonts.py). The society name goes in the Istražili cell when
+    # no filled OSZ names one.
+    sastavnica_font_path: str | None = None
+    sastavnica_society: str = "SU Estavela"
     # Why the workbook is not the live one (mode FALLBACK); None for LIVE and
     # for an explicit SANDBOX override. Printed by the CLI banner.
     sb_mode_reason: str | None = None
@@ -272,6 +278,10 @@ def load_settings() -> Settings:
         geo_rgi_radius_m=float(geo.get("rgi_radius_m") or 2000.0),
         geo_elevation_tolerance_m=float(geo.get("elevation_tolerance_m") or 10.0),
         geo_elevation_source_label=str(geo.get("elevation_source_label") or "DMV"),
+        sastavnica_font_path=((raw.get("sastavnica") or {}).get("font_path") or None),
+        sastavnica_society=str(
+            (raw.get("sastavnica") or {}).get("society") or "SU Estavela"
+        ),
         georef_base_url=get_env("GEOREF_BASE_URL"),
         georef_username=get_env("GEOREF_USERNAME"),
         georef_password=get_env("GEOREF_PASSWORD"),

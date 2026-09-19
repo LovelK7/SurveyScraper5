@@ -14,10 +14,14 @@ import re
 
 # Separators authors mix freely: comma, semicolon, slash, ampersand, plus,
 # and the Croatian / English conjunctions "i" / "te" / "and" as whole words.
-# Word-boundary anchors keep the letter "i" inside a name (``Ivić``) from
-# being treated as a separator.
+#
+# A conjunction must be SURROUNDED BY SPACE, not merely word-bounded (fixed
+# 2026-09-19). Word boundaries alone matched the initial of every author whose
+# first name starts with I — "I. Dujmović" split into "" and ". Dujmović",
+# losing the initial, and "I.Dujmović" likewise. That silently mangled every
+# Ivan/Ivo/Igor/Iva/Ines in the author cells the izjava gates read.
 _PERSON_SEPARATOR_RE = re.compile(
-    r"\s*(?:[,;/&+]|\b(?:i|te|and)\b)\s*",
+    r"\s*[,;/&+]\s*|\s+(?:i|te|and)\s+",
     re.IGNORECASE,
 )
 

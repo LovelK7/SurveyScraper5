@@ -1,0 +1,99 @@
+"""Cell geometry of the sastavnica template — PDF points, origin top-left.
+
+Positional by necessity: the template is an Illustrator export with no form
+fields and no structure, so a cell is a rectangle. Every number below was read
+out of the authored ``!SUE_sastavnica.pdf`` — the block's own stroked rules for
+the boundaries, the example values for the typesetting rules — never assumed.
+
+Hand-maintained, the same convention as ``osz/addresses.py``. Regenerate with::
+
+    python sastavnica-template/tools/inspect_sastavnica.py --mode cells
+
+whenever the drafter revises the ``.ai``, then re-run ``build_blank.py``. A new
+template version gets its own map beside this one.
+
+Verified against the committed template 2026-09-19.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from cave_dossier.core.config import FEATURE_ROOT
+
+TEMPLATE_VERSION = "v1"
+
+TEMPLATE_DIR = FEATURE_ROOT / "sastavnica-template" / "templates"
+AUTHORED_TEMPLATE = TEMPLATE_DIR / "!SUE_sastavnica.pdf"
+BLANK_TEMPLATE = TEMPLATE_DIR / f"sastavnica_blank_{TEMPLATE_VERSION}.pdf"
+
+
+@dataclass(frozen=True)
+class Cell:
+    """One labelled box. ``label`` is only for messages — the label text is
+    printed by the template itself and is never written by this code."""
+
+    label: str
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+    @property
+    def width(self) -> float:
+        return self.x1 - self.x0
+
+    @property
+    def centre_x(self) -> float:
+        return (self.x0 + self.x1) / 2
+
+
+# Field key -> cell. Keys are the sastavnica's own; where a key names the same
+# thing as an OSZ v10 field the spelling is kept identical on purpose.
+V1: dict[str, Cell] = {
+    "katastarski_broj": Cell("Katastarski broj", 81.35, 49.58, 120.18, 69.66),
+    "ime_objekta": Cell("Ime speleološkog objekta", 120.18, 49.58, 291.43, 69.66),
+    "broj_plocice": Cell("Broj pločice", 81.35, 69.66, 120.18, 89.74),
+    "htrs": Cell("HTRS koordinate", 120.18, 69.66, 248.12, 89.74),
+    "nadmorska_visina": Cell("Nadmorska visina", 248.12, 69.66, 291.43, 89.74),
+    "lokacija": Cell("Lokacija", 81.35, 89.74, 204.82, 109.82),
+    "stvarna_duljina": Cell("Stvarna duljina", 204.82, 89.74, 248.12, 109.82),
+    "tlocrtna_duljina": Cell("Tlocrtna duljina", 248.12, 89.74, 291.43, 109.82),
+    "crtali": Cell("Crtali", 39.85, 109.82, 120.18, 129.88),
+    "mjerili": Cell("Mjerili", 120.18, 109.82, 204.82, 129.88),
+    "dubina": Cell("Dubina/vis. razlika", 204.82, 109.82, 248.12, 129.88),
+    "mjerilo": Cell("Mjerilo", 248.12, 109.82, 291.43, 129.88),
+    "istrazili": Cell("Istražili", 39.85, 129.88, 95.03, 149.94),
+    "ekipa": Cell("Ekipa", 95.03, 129.88, 204.82, 149.94),
+    "datum": Cell("Datum/razdoblje istraživanja", 204.82, 129.88, 291.43, 149.94),
+}
+
+# The block itself, for the record: 251.58 x 100.36 pt ~ 88.7 x 35.4 mm at the
+# top-left of an A4 page. The page is delivered exactly as authored (user,
+# 2026-09-19) so it places into Illustrator at 100 % with no adjustment.
+BLOCK = (39.85, 49.58, 291.43, 149.94)
+
+# ── typesetting, measured off the authored values ────────────────────
+# Baseline sits a constant distance above the cell's bottom rule. The authored
+# baselines cluster at 4.47-4.70 below it, with a few hand nudges up to 5.96;
+# one uniform rule reads better than fifteen copied numbers.
+BASELINE_LIFT = 4.6
+# Side padding inside a cell before shrinking starts. 2 pt is what the drafter's
+# own 8 pt choice for the Ekipa cell implies.
+SIDE_PADDING = 2.0
+MAX_FONT_SIZE = 10.0
+MIN_FONT_SIZE = 6.0
+FONT_STEP = 0.25
+# The authored value colour (#030505), as an RGB triple for PyMuPDF.
+VALUE_COLOR = (0.012, 0.020, 0.020)
+
+# Cells that are never data-driven (user, 2026-09-19):
+#   Katastarski broj — the archivist assigns it at the very end and edits the
+#   PDF by hand, so the prefill keeps the template's own 0000 placeholder.
+#   Carrying the number across SB/Nacrt/OSZ at once is a later step.
+#   Mjerilo — the drafter picks the scale while drawing; "1:" is left as a
+#   visible stub rather than an empty box.
+CONSTANTS: dict[str, str] = {
+    "katastarski_broj": "0000",
+    "mjerilo": "1:",
+}

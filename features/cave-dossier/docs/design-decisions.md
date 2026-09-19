@@ -823,3 +823,42 @@ number"):**
   in place and wipes it the moment real output (or the end) comes. Every
   line still reaches both the console and the run log; the snake itself is
   never logged.
+
+## 2.1e sastavnica — the Illustrator branch (2026-09-19)
+
+The full rationale, the measured template geometry and the eight user decisions
+live in their own note, [sastavnica-design.md](sastavnica-design.md). Three
+things settled here are cross-cutting and belong in this record:
+
+- **It is a module, not a feature.** The Illustrator drafting route is a new
+  *branch of the pipeline* ([ARCHITECTURE §Two routes to the
+  Nacrt](../../../ARCHITECTURE.md#two-routes-to-the-nacrt--csurvey-and-illustrator)),
+  but the code that serves it reads SB through `SBReader`, the cave's leaf
+  through `intake.scanner`, the zapisnik through `osz.reader` and the
+  coordinates through `geo/`. A separate feature could not import any of that —
+  features integrate via artifacts, never imports — so `sastavnica/` sits
+  beside `osz/` and `georef/`. A new pipeline branch does not imply a new
+  feature folder.
+
+- **A delivered file is recognised by a metadata stamp, not by its name.** The
+  user's rule was "refuse on collision", which alone would refuse every
+  ordinary re-run. Stamping the PDF (`sastavnica.prefill.STAMP`) separates our
+  own output from anything else under that name — and because an Illustrator
+  re-save replaces the producer, the same one rule protects a sastavnica the
+  drafter has already worked on. Reusable idea for any other generated
+  deliverable that lands where people also edit.
+
+- **Author cells are printed in the drafter's abbreviated form**
+  (`Dario Maršanić` → `D. Maršanić`), via the existing
+  `core.person_aliases.to_sb_shorthand`. On a map this is not cosmetic: full
+  names shrank a three-person Ekipa cell to 6.25 pt where the drafter's own
+  form sits at 9.5 pt.
+
+Building it surfaced a **pre-existing bug in `core/people.py`** worth recording
+because it fed the izjava gates, not just this tool: the author-cell separator
+treated the conjunction "i" as merely word-bounded, so it matched the *initial*
+of every author whose first name starts with I — `I. Dujmović` split into
+`. Dujmović`, `I.Dujmović` into `.Dujmović`. Every Ivan/Ivo/Igor/Iva/Ines in an
+author cell silently lost their initial on the way into name resolution. A
+conjunction now has to stand between spaces. Regression test:
+`tests/test_people.py::test_conjunctions_split_only_when_they_stand_alone`.

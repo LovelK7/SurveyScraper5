@@ -22,6 +22,7 @@ from cave_dossier.dossier import (
     Source,
     evaluate,
 )
+from cave_dossier.core.people import split_person_names
 from cave_dossier.people.name_resolver import matches_token, name_keys
 from cave_dossier.people.registry import Person, PersonRegistry
 from cave_dossier.people.statements import (
@@ -29,6 +30,24 @@ from cave_dossier.people.statements import (
     link_person_statements,
     scan_izjave,
 )
+
+
+# ── Splitting an author cell into people ──────────────────────────────
+def test_conjunctions_split_only_when_they_stand_alone() -> None:
+    """Regression (2026-09-19): "i" is a separator only between spaces.
+
+    Word boundaries alone matched the INITIAL of every author whose first
+    name starts with I — "I. Dujmović" became ". Dujmović" and "I.Dujmović"
+    became ".Dujmović", so every Ivan/Ivo/Igor/Iva/Ines silently lost their
+    initial on the way into the izjava gates.
+    """
+    assert split_person_names("I. Dujmović, M. Marić") == ["I. Dujmović", "M. Marić"]
+    assert split_person_names("I.Dujmović") == ["I.Dujmović"]
+    assert split_person_names("Igor Ivić and Ines Ilić") == ["Igor Ivić", "Ines Ilić"]
+    # …while a real conjunction still splits.
+    assert split_person_names("Lovel i Mate") == ["Lovel", "Mate"]
+    assert split_person_names("Ana te Ivo") == ["Ana", "Ivo"]
+    assert split_person_names("A.Kapidžić/L.Kukuljan") == ["A.Kapidžić", "L.Kukuljan"]
 
 
 # ── Name resolver (crospeleo port) ────────────────────────────────────

@@ -172,6 +172,19 @@ geo:
   # except on an SB-vs-grid mismatch, where it stays blank with a warning.
   elevation_source_label: "DMV"
 
+# Part 2.1e — sastavnica (Nacrt title block) prefill, for the Illustrator
+# drafting route. Geometry lives in code (sastavnica/addresses.py, measured
+# off the template); only what a different machine or society would change
+# belongs here.
+sastavnica:
+  # Face the VALUES are typeset in. Leave empty to auto-resolve: Myriad Pro
+  # from the local Illustrator install (what the template's own labels use),
+  # else a system fallback with a warning. Myriad Pro is licensed with
+  # Illustrator — found, never bundled.
+  font_path: ""
+  # Goes in the Istražili cell when no filled OSZ names a society.
+  society: "SU Estavela"
+
 # Satellite tables around SB (part 2.2) — see docs/sb-liburnija-hub.md.
 # Overrides for the handful of rows no rule can settle. Everything else is
 # derived on each run, so this list stays short by design.

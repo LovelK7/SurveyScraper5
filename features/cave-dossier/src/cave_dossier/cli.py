@@ -1015,6 +1015,51 @@ def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: b
     return 0
 
 
+def cmd_sastavnica(settings: Settings, serial: int, offline: bool,
+                   local_only: bool, force: bool) -> int:
+    """Part 2.1e: SB row + the leaf's filled OSZ -> prefilled sastavnica PDF."""
+    from cave_dossier.sastavnica import prefill as sastavnica_prefill
+
+    if settings.sb_mode != "LIVE":
+        print(f"⚠ {settings.sb_mode} workbook: SB data comes from a local copy,")
+        print("  which may lag the live SB. Verify before drawing the nacrt.")
+        print()
+    try:
+        outcome = sastavnica_prefill.run_prefill(
+            settings, serial, offline=offline, local_only=local_only, force=force
+        )
+    except sastavnica_prefill.SastavnicaError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    result = outcome.result
+    print(f"Redni broj {serial}: {result.cave_name or '<no name>'}"
+          + (f" (SUE {result.sue_number})" if result.sue_number else ""))
+    print(f"Predložak {result.template_version}, font {result.font} "
+          f"[{result.font_tier}]"
+          + (f", zapisnik {result.osz_source}" if result.osz_source else ""))
+    filled = {k: v for k, v in result.fields.items() if v.value}
+    sizes = {p.key: p.font_size for p in result.placed}
+    from cave_dossier.sastavnica.addresses import V1
+
+    print(f"Popunjeno {len(filled)}/{len(V1)} polja:")
+    for key, fv in filled.items():
+        size = sizes.get(key)
+        print(f"  {key:<18} {fv.value}"
+              + (f"  [{fv.source}]" if fv.source and fv.source != "sb" else "")
+              + (f"  ({size:g} pt)" if size and size < 10 else ""))
+    for note in result.notes:
+        print(f"  ! {note}")
+    print()
+    if outcome.delivered_path is not None:
+        print(f"Delivered: {outcome.delivered_path}")
+    print(f"Run dir:   {outcome.pdf_path.parent}")
+    if outcome.sb_updates_path is not None:
+        print(f"Dopune za SB ({len(result.sb_updates)}): {outcome.sb_updates_path}")
+        print("  (upiši ručno u Svi objekti — alat nikad ne piše u SB)")
+    return 0
+
+
 def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
                   osz_dir_arg: str | None) -> int:
     """Part 2.1b, the reverse of `osz prefill`: read a FILLED OSZ and
@@ -1403,6 +1448,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="Refresh an excerpt that is already in !!Isječci karte (default skips it)",
     )
 
+    sastavnica = subparsers.add_parser(
+        "sastavnica",
+        help="Part 2.1e — prefill the Nacrt's title block (Illustrator route) "
+             "from SB + the cave's filled OSZ",
+    )
+    sastavnica.add_argument(
+        "redni_broj",
+        type=int,
+        help="SB Redni broj of the cave (the only input; everything else is derived)",
+    )
+    sastavnica.add_argument(
+        "--offline",
+        action="store_true",
+        help="Never touch the network: local RGI gpkg + cached DEM tiles only",
+    )
+    sastavnica.add_argument(
+        "--local",
+        action="store_true",
+        dest="local_only",
+        help="Keep the run-dir copy only; do not deliver into the intake leaf",
+    )
+    sastavnica.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite a delivered sastavnica this tool did not produce "
+             "(by default such a file is refused, so an edited one survives)",
+    )
+
     geo = subparsers.add_parser(
         "geo",
         help="Part 2.1b — locality + elevation finders over HTRS96 coordinates",
@@ -1658,6 +1731,9 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_intake_map(settings, args.limit, args.apply, args.unmatched_only)
         if args.command == "karta":
             return cmd_karta(settings, args.redni_broj, args.debug, args.force)
+        if args.command == "sastavnica":
+            return cmd_sastavnica(settings, args.redni_broj, args.offline,
+                                  args.local_only, args.force)
         if args.command == "geo":
             if args.geo_command == "fetch-data":
                 return cmd_geo_fetch_data(settings, args.include_au)

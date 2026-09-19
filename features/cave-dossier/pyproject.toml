@@ -33,6 +33,12 @@ photos = ["Pillow>=10"]
 # crospeleo's OSZParser) needs python-docx — old documents have no controls,
 # and selections live in run-level bold that python-docx exposes cleanly.
 osz = ["lxml>=4.9", "python-docx>=1.1"]
+# Sastavnica prefill (Nacrt title block, Illustrator route) — 2.1e. PyMuPDF
+# both strips the authored template's example values (one-time, build_blank.py)
+# and typesets the new ones. The face itself is NOT bundled: Myriad Pro is
+# found on Illustrator machines, everything else falls back (sastavnica/fonts.py).
+# Needs [osz] too whenever the cave has a filled zapisnik to read survey data from.
+sastavnica = ["pymupdf>=1.24"]
 # Locality + elevation finders (part 2.1b prefill) — RGI WFS, DGU admin
 # boundaries, INSPIRE EL-COV sampling. All imports are lazy: the base install
 # works without this extra, the finders just report "unavailable".

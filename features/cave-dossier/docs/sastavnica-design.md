@@ -6,7 +6,7 @@ and the people who surveyed it. It is an Illustrator asset (`!SUE_sastavnica.ai`
 on the Drive) and today a drafter types all fifteen values into it by hand,
 copying from SB and from the filled OSZ.
 
-This note designs the step that stops that: **a PDF prefill** — same input and
+This note is the step that stopped that: **a PDF prefill** — same input and
 same shape as `osz prefill`, a Redni broj in, a prefilled document delivered
 into the cave's intake leaf. It is part [**2.1e**](../../../ARCHITECTURE.md#part-21e)
 and bridge [**B13**](../../../ARCHITECTURE.md#b13), and it serves the
@@ -14,10 +14,12 @@ and bridge [**B13**](../../../ARCHITECTURE.md#b13), and it serves the
 to the Nacrt (route B), which the society's own digitization instructions
 already describe.
 
-Status: **design only, not built.** Written 2026-09-19 from the user's spec plus
-a measured spike against the authored template — every geometry number below was
-read out of `!SUE_sastavnica.pdf`, not assumed, and the spike reproduced the
-authored layout to 0.01 pt before the design was written down.
+Status: **built and validated live, 2026-09-19** (`cavedossier sastavnica`,
+module `sastavnica/`, 31 tests). Designed and built the same day: every geometry
+number below was read out of `!SUE_sastavnica.pdf`, not assumed, and the design
+was only written down once a spike had reproduced the authored layout to 0.01 pt.
+Validated end to end on SB 1220 (a cave already being drafted in Illustrator —
+its leaf holds the DXF exports) and SB 811.
 
 ## Contents
 
@@ -33,7 +35,9 @@ authored layout to 0.01 pt before the design was written down.
 - [Fail-soft behaviour](#fail-soft-behaviour)
 - [Testing](#testing)
 - [Prod](#prod)
-- [Open questions for the user](#open-questions-for-the-user)
+- [Settled (user, 2026-09-19)](#settled-user-2026-09-19)
+- [Decided while building (2026-09-19)](#decided-while-building-2026-09-19)
+- [Still open](#still-open)
 
 ## The command
 
@@ -113,20 +117,20 @@ out as a `dopune-sb.csv` review row for a person to paste.
 
 | Cell | Source (in order) | Notes |
 |---|---|---|
-| Katastarski broj | SB `Katastarski broj SUE` | blank until the cave earns one — see [open question 2](#open-questions-for-the-user) |
+| Katastarski broj | — | **never filled**: the template's `0000` stays, the archivist stamps the real number in by hand ([decision 2](#settled-user-2026-09-19)) |
 | Ime speleološkog objekta | SB `Ime objekta` | |
 | Broj pločice | SB `Broj pločice` | |
 | HTRS koordinate | SB `X HTRS` + `Y HTRS` | `"<X> <Y>"`, integer metres — the authored form |
-| Nadmorska visina | SB `Z` → `geo.elevation` kota | `"<n> m"`; SB wins, a mismatch is a note |
-| Lokacija | `geo.locality` finding / SB `Lokalitet` · `Najbliže mjesto` | composition is [open question 1](#open-questions-for-the-user) |
-| Stvarna duljina | OSZ `duljina` → SB `Duljina` | `"<n> m"` |
+| Nadmorska visina | SB `Z` → `geo.elevation` kota | `"<n> m"`, **whole metres**; SB wins, a mismatch is a note |
+| Lokacija | `geo.locality` finding / SB `Lokalitet` · `Najbliže mjesto` | `Lokalitet, Najbliže mjesto` — those two only ([decision 1](#settled-user-2026-09-19)) |
+| Stvarna duljina | OSZ `duljina` → SB `Duljina` | `"<n> m"`; a **0** means "not surveyed yet" and stays blank |
 | Tlocrtna duljina | OSZ `horizontalna_duljina` | not in SB — blank when no OSZ |
 | Dubina/vis. razlika | OSZ `dubina` / `visinska_razlika` → SB `Dubina` | `"-<n> m"` for jame |
-| Mjerilo | — | the drafter's own choice, made while drawing; always blank |
-| Crtali | OSZ `crtali` → SB `Autori nacrta ili izvor` | the SB cell holds the *source* for queued caves, so the OSZ wins |
-| Mjerili | OSZ `mjerili` (+ `mjerili_2`) | not in SB |
-| Istražili | OSZ `istrazile_udruge` (+ `_2`) | society default — [open question 6](#open-questions-for-the-user) |
-| Ekipa | OSZ `clanovi_ekipe` (+ `_2`, `_3`) | joined with `, ` |
+| Mjerilo | — | the drafter's own choice, made while drawing; the stub `1:` stays ([decision 3](#settled-user-2026-09-19)) |
+| Crtali | OSZ `crtali` → SB `Autori nacrta ili izvor` | the SB cell holds the *source* for queued caves, so the OSZ wins; **abbreviated** |
+| Mjerili | OSZ `mjerili` (+ `mjerili_2`) | not in SB; **abbreviated** |
+| Istražili | OSZ `istrazile_udruge` (+ `_2`) → `sastavnica.society` | a society, so never abbreviated |
+| Ekipa | OSZ `clanovi_ekipe` (+ `_2`, `_3`) | joined with `, `; **abbreviated** |
 | Datum/razdoblje istraživanja | OSZ `datum_istrazivanja` → SB `Godina ili period istraživanja` | |
 
 Five of the fifteen cells cannot be filled from SB at all — they are survey
@@ -150,6 +154,10 @@ Derived by measuring the authored values, then confirmed by reproducing them:
 - **Colour** `#030505`, the authored value colour.
 - **Never wrap.** Every cell is one line; a value too long even at the floor
   size is set at the floor size and named in a printed warning.
+- **The value is formatted the drafter's way before it is measured** — names
+  abbreviated, kota rounded, depth signed, a zero dropped. That is what keeps a
+  three-person Ekipa at 9.5 pt instead of 6.25; see
+  [Decided while building](#decided-while-building-2026-09-19).
 
 Nothing is inserted for an empty value — the cell simply stays blank, ready for
 the drafter to type into in Illustrator.
@@ -219,9 +227,12 @@ Identical in shape to `osz prefill`, because the drafter looks in the same place
 - **Run artifacts**: `runs/sastavnica/<padded>/` — the PDF copy, a
   `sastavnica.json` sidecar (every field with its value, source and chosen
   size), and `dopune-sb.csv` when the finders proposed anything.
-- **Re-runs are idempotent**: overwrite the delivered file unless its content
-  would be unchanged. An existing file the **drafter has already edited** must
-  not be silently overwritten — see [open question 7](#open-questions-for-the-user).
+- **Re-runs replace their own output, and only their own.** The delivered PDF
+  carries a metadata stamp (`prefill.STAMP`); a file under that name WITHOUT the
+  stamp is refused with a warning rather than overwritten, `--force` being the
+  way past. An Illustrator re-save replaces the producer, so a sastavnica the
+  drafter has already worked on is protected by the same rule
+  ([decision 7](#settled-user-2026-09-19)).
 
 ## Module layout
 
@@ -234,16 +245,21 @@ the coordinates through `geo/`. A separate feature could not import any of that
 
 ```
 src/cave_dossier/sastavnica/
-  addresses.py   # the cell table above, one map per template version
+  addresses.py   # the cell table above + the typesetting constants
   render.py      # blank PDF + {key: value} -> filled PDF (centring, fit, font)
   fonts.py       # the three-tier font resolution
   prefill.py     # orchestrator: SB + OSZ + geo -> fields -> render -> deliver
+  models.py      # the sastavnica.json sidecar
 sastavnica-template/
-  templates/!SUE_sastavnica.pdf          # authored, copied from the Drive
-  templates/sastavnica_blank_v1.pdf      # generated by the builder
-  tools/build_blank.py                   # the stripper
+  templates/!SUE_sastavnica.pdf          # authored, copied verbatim from the Drive
+  templates/sastavnica_blank_v1.pdf      # generated by the builder, committed
+  tools/build_blank.py                   # the stripper (+ --check)
   tools/inspect_sastavnica.py            # dump cells/colours/fonts of any version
 ```
+
+Only `config.yaml` carries anything tunable — `sastavnica.font_path` and
+`sastavnica.society`. The geometry stays in code because it is a property of the
+template, not of a machine or a society.
 
 ## Fail-soft behaviour
 
@@ -258,7 +274,8 @@ always the fallback, and no single missing input kills the run:
 
 ## Testing
 
-Per the house protocol — synthetic fixtures first, then the real thing:
+Per the house protocol — synthetic fixtures first, then the real thing. All of
+this is `tests/test_sastavnica.py` (31 tests):
 
 1. **Geometry regression**: fill the blank with the authored example values and
    assert the rendered text bboxes match the authored PDF's to <1 pt. This is
@@ -270,7 +287,8 @@ Per the house protocol — synthetic fixtures first, then the real thing:
    v10 OSZ, each of the fifteen cells resolves from the expected source.
 5. **Live**: run on a real cave that has both an SB row and a filled OSZ, open
    the result in Illustrator, confirm it places at 100 % and the text is
-   editable vector text.
+   editable vector text. Done on SB 1220 and SB 811 (2026-09-19); 1220's
+   sastavnica is delivered in its intake leaf beside its DXF exports.
 
 ## Prod
 
@@ -281,26 +299,62 @@ stabilizes it gets a launcher from `tools/build_prod.py` like the other two.
 Worth noting that this branch's operators are the *Illustrator* users —
 arguably the group that benefits most from a double-click launcher.
 
-## Open questions for the user
+## Settled (user, 2026-09-19)
 
-1. **Lokacija composition.** The authored example reads
-   `Obruč, Jelenje, Gorski kotar` — a massif, an općina and a region. The geo
-   finder produces *lokalitet*, *najbliže mjesto*, *grad/općina* and *županija*,
-   and SB carries `Lokalitet` + `Najbliže mjesto`. Which three, in which order?
-   (Proposed default: `Lokalitet, Grad/općina, <wider region>` — but nothing in
-   SB or the finders currently yields "Gorski kotar".)
-2. **Katastarski broj.** `osz prefill` deliberately never fills it (the archivist
-   assigns it last). But the sastavnica is drawn at the end, when the number
-   often exists. Fill it from SB when present — or leave it blank always?
-3. **Mjerilo.** Assumed always blank (the drafter picks the scale while drawing).
-   Confirm, or name a default.
-4. **Stvarna vs tlocrtna duljina.** SB has one `Duljina`. Is it the *stvarna*
-   one (assumed), and should the tlocrtna cell stay blank until an OSZ exists?
-5. **Output page.** Keep the A4 page exactly as authored (assumed — it then
-   places into Illustrator identically), or crop to the block's 88.7 × 35.4 mm?
-6. **Istražili.** Default to `SU Estavela` when no OSZ says otherwise?
-7. **Overwrite policy.** If the drafter has already edited the delivered
-   `SB_<broj>_sastavnica.pdf`, should a re-run back it up (`…_stari_<datum>`, as
-   `osz prefill` does), refuse, or overwrite?
-8. **Command name.** `cavedossier sastavnica <broj>` — or under a `pdf` group
-   ("PDF prefill", as you phrased it), leaving room for other PDF outputs?
+The eight questions this note opened with, answered, and what each one became:
+
+| # | Question | Decision | Where it lives |
+|---|---|---|---|
+| 1 | Lokacija composition | **Lokalitet + Najbliže mjesto, nothing else** — the cell is narrow | `_resolve_lokacija` |
+| 2 | Katastarski broj | **Never filled; keep the template's `0000`.** The number is assigned at the very end and the archivist edits the PDF by hand. Carrying it across every product at once (SB, Nacrt, OSZ) is a later step of its own | `addresses.CONSTANTS` |
+| 3 | Mjerilo | **Blank, but keep `1:`** as a visible stub | `addresses.CONSTANTS` |
+| 4 | Stvarna vs tlocrtna duljina | SB's `Duljina` is the **stvarna** one; tlocrtna stays blank until a zapisnik carries it | `_resolve_fields` |
+| 5 | Output page | **Keep the A4 page exactly as authored** — it places into Illustrator at 100 % | the renderer never touches the page box |
+| 6 | Istražili | The OSZ almost always names it; **`SU Estavela` when it does not** | `config.yaml` `sastavnica.society` |
+| 7 | Overwrite policy | Collisions are near-impossible (a drafter names their own file differently), so on one: **refuse and warn** | `_deliver` + the metadata stamp |
+| 8 | Command name | **`cavedossier sastavnica <broj>`** | `cli.py` |
+
+Decision 7 needed one mechanism the question did not: a re-run must not refuse
+its OWN previous output. The delivered PDF is therefore stamped in its metadata
+(`prefill.STAMP`), and only an **unstamped** file is refused. That lands exactly
+right — an Illustrator re-save replaces the producer, so a sastavnica the
+drafter has already worked on is protected, while an ordinary re-run replaces
+itself silently. `--force` is the way past.
+
+## Decided while building (2026-09-19)
+
+Four rules the authored example implied but the questions never reached. All
+four came out of running the tool on real caves (SB 811, 1220):
+
+- **Names take the drafter's abbreviated form** — `Dario Maršanić` →
+  `D. Maršanić`. Not cosmetic: the full names of a three-person team shrank the
+  Ekipa cell to 6.25 pt, where the drafter's own form sits at 9.5 pt. Reuses
+  `core.person_aliases.to_sb_shorthand`; an outside-society bracket survives
+  (`A. Lipovac (SOV)`), and a name that is not "First Last" passes through.
+- **Kota is rounded to whole metres** — SB carries the grid's decimals
+  (`1285,92`), and the authored example shows a bare `1033 m`.
+- **A zero dimension reads as "not surveyed yet"** and leaves the cell blank.
+  SB writes `0` for both; `0 m` printed on a nacrt is worse than an empty box.
+- **A length is formatted only when the cell is nothing but a number.**
+  Deliberately stricter than `parse_optional_float`: a recorder's `oko 20` is a
+  hedge, and flattening it to `20 m` would turn an estimate into a measurement.
+
+One pre-existing bug surfaced on the way and was fixed: `core.people`'s
+separator regex treated the conjunction "i" as word-bounded rather than
+space-bounded, so **every author whose first name starts with I lost their
+initial** — `I. Dujmović` split into `. Dujmović`. That fed the izjava gates,
+not just this tool. Regression test in `tests/test_people.py`.
+
+## Still open
+
+- **Najbliže mjesto vs the drafter's intuition.** The sastavnica inherits the
+  OSZ's geo-admin-wins rule (user, 2026-09-01), so SB 811's Lokacija reads
+  *Kobiljak, Grižane-Belgrad* where SB says *Potkobiljak*. Consistency between
+  the two documents is the reason to keep it; say if a printed nacrt should
+  prefer SB's wording instead.
+- **A vendored OFL fallback font** (Source Sans 3) for a machine without
+  Illustrator. Not a blocker — such a machine is not drafting in Illustrator
+  either — so it stays a backlog item rather than a bundled binary.
+- **A prod launcher**, once the command has seen real drafter use. This
+  branch's operators are the Illustrator users, arguably the group that
+  benefits most from a double-click.

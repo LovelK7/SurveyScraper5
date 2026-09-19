@@ -1,9 +1,10 @@
 # cave-dossier — SB communication + cave dossier builder
 
-Pipeline parts **2.1 / 2.1b / 2.1c / 2.1d / 2.2** ([ARCHITECTURE.md](../../ARCHITECTURE.md)):
+Pipeline parts **2.1 / 2.1b / 2.1c / 2.1d / 2.1e / 2.2** ([ARCHITECTURE.md](../../ARCHITECTURE.md)):
 talk to **SB** (Speleo baza, the society's cave-registry Excel workbook), build a
 per-cave **dossier** with warning/blocker gating, prefill the **OSZ**, produce the
-**isječak karte**, process the **fotografije ulaza**. Python package
+**isječak karte**, process the **fotografije ulaza**, prefill the Nacrt's
+**sastavnica**. Python package
 `cave_dossier`, CLI `cavedossier`. Run from VS Code — no GUI yet, function over
 form.
 
@@ -257,6 +258,44 @@ cavedossier osz prefill 1234 --offline     # never touch the network; an already
 # holds a year). dopune-sb.csv is a review list a person carries into Excel —
 # nothing writes to SB automatically.
 
+# ── Sastavnica (part 2.1e — the Nacrt's title block, for the ILLUSTRATOR
+#    drafting route; delivers SB_<broj>_sastavnica.pdf into the same intake
+#    leaf as the OSZ, for the drafter to place into their .ai document) ────
+cavedossier sastavnica 1234                # SB + the leaf's filled OSZ + finders -> PDF
+cavedossier sastavnica 1234 --offline      # local RGI gpkg + cached DEM only, no network
+cavedossier sastavnica 1234 --local        # keep the run copy, skip Drive delivery
+cavedossier sastavnica 1234 --force        # overwrite a delivered file this tool did not write
+# Fifteen cells, three sources: SB wins for identity/location, the cave's
+# FILLED OSZ wins for survey facts (SB's author cell holds the SOURCE for a
+# queued cave, not the drafter), the geo finders fill what neither has. Without
+# a zapisnik nine cells prefill; with one, fourteen. Whatever stays empty is
+# listed on the run and left for the drafter to type in Illustrator.
+# Two cells are never data-driven: Katastarski broj keeps the template's 0000
+# (the archivist stamps the number in by hand at the very end) and Mjerilo
+# keeps "1:" (the drafter picks the scale while drawing).
+# Formatting follows the authored template, not the raw cells: names are
+# abbreviated the drafter's way ("Dario Maršanić" -> "D. Maršanić"), kota is
+# rounded to whole metres, Dubina is signed downward ("-60 m"), a 0 dimension
+# reads as "not surveyed yet" and stays blank, and Lokacija is exactly
+# Lokalitet + Najbliže mjesto (the cell is narrow).
+# Every value is centred and SHRUNK TO FIT its cell, 10 pt down to 6 pt — the
+# same thing the drafter does by hand. A value that will not fit even at 6 pt
+# is set anyway and named in a warning.
+# Font: Myriad Pro (the template's own face) is found in the local Illustrator
+# install; without it a system face is used and the run says so. Override with
+# sastavnica.font_path in config.yaml. Myriad Pro is licensed with
+# Illustrator — found, never bundled.
+# Collision: a delivered PDF that this tool did not write (or that someone
+# EDITED — editing strips the metadata stamp) is never overwritten; the run
+# refuses and says so. --force is the way past it. Otherwise re-runs simply
+# replace their own output.
+# Template: sastavnica-template/ holds the authored PDF from the Drive and the
+# generated blank the tool fills. After the drafter revises !SUE_sastavnica.ai,
+# refresh the copy and run:
+#   python sastavnica-template/tools/inspect_sastavnica.py --mode cells   # re-derive geometry
+#   python sastavnica-template/tools/build_blank.py                       # rebuild the blank
+# then update sastavnica/addresses.py from the cells dump.
+
 # ── OSZ backfill → SB (part 2.1b — reads a FILLED zapisnik back) ──
 cavedossier osz backfill 1234                # find the cave's SB_<broj>_… dir in the intake
                                              #   tree (!Za digitalizirat), read the OSZ DOCX
@@ -300,7 +339,8 @@ copy .env.example .env     # then fill in (see below)
 Optional extras per tool: `[karta]` (playwright + Pillow; then run
 `playwright install chromium` once) for the isječak karte, `[photos]` (Pillow)
 for `photos process`, `[osz]` (lxml) for the OSZ prefill and for reading the
-photo author out of a filled zapisnik, `[geo]` (requests, geopandas, shapely,
+photo author out of a filled zapisnik, `[sastavnica]` (PyMuPDF) for the Nacrt
+title block, `[geo]` (requests, geopandas, shapely,
 pyproj, rapidfuzz, rasterio) for the locality/elevation finders — then a
 one-time `cavedossier geo fetch-data` to provision the geodata. `[sb-write]`
 (xlwings) stays dormant until M6.
