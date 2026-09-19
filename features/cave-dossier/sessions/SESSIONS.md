@@ -6,6 +6,87 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 
 ---
 
+### 2026-09-19 — 2.1e sastavnica: the Illustrator branch, designed and shipped in one session (agent) ✅
+
+- **Did:** (1) *The branch.* ARCHITECTURE gained **§Two routes to the Nacrt** —
+  route A (2.1a, cSurvey, ours) and route B (Adobe Illustrator: TDX → DXF/PDF →
+  hand-drafted `.ai` → Nacrt PDF), diverging after TopoDroid and converging on
+  the same archived artifact, so everything downstream stays route-blind. New
+  **part 2.1e** + **bridge B13**, wired into the overview diagram, the
+  part→bridge table, Map 3, the chains list and the glossary. Route B is not
+  hypothetical: `!!!Digitalizacija` on the Drive *is* that workshop
+  (`!SUE_sastavnica.ai`, `!Alati za digitalizaciju.ai`, two Illustrator
+  manuals, and `!!!UPUTE.txt` telling drafters to use them).
+  (2) *The template.* The user dropped `!SUE_sastavnica.pdf` in the repo root;
+  it now lives in `sastavnica-template/templates/`. Measured it rather than
+  guessing: 1 page A4, no form fields, logo = 59 vector paths, one embedded
+  MyriadPro **subset**, block 251.58 × 100.36 pt at the top-left, five 20.08 pt
+  rows, 15 cells whose rects come from the block's own stroke operators.
+  `tools/inspect_sastavnica.py` re-derives that table from any future export.
+  (3) *The blank.* `tools/build_blank.py` strips the 15 example values by
+  **content-stream surgery** — drop every `Tj`/`TJ` issued under the value
+  colour, keep the positioning — because labels and values are separable by
+  fill colour alone (`#5e6161` @5 pt vs `#030505` @8–10 pt) and the subset's
+  custom encoding makes extracted text unusable (`Broj plo?ice`).
+  (4) *The module.* `sastavnica/` (addresses · render · fonts · prefill ·
+  models) + `cavedossier sastavnica <broj>` with `--offline/--local/--force`,
+  31 tests. (5) *Prod.* Published as **v1.4** beside the other two launchers.
+- **Result:** Shipped and validated live. 347 tests green, doctor clean.
+  SB 1220 (a cave already mid-digitization, DXF in its leaf) and SB 811 both
+  delivered; the v1.4 launcher was validated by a **clean install from the
+  published Drive folder**, not from the staged copy. Nine of fifteen cells
+  fill from SB alone, fourteen once the cave's zapisnik is filled.
+- **Learned:**
+  - **A PDF can carry a second, invisible copy of itself.** The template was
+    exported with *Preserve Illustrator Editing Capabilities*, so the page held
+    the whole `.ai` under `/PieceInfo` — 80 % of the file. Every PDF *viewer*
+    renders the page content; **Illustrator prefers the payload**. The first
+    delivered sastavnica was therefore correct in Acrobat and showed the
+    TEMPLATE's example values in the one application it exists for. The user
+    caught it; `build_blank.py` now drops `/PieceInfo`, the stale `/Thumb`
+    (which also still pictured the old values) and the XMP packet — 226 KB →
+    45 KB. Generalisable: when a generated document is meant to be *opened* in
+    its authoring application, check what that application actually reads.
+    Note it only surfaced because the user opened rather than placed it —
+    File > Place uses the page content and would have looked fine.
+  - **PyMuPDF redaction cannot strip these values.** It removes any glyph whose
+    box intersects the rect, and the 10 pt value boxes overlap the 5 pt labels
+    above them: `HTRS koordinate:` came back as `HTRS koordin`. Measured, then
+    abandoned for the stream walk.
+  - **Myriad Pro is on every machine that matters.** It ships inside the
+    Illustrator install (`Support Files/Required/Fonts/MyriadPro-Regular.otf`),
+    which is exactly the population this branch serves — so the font is
+    *found*, never bundled (it is licensed with Illustrator). With it the
+    computed widths reproduce the authored ones exactly (`339823 5037995`
+    68.81/68.81 pt), which is what proved the whole geometry model.
+  - **The authored example is the spec.** Its hand-chosen 10/9/8 pt sizes are
+    shrink-to-fit done by hand; its abbreviated names are a rule. Printing
+    `Dario Maršanić, Matija Vrkić, Tatjana Ilić` shrank Ekipa to 6.25 pt where
+    `D. Maršanić, M. Vrkić, T. Ilić` sits at 9.5. Also: kota rounded to whole
+    metres, Dubina signed downward, a `0` dimension treated as "not surveyed
+    yet" rather than printed as `0 m`.
+  - **"Refuse on collision" needed a stamp to be usable.** The literal rule
+    would refuse every ordinary re-run, so the delivered PDF carries a metadata
+    stamp and only an *unstamped* file is refused — and since an Illustrator
+    re-save replaces the producer, the same one rule protects a sastavnica the
+    drafter has already edited.
+  - **A new pipeline branch does not imply a new feature folder.** `sastavnica/`
+    reads SB, the intake leaf, the OSZ and the geo finders; a separate feature
+    could not import any of that (artifacts, never imports), so it is a module
+    beside `osz/` and `georef/`.
+  - **Pre-existing bug, found by the new tool's output:** `core/people.py`
+    treated the conjunction "i" as merely word-bounded, so it matched the
+    *initial* of every author whose first name starts with I — `I. Dujmović`
+    split into `. Dujmović`. That fed the izjava gates and `osz backfill`, not
+    just this tool. A conjunction now has to stand between spaces; regression
+    test in `tests/test_people.py`.
+- **Next:** decide whether the sastavnica's Lokacija should keep the OSZ's
+  geo-admin-wins Najbliže mjesto (SB 811 prints *Grižane-Belgrad* where SB says
+  *Potkobiljak*) or take SB's wording as a nacrt-only exception; then let a real
+  drafter run v1.4 and see what the fifteen cells still get wrong.
+
+---
+
 ### 2026-09-02 (later) — `osz fetch` → `osz backfill`, and the M6 delivery step designed (agent) ✅
 
 - **Did:** (1) *Rename*: `osz fetch` never fetched anything — it reads a filled

@@ -1,6 +1,6 @@
 # STATUS
 
-Updated: 2026-09-02 (maintained by `/wrap-up` at the end of each session)
+Updated: 2026-09-19 (maintained by `/wrap-up` at the end of each session)
 
 
 Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -232,6 +232,11 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
   nacrt get a suffix; does the archived intake leaf take the katastarski broj or
   keep its field name; is `deliver` dev-only at first (it needs Excel + xlwings);
   does `Godina zadnjeg istraživanja` join the same SB write.
+- **Sastavnica Lokacija wording** (new 2026-09-19): the sastavnica inherits the
+  OSZ's geo-admin-wins rule for Najbliže mjesto, so SB 811 prints
+  *Kobiljak, Grižane-Belgrad* where SB says *Potkobiljak*. Kept for consistency
+  between the two documents — say if a printed nacrt should prefer SB's wording
+  instead (it would be a sastavnica-only exception).
 - **Optimal entrance-photo resolution** (new 2026-09-01): `photos process` ships at
   1920 px / 1.5 MB and writes COPIES precisely so this stays revisable —
   `--long-edge N --overwrite` re-cuts a cave. Once the number is settled, the copies
@@ -304,6 +309,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
+- 2026-09-19 — **2.1e sastavnica shipped, designed and built the same day**: the Illustrator drafting route gets its own pipeline branch in ARCHITECTURE (route A/B, part 2.1e, bridge B13) and `cavedossier sastavnica <broj>` prefills the Nacrt's title block from SB + the leaf's filled OSZ + the geo finders, delivered beside the OSZ. Blank template generated from the authored `.ai` export by content-stream surgery; the embedded `.ai` payload that made Illustrator open the TEMPLATE was found by the user on the first delivered file and stripped. Prod launcher **v1.4** published the same day. Also fixed a pre-existing `core/people.py` bug that ate the initial of every author whose first name starts with I → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-09-02 (later) — **`osz fetch` renamed to `osz backfill`** (code, all docs, test file; 300 tests green, doctor clean) and the **M6 delivery step designed** — [m6-delivery-design.md](features/cave-dossier/docs/m6-delivery-design.md): `deliver <broj>` as the last gate (OSZ completeness → `/` filler → files nameable → katastarski broj `max+1` → approval → rename/file/SB write-back). Measuring the live SB/Drive found the queue-flag double-view trap and the 4 checkbox-group fields no reader can see yet → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
 - 2026-09-02 — **first productionization slice, v1.0→v1.3 the same evening**: `tools/build_prod.py` + templates generate versioned double-click launchers for `osz prefill` / `photos process` on the Drive (`!!!Digitalizacija/SurveyScraper5/`, self-installing to `%LOCALAPPDATA%\CaveDossier`); iterated on the user's real first runs — per-run logs + console font (v1.1), operator-side karta flow + Croatian PROCITAJ_ME (v1.2, caught+fixed the `_karta_newly_embedded` re-delivery bug), waiting snake + `PYTHONUNBUFFERED` streaming fix (v1.3) → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)
-- 2026-09-01 — 2.1d photo processor shipped: `photos process <broj>` (intake leaf → downsized `SB_<broj>_<Ime>_<Autor>_<n>.jpg` copies, author from the OSZ) + `photos pull-staged` (queue → intake leaf, creates the folder); fixed the OSZ locator going ambiguous on every prefill-migrated leaf → [features/cave-dossier/sessions/SESSIONS.md](features/cave-dossier/sessions/SESSIONS.md)

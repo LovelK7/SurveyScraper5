@@ -284,3 +284,24 @@ when an idea's time comes. Nothing here is a commitment.
   Drive to `Kraljica trotoara` and matches SB 1446 on its own now. Same one-pass
   check would flag every orphan line in `intake.new_entries`,
   `intake.manual_matches` and `intake.split_folders`.
+- 2026-09-19 — **vendor an OFL fallback font for the sastavnica** (Source Sans 3,
+  the closest free match to Myriad Pro). Today a machine without Illustrator
+  falls back to Calibri with a warning. Not urgent — such a machine is not
+  drafting in Illustrator either — but it is the one prod input that does not
+  ride in the bundle, and the only reason `sastavnica` is not fully portable.
+- 2026-09-19 — **strip the Illustrator round-trip payload wherever else it can
+  appear.** `build_blank.py` now drops `/PieceInfo` + `/Thumb` + XMP because
+  Illustrator opens the embedded `.ai` in preference to the page. Any future
+  tool that edits a PDF the society authored in Illustrator (a Nacrt, a legend,
+  an overlay) inherits the same trap — worth a shared helper rather than a
+  second discovery.
+- 2026-09-19 — **carry the katastarski broj across all products in one step.**
+  The sastavnica deliberately keeps `0000` and `osz prefill` never fills
+  Katastarski broj, because the archivist assigns it last and edits by hand.
+  Once M6's `deliver` allocates the number it could stamp SB + the OSZ + the
+  sastavnica PDF together, which is the user's stated intent (2026-09-19) and
+  removes the one hand-edit each of those documents still needs.
+- 2026-09-19 — **`sastavnica` could read the 2.1a survey artifacts directly**
+  (M5). Tlocrtna duljina, stvarna duljina and vis. razlika are survey outputs;
+  today they only arrive via a filled OSZ, so a cave drafted before its zapisnik
+  is completed prints four empty cells that the pipeline already knows.
