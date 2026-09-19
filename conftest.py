@@ -14,7 +14,10 @@ import pytest
 from cave_dossier.core.config import Settings
 from cave_dossier.sb.loader import SBReader
 
-FIXTURE = Path(__file__).resolve().parent / "fixtures" / "mini_sb.xlsx"
+# conftest.py sits at the repo root so its fixtures reach every
+# stages/*/tests/ dir; the fixture data itself lives in tests/fixtures/,
+# which keeps `python tests/fixtures/make_mini_sb.py` working as documented.
+FIXTURE = Path(__file__).resolve().parent / "tests" / "fixtures" / "mini_sb.xlsx"
 
 FIELD_COLUMNS = {
     "serial_number": "Redni broj",

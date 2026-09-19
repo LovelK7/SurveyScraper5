@@ -1189,7 +1189,7 @@ def cmd_people_check(settings: Settings, limit: int) -> int:
     registry — names that resolve to no one. Writes the person↔izjava JSON
     snapshot under runs/people/.
     """
-    from cave_dossier.core.config import FEATURE_ROOT
+    from cave_dossier.core.paths import workspace
     from cave_dossier.people.registry import PersonRegistry
     from cave_dossier.people.statements import (
         StatementIndex,
@@ -1303,7 +1303,7 @@ def cmd_people_check(settings: Settings, limit: int) -> int:
         print(f"    … {len(unresolved) - limit} more (raise --limit)")
     findings = findings or bool(unresolved)
 
-    out_path = FEATURE_ROOT / "runs" / "people" / "statements-index.json"
+    out_path = workspace("runs", "people", "statements-index.json")
     write_index_json(index, out_path, source_dir=directory)
     print()
     print(f"Poveznice osoba ↔ izjava: {out_path}")

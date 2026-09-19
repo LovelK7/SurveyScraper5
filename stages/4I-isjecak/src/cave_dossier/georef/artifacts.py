@@ -14,10 +14,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from cave_dossier.core.config import FEATURE_ROOT
+from cave_dossier.core.paths import workspace
 from cave_dossier.georef.models import GeorefArtifacts, GeorefResult
 
-RUNS_ROOT = FEATURE_ROOT / "runs" / "georef"
+RUNS_ROOT = workspace("runs", "georef")
 
 
 def build_georef_artifacts(serial_label: str) -> GeorefArtifacts:

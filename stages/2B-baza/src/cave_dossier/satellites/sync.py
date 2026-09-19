@@ -432,9 +432,9 @@ SYNC_ROOT_NAME = "sb-sync"
 
 def default_out_dir(satellite: str, today: date) -> Path:
     """`sb-sync/<satellite>/<YYYY-MM-DD>/`, resolved against the feature root."""
-    from cave_dossier.core.config import FEATURE_ROOT
+    from cave_dossier.core.paths import workspace
 
-    return FEATURE_ROOT / SYNC_ROOT_NAME / satellite / today.isoformat()
+    return workspace(SYNC_ROOT_NAME, satellite, today.isoformat())
 
 
 def write_lists(

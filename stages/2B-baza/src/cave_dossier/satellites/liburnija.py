@@ -29,7 +29,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from cave_dossier.core.config import FEATURE_ROOT, Settings
+from cave_dossier.core.config import Settings
+from cave_dossier.core.paths import workspace_root
 from cave_dossier.satellites.model import CandidateState
 
 SOURCE = "liburnija"
@@ -144,7 +145,7 @@ def sheet_path(settings: Settings) -> Path | None:
     if not relative:
         return None
     path = Path(relative)
-    return path if path.is_absolute() else FEATURE_ROOT / path
+    return path if path.is_absolute() else workspace_root() / path
 
 
 def _text(record: dict[str, str], column: str) -> str | None:

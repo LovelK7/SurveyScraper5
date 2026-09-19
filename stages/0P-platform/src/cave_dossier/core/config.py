@@ -23,10 +23,35 @@ from pathlib import Path
 
 import yaml
 
-# Feature root = parent of src/ (config.py sits at src/cave_dossier/core/).
-FEATURE_ROOT = Path(__file__).resolve().parents[3]
-CONFIG_YAML = FEATURE_ROOT / "config.yaml"
-ENV_FILE = FEATURE_ROOT / ".env"
+from cave_dossier.core.paths import workspace, workspace_root
+
+# The workspace root — see core/paths.py for why this is a marker search and
+# not a parents[N] count. Kept as module-level names because config.py is
+# imported by 24 modules; they are resolved lazily on first use.
+CONFIG_YAML = workspace("config.yaml")
+ENV_FILE = workspace(".env")
+
+
+def _georef_selectors_default() -> Path:
+    """Locate ``georef/selectors.yaml`` WITHOUT importing the subpackage.
+
+    selectors.yaml is package data that travels with the georef code, but
+    core/ must not depend on georef/ — core.config is imported by 24 modules
+    including georef itself, so a real import would be circular.
+    ``find_spec`` only locates a package; it never executes it.
+    """
+    from importlib.util import find_spec
+
+    try:
+        spec = find_spec("cave_dossier.georef")
+    except (ImportError, ValueError):  # mid-import, or not installed
+        spec = None
+    if spec is not None and spec.submodule_search_locations:
+        return Path(next(iter(spec.submodule_search_locations))) / "selectors.yaml"
+    # Not installed (e.g. a docs-only checkout): a clearly-wrong path here
+    # would be silent, so point at the workspace and let the caller's
+    # "selectors file not found" error name it.
+    return workspace("config", "selectors.yaml")
 
 
 class ConfigError(RuntimeError):
@@ -101,16 +126,16 @@ class Settings:
     # runs are clamped to the physical display and the crop adapts.
     georef_window_width: int = 2560
     georef_window_height: int = 1600
-    georef_selectors_path: Path = FEATURE_ROOT / "config" / "selectors.yaml"
+    georef_selectors_path: Path = field(default_factory=_georef_selectors_default)
     playwright_browser: str = "chromium"
     playwright_slow_mo_ms: int = 0
     # Part 2.1b — locality + elevation finders (config.yaml `geo`). The data
     # dir holds the gitignored boundary GeoPackages / RGI gazetteer / DEM
     # tiles that `cavedossier geo fetch-data` provisions.
-    geo_data_dir: Path = FEATURE_ROOT / "data" / "geo"
+    geo_data_dir: Path = workspace("data", "geo")
     # People registry (authors + curated aliases + izjava linkage) — the
     # committed JSON people/registry.py loads. config.yaml `people.registry_path`.
-    people_registry_path: Path = FEATURE_ROOT / "data" / "people" / "registry.json"
+    people_registry_path: Path = workspace("data", "people", "registry.json")
     geo_rgi_radius_m: float = 2000.0
     geo_elevation_tolerance_m: float = 10.0
     geo_elevation_source_label: str = "DMV"
@@ -184,16 +209,16 @@ def load_settings() -> Settings:
     drive_root_raw = get_env("LOCAL_DRIVE_ROOT")
     local_drive_root = Path(drive_root_raw) if drive_root_raw else None
 
-    def _feature_relative(raw: str) -> Path:
-        # Relative paths resolve against the feature root, so the sandbox
+    def _workspace_relative(raw: str) -> Path:
+        # Relative paths resolve against the workspace root, so the sandbox
         # copy under example/ survives renames/moves of the repo folder.
         path = Path(raw)
-        return path if path.is_absolute() else FEATURE_ROOT / path
+        return path if path.is_absolute() else workspace_root() / path
 
     mode_reason: str | None = None
     sandbox_raw = get_env("SB_WORKBOOK_PATH")
     if sandbox_raw:
-        workbook_path = _feature_relative(sandbox_raw)
+        workbook_path = _workspace_relative(sandbox_raw)
         mode = "SANDBOX"
     else:
         workbook_filename = sb.get("workbook_filename")
@@ -203,11 +228,11 @@ def load_settings() -> Settings:
                 "  Set LOCAL_DRIVE_ROOT in .env so the live workbook resolves as\n"
                 f"  <LOCAL_DRIVE_ROOT>/{workbook_filename or '<sb.workbook_filename>'},\n"
                 "  or set SB_WORKBOOK_PATH to force a sandbox copy.\n"
-                f"  (.env template: {FEATURE_ROOT / '.env.example'})"
+                f"  (.env template: {workspace('.env.example')})"
             )
         live_path = local_drive_root / workbook_filename
         fallback_raw = get_env("SB_SANDBOX_PATH")
-        fallback_path = _feature_relative(fallback_raw) if fallback_raw else None
+        fallback_path = _workspace_relative(fallback_raw) if fallback_raw else None
         workbook_path, mode, mode_reason = resolve_live_workbook(live_path, fallback_path)
 
     return Settings(
@@ -271,8 +296,8 @@ def load_settings() -> Settings:
             str(name): dict(values or {})
             for name, values in (raw.get("satellites") or {}).items()
         },
-        geo_data_dir=_feature_relative(str(geo.get("data_dir") or "data/geo")),
-        people_registry_path=_feature_relative(
+        geo_data_dir=_workspace_relative(str(geo.get("data_dir") or "data/geo")),
+        people_registry_path=_workspace_relative(
             str(people.get("registry_path") or "data/people/registry.json")
         ),
         geo_rgi_radius_m=float(geo.get("rgi_radius_m") or 2000.0),

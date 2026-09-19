@@ -27,6 +27,7 @@ import zipfile
 from pathlib import Path
 
 from cave_dossier.core.config import Settings
+from cave_dossier.core.paths import repo_root
 from cave_dossier.geo.rgi_client import OFFLINE_GPKG_NAME
 
 RGI_WFS_URL = "http://rgi.dgu.hr/geoserver/wfshr/wfs"
@@ -37,10 +38,16 @@ RGI_TIMEOUT_S = 120
 
 AU_ZIP_URL = "https://geoportal.dgu.hr/services/atom/INSPIRE_Administrative_Units_(AU).zip"
 
-# ../crospeleo-automation sits beside the SurveyScraper5 repo root
-# (provision.py -> geo -> cave_dossier -> src -> cave-dossier -> features
-#  -> SurveyScraper5 -> Programming).
-CROSPELEO_GEO_DIR = Path(__file__).resolve().parents[6] / "crospeleo-automation" / "data" / "geo"
+# ../crospeleo-automation sits beside the SurveyScraper5 repo root. This is a
+# DEV-ONLY shortcut (copy instead of re-download); a prod install has no repo,
+# so repo_root() returns None there and this stays None — callers skip the
+# local-copy tier and fall through to downloading from the open DGU services.
+def _crospeleo_geo_dir() -> Path | None:
+    repo = repo_root()
+    return None if repo is None else repo.parent / "crospeleo-automation" / "data" / "geo"
+
+
+CROSPELEO_GEO_DIR = _crospeleo_geo_dir()
 
 ADMIN_GPKGS = ("naselja.gpkg", "jls.gpkg", "zupanije.gpkg")
 

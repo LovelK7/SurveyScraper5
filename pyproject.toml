@@ -54,8 +54,78 @@ geo = [
 [project.scripts]
 cavedossier = "cave_dossier.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+# ---------------------------------------------------------------------------
+# Packaging: one import namespace, many source roots
+# ---------------------------------------------------------------------------
+# Each pipeline stage owns its own src/cave_dossier/<sub>/ so that everything
+# about a substage — code, README, docs, tests, templates — sits in one folder.
+# `import cave_dossier.osz` is unchanged; only where the files live changed.
+#
+# This MUST be an explicit package-dir map. The obvious shorthand
+#     [tool.setuptools.packages.find]
+#     where = ["stages/0P-platform/src", "stages/4O-osz/src", ...]
+# is NOT a union: setuptools reduces each root to its top-level package name
+# and .update()s them into one dict, so every root collides on "cave_dossier"
+# and the LAST one silently wins. `pip install -e .` then succeeds and
+# `import cave_dossier.osz` raises ModuleNotFoundError. Verified broken on
+# setuptools 84.0.0; the explicit map below is verified working on the same.
+#
+# "cave_dossier" itself is deliberately ABSENT from `packages`: setuptools
+# synthesises the PEP 420 namespace portion. Listing it would make setuptools
+# look for a top-level ./cave_dossier directory that does not exist.
+# For the same reason there is no cave_dossier/__init__.py anywhere.
+#
+# Adding a subpackage means adding one line to each table below. The pipeline
+# doctor fails if a subpackage exists that no stage claims, so this cannot
+# silently drift.
+[tool.setuptools]
+packages = [
+    "cave_dossier.core",
+    "cave_dossier.cli",
+    "cave_dossier.intake",
+    "cave_dossier.sb",
+    "cave_dossier.satellites",
+    "cave_dossier.geo",
+    "cave_dossier.georef",
+    "cave_dossier.osz",
+    "cave_dossier.photos",
+    "cave_dossier.sastavnica",
+    "cave_dossier.people",
+    "cave_dossier.archive",
+    "cave_dossier.dossier",
+]
+
+[tool.setuptools.package-dir]
+"cave_dossier.core"       = "stages/0P-platform/src/cave_dossier/core"
+"cave_dossier.cli"        = "stages/0P-platform/src/cave_dossier/cli"
+"cave_dossier.intake"     = "stages/1T-teren/src/cave_dossier/intake"
+"cave_dossier.sb"         = "stages/2B-baza/src/cave_dossier/sb"
+"cave_dossier.satellites" = "stages/2B-baza/src/cave_dossier/satellites"
+"cave_dossier.geo"        = "stages/4G-geo/src/cave_dossier/geo"
+"cave_dossier.georef"     = "stages/4I-isjecak/src/cave_dossier/georef"
+"cave_dossier.osz"        = "stages/4O-osz/src/cave_dossier/osz"
+"cave_dossier.photos"     = "stages/4F-fotografije/src/cave_dossier/photos"
+"cave_dossier.sastavnica" = "stages/4S-sastavnica/src/cave_dossier/sastavnica"
+"cave_dossier.people"     = "stages/5O-osobe/src/cave_dossier/people"
+"cave_dossier.archive"    = "stages/5O-osobe/src/cave_dossier/archive"
+"cave_dossier.dossier"    = "stages/5D-dosje/src/cave_dossier/dossier"
+
+# Runtime inputs that travel with their code. A no-op for the editable
+# install prod actually uses, but set so a real wheel is never silently
+# missing the OSZ template or the georef selectors.
+[tool.setuptools.package-data]
+"cave_dossier.georef"     = ["selectors.yaml"]
+"cave_dossier.osz"        = ["pristupi.yaml", "templates/*.docx"]
+"cave_dossier.sastavnica" = ["templates/*.pdf"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# Tests live beside the stage they cover; conftest.py at the rootdir supplies
+# the shared fixtures. importlib import mode keeps same-named test files in
+# different stages from colliding (prepend mode would raise "import file
+# mismatch" the first time two stages both have a test_models.py).
+testpaths = ["stages", "prod", "tools"]
+# Default (prepend) import mode: stage dir names like "4O-osz" are not valid
+# Python identifiers, so tests dirs can never be packages, and one module
+# imports a sibling (test_osz_prefill <- test_osz_writer). Prepend puts each
+# tests dir on sys.path, which makes that work. The duplicate-basename hazard
+# that importlib mode would avoid is checked by tools/pipeline_doctor.py.

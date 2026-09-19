@@ -33,9 +33,10 @@ from datetime import date
 from pathlib import Path
 
 from cave_dossier import georef
-from cave_dossier.core.config import FEATURE_ROOT, Settings
+from cave_dossier.core.config import Settings
 from cave_dossier.core.matching import SB_PREFIX
 from cave_dossier.core.normalization import normalize_lookup_key, parse_optional_float
+from cave_dossier.core.paths import workspace
 from cave_dossier.geo import elevation as elevation_mod
 from cave_dossier.geo import locality as locality_mod
 from cave_dossier.intake.scanner import find_cave_leaf
@@ -45,8 +46,10 @@ from cave_dossier.osz.models import FieldValue, PrefillResult, SBUpdate
 from cave_dossier.osz.writer import OszDocument
 from cave_dossier.sb.loader import CaveRow, SBReader
 
-TEMPLATE_PATH = FEATURE_ROOT / "osz-template" / "templates" / "Zapisnik_OSZ_v10.docx"
-RUNS_DIR = FEATURE_ROOT / "runs" / "osz"
+# Package asset: travels with this subpackage, so it resolves the same under
+# an editable install, a wheel and the extracted prod bundle.
+TEMPLATE_PATH = Path(__file__).resolve().parent / "templates" / "Zapisnik_OSZ_v10.docx"
+RUNS_DIR = workspace("runs", "osz")
 
 SB_UPDATES_CSV_COLUMNS = ("Redni broj", "Stupac", "Vrijednost", "Izvor", "Napomena")
 

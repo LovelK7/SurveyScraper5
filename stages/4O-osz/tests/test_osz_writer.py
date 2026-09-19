@@ -20,10 +20,9 @@ lxml_etree = pytest.importorskip("lxml.etree")
 from cave_dossier.osz.addresses import KARTA_FRAME, V10
 from cave_dossier.osz.writer import W, W14, OszDocument
 
-TEMPLATE = (
-    Path(__file__).resolve().parents[1]
-    / "osz-template" / "templates" / "Zapisnik_OSZ_v10.docx"
-)
+# The template is package data now, so take it from the code that reads it
+# rather than re-deriving a path that can drift.
+from cave_dossier.osz.prefill import TEMPLATE_PATH as TEMPLATE
 
 
 def make_png(width: int, height: int) -> bytes:

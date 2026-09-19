@@ -17,10 +17,9 @@ from pathlib import Path
 
 import yaml
 
-from cave_dossier.core.config import FEATURE_ROOT
 from cave_dossier.core.normalization import normalize_lookup_key
 
-PRISTUPI_PATH = FEATURE_ROOT / "config" / "pristupi.yaml"
+PRISTUPI_PATH = Path(__file__).resolve().parent / "pristupi.yaml"
 
 _TOKEN_SPLIT_RE = re.compile(r"[,;/]+")
 

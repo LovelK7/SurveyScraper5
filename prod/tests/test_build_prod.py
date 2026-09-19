@@ -13,10 +13,10 @@ from pathlib import Path
 
 import pytest
 
-FEATURE_ROOT = Path(__file__).resolve().parents[1]
+PROD_ROOT = Path(__file__).resolve().parents[1]
 
 spec = importlib.util.spec_from_file_location(
-    "build_prod", FEATURE_ROOT / "tools" / "build_prod.py"
+    "build_prod", PROD_ROOT / "build_prod.py"
 )
 build_prod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(build_prod)
@@ -93,22 +93,42 @@ def test_bootstrap_installs_karta_flow(staged):
 def test_bundle_carries_the_runtime_tree(staged):
     with zipfile.ZipFile(staged / "v9.9" / "bundle.zip") as zf:
         names = set(zf.namelist())
-    # Everything FEATURE_ROOT-relative the two commands stand on at runtime.
+    # Everything the prod commands stand on at runtime, at its FLATTENED
+    # bundle path: dev spreads these across stages/*/src/cave_dossier/, the
+    # bundle rewrites them all into one src/cave_dossier/ tree.
     for expected in [
         "pyproject.toml",
         "config.yaml",
         ".env.example",
-        "src/cave_dossier/cli.py",
+        # workspace_root() walks up for this; without it every operator run
+        # dies at startup.
+        ".cavedossier-workspace",
+        "src/cave_dossier/cli/__init__.py",
+        "src/cave_dossier/core/paths.py",
         "src/cave_dossier/osz/prefill.py",
         "src/cave_dossier/photos/process.py",
-        "config/pristupi.yaml",
-        "config/selectors.yaml",
+        # Runtime inputs now travel INSIDE their subpackage rather than being
+        # listed separately in the bundle manifest.
+        "src/cave_dossier/osz/pristupi.yaml",
+        "src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx",
+        "src/cave_dossier/georef/selectors.yaml",
+        "src/cave_dossier/sastavnica/templates/sastavnica_blank_v1.pdf",
         "data/people/registry.json",
-        "osz-template/templates/Zapisnik_OSZ_v10.docx",
         "PROD_VERSION.txt",
     ]:
         assert expected in names, f"bundle misses {expected}"
     assert not any("__pycache__" in n or n.endswith(".pyc") for n in names)
+    # Stale editable-install metadata shipped in every bundle up to v1.4 and
+    # was pip-installed over on the operator machine. Never again.
+    assert not any("egg-info" in n for n in names), "bundle carries egg-info"
+    # The bundle must be FLAT: no stages/ prefix survives the rewrite.
+    assert not any(n.startswith("stages/") for n in names)
+    # The operator install must see a single-root pyproject, not the dev
+    # package-dir map -- that map is what must NOT run on their machine.
+    with zipfile.ZipFile(staged / "v9.9" / "bundle.zip") as zf:
+        pyproj = zf.read("pyproject.toml").decode("utf-8")
+    assert 'where = ["src"]' in pyproj
+    assert "[tool.setuptools.package-dir]" not in pyproj
     # data/geo is provisioned per machine (cloud copy / fetch-data), never bundled.
     assert not any(n.startswith("data/geo/") for n in names)
 

@@ -19,13 +19,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from cave_dossier.core.config import FEATURE_ROOT
+from pathlib import Path
+
+from cave_dossier.core.paths import repo_root
 
 TEMPLATE_VERSION = "v1"
 
-TEMPLATE_DIR = FEATURE_ROOT / "sastavnica-template" / "templates"
-AUTHORED_TEMPLATE = TEMPLATE_DIR / "!SUE_sastavnica.pdf"
+# The blank is a package asset — the renderer fills it on every run, so it
+# ships with the code and with the prod bundle.
+TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 BLANK_TEMPLATE = TEMPLATE_DIR / f"sastavnica_blank_{TEMPLATE_VERSION}.pdf"
+
+# The AUTHORED Illustrator export is a BUILD-TIME input: template-workbench/
+# tools/build_blank.py consumes it once to generate the blank above. It is
+# never read at runtime and never bundled, so it stays in the workbench and
+# is None in a prod install.
+_WORKBENCH = "stages/4S-sastavnica/template-workbench/templates"
+AUTHORED_TEMPLATE = (
+    None if repo_root() is None else repo_root() / _WORKBENCH / "!SUE_sastavnica.pdf"
+)
 
 
 @dataclass(frozen=True)

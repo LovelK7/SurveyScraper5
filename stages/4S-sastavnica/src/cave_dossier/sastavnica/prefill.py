@@ -31,7 +31,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from cave_dossier import georef
-from cave_dossier.core.config import FEATURE_ROOT, Settings
+from cave_dossier.core.config import Settings
+from cave_dossier.core.paths import workspace
 from cave_dossier.core.normalization import parse_optional_float
 from cave_dossier.core.people import split_authors
 from cave_dossier.core.person_aliases import to_sb_shorthand
@@ -48,7 +49,7 @@ from cave_dossier.sastavnica.models import (
 )
 from cave_dossier.sb.loader import CaveRow, SBReader
 
-RUNS_DIR = FEATURE_ROOT / "runs" / "sastavnica"
+RUNS_DIR = workspace("runs", "sastavnica")
 
 # Stamped into the delivered PDF's metadata so a re-run can tell ITS OWN output
 # apart from a file somebody else put under the same name — including our own

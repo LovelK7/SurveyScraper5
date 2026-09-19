@@ -1,4 +1,4 @@
-﻿"""Part 2.1c unit tests — everything that runs WITHOUT a browser: serial
+"""Part 2.1c unit tests — everything that runs WITHOUT a browser: serial
 lookup, input building, delivery naming, the !georef_zapisi.csv upsert, and
 the selectors-file parser. The Playwright flow itself is exercised live
 (one cave per attended run), never from tests."""
@@ -261,7 +261,11 @@ def test_load_selectors_keeps_css_ids_and_strips_comments(tmp_path: Path) -> Non
 
 
 def test_shipped_selectors_file_parses() -> None:
-    shipped = Path(__file__).resolve().parents[1] / "config" / "selectors.yaml"
+    # selectors.yaml is package data now -- ask the package where it is, so
+    # this test cannot drift from what the client actually loads.
+    import cave_dossier.georef as georef_pkg
+
+    shipped = Path(georef_pkg.__file__).resolve().parent / "selectors.yaml"
     selectors = load_selectors(shipped)
     # The three the flow cannot run without:
     assert selectors["georef_x_htrs_input"] == "#uncertCoordX"
