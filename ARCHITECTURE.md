@@ -10,6 +10,7 @@ firm up as real usage accumulates.
 - [What the app produces](#what-the-app-produces)
 - [The two main parts](#the-two-main-parts)
 - [Part map](#part-map)
+  - [Two routes to the Nacrt — cSurvey and Illustrator](#two-routes-to-the-nacrt--csurvey-and-illustrator)
 - [Bridges — the scripts between the nodes](#bridges--the-scripts-between-the-nodes)
   - [Map 1 — everything that flows INTO SB](#map-1--everything-that-flows-into-sb)
   - [Map 2 — producing the field kit (SB → prefilled zapisnik)](#map-2--producing-the-field-kit-sb--prefilled-zapisnik)
@@ -46,6 +47,7 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
 │   the survey phone)          │  dirs   │  │ <a href="#part-21b">2.1b</a> OSZ builder   ─→ OSZ DOCX [<a href="#b6">B6</a>·<a href="#b7">B7</a>]  │  │
 └──────────────────────────────┘         │  │ <a href="#part-21c">2.1c</a> isječak karte ─→ excerpt PNG  [<a href="#b3">B3</a>] │  │
                                          │  │ <a href="#part-21d">2.1d</a> foto ulaza    ─→ renamed foto [<a href="#b8">B8</a>] │  │
+                                         │  │ <a href="#part-21e">2.1e</a> sastavnica    ─→ title block [<a href="#b13">B13</a>] │  │
         (manual for now: user            │  └───────────┬────────────────▲────────────┘  │
          copies files by hand)           │   [<a href="#b10">B10</a>] dims │   coords, year │ [<a href="#b6">B6</a>·<a href="#b9">B9</a>]       │
                                          │              ▼                │               │
@@ -86,9 +88,45 @@ names the exact command.*
 | <a name="part-21b"></a>**2.1b** | OSZ builder: fills the society's blank OSZ template (SB primary data + 2.1a results + part-1 field data + 2.1c excerpt). `cavedossier osz prefill <Redni broj>` delivers `SB_<broj>_OSZ.docx` prefilled from SB + the `geo/` finders (locality via DGU/RGI, kota via the open DMV grid) with the excerpt embedded; `cavedossier osz backfill` reads a FILLED zapisnik back and proposes the SB backfill (pločica, ime→sinonimi, duljina/dubina, godina, autori via the alias registry) as a review CSV | `features/cave-dossier/` (modules `osz/` + `geo/`) | **prefill + backfill operational** (2026-08-30); real-zapisnik validation + the CroSpeleo-field reader (checkbox groups) pending |
 | <a name="part-21c"></a>**2.1c** | Isječak karte: map excerpt from georef.hr (HTRS96 coords → marker-centered PNG + record text). `cavedossier karta <Redni broj>` delivers `SB_<padded broj>.png` + a `!georef_zapisi.csv` row into the shared `!!Isječci karte` Drive dir | `features/cave-dossier/` (module `georef/`, ported from crospeleo-automation 2026-08-29) | **operational** (M3 done) |
 | <a name="part-21d"></a>**2.1d** | Entrance-photo processing, per cave, in three hops: a cave's photos arrive either in its `SB_<Redni broj>_…` **intake leaf** or in the `!!Fotografije ulaza za istražit` staging queue (`photos pull-staged` moves the queued ones into the leaf, creating it if needed); `photos process` then downsizes them (~1920 px / ~1.5 MB) into `SB_<broj>_<Ime>_<Autor>_<n>.jpg` copies, the author taken from the OSZ cell *Autor fotografije ulaza*; finally the **mover** files them into `!!Fotografije ulaza` under the archive convention `<padded SUE>_<ime>_…_<autor>.jpg`, which can only happen once the cave earns its SUE number. That move is manual today and routinely forgotten, so the tool also **flags staged photos whose cave already has a SUE number** — the leak that leaves old photos in the queue forever | `features/cave-dossier/` (module `photos/`) | matcher + staleness guard done 2026-08-28 (that staging sweep is finished and no longer run); **per-cave downsize + rename done 2026-09-01** (`photos process`, copies only); the mover into `!!Fotografije ulaza` under the katastarski broj is the remaining step |
+| <a name="part-21e"></a>**2.1e** | **Sastavnica prefill** — the Nacrt's title block (logo + 15 cells: numbers, name, koordinate, kota, lokacija, duljine/dubina, mjerilo, crtali/mjerili/istražili/ekipa, datum), prefilled from SB + the cave's filled OSZ + the geo finders. `cavedossier sastavnica <Redni broj>` will deliver `SB_<padded broj>_sastavnica.pdf` into the cave's intake leaf, beside its OSZ. Serves **route B** below — the drafter places it into the Illustrator document instead of typing fifteen values by hand | `features/cave-dossier/` (module `sastavnica/`), template workbench in [sastavnica-template/](features/cave-dossier/sastavnica-template/README.md) | **design only** (2026-09-19) — [sastavnica-design.md](features/cave-dossier/docs/sastavnica-design.md); outside the M-ladder, needs only M1 (done) |
 | <a name="part-22"></a>**2.2** | **Registry communication** — everything the app knows about *which caves exist*. Not a side channel: 2.1 cannot start a dossier without it, and every finished dossier ends by writing back into it | `features/cave-dossier/` | in development |
 | <a name="part-22a"></a>**2.2a** | **SB (Speleo baza)** — the master registry of all caves (discovered + to-be-explored), an `.xlsm` on the Drive mount. Source of coordinates/year/etc. for the OSZ; updated with new data (dimensions) once a survey is finished. Everything else in the app treats it as ground truth | `features/cave-dossier/` (module `sb/`) | **M1 ✅**; write-back at M6 |
 | <a name="part-22b"></a>**2.2b** | **Satellite tables** — SB is the master but not the only table holding cave data. The *Liburnija* Google Sheet (the LiDAR Kristal table, live and edited in the field), plus `Literatura` and `Katastar RH` inside the workbook. None carries an SB row number, so they are joined on shared keys (pločica → `LiDAR Kristal N` synonym → coordinates), **never on a local row id**. `sat sync` compares a satellite against SB and emits four review lists a person carries out — it never writes to either side. This is how a LIDAR candidate becomes an SB row, and how the field sheet learns what happened to it | `features/cave-dossier/` (module `satellites/`), design in [docs/sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md) | **operational** — 126 rows entered SB from Liburnija 2026-08-29 |
+
+### Two routes to the Nacrt — cSurvey and Illustrator
+
+The Nacrt has **two drafting routes**, and only one of them is this app's own.
+They diverge right after TopoDroid and converge on the same deliverable — a
+vector PDF filed in the archive dir — so everything downstream ([2.1](#part-21)
+gathering, [B9](#b9) gating, M6 delivery) is route-blind by construction.
+
+<pre>
+                            TopoDroid survey (.tdx)
+                                       │
+                   ┌───────────────────┴────────────────────┐
+                   ▼                                        ▼
+  ┌─────────────────────────────────┐   ┌───────────────────────────────────────┐
+  │ ROUTE A — cSurvey  (<a href="#part-21a">2.1a</a>, ours) │   │ ROUTE B — Adobe Illustrator           │
+  │   .tdx → .csx → cSurvey drawing │   │   .tdx → DXF / PDF export             │
+  │   → Nacrt PDF + cave dimensions │   │   → hand-drafted .ai → Nacrt PDF      │
+  │   title block: cSurvey's own    │   │   title block: <b>sastavnica</b> (<a href="#part-21e">2.1e</a>, <a href="#b13">B13</a>) │
+  └────────────────┬────────────────┘   └───────────────────┬───────────────────┘
+                   └─────────────► Nacrt PDF ◄──────────────┘
+                 (same artifact, same archive dir, same gates)
+</pre>
+
+Route B is **not our intent, and it is not a fork of the pipeline** — it is the
+society's established practice: `!!!Digitalizacija` on the Drive is that
+workshop, with its own Illustrator manuals (`!Upute_Kukuljan_2020_Adobe
+Illustrator.pdf`), its tool file (`!Alati za digitalizaciju.ai`) and the
+sastavnica itself, and its `!!!UPUTE.txt` tells a drafter to use them. People
+who draft that way will keep drafting that way, and the pipeline serves them at
+exactly one point: **[2.1e](#part-21e) prefills the sastavnica** so the fifteen
+values already in SB are not retyped from it by hand.
+
+Everything else in part 2 is shared between the routes — the same SB row, the
+same intake leaf, the same OSZ, the same photos, the same gates. Route B needs
+no second dossier builder and gets none.
 
 > Picking a part tells you WHAT; the [Bridges section](#bridges--the-scripts-between-the-nodes)
 > right below tells you what to RUN — find your part in its per-part table,
@@ -115,6 +153,7 @@ bridge, not from the command list.
 | [2.1b](#part-21b) OSZ builder | [**B4**](#b4) (once) → [**B6**](#b6) (prefill) → [**H2**](#h2) (field) → [**B7**](#b7) (fetch) → [**H1**](#h1); [**B5**](#b5) to verify the finders |
 | [2.1c](#part-21c) isječak karte | [**B3**](#b3) (standalone; B6 runs it for you) |
 | [2.1d](#part-21d) fotografije ulaza | [**B8**](#b8) (downsize + rename, done); the *mover* into `!!Fotografije ulaza` rides with [**B11**](#b11) (M6) |
+| [2.1e](#part-21e) sastavnica | [**B13**](#b13) (designed, not built) — reads what [**B6**](#b6)/[**B7**](#b7) already know |
 | [2.2a](#part-22a) SB master | destination of [**H1**](#h1); source of [B3](#b3)/[B6](#b6)/[B9](#b9); [**B11**](#b11) (M6) will write it |
 | [2.2b](#part-22b) satellites | [**B1**](#b1) → [**H1**](#h1) |
 
@@ -209,6 +248,10 @@ The bridges that keep names/numbers straight and say when a cave is done.
   (data/people/registry.json ↔          (list/check: aliases resolved, per-person
    !!Izjave za katastar RH)              izjava linkage, missing-statement audit)
 
+  SB row + the leaf's filled OSZ   ···[<a href="#b13">B13</a>] sastavnica ··► SB_&lt;broj&gt;_sastavnica.pdf
+                                        (designed, not built: the Nacrt title       in the leaf
+                                         block prefilled for <a href="#two-routes-to-the-nacrt--csurvey-and-illustrator">route B</a>)
+
   2.1a survey artifacts            ···[<a href="#b10">B10</a>] (M5, planned)···► dossier (Nacrt + dims)
   finished dossier                 ···[<a href="#b11">B11</a>] (M6, planned)···► SB write-back + archive
                                         delivery; the 2.1d mover rides along
@@ -233,6 +276,7 @@ What each label actually runs. One line here; flags and details in the
 | <a name="b10"></a>**B10** | *(M5, planned)* | 2.1a Nacrt + dimensions → dossier | — |
 | <a name="b11"></a>**B11** | *(M6, planned)* `cavedossier deliver <broj>` | dossier → katastarski broj + every file filed under it + SB write-back | gate 1 passes; designed in [m6-delivery-design.md](features/cave-dossier/docs/m6-delivery-design.md) |
 | <a name="b12"></a>**B12** | `cavedossier people list/check` | people registry ↔ izjave dir ↔ SB author cells → audit + `statements-index.json` | a new izjava or author appeared, or periodically — it never changes anything |
+| <a name="b13"></a>**B13** | *(designed, not built)* `cavedossier sastavnica <broj>` | SB + the leaf's filled OSZ + geo → `SB_<padded>_sastavnica.pdf` in the cave's intake leaf | a cave is about to be drafted in Illustrator ([route B](#two-routes-to-the-nacrt--csurvey-and-illustrator)); designed in [sastavnica-design.md](features/cave-dossier/docs/sastavnica-design.md) |
 | <a name="h1"></a>**H1** | a person, in Excel | any `dopune-*.csv` / review list → `Svi objekti` | after B1 / B6 / B7 produce one |
 | <a name="h2"></a>**H2** | the recorder, in the field | prefilled DOCX → completed zapisnik → cave's intake dir | after B6, around the exploration |
 
@@ -248,6 +292,10 @@ The map answers "how do I get from A to B" as a bridge sequence:
 - **After the exploration:** [**H2**](#h2) (zapisnik filed) → [**B7**](#b7) →
   [**H1**](#h1) (SB backfilled) → [**B8**](#b8) (photos) → [**B9**](#b9)
   (is gate 1 met?) → *(M6: [B11](#b11) delivers and writes back)*.
+- **Draft a cave in Illustrator ([route B](#two-routes-to-the-nacrt--csurvey-and-illustrator)):**
+  TopoDroid DXF/PDF export → the drafter's `.ai` → *(designed)* [**B13**](#b13)
+  puts `SB_<broj>_sastavnica.pdf` in the same intake leaf → the drafter places
+  it → Nacrt PDF, which rejoins every other chain unchanged.
 - **Just checking where a cave stands:** [**B9**](#b9) alone; to sanity-check
   the finders' data first, [**B5**](#b5).
 - **A new author (or izjava) appears:** file `Izjava_<Ime>.<ext>` into

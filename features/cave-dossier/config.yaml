@@ -110,7 +110,9 @@ intake:
     "Golobreška nanoekspedicija": 1103   # SB: "Golobreška mikroekspedicija"
     "Krater_CL": 1226              # SB: "Jama Krater u dolcima"
     "Eugenov Dalekovod": 1174      # SB: "Jama pod dalekovodom"
+    # Two objects in Mudni dol; the folders abbreviate it the same way.
     "M.Dol Pećina": 1272           # SB: "Pećina u Mudnoj doli"
+    "Špilja M.Dol": 1452           # SB: "Špilja u Mudnoj doli" (051-773) — user, 2026-09-19
     "kripanj_ivana": 1215          # SB: "Paraglajderska"
     "Solareva draga": 1312         # SB: "Jama u Solarevoj dragi"
     "Dario8": 1450                 # SB: "Dmune8" (051-779) — user, 2026-09-19
@@ -133,7 +135,6 @@ intake:
     # Overrides a lookalike automatic match:
     - "Božur_Frustuck"           # resembles "Božur" (1087) but is a different cave
     # Confirmed by the user 2026-08-29, re-checked 2026-09-19 — still no SB row.
-    - "Špilja M.Dol"
     - "Ona mala špilja_Mileni"
     - "Mune_Nat4_Natalija"
     - "kurvica_na_putu_ivana"

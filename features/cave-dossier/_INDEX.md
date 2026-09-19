@@ -15,6 +15,7 @@
 > - **Isječak karte (georef.hr browser flow)** → `georef/` — staleness/self-healing in `georef/worker.refresh_reason`
 > - **Locality / elevation from coordinates** → `geo/`
 > - **OSZ template writing + prefill** → `osz/` — cell addresses per template version in `osz/addresses.py`
+> - **Sastavnica (Nacrt title block, Illustrator route)** → *not built* — [docs/sastavnica-design.md](docs/sastavnica-design.md) + [sastavnica-template/](sastavnica-template/README.md)
 > - **Satellite tables (Liburnija sheet ↔ SB)** → `satellites/`
 > - **Name/plaque/number matching shared by photos + intake** → `core/matching.py`
 > - **Entrance-photo downsize + rename for one cave** → `photos/process.py`
@@ -56,7 +57,9 @@
 
 Planned modules: `delivery/` (M6 — the last gate: allocate the katastarski
 broj, rename + file every deliverable, write SB back; designed in
-[docs/m6-delivery-design.md](docs/m6-delivery-design.md)), `dossier/intake.py`
+[docs/m6-delivery-design.md](docs/m6-delivery-design.md)), `sastavnica/` (2.1e —
+the Nacrt title block prefilled into a PDF for the Illustrator route; designed
+in [docs/sastavnica-design.md](docs/sastavnica-design.md)), `dossier/intake.py`
 (rest of M2 — resolve a cave's files on Drive), the CroSpeleo half of the OSZ reader (checkbox groups + narrative
 controls + the Google-Docs text variant — `osz/reader.py` covers the
 identity/metadata cells the SB backfill needs), and 2.1d's last step — the
@@ -76,6 +79,8 @@ renames `SB_<Redni broj>` to the katastarski broj once the cave earns one.
 | [docs/sb-powerquery.md](docs/sb-powerquery.md) | SB's Power Query view filters (M code) + how to re-extract them | reference |
 | [docs/sb-write-back-design.md](docs/sb-write-back-design.md) | M6 write-back **mechanics** (COM, backup, rehearsal protocol) — dormant | design |
 | [docs/m6-delivery-design.md](docs/m6-delivery-design.md) | M6 **delivery**: the last gate — `deliver <broj>`, katastarski-broj allocation, rename + file into the archive dirs | design |
+| [docs/sastavnica-design.md](docs/sastavnica-design.md) | 2.1e **sastavnica prefill**: the Nacrt title block for the Illustrator route — measured template geometry, field map, typesetting + font rules, `sastavnica <broj>` | design |
+| [sastavnica-template/README.md](sastavnica-template/README.md) | the sastavnica template workbench (provenance, the planned blank builder) | living reference |
 | [docs/sb-restructure-excel-prompt.md](docs/sb-restructure-excel-prompt.md) | the prompt that drove the v3.0 workbook restructure | history |
 | [osz-template/README.md](osz-template/README.md) | the OSZ v10 template workbench (tools, audits, conformance) | living reference |
 | [data/README.md](data/README.md) | provenance + licences of the downloaded geodata | reference |
@@ -95,6 +100,7 @@ the dev cycle stands), [CLAUDE.md](../../CLAUDE.md) (agent orientation),
 | `.env` | per-machine: `LOCAL_DRIVE_ROOT`, `SB_*`, `GEOREF_*` | no (`.env.example` is) |
 | `config/selectors.yaml` | georef.hr DOM selectors (line-based, not real YAML) | yes |
 | `osz-template/templates/Zapisnik_OSZ_v10.docx` | the template `osz prefill` fills | yes |
+| `sastavnica-template/templates/!SUE_sastavnica.pdf` | the authored Nacrt title block, copied verbatim from Drive `!!!Digitalizacija/` (2.1e, design only) | yes |
 | `data/geo/` | boundary GeoPackages, RGI gazetteer, DEM tiles (`geo fetch-data`) | no (README is) |
 | `data/people/registry.json` | the people registry: canonical authors + curated aliases (hand-curated record) | **yes** |
 | `runs/people/statements-index.json` | derived person ↔ izjava linkage snapshot (`people check`) | no |

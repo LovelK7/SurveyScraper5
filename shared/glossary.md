@@ -8,6 +8,7 @@ conversation; the codebase around them is English. Pipeline part numbers refer t
 |---|---|---|
 | **OSZ** | *Osnovni speleološki zapisnik* — the basic cave record, a per-cave DOCX form aggregating all data | Final product of 2.1b; consumed downstream by crospeleo-automation's OSZ parser |
 | **Nacrt** | The survey map / cave plan, delivered as vector PDF | Final product of 2.1a; archive dir `!!Nacrti/` |
+| **Sastavnica** | The Nacrt's title block — society logo plus fifteen labelled cells (numbers, ime, koordinate, kota, lokacija, duljine/dubina, mjerilo, crtali/mjerili/istražili/ekipa, datum). An Illustrator asset on the Drive (`!!!Digitalizacija/!SUE_sastavnica.ai`) | Part 2.1e (designed): prefilled from SB + the filled OSZ for the Illustrator drafting route |
 | **SB / Speleo baza** | The society's cave registry — live Excel workbook `!Speleo_baza_SUE_v2.4.xlsm` (macro-heavy, shared, on Drive). Rows = every cave discovered + caves to be explored | Part 2.2: source of primary data (coordinates, year), target of write-back (dimensions) |
 | **SUE** | *Katastarski broj SUE* — the society's internal cadastre number, the shared filename key across archive dirs (`<SUE>.docx`, `<SUE>.pdf`, `<SUE>*.jpg`) | Row identity in SB; file naming in delivery (M6) |
 | **Isječak karte** | Map excerpt — marker-centered topo-map PNG + georeference record text, produced via georef.hr from HTRS96 coordinates | Part 2.1c; embedded in OSZ, attached in cadastre submission |
