@@ -118,7 +118,7 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-08-29 — **satellite hub** (`cave_dossier/satellites/`): a committed crosswalk
   file per satellite table + a ranked resolver, replacing the per-table bespoke bridge.
   First payoff is `sat gaps liburnija` — 117 confirmed caves the sheet has and SB does
-  not. Designed in [docs/sb-liburnija-hub.md](../docs/sb-liburnija-hub.md); unscheduled.
+  not. Designed in [docs/sb-liburnija-hub.md](../stages/2B-baza/docs/sb-liburnija-hub.md); unscheduled.
 - 2026-08-29 — SB naming convention worth enforcing at row creation: a cave born from
   Liburnija row N always carries `LiDAR Kristal N` (as `Ime objekta` if unnamed, else in
   `Sinonimi`). Turns the sheet's local number into a legitimate key instead of a trap.

@@ -15,14 +15,14 @@
 > - **Isječak karte (georef.hr browser flow)** → `georef/` — staleness/self-healing in `georef/worker.refresh_reason`
 > - **Locality / elevation from coordinates** → `geo/`
 > - **OSZ template writing + prefill** → `osz/` — cell addresses per template version in `osz/addresses.py`
-> - **Sastavnica (Nacrt title block, Illustrator route)** → `sastavnica/` — cell geometry in `sastavnica/addresses.py`, template workbench in [sastavnica-template/](sastavnica-template/README.md)
+> - **Sastavnica (Nacrt title block, Illustrator route)** → `sastavnica/` — cell geometry in `sastavnica/addresses.py`, template workbench in [sastavnica-template/](../stages/4S-sastavnica/template-workbench/README.md)
 > - **Satellite tables (Liburnija sheet ↔ SB)** → `satellites/`
 > - **Name/plaque/number matching shared by photos + intake** → `core/matching.py`
 > - **Entrance-photo downsize + rename for one cave** → `photos/process.py`
 > - **People: the author registry, aliases, izjava linkage** → `people/` + `data/people/registry.json`
 > - **Prod launchers for operators (build + publish to the Drive)** → `tools/build_prod.py` + `tools/prod_templates/`
-> - **Why a rule/heuristic exists** → [docs/design-decisions.md](docs/design-decisions.md)
-> - **Where a ported file came from** → [docs/PORTING.md](docs/PORTING.md)
+> - **Why a rule/heuristic exists** → [docs/design-decisions.md](design-decisions.md)
+> - **Where a ported file came from** → [docs/PORTING.md](../stages/0P-platform/docs/PORTING.md)
 
 ## Module map (`src/cave_dossier/`)
 
@@ -58,7 +58,7 @@
 
 Planned modules: `delivery/` (M6 — the last gate: allocate the katastarski
 broj, rename + file every deliverable, write SB back; designed in
-[docs/m6-delivery-design.md](docs/m6-delivery-design.md)), `dossier/intake.py`
+[docs/m6-delivery-design.md](../stages/6P-predaja/docs/m6-delivery-design.md)), `dossier/intake.py`
 (rest of M2 — resolve a cave's files on Drive), the CroSpeleo half of the OSZ reader (checkbox groups + narrative
 controls + the Google-Docs text variant — `osz/reader.py` covers the
 identity/metadata cells the SB backfill needs), and 2.1d's last step — the
@@ -69,27 +69,27 @@ renames `SB_<Redni broj>` to the katastarski broj once the cave earns one.
 
 | File | What | Kind |
 |---|---|---|
-| [README.md](README.md) | operator view: what this is, setup, commands, testing | living reference |
-| [docs/design-decisions.md](docs/design-decisions.md) | settled decisions + their why: two gates, rule table, identity, Q&A record, intake/izjava/photo matching, people registry + statement gates, prefill rules | decision record |
-| [docs/PORTING.md](docs/PORTING.md) | ledger of every file copied from crospeleo-automation | living ledger |
-| [docs/EXCEL_WORKBOOK_SAFETY.md](docs/EXCEL_WORKBOOK_SAFETY.md) | why reads are openpyxl and writes are Excel-COM only | decision record |
-| [docs/sb-liburnija-hub.md](docs/sb-liburnija-hub.md) | satellite-hub design (2.2b) | design |
-| [docs/sb-satellite-tables.md](docs/sb-satellite-tables.md) | why satellites join on shared keys, never local row ids (with measurements) | decision record |
-| [docs/sb-powerquery.md](docs/sb-powerquery.md) | SB's Power Query view filters (M code) + how to re-extract them | reference |
-| [docs/sb-write-back-design.md](docs/sb-write-back-design.md) | M6 write-back **mechanics** (COM, backup, rehearsal protocol) — dormant | design |
-| [docs/m6-delivery-design.md](docs/m6-delivery-design.md) | M6 **delivery**: the last gate — `deliver <broj>`, katastarski-broj allocation, rename + file into the archive dirs | design |
-| [docs/sastavnica-design.md](docs/sastavnica-design.md) | 2.1e **sastavnica prefill**: the Nacrt title block for the Illustrator route — measured template geometry, field map, typesetting + font rules, the settled decisions | design + decision record |
-| [sastavnica-template/README.md](sastavnica-template/README.md) | the sastavnica template workbench (provenance, the planned blank builder) | living reference |
-| [docs/sb-restructure-excel-prompt.md](docs/sb-restructure-excel-prompt.md) | the prompt that drove the v3.0 workbook restructure | history |
-| [osz-template/README.md](osz-template/README.md) | the OSZ v10 template workbench (tools, audits, conformance) | living reference |
-| [data/README.md](data/README.md) | provenance + licences of the downloaded geodata | reference |
-| [sessions/SESSIONS.md](sessions/SESSIONS.md) | session journal, newest on top | chronology |
-| [backlog/ideas.md](backlog/ideas.md) | dated idea capture (promote when an idea's time comes) | living ledger |
+| [README.md](commands.md) | operator view: what this is, setup, commands, testing | living reference |
+| [docs/design-decisions.md](design-decisions.md) | settled decisions + their why: two gates, rule table, identity, Q&A record, intake/izjava/photo matching, people registry + statement gates, prefill rules | decision record |
+| [docs/PORTING.md](../stages/0P-platform/docs/PORTING.md) | ledger of every file copied from crospeleo-automation | living ledger |
+| [docs/EXCEL_WORKBOOK_SAFETY.md](../stages/0P-platform/docs/EXCEL_WORKBOOK_SAFETY.md) | why reads are openpyxl and writes are Excel-COM only | decision record |
+| [docs/sb-liburnija-hub.md](../stages/2B-baza/docs/sb-liburnija-hub.md) | satellite-hub design (2.2b) | design |
+| [docs/sb-satellite-tables.md](../stages/2B-baza/docs/sb-satellite-tables.md) | why satellites join on shared keys, never local row ids (with measurements) | decision record |
+| [docs/sb-powerquery.md](../stages/2B-baza/docs/sb-powerquery.md) | SB's Power Query view filters (M code) + how to re-extract them | reference |
+| [docs/sb-write-back-design.md](../stages/6P-predaja/docs/sb-write-back-design.md) | M6 write-back **mechanics** (COM, backup, rehearsal protocol) — dormant | design |
+| [docs/m6-delivery-design.md](../stages/6P-predaja/docs/m6-delivery-design.md) | M6 **delivery**: the last gate — `deliver <broj>`, katastarski-broj allocation, rename + file into the archive dirs | design |
+| [docs/sastavnica-design.md](../stages/4S-sastavnica/docs/sastavnica-design.md) | 2.1e **sastavnica prefill**: the Nacrt title block for the Illustrator route — measured template geometry, field map, typesetting + font rules, the settled decisions | design + decision record |
+| [sastavnica-template/README.md](../stages/4S-sastavnica/template-workbench/README.md) | the sastavnica template workbench (provenance, the planned blank builder) | living reference |
+| [docs/sb-restructure-excel-prompt.md](../stages/2B-baza/docs/sb-restructure-excel-prompt.md) | the prompt that drove the v3.0 workbook restructure | history |
+| [osz-template/README.md](../stages/4O-osz/template-workbench/README.md) | the OSZ v10 template workbench (tools, audits, conformance) | living reference |
+| [data/README.md](../data/README.md) | provenance + licences of the downloaded geodata | reference |
+| [sessions/SESSIONS.md](../journal/SESSIONS.md) | session journal, newest on top | chronology |
+| [backlog/ideas.md](../journal/backlog.md) | dated idea capture (promote when an idea's time comes) | living ledger |
 
-Repo-level: [ARCHITECTURE.md](../../ARCHITECTURE.md) (part numbering — the
-reference vocabulary; dev-vs-prod rules), [STATUS.md](../../STATUS.md) (where
-the dev cycle stands), [CLAUDE.md](../../CLAUDE.md) (agent orientation),
-[shared/glossary.md](../../shared/glossary.md) (Croatian domain terms).
+Repo-level: [ARCHITECTURE.md](../ARCHITECTURE.md) (part numbering — the
+reference vocabulary; dev-vs-prod rules), [STATUS.md](../STATUS.md) (where
+the dev cycle stands), [CLAUDE.md](../CLAUDE.md) (agent orientation),
+[shared/glossary.md](../shared/glossary.md) (Croatian domain terms).
 
 ## Data & runtime locations
 

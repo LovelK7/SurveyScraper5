@@ -4,11 +4,11 @@ This file is the **decision record** for the cave-dossier feature: material
 that was worked out once (mostly in the 2026-08-25/26 sessions with the user)
 and is now built into the code. Read it to understand *why* the tool behaves
 as it does — not to operate it. Operating instructions live in the
-[README](../README.md); the module map for agents/developers is
-[_INDEX.md](../_INDEX.md).
+[README](commands.md); the module map for agents/developers is
+[_INDEX.md](module-map.md).
 
 Nothing here is a live worklist. When a decision changes, update the section
-and note the date; the session journal ([sessions/SESSIONS.md](../sessions/SESSIONS.md))
+and note the date; the session journal ([sessions/SESSIONS.md](../journal/SESSIONS.md))
 keeps the chronology.
 
 ## Contents
@@ -128,7 +128,7 @@ Recognising the state is what shrank the unclassified list from 47 rows to 19.
 
 The filters themselves, an M snippet to re-extract them from the workbook, and
 the applied *exclude za-istražit from Nesređeni* edit are in
-[sb-powerquery.md](sb-powerquery.md).
+[sb-powerquery.md](../stages/2B-baza/docs/sb-powerquery.md).
 
 ## Data flow
 
@@ -162,30 +162,30 @@ not fail — they report as *not checked yet*.
 
 Using `report --cave 570` as the example:
 
-1. [core/config.py](../src/cave_dossier/core/config.py) reads `config.yaml` +
+1. [core/config.py](../stages/0P-platform/src/cave_dossier/core/config.py) reads `config.yaml` +
    `.env` into a `Settings` object and resolves the workbook — LIVE by default,
    FALLBACK onto the local copy on conflict, SANDBOX when forced. The banner you
    see first is printed from this.
-2. [sb/loader.py](../src/cave_dossier/sb/loader.py) opens the workbook read-only
+2. [sb/loader.py](../stages/2B-baza/src/cave_dossier/sb/loader.py) opens the workbook read-only
    (openpyxl), finds the header row by scoring rows against the configured
    column names, and returns the matching row as a `CaveRow` — the raw cells
    plus its **Excel row number** (the handle M6 will write back through).
-3. [dossier/sb_mapper.py](../src/cave_dossier/dossier/sb_mapper.py) turns those raw
+3. [dossier/sb_mapper.py](../stages/5D-dosje/src/cave_dossier/dossier/sb_mapper.py) turns those raw
    cells into typed dossier fields: numbers parsed, `Sinonimi` split, `Autori
    nacrta` split into people (society bracket peeled off as a flag), the
    `za istražit` marker parsed out of Napomena, and the **lifecycle state**
    derived. It then marks `Source.SB` as gathered.
-4. [dossier/gating.py](../src/cave_dossier/dossier/gating.py) runs the rule table.
+4. [dossier/gating.py](../stages/5D-dosje/src/cave_dossier/dossier/gating.py) runs the rule table.
    Each rule declares which source feeds it **and which gate it belongs to**;
    rules whose source is missing are set aside as *unchecked* instead of run.
-5. [dossier/report.py](../src/cave_dossier/dossier/report.py) prints identity →
+5. [dossier/report.py](../stages/5D-dosje/src/cave_dossier/dossier/report.py) prints identity →
    SB status → data → **both gate verdicts**. `--json` prints the dossier object
    instead (raw SB row omitted), which is what later stages will consume.
 
 Nothing in this path can modify the workbook: reads go through openpyxl, and the
-only write path in the package ([sb/safe_io.py](../src/cave_dossier/sb/safe_io.py),
+only write path in the package ([sb/safe_io.py](../stages/2B-baza/src/cave_dossier/sb/safe_io.py),
 xlwings/Excel-COM with backups) is dormant until M6. See
-[sb-write-back-design.md](sb-write-back-design.md).
+[sb-write-back-design.md](../stages/6P-predaja/docs/sb-write-back-design.md).
 
 ## Three-tier verdict
 
@@ -200,7 +200,7 @@ unchecked.
 
 ## The rule table
 
-Every rule lives in [dossier/gating.py](../src/cave_dossier/dossier/gating.py).
+Every rule lives in [dossier/gating.py](../stages/5D-dosje/src/cave_dossier/dossier/gating.py).
 **Gate 2 includes every gate-1 rule**; the last column lists only what it adds.
 
 | Source | Gate 1 — katastarski broj | Gate 2 adds |
@@ -279,7 +279,7 @@ The user's answers from the M2 kickoff, recorded so no session — human or agen
 | 4 | The column is now **`Autori nacrta ili izvor`** — for queued caves it holds the finder/source, not a survey author | Config renamed, with `sb.column_aliases` so the old spelling still reads; the gating label follows; `sb audit-authors` flags citation-shaped values |
 | 5 | List the unclassified rows | `cavedossier sb unclassified` |
 | 6 | Staged photos keep free names but gain an SB_<Redni broj> prefix; needs a name-matching exercise | `cavedossier photos match-queued` |
-| — | **2.1d entrance-photo processing** is a missing pipeline part | Added to [ARCHITECTURE.md](../../../ARCHITECTURE.md) as part 2.1d, plus `Source.PHOTOS`, a gate-1 warning for oversized / unrenamed photos, and the `photos/` module |
+| — | **2.1d entrance-photo processing** is a missing pipeline part | Added to [ARCHITECTURE.md](../ARCHITECTURE.md) as part 2.1d, plus `Source.PHOTOS`, a gate-1 warning for oversized / unrenamed photos, and the `photos/` module |
 
 ## Identity: which number names a cave
 
@@ -308,7 +308,7 @@ a row is inserted above.
 
 Some problems are only visible as a column-wide sweep, and are only fixable in
 Excel — so `sb audit-authors`, `sb unclassified` and `photos match-queued` are
-read-only worklists (commands in the [README](../README.md#commands)).
+read-only worklists (commands in the [README](commands.md#commands)).
 
 `sb audit-authors` (first run, 2026-08-26) reported **483 rows** across six
 flags: `single_name` 172 (a bare first name like "Renata"), `society` 108,
@@ -462,7 +462,7 @@ section.
 ## People registry and the statement gates (2026-08-30)
 
 **The registry.** `data/people/registry.json` — one committed, hand-curated
-JSON, loaded by [people/registry.py](../src/cave_dossier/people/registry.py).
+JSON, loaded by [people/registry.py](../stages/5O-osobe/src/cave_dossier/people/registry.py).
 One entry per person; `name` in full `First Last` form derives its
 abbreviation aliases automatically at load time (`L.Kukuljan`, `LKukuljan`,
 `Lovel K.` …), so the file mostly holds bare names. The design is the
@@ -832,12 +832,12 @@ number"):**
 ## 2.1e sastavnica — the Illustrator branch (2026-09-19)
 
 The full rationale, the measured template geometry and the eight user decisions
-live in their own note, [sastavnica-design.md](sastavnica-design.md). Three
+live in their own note, [sastavnica-design.md](../stages/4S-sastavnica/docs/sastavnica-design.md). Three
 things settled here are cross-cutting and belong in this record:
 
 - **It is a module, not a feature.** The Illustrator drafting route is a new
   *branch of the pipeline* ([ARCHITECTURE §Two routes to the
-  Nacrt](../../../ARCHITECTURE.md#two-routes-to-the-nacrt--csurvey-and-illustrator)),
+  Nacrt](../ARCHITECTURE.md#two-routes-to-the-nacrt--csurvey-and-illustrator)),
   but the code that serves it reads SB through `SBReader`, the cave's leaf
   through `intake.scanner`, the zapisnik through `osz.reader` and the
   coordinates through `geo/`. A separate feature could not import any of that —

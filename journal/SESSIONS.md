@@ -101,7 +101,7 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
   No alias: the old name now errors and names the replacement. SESSIONS left
   verbatim (chronology), the rename recorded in the decision record instead.
   (2) *Designed M6 delivery* — the step the M6 plan never had — as
-  [docs/m6-delivery-design.md](../docs/m6-delivery-design.md): `cavedossier
+  [docs/m6-delivery-design.md](../stages/6P-predaja/docs/m6-delivery-design.md): `cavedossier
   deliver <Redni broj>`, dry-run by default, six steps (OSZ completeness gate →
   `/` filler → files present and nameable → allocate the katastarski broj →
   printed approval → apply: rename, file into the three archive dirs, leaf into
@@ -394,7 +394,7 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 ### 2026-08-29 — satellite hub (part 2.2b): Liburnija ↔ SB, end to end (agent) ✅
 
 - **Did:** turned the read-only Liburnija bridge into a real two-way hub.
-  (1) *Design* — [docs/sb-liburnija-hub.md](../docs/sb-liburnija-hub.md): the
+  (1) *Design* — [docs/sb-liburnija-hub.md](../stages/2B-baza/docs/sb-liburnija-hub.md): the
   four-state candidate lifecycle (`provjereno` × `speleo_obj`), the crossing rule,
   per-stage field ownership, ranked join keys with measured thresholds, and the
   write-back transport options. (2) *Code* — new `cave_dossier/satellites/`
@@ -515,7 +515,7 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
 - **Did:** answered "what did I want changed in the next OSZ" from
   `crospeleo-automation/TODO` (§"OSZ template overhaul", §"replace sa with s"), then
   wrote Croatian placeholder texts for the 11 narrative fields
-  ([osz-template/docs/placeholders.md](../osz-template/docs/placeholders.md)),
+  ([osz-template/docs/placeholders.md](../stages/4O-osz/template-workbench/docs/placeholders.md)),
   grounded in `osz_parser.py` field specs, `RULES.md`, the CroSpeleo UI inventories
   and the three archived OSZ samples (502/795/811). Created
   `features/cave-dossier/osz-template/` (templates + archive, docs, tools, mockups)
@@ -549,7 +549,7 @@ csx-to-survey-pipeline: terse, concrete, honest about limits. Appended by
   lists a stale Izvor-koordinata option set; `_COORD_SOURCE_OPTIONS` in the parser is
   authoritative.
 - **Next:** teach the fetcher content controls (`w:sdt` + `w14:checkbox`), then the
-  mapping rules in [audit-v10.2.md](../osz-template/docs/audit-v10.2.md) §"Pravila
+  mapping rules in [audit-v10.2.md](../stages/4O-osz/template-workbench/docs/audit-v10.2.md) §"Pravila
   preslikavanja" — notably `onečišćenje otpadom` → also Opasnosti `otpad u objektu`,
   MES → two CroSpeleo controls, and the snow/ice presence rule that can retire
   `infer_snow_ice_negative`.

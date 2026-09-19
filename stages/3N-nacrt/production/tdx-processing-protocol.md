@@ -1,6 +1,6 @@
 # TDX → cSurvey processing protocol (closing report of the symbol-mapping brief)
 
-**Status: OPERATIONAL** — brief [tdx-symbol-mapping-brief.md](../projects/0002-tdx-symbol-mapping/brief.md) closed 2026-07-26 with user sign-off after full acceptance on real surveys (`ponor_rupa_babi_pod_kucu`, `rupe_preko_vertikale`; runs in [projects/0002-tdx-symbol-mapping/runs/](../projects/0002-tdx-symbol-mapping/runs/)).
+**Status: OPERATIONAL** — brief [tdx-symbol-mapping-brief.md](../projects/0002-tdx-symbol-mapping/brief.md) closed 2026-07-26 with user sign-off after full acceptance on real surveys (`ponor_rupa_babi_pod_kucu`, `rupe_preko_vertikale`; runs in [projects/0002-tdx-symbol-mapping/runs/](../projects/0002-tdx-symbol-mapping/runs)).
 
 ## What was built
 

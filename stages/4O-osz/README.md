@@ -29,8 +29,8 @@ missing or stale, so one command is enough to produce a field-ready zapisnik.
 ## How it works
 
 The v10 template is a Word document with `w:sdt` **content controls**, which are
-invisible to python-docx — so the writer works on `word/document.xml` with lxml
-directly, at the cell addresses recorded in `addresses.py`. The **legacy** parser
+invisible to python-docx — so the writer works on the `document.xml` inside the
+.docx with lxml directly, at the cell addresses recorded in `addresses.py`. The **legacy** parser
 (`legacy.py`) is the exception: pre-v10 zapisnici have no controls and their
 selections live in run-level bold, which python-docx exposes cleanly.
 

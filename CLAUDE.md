@@ -23,8 +23,8 @@ others.
 
 | Feature | Pipeline part | What it is |
 |---|---|---|
-| [features/csx-to-survey-pipeline/](features/csx-to-survey-pipeline/README.md) | 2.1a | Migrated 2026-08-16 from `cSurvey/dev/`: the TopoDroid → finished-map (Nacrt) pipeline — architecture knowledge base, the operational TDX→CSX processing toolkit, project work items, and decision/session logs. Start at its [README.md](features/csx-to-survey-pipeline/README.md). |
-| [features/cave-dossier/](features/cave-dossier/_INDEX.md) | 2.1, 2.1b, 2.1c, 2.2 | Python package `cave_dossier` (CLI `cavedossier`): SB (Speleo baza) communication, per-cave dossier builder with warning/blocker gating, OSZ prefill, isječak karte, locality/elevation finders. **Agents start at [_INDEX.md](features/cave-dossier/_INDEX.md)** (module + docs map); the human operator's view is its [README.md](features/cave-dossier/README.md); settled rationale is [docs/design-decisions.md](features/cave-dossier/docs/design-decisions.md). |
+| [features/csx-to-survey-pipeline/](stages/3N-nacrt/README.md) | 2.1a | Migrated 2026-08-16 from `cSurvey/dev/`: the TopoDroid → finished-map (Nacrt) pipeline — architecture knowledge base, the operational TDX→CSX processing toolkit, project work items, and decision/session logs. Start at its [README.md](stages/3N-nacrt/README.md). |
+| [features/cave-dossier/](docs/module-map.md) | 2.1, 2.1b, 2.1c, 2.2 | Python package `cave_dossier` (CLI `cavedossier`): SB (Speleo baza) communication, per-cave dossier builder with warning/blocker gating, OSZ prefill, isječak karte, locality/elevation finders. **Agents start at [_INDEX.md](docs/module-map.md)** (module + docs map); the human operator's view is its [README.md](docs/commands.md); settled rationale is [docs/design-decisions.md](docs/design-decisions.md). |
 
 Room for more features later — add new folders under `features/`, one per module.
 Features integrate via **artifacts** (files), never cross-feature imports.
@@ -71,11 +71,11 @@ necessary; don't force it up-front.
 ## Where the deep knowledge is
 
 The deep TopoDroid / cSurvey architecture knowledge base is
-[features/csx-to-survey-pipeline/reference/](features/csx-to-survey-pipeline/reference/README.md)
+[features/csx-to-survey-pipeline/reference/](stages/3N-nacrt/reference/README.md)
 — subsystem docs grounded with `cSurvey/cSurveyPC/...` `path:line` citations,
 adversarially fact-checked. Read the relevant doc before working in a subsystem.
 Current project state and strategy:
-[features/csx-to-survey-pipeline/decisions/roadmap-decisions.md](features/csx-to-survey-pipeline/decisions/roadmap-decisions.md).
+[features/csx-to-survey-pipeline/decisions/roadmap-decisions.md](stages/3N-nacrt/decisions/roadmap-decisions.md).
 This file deliberately does **not** duplicate cSurvey's architecture notes — see
 `cSurvey/CLAUDE.md` and the migrated docs.
 

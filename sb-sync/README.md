@@ -23,8 +23,8 @@ writes to the satellite: it reads the workbook and a cached export, compares
 them, and leaves these lists for a person to carry out. That is the whole
 point — the field sheet is a live Google Sheet people type into, and SB is a
 macro-heavy shared workbook. See
-[docs/sb-liburnija-hub.md](../docs/sb-liburnija-hub.md) for the design and
-[docs/EXCEL_WORKBOOK_SAFETY.md](../docs/EXCEL_WORKBOOK_SAFETY.md) for why.
+[docs/sb-liburnija-hub.md](../stages/2B-baza/docs/sb-liburnija-hub.md) for the design and
+[docs/EXCEL_WORKBOOK_SAFETY.md](../stages/0P-platform/docs/EXCEL_WORKBOOK_SAFETY.md) for why.
 
 ```bash
 cavedossier sat sync --coords --out          # → sb-sync/liburnija/<today>/

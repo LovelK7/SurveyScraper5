@@ -145,7 +145,7 @@ class ObjectLink:
 Why a crosswalk rather than importing the sheet into SB:
 
 - **SB stays master and stays untouched.** No new columns (hard rule, see
-  [sb-write-back-design.md](sb-write-back-design.md)), no imported rows nobody
+  [sb-write-back-design.md](../../6P-predaja/docs/sb-write-back-design.md)), no imported rows nobody
   asked for.
 - **Decisions persist.** `out_of_scope` (row 89, *Jama na Patuhovcu* — another
   society's cave) and `not_a_cave` (150 rows) are recorded once and never
@@ -282,7 +282,7 @@ They are constantly confused, so keep them apart:
 
 | Destination | What it physically is | How anything gets written to it |
 |---|---|---|
-| **SB** | an `.xlsm` workbook sitting on the Google Drive Desktop mount — a real file, opened in real Excel | Excel COM / xlwings, backup first. Already designed: [sb-write-back-design.md](sb-write-back-design.md) |
+| **SB** | an `.xlsm` workbook sitting on the Google Drive Desktop mount — a real file, opened in real Excel | Excel COM / xlwings, backup first. Already designed: [sb-write-back-design.md](../../6P-predaja/docs/sb-write-back-design.md) |
 | **Liburnija** | a *native* Google Sheet. There is no file on disk, Excel cannot open it, and people are typing into it in the field while the tool runs | **this section** |
 
 ### What the tool produces: four lists, and nothing else

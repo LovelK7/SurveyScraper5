@@ -8,7 +8,7 @@ ekipa, datum). It belongs to the **Illustrator route** to the Nacrt — part
 values by hand today.
 
 This folder is the template workbench, the counterpart of
-[osz-template/](../osz-template/README.md).
+[osz-template/](../../4O-osz/template-workbench/README.md).
 
 ## Provenance
 

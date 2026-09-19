@@ -44,7 +44,7 @@ Brief: [brief.md](brief.md)
 ### closed ✅ 2026-07-26 — user sign-off on real data
 
 - **Outputs — Production:** `preprocess_tdx_csx.py`, `fix_imported_linetypes.py`, `make_signs_catalog.py`,
-  `tdx-mapping.json`, `signs-pack/` → [`production/tools/`](../../production/tools/); the standing SOP
+  `tdx-mapping.json`, `signs-pack/` → [`production/tools/`](../../production/tools); the standing SOP
   [`tdx-processing-protocol.md`](../../production/tdx-processing-protocol.md).
 - **Outputs — Reference/knowledge:** [`tdx-symbol-matrix.md`](../../production/tdx-symbol-matrix.md).
 - **Follow-ups:** custom-sign-palette ([backlog](../../backlog/custom-sign-palette.md)); upstream fixes

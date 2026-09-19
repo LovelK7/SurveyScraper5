@@ -1,6 +1,6 @@
 # cave-dossier — SB communication + cave dossier builder
 
-Pipeline parts **2.1 / 2.1b / 2.1c / 2.1d / 2.1e / 2.2** ([ARCHITECTURE.md](../../ARCHITECTURE.md)):
+Pipeline parts **2.1 / 2.1b / 2.1c / 2.1d / 2.1e / 2.2** ([ARCHITECTURE.md](../ARCHITECTURE.md)):
 talk to **SB** (Speleo baza, the society's cave-registry Excel workbook), build a
 per-cave **dossier** with warning/blocker gating, prefill the **OSZ**, produce the
 **isječak karte**, process the **fotografije ulaza**, prefill the Nacrt's
@@ -10,8 +10,8 @@ form.
 
 This page is the **operator's view**: what the tools are, every command you can
 run, and how to set a machine up. Design rationale and settled decisions live in
-[docs/design-decisions.md](docs/design-decisions.md); the module/docs map for
-agents and developers is [_INDEX.md](_INDEX.md).
+[docs/design-decisions.md](design-decisions.md); the module/docs map for
+agents and developers is [_INDEX.md](module-map.md).
 
 ## Contents
 
@@ -35,17 +35,17 @@ agents and developers is [_INDEX.md](_INDEX.md).
 |---|---|
 | Run any tool, look up a command and its flags | [Commands](#commands) (this page, below) |
 | Set up a fresh machine | [Setup](#setup-once) (this page) |
-| Understand **why** a rule / verdict / heuristic behaves as it does | [docs/design-decisions.md](docs/design-decisions.md) |
-| Find a Python module, doc, or data location | [_INDEX.md](_INDEX.md) |
-| See where the dev cycle stands right now | [../../STATUS.md](../../STATUS.md) (milestone ladder + checklists) |
+| Understand **why** a rule / verdict / heuristic behaves as it does | [docs/design-decisions.md](design-decisions.md) |
+| Find a Python module, doc, or data location | [_INDEX.md](module-map.md) |
+| See where the dev cycle stands right now | [../../STATUS.md](../STATUS.md) (milestone ladder + checklists) |
 | What an "M-number" (M1…M6) means | [Milestones](#milestones--what-m1-m6-mean) (this page) |
-| The pipeline map + part numbering (2.1a/b/c…) | [../../ARCHITECTURE.md](../../ARCHITECTURE.md) |
-| **Which command connects part A to part B** (nodes, bridges, chains) | [ARCHITECTURE §Bridges](../../ARCHITECTURE.md#bridges--the-scripts-between-the-nodes) |
-| Where a ported file came from | [docs/PORTING.md](docs/PORTING.md) |
-| Why SB reads are openpyxl and writes Excel-COM only | [docs/EXCEL_WORKBOOK_SAFETY.md](docs/EXCEL_WORKBOOK_SAFETY.md) |
-| The OSZ v10 template workbench (audits, mockups, conformance) | [osz-template/README.md](osz-template/README.md) |
-| What happened in past sessions / captured ideas | [sessions/SESSIONS.md](sessions/SESSIONS.md) · [backlog/ideas.md](backlog/ideas.md) |
-| Work as an AI agent in this repo | [../../CLAUDE.md](../../CLAUDE.md) → [_INDEX.md](_INDEX.md) |
+| The pipeline map + part numbering (2.1a/b/c…) | [../../ARCHITECTURE.md](../ARCHITECTURE.md) |
+| **Which command connects part A to part B** (nodes, bridges, chains) | [ARCHITECTURE §Bridges](../ARCHITECTURE.md#bridges--the-scripts-between-the-nodes) |
+| Where a ported file came from | [docs/PORTING.md](../stages/0P-platform/docs/PORTING.md) |
+| Why SB reads are openpyxl and writes Excel-COM only | [docs/EXCEL_WORKBOOK_SAFETY.md](../stages/0P-platform/docs/EXCEL_WORKBOOK_SAFETY.md) |
+| The OSZ v10 template workbench (audits, mockups, conformance) | [osz-template/README.md](../stages/4O-osz/template-workbench/README.md) |
+| What happened in past sessions / captured ideas | [sessions/SESSIONS.md](../journal/SESSIONS.md) · [backlog/ideas.md](../journal/backlog.md) |
+| Work as an AI agent in this repo | [../../CLAUDE.md](../CLAUDE.md) → [_INDEX.md](module-map.md) |
 
 ## What this does (orientation)
 
@@ -64,7 +64,7 @@ submits against. Everything that is not *Istraženi* is the queue. A verdict is
 three-tier — blocker / warning / *not checked yet* — so "missing" is never
 confused with "nobody looked". The full design (state derivation from SB's own
 Power Query, the rule table, §5.1 year exemptions, identity numbering) is in
-[docs/design-decisions.md](docs/design-decisions.md).
+[docs/design-decisions.md](design-decisions.md).
 
 People go through the **registar osoba** (`data/people/registry.json`): one
 entry per author, aliases derived automatically, so SB's `L.Kukuljan`, an
@@ -77,8 +77,8 @@ audit over the whole registry and workbook.
 ## Milestones — what M1-M6 mean
 
 The M-numbers this repo's docs and comments use everywhere are stage-2 build
-steps (canonical definitions: [ARCHITECTURE.md §Milestones](../../ARCHITECTURE.md#milestones-stage-2);
-current state per milestone: [STATUS.md](../../STATUS.md#milestone-ladder)):
+steps (canonical definitions: [ARCHITECTURE.md §Milestones](../ARCHITECTURE.md#milestones-stage-2);
+current state per milestone: [STATUS.md](../STATUS.md#milestone-ladder)):
 
 | M | In one line |
 |---|---|
@@ -97,7 +97,7 @@ carries into Excel — that is why so many outputs are `dopune-*.csv` files.
 
 This is the full reference. If you are asking *"what do I run to get from
 here to there?"*, start from the pipeline's bridge maps instead —
-[ARCHITECTURE §Bridges](../../ARCHITECTURE.md#bridges--the-scripts-between-the-nodes)
+[ARCHITECTURE §Bridges](../ARCHITECTURE.md#bridges--the-scripts-between-the-nodes)
 — and come back here for the flags.
 
 Exit codes: **1** = ready, **0** = not ready, **99** = error. `--gate` only
@@ -381,7 +381,7 @@ Every command prints the mode first — `SB mode: LIVE (...)`,
 ### Dev vs prod — this setup is the DEV half
 
 Everything on this page assumes the developer's PC. **Prod is the registry
-Drive** (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §Dev vs prod): the
+Drive** (see [ARCHITECTURE.md](../ARCHITECTURE.md) §Dev vs prod): the
 people who run these tools work in the shared Drive folders, not in a repo
 clone. Since 2026-09-02 the operator-facing commands ship there as versioned
 launchers — see [Prod launchers on the Drive](#prod-launchers-on-the-drive)
@@ -491,4 +491,4 @@ is regenerated by `python tests/fixtures/make_mini_sb.py` and deliberately
 reproduces the live workbook's traps (metadata row above the header, header
 spelling variants, a queue row with no SUE, a surname-first author cell). Real
 data checks run manually via the CLI against the sandbox — see
-[STATUS.md](../../STATUS.md) for the current checklist.
+[STATUS.md](../STATUS.md) for the current checklist.

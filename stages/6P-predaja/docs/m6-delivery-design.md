@@ -125,7 +125,7 @@ archive must never receive a 7 MB field photo.
 **A target that already exists is a blocker, never an overwrite.** An existing
 `<broj>.pdf` means the number is taken, which means the allocation is wrong;
 that is a stop, not a merge. (The legacy `_A` *dopunski zapisnik* suffix is
-superseded — decision C1 in [design-decisions.md](design-decisions.md) — so
+superseded — decision C1 in [design-decisions.md](../../../docs/design-decisions.md) — so
 delivery never generates one.)
 
 ## Step 4 — allocate the katastarski broj

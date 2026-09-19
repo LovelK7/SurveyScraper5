@@ -2,7 +2,7 @@
 
 > Povijesno. Završna provjera: [audit-v10.2.md](audit-v10.2.md).
 
-Predložak: [templates/Zapisnik_OSZ_v10.docx](../templates/Zapisnik_OSZ_v10.docx),
+Predložak: [templates/Zapisnik_OSZ_v10.docx](../../src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx),
 stanje od 16:05. Verzija samog zapisnika ostaje **v10** — oznake v10.0 / v10.1
 koriste se samo za razlikovanje varijanti tijekom rada. Strojni izlaz:
 [conformance-v10.1.txt](conformance-v10.1.txt) — `python tools/check_conformance.py`.

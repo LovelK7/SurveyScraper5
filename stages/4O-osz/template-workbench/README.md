@@ -2,7 +2,7 @@
 
 Sve što se tiče **Word predloška Osnovnog speleološkog zapisnika**: verzije
 predloška, alati za inspekciju i provjeru, tekstovi placeholdera i ogledni
-ispunjeni primjerci. Dio featurea [cave-dossier](../README.md) (dio 2.2
+ispunjeni primjerci. Dio featurea [cave-dossier](../../../docs/commands.md) (dio 2.2
 cjevovoda — OSZ builder), ali odvojen jer je ovo rad na dokumentu, a ne na kodu.
 
 ```

@@ -1,6 +1,6 @@
 # OSZ v10 — završna provjera predloška (2026-08-23)
 
-Predložak: [templates/Zapisnik_OSZ_v10.docx](../templates/Zapisnik_OSZ_v10.docx),
+Predložak: [templates/Zapisnik_OSZ_v10.docx](../../src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx),
 stanje od 16:32 — **završna varijanta v10**. Strojni izlaz:
 [conformance-v10.2.txt](conformance-v10.2.txt). Ranije provjere:
 [v10.1](audit-v10.1.md), [v10.0](audit-v10.0.md).

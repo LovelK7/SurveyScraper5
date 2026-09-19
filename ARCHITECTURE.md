@@ -83,15 +83,15 @@ names the exact command.*
 |---|---|---|---|
 | <a name="part-1"></a>**1** | Field mobile app (Android): voice→text description, photos→cloud, receive TopoDroid `.csx`, upload everything to Drive queue dirs | not started — to be built in Android Studio (via Gemini); user has a prior app to reuse as context | **PARKED** (manual workflow suffices; its only design interface is the intake dir contract, settled at 2.1's M2) |
 | <a name="part-2"></a>**2** | Stationary local app for postprocessing, run from VS Code (no GUI yet — function over form) | `features/` below | **ACTIVE** |
-| <a name="part-21"></a>**2.1** | Dossier builder — gathers all available data per cave, with warning/blocker gating (e.g. missing author izjava) | [features/cave-dossier/](features/cave-dossier/README.md) | in development |
-| <a name="part-21a"></a>**2.1a** | csx-to-survey: TopoDroid TDX/CSX → processed survey → Nacrt (PDF/vector). Also yields cave dimensions → SB | [features/csx-to-survey-pipeline/](features/csx-to-survey-pipeline/README.md) — its own feature; integration via artifacts (Nacrt PDF + dimensions), never imports | operational (semi-manual pipeline) |
+| <a name="part-21"></a>**2.1** | Dossier builder — gathers all available data per cave, with warning/blocker gating (e.g. missing author izjava) | [features/cave-dossier/](docs/commands.md) | in development |
+| <a name="part-21a"></a>**2.1a** | csx-to-survey: TopoDroid TDX/CSX → processed survey → Nacrt (PDF/vector). Also yields cave dimensions → SB | [features/csx-to-survey-pipeline/](stages/3N-nacrt/README.md) — its own feature; integration via artifacts (Nacrt PDF + dimensions), never imports | operational (semi-manual pipeline) |
 | <a name="part-21b"></a>**2.1b** | OSZ builder: fills the society's blank OSZ template (SB primary data + 2.1a results + part-1 field data + 2.1c excerpt). `cavedossier osz prefill <Redni broj>` delivers `SB_<broj>_OSZ.docx` prefilled from SB + the `geo/` finders (locality via DGU/RGI, kota via the open DMV grid) with the excerpt embedded; `cavedossier osz backfill` reads a FILLED zapisnik back and proposes the SB backfill (pločica, ime→sinonimi, duljina/dubina, godina, autori via the alias registry) as a review CSV | `features/cave-dossier/` (modules `osz/` + `geo/`) | **prefill + backfill operational** (2026-08-30); real-zapisnik validation + the CroSpeleo-field reader (checkbox groups) pending |
 | <a name="part-21c"></a>**2.1c** | Isječak karte: map excerpt from georef.hr (HTRS96 coords → marker-centered PNG + record text). `cavedossier karta <Redni broj>` delivers `SB_<padded broj>.png` + a `!georef_zapisi.csv` row into the shared `!!Isječci karte` Drive dir | `features/cave-dossier/` (module `georef/`, ported from crospeleo-automation 2026-08-29) | **operational** (M3 done) |
 | <a name="part-21d"></a>**2.1d** | Entrance-photo processing, per cave, in three hops: a cave's photos arrive either in its `SB_<Redni broj>_…` **intake leaf** or in the `!!Fotografije ulaza za istražit` staging queue (`photos pull-staged` moves the queued ones into the leaf, creating it if needed); `photos process` then downsizes them (~1920 px / ~1.5 MB) into `SB_<broj>_<Ime>_<Autor>_<n>.jpg` copies, the author taken from the OSZ cell *Autor fotografije ulaza*; finally the **mover** files them into `!!Fotografije ulaza` under the archive convention `<padded SUE>_<ime>_…_<autor>.jpg`, which can only happen once the cave earns its SUE number. That move is manual today and routinely forgotten, so the tool also **flags staged photos whose cave already has a SUE number** — the leak that leaves old photos in the queue forever | `features/cave-dossier/` (module `photos/`) | matcher + staleness guard done 2026-08-28 (that staging sweep is finished and no longer run); **per-cave downsize + rename done 2026-09-01** (`photos process`, copies only); the mover into `!!Fotografije ulaza` under the katastarski broj is the remaining step |
-| <a name="part-21e"></a>**2.1e** | **Sastavnica prefill** — the Nacrt's title block (logo + 15 cells: numbers, name, koordinate, kota, lokacija, duljine/dubina, mjerilo, crtali/mjerili/istražili/ekipa, datum), prefilled from SB + the cave's filled OSZ + the geo finders. `cavedossier sastavnica <Redni broj>` delivers `SB_<padded broj>_sastavnica.pdf` into the cave's intake leaf, beside its OSZ. Serves **route B** below — the drafter places it into the Illustrator document instead of typing fifteen values by hand | `features/cave-dossier/` (module `sastavnica/`), template workbench in [sastavnica-template/](features/cave-dossier/sastavnica-template/README.md) | **operational** (2026-09-19, same day as its design) — nine cells from SB alone, fourteen once the cave's zapisnik is filled; validated live on SB 1220 + 811. Rules + decisions: [sastavnica-design.md](features/cave-dossier/docs/sastavnica-design.md). Outside the M-ladder — needs only M1 |
+| <a name="part-21e"></a>**2.1e** | **Sastavnica prefill** — the Nacrt's title block (logo + 15 cells: numbers, name, koordinate, kota, lokacija, duljine/dubina, mjerilo, crtali/mjerili/istražili/ekipa, datum), prefilled from SB + the cave's filled OSZ + the geo finders. `cavedossier sastavnica <Redni broj>` delivers `SB_<padded broj>_sastavnica.pdf` into the cave's intake leaf, beside its OSZ. Serves **route B** below — the drafter places it into the Illustrator document instead of typing fifteen values by hand | `features/cave-dossier/` (module `sastavnica/`), template workbench in [sastavnica-template/](stages/4S-sastavnica/template-workbench/README.md) | **operational** (2026-09-19, same day as its design) — nine cells from SB alone, fourteen once the cave's zapisnik is filled; validated live on SB 1220 + 811. Rules + decisions: [sastavnica-design.md](stages/4S-sastavnica/docs/sastavnica-design.md). Outside the M-ladder — needs only M1 |
 | <a name="part-22"></a>**2.2** | **Registry communication** — everything the app knows about *which caves exist*. Not a side channel: 2.1 cannot start a dossier without it, and every finished dossier ends by writing back into it | `features/cave-dossier/` | in development |
 | <a name="part-22a"></a>**2.2a** | **SB (Speleo baza)** — the master registry of all caves (discovered + to-be-explored), an `.xlsm` on the Drive mount. Source of coordinates/year/etc. for the OSZ; updated with new data (dimensions) once a survey is finished. Everything else in the app treats it as ground truth | `features/cave-dossier/` (module `sb/`) | **M1 ✅**; write-back at M6 |
-| <a name="part-22b"></a>**2.2b** | **Satellite tables** — SB is the master but not the only table holding cave data. The *Liburnija* Google Sheet (the LiDAR Kristal table, live and edited in the field), plus `Literatura` and `Katastar RH` inside the workbook. None carries an SB row number, so they are joined on shared keys (pločica → `LiDAR Kristal N` synonym → coordinates), **never on a local row id**. `sat sync` compares a satellite against SB and emits four review lists a person carries out — it never writes to either side. This is how a LIDAR candidate becomes an SB row, and how the field sheet learns what happened to it | `features/cave-dossier/` (module `satellites/`), design in [docs/sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md) | **operational** — 126 rows entered SB from Liburnija 2026-08-29 |
+| <a name="part-22b"></a>**2.2b** | **Satellite tables** — SB is the master but not the only table holding cave data. The *Liburnija* Google Sheet (the LiDAR Kristal table, live and edited in the field), plus `Literatura` and `Katastar RH` inside the workbook. None carries an SB row number, so they are joined on shared keys (pločica → `LiDAR Kristal N` synonym → coordinates), **never on a local row id**. `sat sync` compares a satellite against SB and emits four review lists a person carries out — it never writes to either side. This is how a LIDAR candidate becomes an SB row, and how the field sheet learns what happened to it | `features/cave-dossier/` (module `satellites/`), design in [docs/sb-liburnija-hub.md](stages/2B-baza/docs/sb-liburnija-hub.md) | **operational** — 126 rows entered SB from Liburnija 2026-08-29 |
 
 ### Two routes to the Nacrt — cSurvey and Illustrator
 
@@ -141,7 +141,7 @@ external service, a local cache); a *bridge* is the script or human step that
 moves data between two nodes. Every scripted bridge is labeled **[B#]** and
 every human step **[H#]**; the [catalog below](#bridge-catalog) resolves each
 label to its exact command. Deep flags live in the feature README's
-[command reference](features/cave-dossier/README.md#commands) — start from the
+[command reference](docs/commands.md#commands) — start from the
 bridge, not from the command list.
 
 **Which bridges do I need for part X?**
@@ -260,7 +260,7 @@ The bridges that keep names/numbers straight and say when a cave is done.
 ### Bridge catalog
 
 What each label actually runs. One line here; flags and details in the
-[command reference](features/cave-dossier/README.md#commands).
+[command reference](docs/commands.md#commands).
 
 | Label | Runs | From → to | Run it when |
 |---|---|---|---|
@@ -274,7 +274,7 @@ What each label actually runs. One line here; flags and details in the
 | <a name="b8"></a>**B8** | `cavedossier photos process` (per cave) · `photos pull-staged` (queue → intake leaf) · `photos check-flag` · `photos match-queued` (one-off staging sweep, finished) | intake photos → archive-ready copies; staged photos ↔ SB | a cave's field photos arrived in its intake leaf |
 | <a name="b9"></a>**B9** | `cavedossier report --cave <x>` | gathered sources → gate verdicts | any time — it never changes anything |
 | <a name="b10"></a>**B10** | *(M5, planned)* | 2.1a Nacrt + dimensions → dossier | — |
-| <a name="b11"></a>**B11** | *(M6, planned)* `cavedossier deliver <broj>` | dossier → katastarski broj + every file filed under it + SB write-back | gate 1 passes; designed in [m6-delivery-design.md](features/cave-dossier/docs/m6-delivery-design.md) |
+| <a name="b11"></a>**B11** | *(M6, planned)* `cavedossier deliver <broj>` | dossier → katastarski broj + every file filed under it + SB write-back | gate 1 passes; designed in [m6-delivery-design.md](stages/6P-predaja/docs/m6-delivery-design.md) |
 | <a name="b12"></a>**B12** | `cavedossier people list/check` | people registry ↔ izjave dir ↔ SB author cells → audit + `statements-index.json` | a new izjava or author appeared, or periodically — it never changes anything |
 | <a name="b13"></a>**B13** | `cavedossier sastavnica <broj>` | SB + the leaf's filled OSZ + geo → `SB_<padded>_sastavnica.pdf` in the cave's intake leaf | a cave is about to be drafted in Illustrator ([route B](#two-routes-to-the-nacrt--csurvey-and-illustrator)); best after the zapisnik is filled, but useful before it |
 | <a name="h1"></a>**H1** | a person, in Excel | any `dopune-*.csv` / review list → `Svi objekti` | after B1 / B6 / B7 produce one |
@@ -335,7 +335,7 @@ The map answers "how do I get from A to B" as a bridge sequence:
   *wrong* cave. Join on a shared key, ranked: Broj pločice → `LiDAR Kristal N`
   synonym → Katastarski broj RH → HTRS coordinates (tight, calibrated bands) →
   name (corroboration and duplicate-guard only). Details and the measurements:
-  [sb-satellite-tables.md](features/cave-dossier/docs/sb-satellite-tables.md).
+  [sb-satellite-tables.md](stages/2B-baza/docs/sb-satellite-tables.md).
 - **A LIDAR table carries a stage SB does not model**: *probable* caves — points
   nobody has yet checked are caves at all (`provjereno` / `speleo_obj`). A row
   crosses into SB only once it is confirmed a cave, entering as *Za istražit* or
@@ -346,7 +346,7 @@ The map answers "how do I get from A to B" as a bridge sequence:
   workbook and Liburnija is a Google Sheet people type into in the field, so
   `sat sync` produces review lists (a paste-able CSV for SB, worksheets for the
   rest) and a person carries them out. Same reasoning as the Excel safety rules:
-  [sb-liburnija-hub.md](features/cave-dossier/docs/sb-liburnija-hub.md) §7.
+  [sb-liburnija-hub.md](stages/2B-baza/docs/sb-liburnija-hub.md) §7.
 - **Real data from day one**: development and testing run against real dirs (photos,
   csx, descriptions) under gitignored `example/` zones; committed test fixtures are
   tiny and synthetic.
@@ -381,7 +381,7 @@ geo copy, `.env` with `LOCAL_DRIVE_ROOT` derived from the launcher's own
 location); everything on the Drive is generated by
 `features/cave-dossier/tools/build_prod.py --version X.Y --publish` — see
 the feature README §[Prod launchers on the
-Drive](features/cave-dossier/README.md#prod-launchers-on-the-drive) and the
+Drive](docs/commands.md#prod-launchers-on-the-drive) and the
 decision record. Since v1.2 (same day) operator machines also run the
 `[karta]` georef.hr flow themselves — prefill collects a missing excerpt on
 the spot; every run writes a log under `%LOCALAPPDATA%\CaveDossier\logs\`
