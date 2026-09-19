@@ -6,41 +6,49 @@
 *.csx
 *.CSX
 
-# Bulky gitignored reference material migrated from cSurvey/dev
-# (present locally, absent from a fresh clone; see feature README)
-features/*/literature/
-features/*/example/
+# === Bulky material kept inside a stage =================================
+# Migrated manuals + the TopoDroid symbol repo, and real survey data used
+# for development. Present locally, absent from a fresh clone.
+stages/*/literature/
+stages/*/example/
 
-# === SB <-> satellite sync runs (features/*/sb-sync) ====================
-# One dated folder per `cavedossier sat sync --out` run. The lists carry real
-# society data (cave names, field comments, coordinates), and a run is a
-# snapshot of two moving sources — re-run rather than reuse. The README that
-# explains the folder is tracked; nothing a run produces is.
-features/*/sb-sync/*
-!features/*/sb-sync/README.md
+# === Workspace state at the repo root ===================================
+# One of each, mirroring the shape the prod bundle extracts to, so dev and
+# an operator's %LOCALAPPDATA%\CaveDossier\v<X> resolve identically.
+#
+# THE LEADING SLASHES BELOW ARE LOAD-BEARING. A bare `runs/` or `data/`
+# matches at EVERY depth and would silently start ignoring the TRACKED
+# per-project ground truth under stages/3N-nacrt/projects/*/runs/
+# (RUNLOG.md + the step-NN JSON inspector reports). Keep them anchored.
 
-# === Georef run artifacts (features/*/runs/georef) ======================
-# One folder per cave, overwritten on re-run: Playwright traces, browser
-# logs, screenshots, result JSON. The delivered products live on Drive
-# (!!Isječci karte); nothing here is the record.
-features/*/runs/
+# Real society data: sandbox workbook copies, the Liburnija sheet export
+/example/
 
-# === Downloaded geodata (features/*/data) ================================
-# DGU boundary GeoPackages, the RGI gazetteer and EL-COV DEM tiles —
-# provisioned by `cavedossier geo fetch-data`, regenerable from open DGU
-# services. The README documenting provenance + licences stays tracked.
-features/*/data/*
-!features/*/data/README.md
-# …except the people registry: curated by hand, not downloaded, so it is the
-# record and stays tracked (crospeleo-automation's data/registries/curated/
-# pattern). Derived person↔izjava snapshots land in runs/ instead.
-!features/*/data/people/
-!features/*/data/people/**
+# SB <-> satellite sync runs. One dated folder per `sat sync --out` run;
+# the lists carry cave names, field comments and coordinates. A run is a
+# snapshot of two moving sources — re-run rather than reuse.
+/sb-sync/*
+!/sb-sync/README.md
 
-# === Prod build staging (features/*/tools/build_prod.py) ================
+# Run artifacts, one folder per cave, overwritten on re-run: Playwright
+# traces, browser logs, screenshots, prefill/sastavnica sidecars. The
+# delivered products live on Drive; nothing here is the record.
+/runs/
+
+# Downloaded geodata: DGU boundary GeoPackages, the RGI gazetteer and
+# EL-COV DEM tiles. Regenerable with `cavedossier geo fetch-data`; the
+# README documenting provenance + licences stays tracked.
+/data/*
+!/data/README.md
+# …except the people registry: curated by hand, not downloaded, so it IS
+# the record and stays tracked. Derived person<->izjava snapshots go to runs/.
+!/data/people/
+!/data/people/**
+
+# === Prod build staging (prod/build_prod.py) ============================
 # Rendered launchers + bundle zips; the published copy lives on the Drive
-# (!!!Digitalizacija/SurveyScraper5) and the templates in tools/ are tracked.
-features/*/dist/
+# (!!!Digitalizacija/SurveyScraper5) and the templates in prod/ are tracked.
+/prod/dist/
 
 # === Secrets / per-machine config =======================================
 .env
@@ -67,20 +75,19 @@ desktop.ini
 .idea/
 .vscode/
 
-# === OSZ template workbench (features/cave-dossier/osz-template) =========
+# === OSZ template workbench (stages/4O-osz/template-workbench) ==========
 # Word autosave leftovers (~$ lock files are covered above)
 ~WRL*.tmp
-# Same-day template iterations: heavy, near-identical .docx; the current
-# template in templates/ is the tracked one
-features/cave-dossier/osz-template/templates/archive/
-# Generated mockups: regenerate with tools/make_mockup.py — only the PDFs
-# (small, reviewable without Word) stay tracked
-features/cave-dossier/osz-template/mockups/*.docx
+# Same-day template iterations: heavy, near-identical .docx. The template
+# the tool actually reads now lives in the package, beside its code.
+stages/4O-osz/template-workbench/templates/archive/
+# Generated mockups: regenerate with template-workbench/tools/make_mockup.py
+# — only the PDFs (small, reviewable without Word) stay tracked
+stages/4O-osz/template-workbench/mockups/*.docx
+# Distribution copies are byte-identical to templates/ — the tracked pair
+# there is the record of what was handed out
+stages/4O-osz/template-workbench/distribution/
 
 # === Auto-commit hook (.claude/hooks/auto-commit.sh) =====================
 # Per-machine run log; the commits themselves are the tracked record
 .claude/auto-commit.log
-
-# Distribution copies are byte-identical to templates/ — the tracked pair there
-# (Zapisnik_OSZ_v10.dotx + _gdocs.docx) is the record of what was handed out
-features/cave-dossier/osz-template/distribution/

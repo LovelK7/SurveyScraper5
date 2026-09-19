@@ -1,123 +1,150 @@
 # CLAUDE.md — SurveyScraper5 orientation for AI agents
 
-SurveyScraper5 is an **umbrella "superapp"** that unifies several cave-survey /
-Croatian-speleology tools: it conveys raw cave-exploration data into the two final
-products, the **OSZ** cave file and the **Nacrt** survey map. It is the repo where
-**all work is committed**; the source projects that feed it stay outside as
-read-only reference material.
+SurveyScraper5 conveys raw cave-exploration data into the two final products,
+the **OSZ** cave file and the **Nacrt** survey map. It is the repo where **all
+work is committed**; the source projects that feed it stay outside as read-only
+reference material.
 
-**Read first:** [ARCHITECTURE.md](ARCHITECTURE.md) — the canonical pipeline map and
-part numbering (1, 2.1a/b/c, 2.2). [STATUS.md](STATUS.md) — where the dev cycle
-currently stands. [shared/glossary.md](shared/glossary.md) — Croatian domain terms
-(OSZ, Nacrt, SB, SUE, izjava…); terms stay Croatian, code stays English.
+**Read first:** [ARCHITECTURE.md](ARCHITECTURE.md) — the canonical pipeline map.
+[STATUS.md](STATUS.md) — where the dev cycle currently stands.
+[pipeline.yaml](pipeline.yaml) — the machine-readable stage list the doctor checks
+everything against. [shared/glossary.md](shared/glossary.md) — Croatian domain
+terms (OSZ, Nacrt, SB, SUE, izjava…); terms stay Croatian, code stays English.
 
-> **⚠ App source referenced by the `csx-to-survey-pipeline` feature lives in the
-> read-only `cSurvey/` reference clone (`../cSurvey`), not in this repo.**
-> Citations written `cSurvey/cSurveyPC/path.vb:123` resolve against that clone.
+> **⚠ App source referenced by the `3N-nacrt` stage lives in the read-only
+> `cSurvey/` reference clone (`../cSurvey`), not in this repo.** Citations
+> written `cSurvey/cSurveyPC/path.vb:123` resolve against that clone.
 
-## Features
+## The stages
 
-Each feature is a self-contained module under `features/`. A feature is a unit of
-work with its own docs, tools, and logs — not necessarily sharing code with the
-others.
+One directory per pipeline stage under `stages/`, each with its own README.
+**The label is `<digit><letter>`: the digit is the position in the pipeline, the
+letter is the Croatian name of the thing.** So the folders list in the order data
+flows, and the label says what it is without a lookup. Use these labels in docs,
+STATUS, session logs and conversation — `4O` always means the OSZ builder.
 
-| Feature | Pipeline part | What it is |
-|---|---|---|
-| [features/csx-to-survey-pipeline/](features/csx-to-survey-pipeline/README.md) | 2.1a | Migrated 2026-08-16 from `cSurvey/dev/`: the TopoDroid → finished-map (Nacrt) pipeline — architecture knowledge base, the operational TDX→CSX processing toolkit, project work items, and decision/session logs. Start at its [README.md](features/csx-to-survey-pipeline/README.md). |
-| [features/cave-dossier/](features/cave-dossier/_INDEX.md) | 2.1, 2.1b, 2.1c, 2.2 | Python package `cave_dossier` (CLI `cavedossier`): SB (Speleo baza) communication, per-cave dossier builder with warning/blocker gating, OSZ prefill, isječak karte, locality/elevation finders. **Agents start at [_INDEX.md](features/cave-dossier/_INDEX.md)** (module + docs map); the human operator's view is its [README.md](features/cave-dossier/README.md); settled rationale is [docs/design-decisions.md](features/cave-dossier/docs/design-decisions.md). |
+| Label | Directory | What it is | Was |
+|---|---|---|---|
+| **0P** | [stages/0P-platform/](stages/0P-platform/README.md) | Shared spine: config, the workspace anchor, normalization, matching, the CLI | — |
+| **1T** | [stages/1T-teren/](stages/1T-teren/README.md) | Field capture (PARKED) + the intake-dir contract and scanner | 1 + intake |
+| **2B** | [stages/2B-baza/](stages/2B-baza/README.md) | SB (Speleo baza) master workbook + satellite tables | 2.2a + 2.2b |
+| **3N** | [stages/3N-nacrt/](stages/3N-nacrt/README.md) | csx-to-survey → Nacrt PDF + dimensions; the cSurvey knowledge base | 2.1a |
+| **4G** | [stages/4G-geo/](stages/4G-geo/README.md) | Locality + kota finders (DGU / RGI / DMV) | part of 2.1b |
+| **4I** | [stages/4I-isjecak/](stages/4I-isjecak/README.md) | Isječak karte via georef.hr | 2.1c |
+| **4O** | [stages/4O-osz/](stages/4O-osz/README.md) | OSZ builder — prefill + backfill over the v10 template | 2.1b |
+| **4F** | [stages/4F-fotografije/](stages/4F-fotografije/README.md) | Entrance-photo processing | 2.1d |
+| **4S** | [stages/4S-sastavnica/](stages/4S-sastavnica/README.md) | Nacrt title block for the Illustrator route | 2.1e |
+| **5O** | [stages/5O-osobe/](stages/5O-osobe/README.md) | Registar osoba + izjave linkage | part of 2.1 |
+| **5D** | [stages/5D-dosje/](stages/5D-dosje/README.md) | Dossier model, the two gates, `report` | 2.1 |
+| **6P** | [stages/6P-predaja/](stages/6P-predaja/README.md) | Delivery + SB write-back (designed only) | M6 |
 
-Room for more features later — add new folders under `features/`, one per module.
-Features integrate via **artifacts** (files), never cross-feature imports.
+**Historical documents keep the old numbers.** `journal/SESSIONS.md`,
+`docs/design-decisions.md` and `stages/3N-nacrt/decisions/` were written when
+`2.1b` meant the OSZ builder; they were migrated verbatim and not rewritten. The
+`Was` column above is the mapping — read old logs through it.
 
-**Documentation audience split** (user, 2026-08-30): each feature separates the
-**agent/developer map** (`_INDEX.md` — modules, docs, data locations), the
-**human operator's view** (`README.md` — setup, commands, troubleshooting; no
-design history), and the **decision record** (`docs/design-decisions.md` — what
-was settled once and why). Keep new documentation in the right bucket: when a
-session settles a design question, it goes into the decision record, not the
-README; large documents get a linkable table of contents at the top.
+## The rest of the tree
+
+| Path | What |
+|---|---|
+| `prod/` | **The outward-facing surface** — everything a non-developer touches. See [prod/README.md](prod/README.md) and [prod/drive-layout.md](prod/drive-layout.md). |
+| `docs/` | Cross-cutting records: [design-decisions.md](docs/design-decisions.md) (the settled rationale, whole), [commands.md](docs/commands.md) (every CLI command in one place), [module-map.md](docs/module-map.md). |
+| `journal/` | [SESSIONS.md](journal/SESSIONS.md) + [backlog.md](journal/backlog.md) — the active log. `/wrap-up` writes here. |
+| `config.yaml`, `.env` | Committed config; per-machine facts. Workspace root. |
+| `data/`, `runs/`, `sb-sync/`, `example/` | Workspace state, one of each, mostly gitignored. |
+| `conftest.py`, `tests/fixtures/` | Repo-level test infra; per-stage tests live in `stages/*/tests/`. |
+| `tools/pipeline_doctor.py` | The structural health check. |
+
+## How the code is laid out
+
+**One importable package, many source roots.** Each stage owns
+`stages/<label>-<name>/src/cave_dossier/<subpackage>/`, and `import
+cave_dossier.osz` works unchanged. `pyproject.toml` maps them with an explicit
+`[tool.setuptools.package-dir]` table.
+
+Three rules that are easy to get wrong:
+
+1. **Never use `packages.find` with `where = [several roots]`.** It is not a
+   union — setuptools collapses every root onto `cave_dossier` and the last one
+   silently wins; `pip install -e .` succeeds and the import then fails. The
+   explicit `package-dir` map is the only form that works.
+2. **There is no `cave_dossier/__init__.py`.** PEP 420 namespace; adding one
+   makes that root win and the others vanish.
+3. **Adding a subpackage means editing `pyproject.toml` and `pipeline.yaml`.**
+   The doctor fails if a subpackage exists that no stage claims.
+
+**Paths.** Never re-derive a root with `parents[N]`. Use
+`cave_dossier.core.paths`: `workspace_root()` for config and mutable state
+(`config.yaml`, `.env`, `data/`, `runs/`, `sb-sync/`), `repo_root()` only for
+dev-only sibling-repo reaches (it returns `None` in prod), and
+`Path(__file__).parent` for package assets that ship with their code.
 
 ## Read-only reference repos (HARD RULE)
 
 Two sibling repos are **reference material only. NEVER edit files in them, NEVER
-run git write commands (commit/push/checkout/reset/...) in them.** All work —
+run git write commands (commit/push/checkout/reset/…) in them.** All work —
 code, docs, logs — lands in SurveyScraper5.
 
 | Repo | Role |
 |---|---|
-| `../cSurvey` | VB.NET / .NET Framework 4.8 desktop cave-survey app (~320k LOC). **Upstream GitHub clone the user does not own** — kept clean so upstream can be pulled freely. The `csx-to-survey-pipeline` feature's `path:line` citations resolve here. Its own `CLAUDE.md` is the one-page orientation to that codebase. (Its `dev/` folder is the pre-migration original of our first feature; treat it as frozen history.) |
-| `../crospeleo-automation` | Python automation for Croatian cave-catalog (CroSpeleo / SpeleoFlow) submissions. Own repo, own workspace. It is the **downstream consumer** of SurveyScraper5's delivery dirs (it submits finished dossiers to the national cadastre). **Porting rule:** code may be COPIED from it into this repo and adapted freely — log every copy in `features/cave-dossier/docs/PORTING.md`; never edit the source repo. |
+| `../cSurvey` | VB.NET desktop cave-survey app (~320k LOC). **Upstream GitHub clone the user does not own** — kept clean so upstream can be pulled freely. `3N-nacrt`'s `path:line` citations resolve here. |
+| `../crospeleo-automation` | Python automation for Croatian cave-catalog submissions. The **downstream consumer** of this repo's Drive delivery dirs. **Porting rule:** code may be COPIED from it and adapted freely — log every copy in [stages/0P-platform/docs/PORTING.md](stages/0P-platform/docs/PORTING.md); never edit the source repo. |
 
 Open [SurveyScraper5.code-workspace](SurveyScraper5.code-workspace) to get all
-three folders in one VS Code window (reference repos labeled read-only).
+three folders in one VS Code window.
 
 ## Dev vs prod
 
-This repo is the **dev** half; **prod is the registry Google Drive** — the
-shared folders where the society's non-developer users work and where every
-tool's outputs already land. Productionization (distributable tools + cloud
-copies of the data/templates they need) is a noted, unscheduled stage — see
-[ARCHITECTURE.md](ARCHITECTURE.md) §"Dev vs prod" for the standing
-portability rules every new tool must respect NOW so that step stays cheap.
+This repo is the **dev** half; **prod is the registry Google Drive** — the shared
+folders where the society's non-developer users work and where every tool's
+outputs already land. The contract, the dirs and the standing portability rules
+are in [prod/README.md](prod/README.md) and [prod/drive-layout.md](prod/drive-layout.md).
+
+The workspace root is deliberately shaped like the extracted prod bundle, so one
+`workspace_root()` rule serves dev and an operator's
+`%LOCALAPPDATA%\CaveDossier\v<X>` alike.
 
 ## Shared domain, not shared code
 
 The source projects overlap on the **speleology domain** — caves, surveys,
-catalog records, file formats (`.csx`/`.csz`/`.th`) — but their tech stacks
-differ (VB.NET vs Python). What they share is **specs / data / domain
-knowledge, NOT code.** Distill shared material into `shared/` only as it proves
-necessary; don't force it up-front.
+catalog records, file formats — but their tech stacks differ (VB.NET vs Python).
+What they share is **specs / data / domain knowledge, NOT code.** Stages
+integrate via **artifacts** (files), never cross-stage imports of each other's
+orchestrators. Distill shared material into `shared/` only as it proves
+necessary.
 
-## Where the deep knowledge is
+## Documentation audience split
 
-The deep TopoDroid / cSurvey architecture knowledge base is
-[features/csx-to-survey-pipeline/reference/](features/csx-to-survey-pipeline/reference/README.md)
-— subsystem docs grounded with `cSurvey/cSurveyPC/...` `path:line` citations,
-adversarially fact-checked. Read the relevant doc before working in a subsystem.
-Current project state and strategy:
-[features/csx-to-survey-pipeline/decisions/roadmap-decisions.md](features/csx-to-survey-pipeline/decisions/roadmap-decisions.md).
-This file deliberately does **not** duplicate cSurvey's architecture notes — see
-`cSurvey/CLAUDE.md` and the migrated docs.
+Established by the user 2026-08-30, and unchanged by the restructure:
 
-## Path conventions (established at migration)
+- **`stages/*/README.md`** — what that stage does, how to run it, how it works,
+  where its code and assets are. The one place to look to understand a segment.
+- **`docs/design-decisions.md`** — the decision record: what was settled once and
+  why. Stage READMEs link into it rather than restating it.
+- **`prod/`** — the operator-facing surface.
 
-- `cSurvey/cSurveyPC/...` (or any `cSurvey/...` path) → the read-only reference
-  clone at `../cSurvey`.
-- Inside a feature, bare zone paths (`reference/…`, `production/…`,
-  `projects/…`, `decisions/…`, `sessions/…`, `backlog/…`) are relative to that
-  feature's root.
-- Historical logs (`sessions/SESSIONS.md`, per-project `log.md`, `RUNLOG.md`)
-  were migrated **verbatim** and may still contain pre-migration `dev/...` and
-  bare `cSurveyPC/...` paths — map them mentally via the two rules above.
-- Doc aliases inherited from cSurvey: `example/` (gitignored, present locally
-  only) mirrors sample surveys whose tracked originals are
-  `cSurvey/cSurveyPC/data/` (`example/buless.csz` =
-  `cSurvey/cSurveyPC/data/buless_test1.csz`); `literature/` (gitignored) holds
-  manuals + the TopoDroid symbol repo.
+When a session settles a design question it goes into the decision record, not a
+README. Large documents get a linkable table of contents at the top.
 
 ## Logging discipline
 
 Commits are automated: [`.claude/hooks/auto-commit.sh`](.claude/hooks/README.md)
-commits and pushes everything to GitHub on a throttled checkpoint during long
-sessions and again at session end. Those commits are tagged `chore(auto):` — they
-are a backup safety net, not the record. The record is still `/wrap-up`'s curated
-commit, so nothing below changes.
+commits and pushes to GitHub on a throttled checkpoint and at session end, tagged
+`chore(auto):`. Those are a backup safety net, not the record. **The hook only
+ever acts on `main`** — working on a branch makes it inert, which is the
+supported way to do a risky migration.
 
-**Development runs through `/feature-dev`**
-(`.claude/skills/feature-dev/SKILL.md`): the phased guide for building any
-feature or capability — standing build rules (SB never auto-written, hand-managed
-Drive dirs, fail-soft + offline, dev/prod portability), the test protocol
-(synthetic fixtures → terminal-first live validation → verify in the real
-consumer), and the **documentation close-out checklist** (README commands,
-_INDEX, design-decisions, ARCHITECTURE part status + bridges, STATUS milestone
-ladder, PORTING, backlog). It ends by running `python tools/pipeline_doctor.py`
-— broken links, undocumented CLI commands, _INDEX drift, doc orphans, stale
-status claims. Doc updates are part of the work, not a follow-up request.
+**Development runs through `/feature-dev`** (`.claude/skills/feature-dev/SKILL.md`):
+standing build rules (SB never auto-written, hand-managed Drive dirs, fail-soft +
+offline, dev/prod portability), the test protocol, and the documentation
+close-out checklist. It ends by running `python tools/pipeline_doctor.py`.
+Doc updates are part of the work, not a follow-up request.
 
-The repo runs a logging discipline — keep it up. **End every working session with
-`/wrap-up`** (`.claude/skills/wrap-up/SKILL.md`): it updates [STATUS.md](STATUS.md),
-appends a session block to the touched feature's `sessions/SESSIONS.md`, captures
-new ideas into the feature's `backlog/`, and commits everything on `main` (single
-branch, single history — the user is the sole developer). Per-project `log.md` and
-run `RUNLOG.md` files are tracked ground truth (survey snapshots `.csz`/`.csx` are
-gitignored, never committed).
+**End every working session with `/wrap-up`** (`.claude/skills/wrap-up/SKILL.md`):
+it updates [STATUS.md](STATUS.md), appends a block to
+[journal/SESSIONS.md](journal/SESSIONS.md), captures ideas into
+[journal/backlog.md](journal/backlog.md), and commits on `main`.
+
+Survey snapshots (`.csz`/`.csx`) are gitignored and never committed. Before any
+change that moves files, check `git check-ignore` still covers `data/`, `runs/`,
+`example/` and `sb-sync/` — the auto-commit hook runs `git add -A`.

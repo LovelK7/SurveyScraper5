@@ -12,7 +12,9 @@ the pipeline doctor, then hand off to `/wrap-up`.
    this work belongs to and the **bridges** it touches (§Bridges — part →
    bridge → command is the repo's navigation model). Read
    [STATUS.md](../../../STATUS.md) for the milestone ladder, and the touched
-   feature's `_INDEX.md` for its module map.
+   stage's `README.md` for what it does and where its code lives.
+   [pipeline.yaml](../../../pipeline.yaml) lists every stage with the
+   subpackages and CLI commands it owns.
 2. When the user answers a design question, that answer is a **decision** —
    it will be recorded in `docs/design-decisions.md` at close-out (with date
    and the why), never left only in chat and never dumped into the README.
@@ -67,16 +69,20 @@ the pipeline doctor, then hand off to `/wrap-up`.
 ## Phase 4 — Documentation close-out (the part that keeps getting forgotten)
 
 Docs are updated **in the same session as the code**, in the right bucket
-(audience split, root CLAUDE.md): agents read `_INDEX.md`, the operator reads
-`README.md`, rationale lives in `docs/design-decisions.md`. Walk this
+(audience split, root CLAUDE.md): the stage `README.md` says what the stage
+does and how to run it; rationale lives in `docs/design-decisions.md` at the
+repo root. Walk this
 checklist explicitly — every box, every time:
 
-- [ ] **Feature README — Commands section**: every new subcommand/flag
-      appears in its part-grouped block, with the behavioral rules as
-      comments. Living content (Commands) stays ABOVE run-once content
-      (Setup). TOC updated; headings linkable.
-- [ ] **`_INDEX.md`**: new modules in the module map + layer cheat-sheet;
-      new docs in the docs map; new data locations in the locations table.
+- [ ] **The stage README**: every new subcommand/flag appears in the README
+      of the stage that OWNS it — the doctor checks exactly this, via
+      `pipeline.yaml`. Add it to `docs/commands.md` too, the one place
+      listing every command.
+- [ ] **`pipeline.yaml`**: a new subpackage or CLI command must be claimed
+      by exactly one stage. A new stage needs its folder, its README and an
+      entry here. A new subpackage ALSO needs a `packages` entry and a
+      `package-dir` line in `pyproject.toml` — `packages.find` cannot be
+      used across several source roots (see CLAUDE.md).
 - [ ] **`docs/design-decisions.md`**: every decision settled this session,
       dated, with its why — including what was validated and against what.
       TOC entry added.
@@ -89,9 +95,9 @@ checklist explicitly — every box, every time:
       session).
 - [ ] **STATUS.md**: milestone-ladder row + the detailed checklist for the
       touched milestone.
-- [ ] **`docs/PORTING.md`**: a row per ported file (already done in Phase 1,
-      verify none were missed).
-- [ ] **`backlog/ideas.md`**: dated one-liners for every "we should also"
+- [ ] **`stages/0P-platform/docs/PORTING.md`**: a row per ported file
+      (already done in Phase 1, verify none were missed).
+- [ ] **`journal/backlog.md`**: dated one-liners for every "we should also"
       that surfaced and was not built.
 
 ## Phase 5 — Pipeline doctor, then wrap up
@@ -101,7 +107,7 @@ python tools/pipeline_doctor.py
 ```
 
 - **FAIL** lines (broken links, CLI commands missing from the README,
-  `_INDEX` paths that don't exist) are fixed before finishing — no
+  a subpackage no stage claims) are fixed before finishing — no
   exceptions.
 - **WARN** lines are triaged: fix what's cheap, backlog the rest with a
   dated line.

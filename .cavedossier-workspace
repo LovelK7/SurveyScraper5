@@ -1,0 +1,7 @@
+# Marks the cave_dossier workspace root: the directory holding config.yaml,
+# .env, data/, runs/ and sb-sync/.
+#
+# cave_dossier.core.paths.workspace_root() walks up for this file, which is
+# why the same rule works in a dev clone and in an extracted prod bundle at
+# %LOCALAPPDATA%\CaveDossier\v<X>. prod/build_prod.py ships it in bundle.zip;
+# without it, every operator run fails at startup.

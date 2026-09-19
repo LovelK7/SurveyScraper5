@@ -1,0 +1,273 @@
+"""Part 2.1c unit tests — everything that runs WITHOUT a browser: serial
+lookup, input building, delivery naming, the !georef_zapisi.csv upsert, and
+the selectors-file parser. The Playwright flow itself is exercised live
+(one cave per attended run), never from tests."""
+
+from __future__ import annotations
+
+import dataclasses
+from pathlib import Path
+
+import pytest
+
+import struct
+import zlib
+
+from cave_dossier.core.config import Settings
+from cave_dossier.georef import worker
+from cave_dossier.georef.models import GeorefInput
+from cave_dossier.georef.selectors import load_selectors
+from cave_dossier.sb.loader import SBReader
+
+
+def tiny_png(width: int, height: int) -> bytes:
+    """A minimal valid PNG — refresh_reason reads real IHDR headers now."""
+    def chunk(typ: bytes, data: bytes) -> bytes:
+        return (struct.pack(">I", len(data)) + typ + data
+                + struct.pack(">I", zlib.crc32(typ + data) & 0xFFFFFFFF))
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    raw = b"".join(b"\x00" + b"\x00\x00\x00" * width for _ in range(height))
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+# ── Serial lookup + input building (synthetic mini workbook) ───────
+
+
+def test_find_by_serial_resolves_the_row(reader: SBReader, settings: Settings) -> None:
+    cave = worker.find_by_serial(reader, settings, 1)
+    assert cave is not None
+    assert cave.object_name == "Špilja Testovka"
+
+
+def test_find_by_serial_unknown_number(reader: SBReader, settings: Settings) -> None:
+    assert worker.find_by_serial(reader, settings, 99) is None
+
+
+def test_build_input_reads_sb_coordinates(reader: SBReader, settings: Settings) -> None:
+    cave = worker.find_by_serial(reader, settings, 1)
+    georef_input = worker.build_input(cave, settings)
+    assert georef_input.object_id == "1"
+    assert georef_input.object_name == "Špilja Testovka"
+    assert georef_input.x_htrs == 450123.0
+    assert georef_input.y_htrs == 5023456.0
+    assert georef_input.source == "sb_htrs"
+    assert georef_input.notes == []
+
+
+def test_build_input_flags_missing_coordinates(reader: SBReader, settings: Settings) -> None:
+    cave = worker.find_by_serial(reader, settings, 4)  # queue row, no coords
+    georef_input = worker.build_input(cave, settings)
+    assert georef_input.x_htrs is None
+    assert georef_input.source is None
+    assert georef_input.notes
+
+
+def test_coordinate_variants_round_to_integer_metres() -> None:
+    # The Georef form silently rejects decimals (crospeleo, SUE 960 lesson).
+    assert GeorefInput.coordinate_variants(361433.72) == ["361434"]
+    assert GeorefInput.coordinate_variants(None) == []
+
+
+# ── Delivery naming ────────────────────────────────────────────────
+
+
+def test_delivery_paths_use_padded_serial(settings: Settings, tmp_path: Path) -> None:
+    configured = dataclasses.replace(
+        settings,
+        local_drive_root=tmp_path,
+        archive_dirs={"map_excerpts_dir": "!!Isječci karte"},
+    )
+    paths = worker.delivery_paths(configured, 17)
+    assert paths.png == tmp_path / "!!Isječci karte" / "SB_0017.png"
+    assert paths.records_csv == tmp_path / "!!Isječci karte" / "!georef_zapisi.csv"
+
+
+def test_delivery_paths_need_drive_root(settings: Settings) -> None:
+    assert worker.delivery_paths(settings, 17) is None  # fixture has no drive root
+
+
+# ── !georef_zapisi.csv upsert ───────────────────────────────────────
+
+
+def test_upsert_record_creates_then_updates(tmp_path: Path) -> None:
+    csv_path = tmp_path / "!georef_zapisi.csv"
+    worker.upsert_record(csv_path, "0002", "Jama Čavlić", "zapis; star", "2026-08-29")
+    worker.upsert_record(csv_path, "0001", "Špilja Testovka", "zapis; jedan", "2026-08-29")
+    # Re-running cave 0002 must REPLACE its row, not append a duplicate.
+    worker.upsert_record(csv_path, "0002", "Jama Čavlić", "zapis;\nnov", "2026-08-30")
+
+    raw = csv_path.read_bytes()
+    assert raw.startswith(b"\xef\xbb\xbf")  # BOM, as Excel expects of a .csv
+    assert b"\r\n" in raw
+
+    lines = csv_path.read_text(encoding="utf-8-sig").splitlines()
+    assert lines[0].split(",")[:2] == ["Redni broj", "Ime objekta"]
+    assert len(lines) == 3  # header + two caves
+    assert lines[1].startswith("0001")  # sorted by padded serial
+    assert "zapis; nov" in lines[2]  # updated + flattened to one line
+    assert "star" not in lines[2]
+
+
+def test_excel_mangled_csv_still_matches(settings: Settings, tmp_path: Path) -> None:
+    """The collation CSV round-trips through Excel (seen live 2026-08-30):
+    leading zeros stripped ('0651' → '651'), local date format, blank ',,,'
+    rows appended. The lookup must still find the row, and an upsert must
+    repair the padding instead of duplicating."""
+    csv_path = tmp_path / "!georef_zapisi.csv"
+    csv_path.write_text(
+        "Redni broj,Ime objekta,Georef zapis,Datum\r\n"
+        ",,,\r\n"
+        "651,Jama na Globoko,999;Jama na Globoko;1;2;0.7,30.8.2026\r\n",
+        encoding="utf-8-sig",
+    )
+    rows = worker.read_records(csv_path)
+    assert worker.record_key("0651") in rows  # unpadded row found via the key
+    assert len(rows) == 1                     # blank ',,,' row skipped
+
+    configured = dataclasses.replace(
+        settings, local_drive_root=tmp_path, archive_dirs={"map_excerpts_dir": "."},
+    )
+    paths = worker.delivery_paths(configured, 651)
+    paths.png.write_bytes(tiny_png(50, 40))  # current 5:4 format
+    assert worker.refresh_reason(configured, 651, "Jama na Globoko") is None
+
+    # Upsert re-pads the Excel-stripped row rather than adding a second one.
+    worker.upsert_record(csv_path, "0651", "Jama na Globoko",
+                         "999;Jama na Globoko;1;2;0.7", "2026-08-30")
+    lines = csv_path.read_text(encoding="utf-8-sig").splitlines()
+    assert len(lines) == 2  # header + the one cave
+    assert lines[1].startswith("0651")
+
+
+def test_old_format_excerpt_refreshes_itself(settings: Settings, tmp_path: Path) -> None:
+    """A format change must invalidate collected excerpts automatically —
+    the 1:1 → 5:4 migration (2026-08-30) forced the user to delete files
+    by hand because skip-if-collected saw the old squares as 'present'.
+    The dir is managed by hand by non-technical people; the tool detects."""
+    configured = dataclasses.replace(
+        settings, local_drive_root=tmp_path, archive_dirs={"map_excerpts_dir": "."},
+    )
+    paths = worker.delivery_paths(configured, 651)
+    worker.upsert_record(paths.records_csv, "0651", "Jama na Globoko",
+                         "999;Jama na Globoko;1;2;0.7", "2026-08-30")
+
+    # The old square format → stale, regardless of a valid CSV row.
+    paths.png.write_bytes(tiny_png(50, 50))
+    reason = worker.refresh_reason(configured, 651, "Jama na Globoko")
+    assert reason is not None and "5:4" in reason
+
+    # Junk where the PNG should be (hand-copied wrong file) → also stale.
+    paths.png.write_bytes(b"not a png at all........")
+    assert worker.refresh_reason(configured, 651, "Jama na Globoko") is not None
+
+    # Current 5:4 format → clean skip.
+    paths.png.write_bytes(tiny_png(50, 40))
+    assert worker.refresh_reason(configured, 651, "Jama na Globoko") is None
+
+
+def test_rename_invalidates_a_collected_excerpt(settings: Settings, tmp_path: Path) -> None:
+    """The cave name is an integral part of the georef zapis (it is typed into
+    the point and comes back inside the record), so an SB rename — e.g. a field
+    name like 'LiDAR Kristal 31' becoming a synonym of the real name — must
+    trigger a re-run, not a skip (user, 2026-08-30)."""
+    configured = dataclasses.replace(
+        settings,
+        local_drive_root=tmp_path,
+        archive_dirs={"map_excerpts_dir": "!!Isječci karte"},
+    )
+    paths = worker.delivery_paths(configured, 1320)
+    paths.png.parent.mkdir(parents=True)
+    paths.png.write_bytes(tiny_png(50, 40))  # current 5:4 format
+    worker.upsert_record(paths.records_csv, "1320", "LiDAR Kristal 31",
+                         "999;LiDAR Kristal 31;1;2;0.7", "2026-08-30")
+
+    # Same name → current, skip stands.
+    assert worker.refresh_reason(configured, 1320, "LiDAR Kristal 31") is None
+    # Renamed in SB → stale, with both names in the reason.
+    reason = worker.refresh_reason(configured, 1320, "Jama Nova")
+    assert reason is not None and "LiDAR Kristal 31" in reason and "Jama Nova" in reason
+    # PNG without a CSV row → the pair is incomplete, also a refresh.
+    paths.records_csv.unlink()
+    assert worker.refresh_reason(configured, 1320, "LiDAR Kristal 31") is not None
+    # Nothing collected at all → not a refresh case (normal fetch path).
+    paths.png.unlink()
+    assert worker.refresh_reason(configured, 1320, "LiDAR Kristal 31") is None
+
+
+# ── Excerpt size budget ────────────────────────────────────────────
+
+
+def test_save_png_under_limit_downscales_to_fit(tmp_path: Path) -> None:
+    # Random noise defeats PNG compression, forcing the downscale loop.
+    pytest.importorskip("PIL")
+    pytest.importorskip("playwright")  # flows.py imports it at module scope
+    import numpy
+    from PIL import Image
+
+    from cave_dossier.georef.flows import save_png_under_limit
+
+    noise = numpy.random.default_rng(7).integers(0, 256, (1400, 1400, 3), dtype="uint8")
+    image = Image.fromarray(noise, "RGB")
+    target = tmp_path / "excerpt.png"
+    save_png_under_limit(image, target, max_bytes=1_000_000)
+    assert target.stat().st_size <= 1_000_000
+    assert min(Image.open(target).size) >= 512  # floor respected
+
+
+def test_quantization_keeps_the_marker_red() -> None:
+    # Regression (2026-08-30): a plain 256-color quantize merged the tiny red
+    # pin into the map palette — it came out green-grey. The reserved-slot
+    # quantizer must keep it unmistakably red.
+    pytest.importorskip("PIL")
+    pytest.importorskip("playwright")
+    from PIL import Image
+
+    from cave_dossier.georef.flows import _quantize_keeping_marker_red
+
+    # A green map-like field with a small red pin: a naive median-cut spends
+    # every palette entry on the green gradient.
+    image = Image.new("RGB", (400, 400))
+    pixels = image.load()
+    for y in range(400):
+        for x in range(400):
+            pixels[x, y] = (x % 60, 120 + (y % 90), x % 40)
+    for y in range(190, 210):
+        for x in range(195, 205):
+            pixels[x, y] = (220, 20, 30)
+
+    quantized = _quantize_keeping_marker_red(image).convert("RGB")
+    r, g, b = quantized.getpixel((200, 200))
+    assert r > 180 and r - g > 100 and r - b > 100
+
+
+# ── Selectors parser ───────────────────────────────────────────────
+
+
+def test_load_selectors_keeps_css_ids_and_strips_comments(tmp_path: Path) -> None:
+    path = tmp_path / "selectors.yaml"
+    path.write_text(
+        "# a comment line\n"
+        "georef_save_button: \"#uncertCoordSave\"\n"
+        "georef_record_value: \"\"  # cleared — see log\n"
+        "georef_point_tool: \"text=Točka\"\n",
+        encoding="utf-8",
+    )
+    selectors = load_selectors(path)
+    assert selectors["georef_save_button"] == "#uncertCoordSave"
+    assert "georef_record_value" not in selectors  # empty stays absent
+    assert selectors["georef_point_tool"] == "text=Točka"
+
+
+def test_shipped_selectors_file_parses() -> None:
+    # selectors.yaml is package data now -- ask the package where it is, so
+    # this test cannot drift from what the client actually loads.
+    import cave_dossier.georef as georef_pkg
+
+    shipped = Path(georef_pkg.__file__).resolve().parent / "selectors.yaml"
+    selectors = load_selectors(shipped)
+    # The three the flow cannot run without:
+    assert selectors["georef_x_htrs_input"] == "#uncertCoordX"
+    assert selectors["georef_y_htrs_input"] == "#uncertCoordY"
+    assert selectors["georef_save_button"] == "#uncertCoordSave"

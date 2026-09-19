@@ -1,0 +1,131 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cave-dossier"
+version = "0.1.0"
+description = "SurveyScraper5 stage 2: SB (Speleo baza) communication + cave dossier builder (parts 2.1, 2.1b, 2.1c, 2.2)"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.0",
+    "openpyxl>=3.1",
+    "pydantic>=2.5",
+    "pydantic-settings>=2.1",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+# Writes to the live SB workbook (Excel COM; Windows + Excel only) — M6
+sb-write = ["xlwings>=0.30"]
+# Isječak karte (georef.hr headed browser flow) — M3
+karta = ["playwright>=1.40", "Pillow>=10"]
+# Entrance-photo downsizing (`photos process`) — 2.1d. Pillow only; `karta`
+# already pulls it in, so this extra is for a machine that processes photos
+# without ever running the browser flow. HEIC sources would additionally need
+# pillow-heif, which is deliberately not a dependency (they are reported, not
+# converted) — see photos/process.py.
+photos = ["Pillow>=10"]
+# OSZ DOCX builder + legacy parser — M4/2.1b. The v10 writer/reader use lxml
+# directly (the template's w:sdt content controls are invisible to
+# python-docx); the LEGACY zapisnik parser (osz/legacy.py, ported from
+# crospeleo's OSZParser) needs python-docx — old documents have no controls,
+# and selections live in run-level bold that python-docx exposes cleanly.
+osz = ["lxml>=4.9", "python-docx>=1.1"]
+# Sastavnica prefill (Nacrt title block, Illustrator route) — 2.1e. PyMuPDF
+# both strips the authored template's example values (one-time, build_blank.py)
+# and typesets the new ones. The face itself is NOT bundled: Myriad Pro is
+# found on Illustrator machines, everything else falls back (sastavnica/fonts.py).
+# Needs [osz] too whenever the cave has a filled zapisnik to read survey data from.
+sastavnica = ["pymupdf>=1.24"]
+# Locality + elevation finders (part 2.1b prefill) — RGI WFS, DGU admin
+# boundaries, INSPIRE EL-COV sampling. All imports are lazy: the base install
+# works without this extra, the finders just report "unavailable".
+geo = [
+    "requests>=2.31",
+    "geopandas>=0.14",
+    "shapely>=2",
+    "pyproj>=3.6",
+    "rapidfuzz>=3",
+    "rasterio>=1.3",
+]
+
+[project.scripts]
+cavedossier = "cave_dossier.cli:main"
+
+# ---------------------------------------------------------------------------
+# Packaging: one import namespace, many source roots
+# ---------------------------------------------------------------------------
+# Each pipeline stage owns its own src/cave_dossier/<sub>/ so that everything
+# about a substage — code, README, docs, tests, templates — sits in one folder.
+# `import cave_dossier.osz` is unchanged; only where the files live changed.
+#
+# This MUST be an explicit package-dir map. The obvious shorthand
+#     [tool.setuptools.packages.find]
+#     where = ["stages/0P-platform/src", "stages/4O-osz/src", ...]
+# is NOT a union: setuptools reduces each root to its top-level package name
+# and .update()s them into one dict, so every root collides on "cave_dossier"
+# and the LAST one silently wins. `pip install -e .` then succeeds and
+# `import cave_dossier.osz` raises ModuleNotFoundError. Verified broken on
+# setuptools 84.0.0; the explicit map below is verified working on the same.
+#
+# "cave_dossier" itself is deliberately ABSENT from `packages`: setuptools
+# synthesises the PEP 420 namespace portion. Listing it would make setuptools
+# look for a top-level ./cave_dossier directory that does not exist.
+# For the same reason there is no cave_dossier/__init__.py anywhere.
+#
+# Adding a subpackage means adding one line to each table below. The pipeline
+# doctor fails if a subpackage exists that no stage claims, so this cannot
+# silently drift.
+[tool.setuptools]
+packages = [
+    "cave_dossier.core",
+    "cave_dossier.cli",
+    "cave_dossier.intake",
+    "cave_dossier.sb",
+    "cave_dossier.satellites",
+    "cave_dossier.geo",
+    "cave_dossier.georef",
+    "cave_dossier.osz",
+    "cave_dossier.photos",
+    "cave_dossier.sastavnica",
+    "cave_dossier.people",
+    "cave_dossier.archive",
+    "cave_dossier.dossier",
+]
+
+[tool.setuptools.package-dir]
+"cave_dossier.core"       = "stages/0P-platform/src/cave_dossier/core"
+"cave_dossier.cli"        = "stages/0P-platform/src/cave_dossier/cli"
+"cave_dossier.intake"     = "stages/1T-teren/src/cave_dossier/intake"
+"cave_dossier.sb"         = "stages/2B-baza/src/cave_dossier/sb"
+"cave_dossier.satellites" = "stages/2B-baza/src/cave_dossier/satellites"
+"cave_dossier.geo"        = "stages/4G-geo/src/cave_dossier/geo"
+"cave_dossier.georef"     = "stages/4I-isjecak/src/cave_dossier/georef"
+"cave_dossier.osz"        = "stages/4O-osz/src/cave_dossier/osz"
+"cave_dossier.photos"     = "stages/4F-fotografije/src/cave_dossier/photos"
+"cave_dossier.sastavnica" = "stages/4S-sastavnica/src/cave_dossier/sastavnica"
+"cave_dossier.people"     = "stages/5O-osobe/src/cave_dossier/people"
+"cave_dossier.archive"    = "stages/5O-osobe/src/cave_dossier/archive"
+"cave_dossier.dossier"    = "stages/5D-dosje/src/cave_dossier/dossier"
+
+# Runtime inputs that travel with their code. A no-op for the editable
+# install prod actually uses, but set so a real wheel is never silently
+# missing the OSZ template or the georef selectors.
+[tool.setuptools.package-data]
+"cave_dossier.georef"     = ["selectors.yaml"]
+"cave_dossier.osz"        = ["pristupi.yaml", "templates/*.docx"]
+"cave_dossier.sastavnica" = ["templates/*.pdf"]
+
+[tool.pytest.ini_options]
+# Tests live beside the stage they cover; conftest.py at the rootdir supplies
+# the shared fixtures. importlib import mode keeps same-named test files in
+# different stages from colliding (prepend mode would raise "import file
+# mismatch" the first time two stages both have a test_models.py).
+testpaths = ["stages", "prod", "tools"]
+# Default (prepend) import mode: stage dir names like "4O-osz" are not valid
+# Python identifiers, so tests dirs can never be packages, and one module
+# imports a sibling (test_osz_prefill <- test_osz_writer). Prepend puts each
+# tests dir on sys.path, which makes that work. The duplicate-basename hazard
+# that importlib mode would avoid is checked by tools/pipeline_doctor.py.

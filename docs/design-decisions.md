@@ -1,0 +1,878 @@
+# Design decisions — the record of what was settled, and why
+
+This file is the **decision record** for the cave-dossier feature: material
+that was worked out once (mostly in the 2026-08-25/26 sessions with the user)
+and is now built into the code. Read it to understand *why* the tool behaves
+as it does — not to operate it. Operating instructions live in the
+[README](commands.md); the module map for agents/developers is
+[_INDEX.md](module-map.md).
+
+Nothing here is a live worklist. When a decision changes, update the section
+and note the date; the session journal ([sessions/SESSIONS.md](../journal/SESSIONS.md))
+keeps the chronology.
+
+## Contents
+
+- [The idea in one paragraph](#the-idea-in-one-paragraph)
+- [The workflow this encodes (two gates)](#the-workflow-this-encodes-two-gates)
+  - [How the lifecycle states are decided](#how-the-lifecycle-states-are-decided)
+- [Data flow](#data-flow)
+- [What `cavedossier report` actually does](#what-cavedossier-report-actually-does)
+- [Three-tier verdict](#three-tier-verdict)
+- [The rule table](#the-rule-table)
+  - [What §5.1 is](#what-51-is)
+  - [Where the whole workbook stood (2026-08-26)](#where-the-whole-workbook-stood-2026-08-26)
+- [Q&A record (2026-08-26)](#qa-record-2026-08-26)
+- [Identity: which number names a cave](#identity-which-number-names-a-cave)
+- [Workbook-wide audits — design](#workbook-wide-audits--design)
+  - [Cross-check against SB's Fotografija ulaza](#cross-check-against-sbs-fotografija-ulaza)
+  - [The staleness guard](#the-staleness-guard)
+- [Per-cave photo processing — `photos process`](#per-cave-photo-processing--photos-process)
+  - [The queue is invisible from the leaf](#the-queue-is-invisible-from-the-leaf--so-every-run-says-so)
+- [Izjava za katastar — filename scheme](#izjava-za-katastar--filename-scheme)
+- [People registry and the statement gates (2026-08-30)](#people-registry-and-the-statement-gates-2026-08-30)
+- [Field-data intake — matching design](#field-data-intake--matching-design)
+  - [A "confirmed absent" line is an observation, and observations go stale](#a-confirmed-absent-line-is-an-observation-and-observations-go-stale)
+  - [Leaves that are not caves](#leaves-that-are-not-caves)
+  - [One folder, several caves](#one-folder-several-caves)
+  - [The third source: the Liburnija LIDAR sheet](#the-third-source-the-liburnija-lidar-sheet)
+- [2.1b prefill rules (2026-08-30)](#21b-prefill-rules-2026-08-30)
+- [OSZ backfill → SB rules (2026-08-30)](#osz-backfill--sb-rules-2026-08-30)
+- [Prod launchers on the Drive (2026-09-02)](#prod-launchers-on-the-drive-2026-09-02)
+
+---
+
+## The idea in one paragraph
+
+A **dossier** is one cave's folder — except it lives in memory instead of on
+Drive. Building it means walking up to each source in turn (the SB row, the
+files on Drive, the processed survey, the filled zapisnik, the isječak karte,
+the processed photos), copying what that source knows into one object, and then
+asking a fixed list of rules: *is anything mandatory still missing?* The answer
+is what `cavedossier report` prints. Later milestones use the same object to
+**write** the OSZ and to update SB — nothing else in the tool has to know where
+a value originally came from.
+
+Because the tool is being built source by source, the dossier records **which
+sources have actually been gathered**. That is the difference between "this cave
+has no entrance photo" and "nobody has looked in the photo folder yet", and the
+whole gating design hangs on it.
+
+## The workflow this encodes (two gates)
+
+A cave moves through SB in a handful of states, and there are **two gates**, not one.
+
+```text
+   Za istražit ──explored──► Nesređeni ──Nacrt + OSZ + foto + pločica + izjave──► Istraženi
+   not explored yet          "fali nacrt         ▲                                 has a SUE
+   no SUE number              i zapisnik"        │                                 number
+                                            ┌────┴──────────────────┐
+                                            │ GATE 1 — katastarski  │  ← this tool's gate
+                                            │ broj (SUE)            │
+                                            └───────────┬───────────┘
+                                                        │ "almost a certain go"
+                                                        ▼
+                                            ┌───────────────────────┐
+                                            │ GATE 2 — CroSpeleo    │  ← crospeleo-automation
+                                            │ (Protokol v6)         │     submits; we pre-check
+                                            └───────────────────────┘
+```
+
+**Gate 1 — katastarski broj (SUE).** The society's own acceptance step: a
+readable Nacrt PDF, an OSZ with its mandatory fields filled, entrance photo(s),
+a pločica, and an *Izjava za katastar* for every author (sketch **and** photo).
+Passing it earns the cave its SUE number. That is why the SUE number is **not a
+requirement of gate 1** — it is the *output*. Old caves are the standing
+exception: a 1960 exploration has no pločica and never will, and it can still be
+given a katastarski broj.
+
+**Gate 2 — CroSpeleo.** The stricter national bar, a strict superset of gate 1:
+adds isječak karte, georef zapis, izvor koordinata, vertikalna razlika,
+istražile udruge, and the SUE number itself. The submission stays
+crospeleo-automation's job downstream; this tool only pre-checks, so nothing
+reaches that tool with a known-missing field.
+
+**The queue is everything that is not Istraženi** — za istražit, nesređeni,
+sudjelovanje, and the rows carrying neither a SUE number nor a flag.
+
+### How the lifecycle states are decided
+
+Not by guesswork: the definitions are lifted from SB's **own Power Query**
+(`Formulas/Section1.m` inside the workbook), so the tool and the Excel views
+cannot drift apart.
+
+| State | SB view | Filter | In the view | Assigned by the tool |
+|---|---|---|---|---|
+| **Istraženi** | `IO_v2_1` | `Katastarski broj SUE` is not empty — that is the entire filter | 885 | 885 |
+| **Za istražit** | `ZI_v2_1` | Napomena contains `za istražit` | 199 | 199 |
+| **Nesređeni** | `NO_v2_1` | Napomena contains `neistraženo`, `fali nacrt`, `fali zapisnik`, `<5 m`, `puhalica`, `ponor`, `ponoviti`, `nastaviti` or `umjetan objekt` | 221 | 179 |
+| **Sudjelovanje** | `S_v2_1` | Napomena contains `sudjelovanje` — another society's cave that SUE took part in | 77 | 28 |
+| **Nesvrstano** | *(none)* | no SUE number and no flag of any kind | — | 19 |
+
+Live workbook, 2026-08-28; 1310 named rows. The two count columns differ
+because **SB's views overlap and the tool's states do not**: a row shows up in
+every view whose filter it matches, while the dossier assigns exactly one state
+by precedence — SUE number → queue flag → outstanding work → provenance. So the
+42 Nesređeni rows the tool "loses" are 29 that already hold a SUE number and 13
+that are really still *za istražit*; the 49 sudjelovanje rows are ones where
+outstanding work or a SUE number outranks the provenance note.
+
+Nesređeni deliberately outranks sudjelovanje — a cave we only took part in that
+still says "fali nacrt" belongs on the worklist. The dossier keeps the Nesređeni
+keywords that hit even when another state wins.
+
+The **Sudjelovanje** view was added to the workbook by the user on 2026-08-28
+(`S_v2_1`, `Text.Contains([Napomena], "sudjelovanje")`) — the same keyword this
+tool matches on, verified against the live file, so the two agree row for row.
+Recognising the state is what shrank the unclassified list from 47 rows to 19.
+
+The filters themselves, an M snippet to re-extract them from the workbook, and
+the applied *exclude za-istražit from Nesređeni* edit are in
+[sb-powerquery.md](../stages/2B-baza/docs/sb-powerquery.md).
+
+## Data flow
+
+```text
+                       config.yaml  +  .env          core/config.py → Settings
+                                  │                  (which workbook? SANDBOX or LIVE?)
+                                  ▼
+  !Speleo_baza_SUE_v3.0.xlsm ─► SBReader ─► CaveRow ─► build_from_sb ─► CaveDossier
+      (Excel, read-only)       sb/loader.py  one row   dossier/         the in-memory
+                                                       sb_mapper.py     "cave folder"
+                                                                             ▲
+   Drive archive dirs   ·······························  intake      (M2, next)
+   survey from 2.1a     ·······························  handoff     (M5)
+   filled zapisnik      ·······························  OSZ fetcher (M4)
+   isječak karte        ·······························  georef      (M3 ✅)
+   processed photos     ·······························  2.1d  ✅  (mover: M6)
+                                                                             │
+                                                                             ▼
+                                                          evaluate()   dossier/gating.py
+                                                                             │
+                                                  ReadinessReport ◄──────────┘
+                                                  (one verdict per gate)
+                                                                             │
+                                              render() → console  dossier/report.py
+```
+
+Dotted lines are the sources that are **not implemented yet**. Their rules do
+not fail — they report as *not checked yet*.
+
+## What `cavedossier report` actually does
+
+Using `report --cave 570` as the example:
+
+1. [core/config.py](../stages/0P-platform/src/cave_dossier/core/config.py) reads `config.yaml` +
+   `.env` into a `Settings` object and resolves the workbook — LIVE by default,
+   FALLBACK onto the local copy on conflict, SANDBOX when forced. The banner you
+   see first is printed from this.
+2. [sb/loader.py](../stages/2B-baza/src/cave_dossier/sb/loader.py) opens the workbook read-only
+   (openpyxl), finds the header row by scoring rows against the configured
+   column names, and returns the matching row as a `CaveRow` — the raw cells
+   plus its **Excel row number** (the handle M6 will write back through).
+3. [dossier/sb_mapper.py](../stages/5D-dosje/src/cave_dossier/dossier/sb_mapper.py) turns those raw
+   cells into typed dossier fields: numbers parsed, `Sinonimi` split, `Autori
+   nacrta` split into people (society bracket peeled off as a flag), the
+   `za istražit` marker parsed out of Napomena, and the **lifecycle state**
+   derived. It then marks `Source.SB` as gathered.
+4. [dossier/gating.py](../stages/5D-dosje/src/cave_dossier/dossier/gating.py) runs the rule table.
+   Each rule declares which source feeds it **and which gate it belongs to**;
+   rules whose source is missing are set aside as *unchecked* instead of run.
+5. [dossier/report.py](../stages/5D-dosje/src/cave_dossier/dossier/report.py) prints identity →
+   SB status → data → **both gate verdicts**. `--json` prints the dossier object
+   instead (raw SB row omitted), which is what later stages will consume.
+
+Nothing in this path can modify the workbook: reads go through openpyxl, and the
+only write path in the package ([sb/safe_io.py](../stages/2B-baza/src/cave_dossier/sb/safe_io.py),
+xlwings/Excel-COM with backups) is dormant until M6. See
+[sb-write-back-design.md](../stages/6P-predaja/docs/sb-write-back-design.md).
+
+## Three-tier verdict
+
+| Tier | Meaning | Effect on a gate |
+|---|---|---|
+| **BLOCKER** | A mandatory thing is genuinely missing or invalid | blocks |
+| **warning** | Worth your attention, you decide | does not block |
+| **not checked yet** | The rule's source has not been gathered — the tool has not looked | blocks *if* that rule could block |
+
+A gate passes only when it has no blockers **and** nothing blocking is left
+unchecked.
+
+## The rule table
+
+Every rule lives in [dossier/gating.py](../stages/5D-dosje/src/cave_dossier/dossier/gating.py).
+**Gate 2 includes every gate-1 rule**; the last column lists only what it adds.
+
+| Source | Gate 1 — katastarski broj | Gate 2 adds |
+|---|---|---|
+| **SB** (working) | Ime objekta · Lokalitet · Najbliže mjesto · Razdoblje istraživanja · Autori nacrta · Dubina | Interni katastarski broj (SUE) |
+| **SB** (working) | Koordinate ulaza · Broj pločice — blockers if the exploration year is ≥ 2015, warnings otherwise (§5.1); kaverne exempt from the pločica rule (§5) | |
+| **ARCHIVE** (next) | Nacrt PDF · Zapisnik (OSZ DOCX) · Fotografija ulaza (§5.1) | |
+| **STATEMENTS** (✅ 2026-08-30) | Izjava za katastar **per author** (drawing + photo, registry- and scope-aware) | *warnings*: a named person (recorder, team member) with no izjava on file · a person missing from the registry |
+| **SURVEY** (M5) | Horizontalna duljina | Vertikalna razlika (falls back to Dubina) |
+| **OSZ** (M4) | Podrijetlo imena · Položaj i pristup · Vrsta objekta · Hidrogeološka funkcija · Hidrološka karakteristika · Osnovni opis s tehničkim podacima · Perspektiva daljnjeg istraživanja · Zapisničar · Članovi ekipe · Širina ulaza · Visina/duljina ulaza | Izvor koordinata · Istražile udruge |
+| **MAP** (M3 ✅) | — | Isječak karte · Georef zapis |
+| **PHOTOS** (2.1d) | *warnings only*: photos over the size budget, or not renamed to `<SUE>_…` | |
+
+Warnings that never block either gate: the SB `Fotografija ulaza` flag
+disagreeing with the archive, an author flagged as drawing for another society,
+a malformed `Razdoblje istraživanja`, and the queue-state note.
+
+### What §5.1 is
+
+**Protokol v6** is the Ministry's rulebook for the national cave cadastre
+(`docs/protocol_katastar_speleoloskih_objekata_RH_v6.md` in
+crospeleo-automation). Two of its sections drive rules here:
+
+- **§6.1, Tablica 2** — the mandatory-field matrix. Fields marked `*` are
+  mandatory, `**` advisory. Most gate-2 rules come from that table.
+- **§5.1** — the *year-conditional* rule: GPS coordinates, an entrance
+  photograph and the entrance pločica are mandatory **only if the exploration
+  started in 2015 or later**. Older caves are exempt. That is exactly the
+  exception the user described — a pre-2015 cave without a pločica can still get
+  a katastarski broj — so the tool drops those three checks to warnings when the
+  exploration year is earlier or unreadable. §5 adds one more exemption:
+  caverns (`kaverna`) never need a pločica.
+
+The year is read from `Godina ili period istraživanja`, falling back to `Godina
+zadnjeg istraživanja`, and the **earliest** 4-digit year in the cell decides (so
+`2018-2019` → 2018).
+
+### Where the whole workbook stood (2026-08-26)
+
+The gate-1 rules run over all 1294 named rows. SB was the only gathered source,
+so this measured SB data quality alone:
+
+| Gate-1 blocker | Rows |
+|---|---|
+| Dubina missing | 292 |
+| Broj pločice missing (post-2015 caves) | 238 |
+| Autori nacrta missing | 145 |
+| Razdoblje istraživanja missing | 10 |
+| Najbliže mjesto missing | 7 |
+| Lokalitet missing | 1 |
+
+Gate 2 adds 409 rows with no SUE number — which is simply "everything not yet
+Istraženi". 108 rows carry an author with an outside-society bracket.
+
+## Q&A record (2026-08-26)
+
+The user's answers from the M2 kickoff, recorded so no session — human or agent
+— has to re-ask. Each is built into the code as described.
+
+| # | Answer | What the code does with it |
+|---|---|---|
+| A2 | `Duljina` = **stvarna duljina** (total length), not horizontal | SB `Duljina` stays total length; *Horizontalna duljina* is expected from the survey (2.1a) and stays unchecked until M5 |
+| A3 | `Z` / kota ulaza lives only in SB + OSZ, never reaches CroSpeleo | Stored as `georeference.z_m`, displayed, never gated |
+| A5 | Authors are comma-separated in practice; `(SOV)` is a **flag** meaning the sketch came from outside SUE; the column needs cleaning | The bracket is peeled off the name into `drawing_author_societies` and surfaced as a warning; a bare year in brackets (`Malez, M. (1960)`) is *not* treated as a society |
+| A6 | Photo author is most reliably in the OSZ; filenames usually carry it too, and the two should agree | Photo authors will be read from the OSZ (M4) and cross-checked against filenames at intake; the per-author izjava check already has its slot |
+| B1 / B2 | Two gates; the SUE number is the *reward* for passing gate 1 | `GateLevel.SUE` vs `GateLevel.CROSPELEO`; the SUE-number rule moved to gate 2 only |
+| B3 | The queue is everything not in Istraženi | `LifecycleState` + `dossier.is_queued`; queue state is reported as context, never as a failure |
+| B4 | Missing `Autori nacrta` blocks gate 1 | Blocker at gate 1 |
+| B5 | Protokol v6 stands | §5.1 / §5 kept as ported |
+| B6 | Exit codes `1` ready, `0` not ready, `99` error | Implemented; `--gate {sue,crospeleo}` picks which gate the code reports on (both always printed) |
+| C1 | The SUE number is the filename key across nacrt / OSZ / photos; `_A` was *dopunski zapisnik*, now superseded by updating the OSZ in place | Intake will resolve by `Link Nacrt` / `Link Zapisnik` first, then padded SUE; `_A` files count as the same cave and get flagged as legacy |
+| C2 | `Izjava_<Initial><Prezime>[_<Lokalitet>].pdf`; a locality-scoped izjava does **not** cover caves outside that locality; the `!!!` text files are the missing-izjava lists | Locality scope becomes a gate-1 rule at intake; the person registry comes from the crospeleo port |
+| C3 | One photo suffices; the *za istražit* photo folder is a **staging queue**, not a repo — photos move into `!!Fotografije ulaza` and take the SUE prefix when the cave earns its number | Modelled as part 2.1d; the mover becomes a delivery action at M6 |
+| C4 / 1 | Before a SUE number exists the cave's ID is its **Redni broj** | `dossier.serial_number` + `working_id`; the staged-photo matcher proposes `SB_<Redni broj>_…` |
+| 2 | Photo budget: cut 7 MB down to 1–2 MB, "resize to screen size" (FastStone) | Gate warns above **2 MB**; the processing targets (1920 px long edge, 1.5 MB) are in `config.yaml` under `photos:` |
+| 4 | The column is now **`Autori nacrta ili izvor`** — for queued caves it holds the finder/source, not a survey author | Config renamed, with `sb.column_aliases` so the old spelling still reads; the gating label follows; `sb audit-authors` flags citation-shaped values |
+| 5 | List the unclassified rows | `cavedossier sb unclassified` |
+| 6 | Staged photos keep free names but gain an SB_<Redni broj> prefix; needs a name-matching exercise | `cavedossier photos match-queued` |
+| — | **2.1d entrance-photo processing** is a missing pipeline part | Added to [ARCHITECTURE.md](../ARCHITECTURE.md) as part 2.1d, plus `Source.PHOTOS`, a gate-1 warning for oversized / unrenamed photos, and the `photos/` module |
+
+## Identity: which number names a cave
+
+Settled 2026-08-26. A cave has **two** identifiers over its life, and the
+handover between them is the last step of gate 1:
+
+| | Before gate 1 | After gate 1 |
+|---|---|---|
+| Identifier | **Redni broj** (SB column) | **Katastarski broj SUE** |
+| In the dossier | `serial_number` | `sue_number` |
+| Used for | intake folders, staged photo prefixes, any processing | archive filenames (`954.pdf`, `954.docx`, `954_…jpg`) |
+
+`dossier.working_id` resolves the pair: the SUE number when it exists, the Redni
+broj otherwise. Note the third number that is **not** an identifier: the Excel
+row (`sb_row_number`) is only the write-back handle for M6 — it shifts whenever
+a row is inserted above.
+
+> The Redni broj is stable only going forward: the v3.0 restructure renumbered
+> the column wholesale, which is why files still named after the *old*
+> Za-istražit broj (`478_…`) need re-prefixing. `cavedossier photos match-queued`
+> does that mapping. Redni-broj prefixes carry an `SB_` marker (`SB_1234_…`,
+> user 2026-08-30) so the number never reads as a katastarski broj; SUE
+> prefixes stay bare.
+
+## Workbook-wide audits — design
+
+Some problems are only visible as a column-wide sweep, and are only fixable in
+Excel — so `sb audit-authors`, `sb unclassified` and `photos match-queued` are
+read-only worklists (commands in the [README](commands.md#commands)).
+
+`sb audit-authors` (first run, 2026-08-26) reported **483 rows** across six
+flags: `single_name` 172 (a bare first name like "Renata"), `society` 108,
+`placeholder` 96 (a "/" meaning nobody), `conjunction` 93 (split on "i" —
+verify the halves are two people), `empty` 49, `citation` 2 (a literature
+source such as `Malez, M. (1960)`, not a survey author).
+
+`photos match-queued` matched the free-form files in the staging folder against
+SB and proposed `SB_<Redni broj>_<rest>`, replacing a stale old-number prefix
+where there was one (**52 of 52 matched**, 2026-08-28). It was a **one-off
+sweep** — it existed to name the unidentified entrance photos already sitting in
+the queue, that job is finished, and it is not run any more (user, 2026-09-01);
+the standing per-cave step is `photos process` below. Evidence, weighed rather
+than ranked — two independent signals agreeing is the strongest result:
+
+| Evidence | Example | Note |
+|---|---|---|
+| plaque number | `051-550_…`, `… 051 418 …` | strongest single signal |
+| cave name or **synonym** | `Poljička Kosa_…`, `Goli breg 4` → *Sik Šits* | longest match wins; an exact whole-stem match is accepted at any length, which is what resolves `ak 47.jpg` → *AK-47* |
+| old Za-istražit broj | `478_…`, `479 (1)` | the number the file already carries — stale since the v3.0 renumbering, so it is *replaced*, not kept |
+| manual mapping | `Jama GB 1` → 812 | `photos.manual_matches` in config.yaml, for abbreviations no rule can reach |
+
+The proposed name is **`SB_<Redni broj>_<Ime objekta>_<sve ostalo>`** — the
+number alone is unreadable in a folder listing, and most of these filenames
+already carry an author or a description worth keeping after it. The cave name
+is only inserted when the filename does not already contain it, illegal
+filename characters in a name are replaced, and the longest resulting path is
+224 chars (Windows allows 260).
+
+Two signals that disagree are reported as a **conflict** and propose nothing.
+`--apply` performs the renames (dry run is the default); it never touches
+conflicts, unmatched files or already-correct names, and never overwrites an
+existing target.
+
+### Cross-check against SB's Fotografija ulaza
+
+The photo folder is ground truth; the SB cell is a human-maintained claim about
+it. `photos check-flag` reports every cave that has a staged photo but is not
+flagged `DA` — the list to fix in Excel. It also prints any non-photo file in
+the folder (a stray `.mp4`, say) rather than skipping it silently: quietly
+ignoring unknown extensions is exactly how four `.jfif` entrance photos went
+uncounted until 2026-08-28.
+
+### The staleness guard
+
+Promoting a queued cave's photos into `!!Fotografije ulaza` under its new SUE
+number is a manual step, and it gets forgotten — especially when newer photos
+arrive and nobody goes back for the old ones. The result is photos of long-since
+explored caves sitting in the staging queue forever.
+
+So every run checks it: a staged photo whose cave **already has a SUE number**
+is flagged *PROMOTE or DELETE*, shown with the name it would carry in the main
+archive (`<padded SUE>_…`), and deliberately excluded from the Redni-broj
+rename — stamping the pre-SUE id on it would only bury the problem. `--apply`
+never touches those files; promoting or deleting is the operator's call.
+
+As of 2026-08-28 the folder is clean: **0 of 52** staged photos belong to an
+explored cave. The check is a standing guard, not a cleanup.
+
+## Per-cave photo processing — `photos process`
+
+Settled 2026-09-01. The standing 2.1d step works on **one cave at a time**, from
+the cave's `SB_<Redni broj>_…` **intake leaf** under `!Za digitalizirat` — the
+same folder `osz prefill` / `osz backfill` already use, so a cave's survey files,
+its zapisnik and its photos are resolved from one place. It produces
+
+    SB_<Redni broj>_<Ime objekta>_<Autor>_<n>.jpg
+
+downsized to the `photos:` targets in config.yaml (1920 px long edge, 1.5 MB).
+
+| Decision | Why |
+|---|---|
+| **Copies, never in-place edits** | The optimal output resolution is not settled yet (user, 2026-09-01), so the originals stay untouched and a re-cut at another `--long-edge` is free. `--overwrite` re-writes existing copies; without it they are skipped. |
+| **No `--apply` — it writes** | The dry-run-by-default habit the rest of the tool follows exists to protect files a command would *change*. This one only ever ADDS: originals stay byte-for-byte, an existing copy is skipped rather than overwritten, nothing leaves the folder. So there was nothing to protect and the flag was pure friction (user, 2026-09-01). `--dry-run` still prints the plan; a stale `--apply` is accepted as a silent no-op. `photos match-queued`, which renames in place, keeps its `--apply`. |
+| **Copies land beside the originals** | Chosen over a `obrađene/` subfolder: one flat leaf is what the operator already browses, and the `SB_<broj>` prefix is enough to tell input from output. |
+| **A run never eats its own output** | `source_photos` excludes anything already prefixed `SB_<this cave's broj>`, so a second run is a no-op rather than squaring the file count. Another cave's `SB_<broj>` prefix is still treated as raw material — it means a photo landed in the wrong folder, not that it is processed. |
+| **Author from the OSZ cell `Autor fotografije ulaza`** | The zapisnik is where the society records it; nothing else on Drive knows it. `--author` overrides for caves with no OSZ yet. A full name becomes the archive's own spelling — `Lovel Kukuljan` → `LKukuljan`, matching `MDevcic` / `TMarkanjević` / `SClashin` in `!!Fotografije ulaza` (note: **no dot**, unlike SB's `L.Kukuljan` shorthand). Several people join with `-`. |
+| **A missing author drops the component** | `SB_1220_Hrđava špilja_1.jpg` — never a placeholder, never a guess from `Fotografirali` or the SB author column. |
+| **Always a numeric suffix** | Caves routinely have several entrance photos; a bare `<broj>_<ime>_<autor>` would collide on the second one. |
+| **Output is always JPEG** | The archive is uniformly `.jpg`, and these are photographs. `.heic` is *reported*, not silently dropped — Pillow needs `pillow-heif`, which is not a dependency. |
+| **Quality descends, size never wins over sharpness** | Qualities 92→70 are tried until the file fits the budget; the floor is kept even when it still misses. An honestly oversized copy is a visible fact the gate already warns about (`gating.MAX_ENTRANCE_PHOTO_BYTES`, 2 MB), a mushy one is a silent loss. |
+| **Never upscales** | A photo already under the long-edge target is copied at its own resolution. |
+| **A JPEG that needs nothing is copied byte-for-byte** | Within the long-edge target *and* within the budget → `shutil.copy2`, no re-encode. Every re-encode is generational loss, and on an already-compressed phone photo it actually *grows* the file (0.25 MB → 0.35 MB, observed on SB 1250). |
+| **`STATS.png` and friends are skipped** | An intake leaf holds images that are not entrance photos — chiefly the cSurvey stats screenshot, which recurs leaf after leaf (user, 2026-09-01). The list is config (`photos.ignore_filenames`), entries are fnmatch patterns, and matches are **listed as skipped on every run**: quietly dropping files by name is how four `.jfif` photos went uncounted for two years. They are removed before the numbering, so a `STATS.png` never shifts a photo's index. |
+| **Not the filing step** | Moving the copies into `!!Fotografije ulaza` and renaming `SB_<Redni broj>` → katastarski broj happens when the cave earns its SUE number — still manual, still a separate step (the 2.1d mover, backlog). |
+
+Fail-soft as everywhere: a missing OSZ, a missing `lxml`, an unreadable zapisnik
+or a missing intake leaf each become a printed note, never an exception — losing
+the author costs one filename component, not the run.
+
+### The queue is invisible from the leaf — so every run says so
+
+Settled 2026-09-01, from the real SB 811. A cave's photos can be in two places:
+its intake leaf, and the `…za istražit` staging queue. `photos process` only
+reads the leaf, so a cave whose photos are all still queued processes cleanly
+and reports *nothing to do* — the worst possible answer, because it looks like
+success. SB 811 was exactly that: an intake leaf with survey files and no
+photos, four entrance photos sitting in the queue.
+
+So **every exit of `photos process` ends with a queue check** — including the
+"nothing to do" and "no intake folder" exits, which are the ones that need it
+most — and prints the command that fixes it:
+
+```
+⚠ 4 fotografije ove jame još stoji u redu čekanja (!!Fotografije ulaza za istražit):
+      SB_811_Possibile Grotta_13 ulaz 051 418 (1 of 1) sz.jpg
+      …
+  Prebaci ih u intake mapu pa ponovno pokreni obradu:
+      cavedossier photos pull-staged 811 --apply
+```
+
+| Decision | Why |
+|---|---|
+| **Matched on the `SB_<broj>_` prefix alone** | The 2026-08-28 sweep named all 52 staged files, so the prefix *is* the queue's index — re-running the name/plaque matcher to learn what a filename already states would be a needless SB read. A staged photo that lost its prefix is not found here; `photos check-flag` still surfaces those. |
+| **`pull-staged` MOVES, it does not copy** | The queue is a staging area, not a repository (decision C3) — a photo that stayed in both places is the leak the staleness guard exists to catch. |
+| **The `SB_<broj>_` prefix is dropped on the way in** | Inside the cave's own `SB_<broj>_…` leaf it is redundant — and it *must* go: `source_photos` reads that prefix as "already processed output", so a pulled photo would otherwise be invisible to the very command meant to process it next. |
+| **It creates the leaf when the cave has none** | A queued cave routinely has no intake folder yet — that is precisely why its photos are still queued. Named by `prefill.intake_folder_name`, the one function every step that may create a leaf now shares. |
+| **`pull-staged` keeps `--apply`** | Unlike `process`, it moves files out of one folder and creates another — the guard `photos match-queued` and `intake map` use is the right one here. The hint prints the `--apply` form, so it is still one paste. |
+
+Ran on SB 811 end to end (2026-09-01): 4 photos pulled, queue left empty for
+that cave, then processed to `SB_811_Possibile Grotta_1..4.jpg`.
+
+First live run (2026-09-01, on copies of real field photos): 6.92 MB /
+3468×4624 → 1.23 MB / 1440×1920, which is the same result the manual FastStone
+"resize to screen size" workflow produced.
+
+## Izjava za katastar — filename scheme
+
+Settled 2026-08-26. Filenames in `!!Izjave za katastar RH` read as
+`Izjava_<Osoba>[_<Opseg>].<ext>`:
+
+| Example | Meaning | Covers |
+|---|---|---|
+| `Izjava_ABahović.pdf` | no suffix → **universal** | every cave |
+| `Izjava_ACiceran_Šverda.pdf` | **locality** scope | caves whose `Lokalitet` is Šverda — the same author elsewhere needs a new izjava |
+| `Izjava_MMarić_Kaverna-Učka.pdf` | **single-cave** scope (also `Kotluša`) | that one cave; both are exceptions, not the rule |
+| `Izjava_SKapidžić-Antolič.pdf` | a **double surname**, hyphen-joined | not a scope at all |
+
+The hyphen is what makes this parseable: it keeps a married double surname
+together, so an underscore always means scope. The one legacy underscore form is
+listed explicitly in `archive/izjave.py` until the file is renamed. Files
+starting with `!` are templates and the society's own missing-izjave lists
+(`!!!Fale_Brane.txt`), never izjave.
+
+Scope resolution compares the suffix against the cave's `Lokalitet`, then its
+name and synonyms — diacritic-insensitively. Since 2026-08-30 this IS a gate-1
+rule: the statements dir is shared (not per-cave), so it gets its own gathering
+step (`Source.STATEMENTS`) and does not wait for archive intake — see the next
+section.
+
+## People registry and the statement gates (2026-08-30)
+
+**The registry.** `data/people/registry.json` — one committed, hand-curated
+JSON, loaded by [people/registry.py](../stages/5O-osobe/src/cave_dossier/people/registry.py).
+One entry per person; `name` in full `First Last` form derives its
+abbreviation aliases automatically at load time (`L.Kukuljan`, `LKukuljan`,
+`Lovel K.` …), so the file mostly holds bare names. The design is the
+crospeleo-automation port (docs/PORTING.md): derived aliases with **collision
+detection** (a key two people claim resolves nobody — never guess), curated
+`aliases` entries that win over derived keys (crospeleo's `S.M.` case; ours:
+`S.Antolič` likely belongs on `SKapidžić-Antolič`), no global surname-only
+keys, exact-key resolution only (no fuzzy). Entries seeded from the izjava
+files are still in token form (`ABahović`); they match the izjava and SB's
+`A.Bahović` shorthand but not an OSZ's full spelling — **upgrade them to full
+names as they are learned**. Committing real names follows existing repo
+practice (config.yaml manual matches, test fixtures) — crospeleo's *scraped*
+mirror is gitignored PII, but its *curated* registry files are committed, and
+this file is all curation.
+
+**Linking people to statements.** The izjava's person token, SB's shorthand
+and the OSZ's full name all normalize into the registry's key space, so
+`Izjava_LKukuljan.pdf` ↔ `L.Kukuljan` ↔ `Lovel Kukuljan` are one person. The
+per-run linkage snapshot (person → izjave, orphans) lands as JSON in
+`runs/people/statements-index.json` (`cavedossier people check`); the registry
+stays the only curated record.
+
+**Author vs finder — the single criterion (user, 2026-08-30).** SB's `Autori
+nacrta ili izvor` cell mixes two groups: **survey authors**, who need an
+izjava, and **cave finders/sources**, who do not. The distinguishing rule is
+the spelling alone: authors are consistently written **`N.Surname`**
+(initial·dot·surname — `L.Kukuljan`, `S.Kapidžić-Antolič`), finders every
+other way (bare first names, full names, phrases). Encoded as
+`core/people.is_author_shorthand`; only names it accepts enter the statement
+gates and the `people check` SB sweep — finders get no entry, no blocker, no
+warning, and are deliberately not scraped into the registry. Measured effect
+on the first live run: the unresolved-SB-authors list dropped from 125 noisy
+names to **28 real authors**. (The rule applies to that SB cell only —
+recorder/team names come from the OSZ, where everyone listed took part.)
+
+**Deceased people are exempt** (user, 2026-08-30): `"deceased": true` on a
+registry entry means a statement cannot be obtained, so the person gets no
+gate blocker, no warning, and is never listed as missing an izjava — their
+absence is a fact, not a finding. First entry: V.Malnar. `people check`
+sorts its people-lists by the caves' exploration years, newest first,
+because a recent author is chase-able and an old one is the hard case.
+
+**The two statement gates.**
+
+| Gate | Severity | Rule |
+|---|---|---|
+| 1 (SUE) | BLOCKER | Every **author** (drawing + photo, separately — the SUE 575 lesson) needs an izjava **whose scope covers this cave**. "Has an izjava, but it is scoped to another locality" is its own blocker message. |
+| 2 (CroSpeleo) | warning | Every **person** the dossier names (recorder, team members too) with no izjava on file at all; and every person the registry cannot resolve (aliases unassessable). Advisory by design — only authors are hard-gated — and a person already blocked at gate 1 is not repeated. |
+
+The gate-2 per-person warning is the user's request of 2026-08-30 ("warn if
+the person is missing a statement"); it sits at gate 2 because that is where
+the full CroSpeleo submission types these people in. `cavedossier people
+check` is the same check registry-wide, off any one cave: people without an
+izjava, izjave without a person, and every SB author cell swept through the
+registry.
+
+## Field-data intake — matching design
+
+`!!!Digitalizacija/!Za digitalizirat` holds the raw material per cave. Its
+**leaf** folders (any depth — the tree runs 1–3 levels) each get a **Redni
+broj** prefix: `SB_<Redni broj>_<Ime objekta>_<original name>`. Nothing is ever
+stripped, because the original name carries the collector and the local id.
+
+**Numbers in these folder names are a suggestion, never evidence.** They are old
+*Za istražit* numbers (user, 2026-08-29), and SB keeps those in Napomena as
+`za istražit, NNN, …` — so `old_queue_candidates` looks them up there and prints
+what it finds. But the numbering collides across campaigns: of 20 folder numbers
+checked against the live workbook, 5 resolved and every one pointed at a Šverda
+cave while the folder sat in a Veprinac LIDAR group. So a number never drives a
+rename on its own; a folder carrying nothing else stays unresolved.
+
+Matching therefore leans on names, in four passes (see `core/matching.py`):
+exact stem → SB name inside the folder name → folder name inside the SB name
+(unique hits only) → same words in any order (`Grotta possibile` → *Possibile
+Grotta*). Two config hooks close the rest: `intake.manual_matches` (fragment →
+Redni broj, for spelling variants like *Bilova* → *Billova ponikva*) and
+`intake.new_entries`, which marks a folder as a cave SB does not have yet —
+needed because a new cave often resembles an existing name (`Božur_Frustuck` is
+**not** *Božur* 1087).
+
+### A "confirmed absent" line is an observation, and observations go stale
+
+`intake.new_entries` used to be an unconditional veto: any folder matching a
+listed fragment had `match.cave` set to `None` and was reported as "confirmed
+absent from SB". But SB only ever grows, and such a line records what was true
+on the day it was written. By 2026-09-19 nine of the eighteen lines were
+suppressing **exact-name** hits on rows 1440–1456 — *Nikad više* (1456,
+051-837), *Ciciklama* (1440), *Mune14* (1441), *Munina* (1443), *Flaviator*
+(1444), *Mune24* (1447), *Logor špilja* (1448), *Ona je glonđa* (1453), *Jama
+na gradilištu* (1455) — all entered by V. Fabijančić weeks after the list was
+made. The run kept saying "confirmed absent from SB (overrides a lookalike
+match)" while quietly discarding the row it had just found, and the folders
+went unnumbered with no signal that anything was wrong. The message was doubly
+misleading: for the other nine lines there was no match to override at all.
+
+The fix is not to let the matcher win. That would mis-number exactly the case
+the list exists for — a genuinely new cave named like an existing row. Instead
+the override keeps winning but **stops destroying its evidence**: the discarded
+cave is kept on `IntakeMatch.overridden`, and `stale_override` flags the
+contradiction. `intake map` prints it as `!  STALE OVERRIDE` with the row it
+found, proposes nothing, and exits not-ready. This is the same rule the matcher
+already applies to disagreeing signals — *two that disagree are a finding in
+their own right and propose nothing* — extended to config-vs-SB disagreement.
+A human deletes the line or fixes the row; nothing resolves itself.
+
+The general lesson for this feature: **any hand-written assertion about SB must
+be re-checked against SB on every run.** A config list that is only read, never
+validated, decays silently into wrong answers.
+
+### Leaves that are not caves
+
+`find_leaf_folders` calls any folder with no subfolders a cave's folder, which
+is right for the intake tree but not universally: `!!!Ekspedicija
+Veprinac_2026/primjeri` is sample material (user, 2026-09-19). Nothing about
+such a folder distinguishes it, so it is config — `intake.ignore_folders`,
+fnmatch patterns like `photos.ignore_filenames`, matched against the folder
+name, or against the path under the intake root when the pattern contains a
+separator (so one group's `primjeri` can go without ruling out every folder of
+that name).
+
+They are **flagged, not dropped**: `find_leaf_folders` still returns them with
+`LeafFolder.ignored`, and the run names every one it skipped. The same reason
+`photos.ignore_filenames` reports rather than drops — a pattern that quietly
+swallowed a real cave folder would otherwise be invisible, and the cave would
+simply never appear in the one list that is supposed to be a to-do.
+
+### One folder, several caves
+
+`vrazji prolaz 2kom` holds two caves — *VP1* (051-807, RB 1457) and *VP2*
+(051-801, RB 1458). A leaf folder is one cave's pre-SUE working identity, so
+there is no prefix that can be correct for it, and no automatic rename is
+possible. `intake.split_folders` (fragment → list of Redni brojevi, user
+2026-09-19) records what is inside; the run marks it `SPLT`, prints the
+`SB_<broj>_<Ime>` name each half should get, and proposes nothing.
+
+That is the whole life of an entry: it exists to tell a human what to do, and
+dies when they do it. `vrazji prolaz 2kom` was split on Drive the same day, both
+halves matched on their own names immediately (`VP1` → 1457, `VP2` → 1458), and
+the entry was deleted. **Empty is the healthy state for this map** — a line that
+outlives its folder is the orphan-config rot described above, just wearing a
+different hat.
+
+### The third source: the Liburnija LIDAR sheet
+
+The Veprinac folders are named after row numbers in a Google Sheet,
+*Liburnija_pot_speleo_2024* — 396 LIDAR candidates with coordinates, whether
+someone checked the point, and for the ones that turned out to be caves, a name
+and a **plaque number**. That plaque is the bridge: `108_Renata` → sheet row 108
+→ pločica 051-723 → SB *LiDAR Kristal 108* (Redni broj 1248). It resolved 14 of
+the 15 numbered Veprinac folders.
+
+Two guards keep it from over-reaching. A number only counts when it stands on
+its own — at a separator or after a lone LIDAR marker letter (`lisina L366`) —
+and two digits minimum, because `Mune_Nat4_Natalija` otherwise offers the "4"
+inside "Nat4" and matches sheet row 4 (*Integral*, somewhere else entirely; a
+false positive caught on the first live run). And the row must carry a plaque
+that exists in SB, so numbers from other schemes simply fail to resolve.
+
+The sheet is cached as CSV under `example/` (gitignored) and read read-only:
+`intake/liburnija.py`. Wiring it in as a real source — people do enter data
+there — is a later architecture decision.
+
+**An unresolved folder means a new cave.** Confirmed by the user: the caves in
+these folders were mostly never entered into SB. So the tool reports them as
+"no SB row — create one, then re-run", not as a matching failure. **End state
+(2026-08-29): 53 leaves = 34 mapped + 19 new entries, nothing unresolved.**
+
+Three findings the mapping surfaced, all settled: two folders held the same
+cave twice (`43_Jasna` / `Jasnina jam lidar 43`, `366_Nina` / `lisina L366` —
+duplicates deleted, the Venio copies kept); five leaves are empty placeholders;
+and sheet row 89 (*Jama na Patuhovcu*) stays out of SB deliberately — another
+society explored it.
+
+## 2.1b prefill rules (2026-08-30)
+
+Settled with the user during the prefill build; enforced in `osz/prefill.py`:
+
+- **SB wins.** A computed value (locality finder, DMV elevation) only fills an
+  EMPTY cell; a disagreement (kota beyond the 10 m tolerance, an unrecognised
+  Najbliže mjesto) is a printed warning, never an override.
+- **Never prefilled:** Katastarski broj (the archivist's manual final step),
+  Duljina / Dubina (come from the survey process, not SB), Datum istraživanja
+  (SB only holds a year; the real date comes from field data).
+- **LiDAR flag:** a cave whose name or synonym carries "lidar" (Lidarka, the
+  `LiDAR Kristal N` Liburnija convention) had its coordinates and Z produced by
+  the LiDAR analysis → `Izvor koordinata` and `Izvor kote ulaza` are prefilled
+  as **"LiDAR"**, known in advance — even when the DMV grid disagrees (the
+  warning then stays advisory). Any other cave with coordinates gets
+  `Izvor koordinata = "GPS"`, the most common source.
+- **SB write-back stays human:** `dopune-sb.csv` lists the empty SB cells a
+  finder could fill (`Z`, `Najbliže mjesto`, `Lokalitet`); a person pastes them
+  into Excel. Nothing writes to SB automatically.
+- **The delivery dirs are hand-managed** — people delete PNGs, edit the CSV in
+  Excel (which strips zero-padding), drop wrong files. Every staleness check
+  lives in the tool (`georef/worker.refresh_reason`): wrong excerpt aspect
+  (format migrations), missing CSV rows, unreadable PNGs all auto-refresh on
+  the next run; nothing requires a manual cleanup ritual.
+
+## OSZ backfill → SB rules (2026-08-30)
+
+The reverse direction (`cavedossier osz backfill`, renamed from `osz fetch`
+2026-09-02), settled with the user the
+same day the prefill shipped; enforced in `osz/reader.py` + `osz/backfill.py`:
+
+- **Scope**: only the SB-relevant cells — Broj pločice, Ime objekta/Sinonimi,
+  Duljina, Dubina, Datum → Godina/period, Crtali → Autori nacrta. The
+  CroSpeleo material (checkbox groups, narrative controls, the Google-Docs
+  text variant) is a later stage.
+- **Fill-missing, note-conflicts**: an empty SB cell gets a proposal; a
+  non-empty cell that disagrees with the OSZ is printed as a difference and
+  SB is kept — the operator decides.
+- **Name change**: when the OSZ carries a different Ime objekta, the field
+  name is the new authoritative one — it replaces SB's, and the old SB name
+  (typically a working `LiDAR Kristal N`) moves into Sinonimi, merged with
+  any OSZ synonyms; the new name never appears in Sinonimi.
+- **Godina convention**: the OSZ's free-form Datum is cropped to SB's style —
+  the single year (`"10.05.2025." → 2025`) or `min-max` when several years
+  appear (`"12.10.2025. i 3.5.2026." → 2025-2026`).
+- **Author conventions**: the OSZ writes full names, SB writes
+  initial·dot·surname (`Lovel Kukuljan` ↔ `L.Kukuljan`).
+  `core/person_aliases.py` (ported from crospeleo's alias generator) matches
+  across the two spellings so an author already in SB is never duplicated;
+  new authors are **merged, never dropped** — for queued caves the SB cell
+  holds the finder/source, and a later survey legitimately adds people.
+- **A control still showing its placeholder reads as EMPTY** (`w:showingPlcHdr`,
+  or a literal `⟨…⟩` in the Docs variant) — the grey hint text is not a value.
+- **Where the zapisnik lives** (user, 2026-08-30): a cave's filled OSZ is
+  filed with its field material — the `SB_<Redni broj>_…` dir in the intake
+  tree (`!Za digitalizirat`). `osz backfill` searches there by default
+  (preferring a DOCX whose name says osz/zapisnik, refusing to guess among
+  several), `--osz-dir` overrides the search root, `--osz` names an exact
+  file; the prefilled copy in `osz_prefill_dir` is only a flagged fallback.
+- **Which DOCX *is* the zapisnik** — one rule, one function
+  (`backfill.pick_osz_docx`, unified 2026-09-01): the canonical
+  `SB_<broj>_OSZ.docx` outright, else a lone name saying osz/zapisnik, else a
+  lone DOCX; Word lock files and prefill's own `_stari_<datum>` backups never
+  count, and only *our* dated marker is excluded (a human's hand-named
+  `Zapisnik_stari.docx` may be the real document). The fetcher and the prefill
+  migration had grown separate versions of this, and the fetcher's lacked both
+  the backup filter and the canonical preference — so **every leaf a prefill
+  migration had touched read as ambiguous**, the backup standing beside the
+  delivered document as a rival candidate. Found via `photos process 1250`,
+  which reported the cave as having no zapisnik while `SB_1250_OSZ.docx` sat in
+  the folder. Whatever consumes the locator must also **print its notes**: the
+  reason lives there, and swallowing them turns "two candidates, pick one" into
+  a flat, wrong "no OSZ".
+- **No writes**: the output is `dopune-sb-iz-osz.csv` under `runs/osz/<broj>/`,
+  carried into Excel by hand. Exit 1 = something to carry over.
+- **Validated** against `osz-template/mockups/v10.2_primjer_811.docx` vs SB 764
+  (all 7 fields confirmed identical across conventions) and a simulated
+  completed zapisnik for queued SB 1320 (6 proposals incl. the name→synonym
+  move; year conflict correctly surfaced, not overridden).
+
+## Prod launchers on the Drive (2026-09-02)
+
+The first productionization slice (ARCHITECTURE §Dev vs prod): `osz prefill`
+and `photos process` ship to operators as versioned launchers. Settled with
+the user this session; built by `tools/build_prod.py` + `tools/prod_templates/`:
+
+- **One dedicated Drive folder** (user): everything lives in
+  `!!!Digitalizacija/SurveyScraper5/` — the two `.bat` launchers, the
+  `v<X>/` support dir (`bootstrap.ps1` + `bundle.zip`), the `podaci/geo/`
+  cloud copy, `PROCITAJ_ME.txt`, `VERZIJE.txt` (publish log) and `_arhiva/`.
+  Contained on purpose: the tool never scatters into the archive root.
+- **Versioning is per release, in the filename**
+  (`cavedossier_osz_prefill_v1.0.bat`): both commands share one release
+  version because they run the same bundle. Publishing a new version moves
+  the superseded launchers and v-dirs into `_arhiva/`, so the newest is the
+  only one visible — "the latest version is whatever is in the folder".
+  A same-version republish is a dev iteration: bootstrap compares
+  `bundle.zip`'s mtime to its install stamp and reinstalls when newer.
+- **Everything on the Drive is generated** — templates live in the repo
+  (`tools/prod_templates/`, ASCII-enforced so cmd/PS 5.1 encoding can never
+  bite); hand edits on the Drive are lost by design at the next publish.
+- **Install is local, per machine**: `%LOCALAPPDATA%\CaveDossier\v<X>` holds
+  the extracted bundle (= FEATURE_ROOT, so `core/config.py`'s
+  feature-relative resolution works unchanged), the venv, `runs/`, the local
+  `data/geo` and the generated `.env`. A venv must never sit on the Drive
+  mount (absolute-path shims break; sync churn) — that rule already cost one
+  venv rebuild in dev.
+- **`LOCAL_DRIVE_ROOT` is derived, not asked for**: bootstrap probes upward
+  from its own location for `!Speleo_baza_SUE_*.xlsm` and writes the machine
+  `.env` (plus `SB_SANDBOX_PATH=sb-fallback/SB_kopija.xlsm`, so the LIVE-first
+  fallback copy works for operators too). Probing beats counting path levels
+  — it survives the SurveyScraper5 folder being moved within the archive.
+- **System Python, guided** (user): the launcher requires Python 3.11+ and,
+  when missing, prints the one-time install instructions (python.org /
+  winget) instead of bundling a runtime. Deps are pip-installed from PyPI at
+  first run — internet is needed once per machine, and the message says so.
+- **`[karta]` stays dev-only** ~~(v1.0/v1.1)~~ — **superseded by v1.2 the
+  same day** (see below): the user chose operator self-sufficiency over the
+  lighter setup.
+- **Geodata is a cloud copy, not a download** (ARCHITECTURE's own
+  suggestion): publish syncs the runtime subset of `data/geo` — the four
+  GeoPackages + `el_cov_index.gml` + `dem/` tiles, ~280 MB — into
+  `podaci/geo/`; setup robocopies it locally (`/XO`, so an interrupted copy
+  heals on the next run). `inspire_au/` + `INSPIRE_AU.zip` (~770 MB) are gpkg
+  build material and never ship.
+- **Validated live** (2026-09-02, this machine as the operator): first
+  double-click path end-to-end (Python detect → bundle extract → venv → pip →
+  geo copy → `.env`), then `photos process 1220 --dry-run` (correct plan, LIVE
+  banner, diacritics intact) and `osz prefill 1320` (11 fields, excerpt
+  reused, DOCX delivered to the intake leaf) — both through the published
+  bootstrap on the Drive, exit 0.
+
+**v1.1 (same day, after the user's first real operator run):**
+
+- **Per-run log** — every run mirrors all output (setup, pip, robocopy, the
+  command, stderr) into `%LOCALAPPDATA%\CaveDossier\logs\<command>_v<X>_<ts>.log`
+  and prints the path at the end; newest 60 kept. This is the debugging
+  channel for runs on other people's machines — the operator sends the file.
+  Native calls go through a tee helper with `$ErrorActionPreference =
+  'Continue'` (under `Stop`, PS 5.1 turns redirected native stderr into
+  terminating NativeCommandError).
+- **Console font** — the first run opened in a tiny raster font that also
+  mangles UTF-8 glyphs; bootstrap now sets Consolas 20 on its own window via
+  `SetCurrentConsoleFontEx` (fail-soft; ignored under Windows Terminal).
+- **Missing-excerpt message names the step, not the module** — without the
+  `[karta]` extra, prefill said "Georef tijek se srušio: No module named
+  'playwright'". It now skips the attempt and tells the operator to have the
+  dev run `cavedossier karta <broj>` and re-run prefill
+  (`osz/prefill.py::_ensure_karta` probes for playwright before starting).
+  With v1.2 installing `[karta]`, this path remains the degradation for a
+  machine whose browser download failed.
+
+**v1.2 (same day, user decision — karta on operator machines + diacritics):**
+
+- **Operators collect the isječak karte themselves**: setup installs
+  `[karta]` + Chromium (~150 MB, one-time; a failed download is a warning,
+  not fatal), and the generated `.env` carries the shared society georef.hr
+  login — injected into `bootstrap.ps1` at build time from the dev `.env`,
+  never committed. Rationale: prefill becomes fully self-sufficient (no
+  "javi razvijatelju" step); the server-side save cost is identical wherever
+  the flow runs; the per-run logs now make remote browser failures
+  debuggable. Validated live: v1.2 first run on this machine fetched SB
+  1087's excerpt from georef.hr and delivered it to `!!Isječci karte`.
+- **Regression found and fixed by that validation** (`_karta_newly_embedded`,
+  `osz/prefill.py`): `_content_unchanged` compares text cells only, so when
+  the excerpt arrived AFTER the first delivery, the re-run declared the old
+  document "netaknut" and left it holding the template's 1.5 KB placeholder
+  image. `unchanged` now also requires the old DOCX to carry an embedded
+  excerpt (any `word/media/*` member > 20 KB) whenever this run has one to
+  embed. Verified: re-run backed the old file up as `_stari` and delivered
+  the document with the real 410 KB `SB_1087.png`; the next re-run is
+  untouched again.
+- **`PROCITAJ_ME.txt` is real Croatian** (user: "does not contain
+  diacritical signs") — written as UTF-8 with BOM so Notepad reads č/ć/š/ž/đ
+  correctly. The ASCII enforcement stays for `.bat`/`.ps1` only, where
+  cmd/PS 5.1 encoding is the actual hazard; console messages in the
+  bootstrap deliberately stay diacritic-free ASCII.
+
+**v1.3 (same day, user: "nothing seems to be going on after inserting the
+number"):**
+
+- **The silence had two causes.** The waiting indicator was the visible ask —
+  but the real regression was that v1.1's logging redirects the CLI's
+  streams, so Python switched to block buffering and held ALL output until
+  exit; v1.0 had streamed because it wrote straight to the console.
+  `PYTHONUNBUFFERED=1` (set once, so pip streams too) restores live lines.
+- **The waiting snake**: `Run-Logged` now runs commands via
+  `System.Diagnostics.Process` with polled `ReadLineAsync` readers (no PS 5.1
+  eventing); whenever no line has arrived it animates an ASCII `~~o>` crawl
+  in place and wipes it the moment real output (or the end) comes. Every
+  line still reaches both the console and the run log; the snake itself is
+  never logged.
+
+## 2.1e sastavnica — the Illustrator branch (2026-09-19)
+
+The full rationale, the measured template geometry and the eight user decisions
+live in their own note, [sastavnica-design.md](../stages/4S-sastavnica/docs/sastavnica-design.md). Three
+things settled here are cross-cutting and belong in this record:
+
+- **It is a module, not a feature.** The Illustrator drafting route is a new
+  *branch of the pipeline* ([ARCHITECTURE §Two routes to the
+  Nacrt](../ARCHITECTURE.md#two-routes-to-the-nacrt--csurvey-and-illustrator)),
+  but the code that serves it reads SB through `SBReader`, the cave's leaf
+  through `intake.scanner`, the zapisnik through `osz.reader` and the
+  coordinates through `geo/`. A separate feature could not import any of that —
+  features integrate via artifacts, never imports — so `sastavnica/` sits
+  beside `osz/` and `georef/`. A new pipeline branch does not imply a new
+  feature folder.
+
+- **A delivered file is recognised by a metadata stamp, not by its name.** The
+  user's rule was "refuse on collision", which alone would refuse every
+  ordinary re-run. Stamping the PDF (`sastavnica.prefill.STAMP`) separates our
+  own output from anything else under that name — and because an Illustrator
+  re-save replaces the producer, the same one rule protects a sastavnica the
+  drafter has already worked on. Reusable idea for any other generated
+  deliverable that lands where people also edit.
+
+- **Author cells are printed in the drafter's abbreviated form**
+  (`Dario Maršanić` → `D. Maršanić`), via the existing
+  `core.person_aliases.to_sb_shorthand`. On a map this is not cosmetic: full
+  names shrank a three-person Ekipa cell to 6.25 pt where the drafter's own
+  form sits at 9.5 pt.
+
+- **A PDF can carry a second, invisible copy of itself.** Illustrator's
+  *Preserve Illustrator Editing Capabilities* export embeds the whole `.ai`
+  under the page's `/PieceInfo`, and Illustrator opens THAT in preference to
+  the page content. Editing only the page content therefore produced a file
+  that was correct in every PDF viewer and wrong in the one application it was
+  made for. Generalisable: when a generated document is meant to be opened in
+  the authoring application, check what that application actually reads — and
+  strip any round-trip payload. Here it was also 80 % of the file size.
+
+Building it surfaced a **pre-existing bug in `core/people.py`** worth recording
+because it fed the izjava gates, not just this tool: the author-cell separator
+treated the conjunction "i" as merely word-bounded, so it matched the *initial*
+of every author whose first name starts with I — `I. Dujmović` split into
+`. Dujmović`, `I.Dujmović` into `.Dujmović`. Every Ivan/Ivo/Igor/Iva/Ines in an
+author cell silently lost their initial on the way into name resolution. A
+conjunction now has to stand between spaces. Regression test:
+`tests/test_people.py::test_conjunctions_split_only_when_they_stand_alone`.
