@@ -53,6 +53,27 @@ PATH_IN_BACKTICKS_RE = re.compile(r"`([A-Za-z0-9_./-]+/[A-Za-z0-9_.-]+\.[A-Za-z0
 # Illustrative stand-ins, not real paths: projects/NNNN/, <broj>, glob stars.
 PLACEHOLDER_RE = re.compile(r"NNNN|[<>*]")
 
+
+# Regions where markdown link syntax is NOT a link. GitHub does not parse
+# markdown inside a fenced block, a code span, or a raw HTML block such as
+# <pre> — "[label](target)" there renders literally. Scanning them produced
+# false FAILs on this repo's own ARCHITECTURE diagrams and on backlog entries
+# that quote the syntax on purpose.
+FENCE_RE = re.compile(r"^```.*?^```", re.M | re.S)
+PRE_RE = re.compile(r"<pre>.*?</pre>", re.S | re.I)
+CODE_SPAN_RE = re.compile(r"`[^`\n]*`")
+
+
+def strip_non_markdown(text: str) -> str:
+    """Blank out non-markdown regions, preserving offsets and line count."""
+    def blank(m: re.Match) -> str:
+        return re.sub(r"[^\n]", " ", m.group(0))
+
+    for rx in (FENCE_RE, PRE_RE, CODE_SPAN_RE):
+        text = rx.sub(blank, text)
+    return text
+
+
 # Citations into the read-only reference clone resolve against ../cSurvey.
 SKIP_MARKER = "<!-- doctor:skip-links -->"
 
@@ -212,6 +233,9 @@ class Doctor:
             text = md.read_text(encoding="utf-8")
             if SKIP_MARKER in text:
                 continue
+            # Only the link SEARCH skips code and raw-HTML regions; anchors are
+            # read from the target file itself, so they are unaffected.
+            text = strip_non_markdown(text)
             rel = md.relative_to(self.repo)
             historical = bool(self.history_dirs & set(rel.parts))
             for raw_target in LINK_RE.findall(text):

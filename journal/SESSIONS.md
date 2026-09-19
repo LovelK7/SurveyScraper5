@@ -14,71 +14,75 @@ numbers through the mapping in
 
 ### 2026-09-19 — Codebase restructured around the pipeline (agent) ✅
 
-- **Why:** `features/cave-dossier` and `features/csx-to-survey-pipeline` were
-  not features — each was a span of the pipeline holding several separable
-  substages, buried in one 56-module package and one 31 KB README. Nothing
-  distinguished outward-facing from internal. And `2.1a`/`2.1b`/`2.1c` was a
-  first guess that stuck: 2.1a (a 95-file survey pipeline) sat as a sibling of
-  2.1c (a 7-module map screenshot), and the letters carried no meaning.
-- **Shape:** twelve stage folders under `stages/`, labelled `<digit><letter>` —
-  digit = position in the pipeline, letter = the Croatian name (`4O` = OSZ,
-  `2B` = baza). Each owns its README, code (`src/cave_dossier/<sub>/`), tests,
-  docs and templates. New root `prod/` holds the whole outward-facing surface
-  (Drive launchers, the TDX kit, the Drive-layout contract). Workspace state
-  (`config.yaml`, `.env`, `data/`, `runs/`, `sb-sync/`) moved to the repo root
-  so dev and an extracted prod bundle are the same shape. `journal/` is the
-  active log. **5D** for the dossier builder is the point: it was `2.1`, the
-  umbrella everything nested under; it *consumes* stages 1–4, it does not
-  contain them.
-- **Packaging:** one import namespace, many source roots, via an explicit
-  `[tool.setuptools.package-dir]` map. The obvious shorthand —
-  `packages.find where=[roots]` — is **not** a union: setuptools collapses every
-  root onto `cave_dossier` and the last one wins, so `pip install -e .` succeeds
-  and `import cave_dossier.osz` then fails. Both branches verified empirically
-  on setuptools 84.0.0 before committing to the layout. `build_prod.py` flattens
-  the bundle and ships a generated single-root pyproject, so the operator's
-  unattended `pip install -e .` never meets the multi-root map — proved by
-  extracting a bundle and installing it in a scratch venv.
-- **Anchor:** `core/paths.py` replaces `FEATURE_ROOT = parents[3]`, which was
-  depth-sensitive and conflated three roots. `workspace_root()` finds
-  `.cavedossier-workspace` by walking up (one rule for dev and for
-  `%LOCALAPPDATA%\CaveDossier\v<X>`); `repo_root()` is dev-only and `None` in
-  prod; package assets use `Path(__file__).parent` and travel with their code.
-- **Safety:** the 13 `features/*/` ignore rules covered **745 files / 1.6 GB**
-  of real cave data, and the auto-commit hook runs `git add -A`. Done on a
-  branch, which makes the hook inert by its own existing guard; `.gitignore`
-  rewritten and proven with `git check-ignore` **before** a byte moved; every
-  move a `git mv`. A path-independent blob-set fingerprint
-  (`8242cd10…`) held identical across all 17 move commits.
-- **Found in passing:** every prod bundle v1.0–v1.4 shipped six stale
-  `.egg-info` files the operator then pip-installed over (now excluded); the
-  three TDX `.bat` files hardcode one developer's absolute path *and* are
-  copied out to operators, so every distributed copy has been inert since
-  handover (replaced by a generated self-contained kit); `/wrap-up`'s guard
-  hardcoded one machine's path, making it useless elsewhere; the glossary still
-  named `!Speleo_baza_SUE_v2.4.xlsm`.
-- **Doctor:** rewritten around a new `pipeline.yaml` manifest. Eight of its
-  checks had degraded to **silent no-ops** — it would have reported a clean bill
-  of health while checking nothing, and both `/feature-dev` and `/wrap-up` gate
-  on its exit code. Work counters now make "examined too little" a failure in
-  its own right, and it has 14 tests of its own, each breaking one input and
-  asserting exit 1. Writing those found a real bug: the CLI↔DOC check
-  substring-matched, so "code in `osz/`" counted as documenting the `osz`
-  command.
-- **Verified:** 361 tests (347 + 14 new), doctor **0 fail · 3 warn** — the same
-  three historical-log warns as before the restructure. Live: `sb stats` reads
-  the LIVE workbook (1458 rows), `geo locate 1220` and `people list` resolve
-  their workspace data, and the prod bundle installs and imports from a scratch
-  venv.
-- **Limits:** `docs/commands.md` and `docs/module-map.md` are parked verbatim at
-  the root — splitting their per-command sections into the stage READMEs is an
-  editorial job, not a move, and is left for a later session.
-  `test_audit_and_photos.py` still straddles 2B and 4F. Historical documents
-  (SESSIONS, design-decisions, roadmap-decisions, SETUP_PROMPT) keep the old
-  part numbers deliberately; the mapping table in ARCHITECTURE is how to read
-  them.
-
----
+- **Did:** (1) *The shape.* `features/` dissolved into **twelve stage folders**
+  under `stages/`, labelled `<digit><letter>` — digit = position in the
+  pipeline, letter = the Croatian name (`4O` = OSZ, `2B` = baza). Each owns its
+  README, code (`src/cave_dossier/<sub>/`), tests, docs and templates. New root
+  `prod/` holds the entire outward-facing surface (Drive launchers, the TDX kit,
+  `drive-layout.md` pinning the `!!`-prefixed dirs and the crospeleo handshake).
+  Workspace state (`config.yaml`, `.env`, `data/`, `runs/`, `sb-sync/`) moved to
+  the repo root; `journal/` is the active log; `docs/design-decisions.md` stays
+  whole at the root per the user's choice.
+  (2) *Packaging.* One import namespace, many source roots, via an explicit
+  `[tool.setuptools.package-dir]` map in `pyproject.toml`; `cave_dossier/__init__.py`
+  deleted (PEP 420). `build_prod.py` FLATTENS `stages/*/src/cave_dossier/` into
+  one `src/cave_dossier/` tree and ships a generated single-root pyproject, so
+  the operator's unattended `pip install -e .` never meets the multi-root map.
+  (3) *Anchor.* `core/paths.py` replaces `FEATURE_ROOT = parents[3]`:
+  `workspace_root()` walks up for `.cavedossier-workspace` (one rule for dev and
+  for `%LOCALAPPDATA%\CaveDossier\v<X>`), `repo_root()` is dev-only and `None`
+  in prod, and package assets resolve as `Path(__file__).parent` so they travel
+  with their code — ~20 constants reclassified across 9 modules.
+  (4) *Doctor.* Rewritten around a new `pipeline.yaml` manifest, plus 14 tests
+  of its own. (5) *TDX kit.* `prod/build_csx_kit.py` generates a self-contained
+  operator kit instead of three `.bat` files hardcoding a path.
+  (6) *Docs.* Twelve stage READMEs, root CLAUDE/README rewritten, ARCHITECTURE's
+  part map + all five `<pre>` diagrams redrawn, both skills repointed.
+- **Result:** ✅ merged to `main` and pushed. 361 tests (347 + 14 new), doctor
+  **0 fail · 3 warn** — the same three historical-log warns as before the move.
+  Live: `sb stats` reads the LIVE workbook (1458 rows), `geo locate 1220`,
+  `people list` and `report` all resolve their workspace data. The prod bundle
+  was extracted and `pip install -e .`'d in a scratch venv — the actual operator
+  path — and every subpackage imported. 27 commits; a path-independent blob-set
+  fingerprint held identical across all 17 move commits, and `git log --follow`
+  still reaches pre-move history.
+- **Learned:**
+  - **`packages.find` with `where = [several roots]` is NOT a union.** setuptools
+    reduces each root to its top-level name and `.update()`s them, so every root
+    collides on `cave_dossier` and the LAST one silently wins: `pip install -e .`
+    succeeds and `import cave_dossier.osz` then raises ModuleNotFoundError.
+    Verified broken *and* verified that the explicit `package-dir` map works, both
+    on setuptools 84.0.0, before committing to the layout. Worst possible failure
+    shape — a wrong build, not an error.
+  - **Every prod bundle v1.0–v1.4 shipped six stale `.egg-info` files** that the
+    operator then pip-installed over. `BUNDLE_EXCLUDE_DIRS` never covered it.
+  - **The three TDX `.bat` files have been inert on every machine but this one
+    since handover** — they hardcode `C:\Users\Lovel.IZRK-LK-NB\...` *and* their
+    own headers say they are copied out to operators. Making them portable is a
+    repair, not a regression.
+  - **The doctor would have lied.** Eight of its checks degraded to *silent
+    no-ops* (`return`/`continue` on a missing input), and `/feature-dev` and
+    `/wrap-up` both gate on its exit code — a clean exit 0 while checking
+    nothing. Work counters with floors are the generic cure: "examined too
+    little" is now itself a failure.
+  - **git records renames for files, not directories** — four directory links
+    survived the automated rewrite pointing at the old path, and one of them
+    (`../../../../features/.../tools`) even produced an identical relpath, so the
+    tool saw "no change" and skipped it. The doctor caught all four.
+  - **The doctor's link regex scanned raw text**, so it read `[B11](M6)` inside
+    a `<pre>` diagram — and `` `[X](Y)` `` inside a code span — as links, and
+    reported them broken. GitHub parses markdown in neither, so both render
+    literally; the false positive was ours. Fixed by blanking fenced blocks,
+    code spans and raw `<pre>` before the link scan, with two regression tests.
+    Caught by writing the backlog entry that warned about it.
+  - The ignore rules guarded **745 files / 1.6 GB**, not the ~280 MB assumed;
+    `git mv` never consults `.gitignore` for the destination, and the
+    auto-commit hook's own `main`-only guard is the supported kill switch for a
+    risky migration.
+- **Next:** split `docs/commands.md`'s per-command sections into the stage
+  READMEs (editorial, deliberately not mixed into the migration); publish the
+  regenerated TDX kit with `--publish` and tell the operators once; `photos`
+  mover still rides with M6; M2's archive-intake tail is still the open item.
 
 ### 2026-09-19 — 2.1e sastavnica: the Illustrator branch, designed and shipped in one session (agent) ✅
 

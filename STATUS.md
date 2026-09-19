@@ -3,7 +3,7 @@
 Updated: 2026-09-19 (maintained by `/wrap-up` at the end of each session)
 
 
-Part numbering per [ARCHITECTURE.md](ARCHITECTURE.md).
+Stage labels per [ARCHITECTURE.md](ARCHITECTURE.md#the-labels) — `<digit><letter>`, digit = position in the pipeline, letter = the Croatian name. Entries written before 2026-09-19 use the old `2.1a`/`2.2b` numbers; the mapping is in that same section.
 
 ## Part status
 
@@ -237,6 +237,7 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
   nacrt get a suffix; does the archived intake leaf take the katastarski broj or
   keep its field name; is `deliver` dev-only at first (it needs Excel + xlwings);
   does `Godina zadnjeg istraživanja` join the same SB write.
+- **TDX kit redistribution** (new 2026-09-19): the three drag-and-drop `.bat` files were found to hardcode one machine's absolute path *and* to be copied out to operators — so every distributed copy has been inert since handover. `python prod/build_csx_kit.py --publish "<TDX folder>"` now generates a self-contained kit. Needs one pass: inventory the copies on the Drive, overwrite them, and tell the operators once to replace the whole folder (the kit is self-contained from then on, so it is the last time).
 - **Sastavnica Lokacija wording** (new 2026-09-19): the sastavnica inherits the
   OSZ's geo-admin-wins rule for Najbliže mjesto, so SB 811 prints
   *Kobiljak, Grižane-Belgrad* where SB says *Potkobiljak*. Kept for consistency
@@ -314,6 +315,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
+- 2026-09-19 (later) — **codebase restructured around the pipeline**: `features/` dissolved into twelve `stages/<digit><letter>-<name>/` folders each owning its README, code, tests and assets; new root `prod/` for the whole outward-facing surface; `FEATURE_ROOT` replaced by a marker-based `workspace_root()`; one import namespace over many source roots via an explicit `package-dir` map (the obvious `where=[roots]` shorthand is silently broken — verified); pipeline doctor rewritten around a new `pipeline.yaml` after finding eight of its checks had degraded to silent no-ops. Found in passing: stale `.egg-info` in every prod bundle to date, and three operator `.bat` files inert on every machine but the developer's. 361 tests, doctor clean → [journal/SESSIONS.md](journal/SESSIONS.md)
 - 2026-09-19 — **2.1e sastavnica shipped, designed and built the same day**: the Illustrator drafting route gets its own pipeline branch in ARCHITECTURE (route A/B, part 2.1e, bridge B13) and `cavedossier sastavnica <broj>` prefills the Nacrt's title block from SB + the leaf's filled OSZ + the geo finders, delivered beside the OSZ. Blank template generated from the authored `.ai` export by content-stream surgery; the embedded `.ai` payload that made Illustrator open the TEMPLATE was found by the user on the first delivered file and stripped. Prod launcher **v1.4** published the same day. Also fixed a pre-existing `core/people.py` bug that ate the initial of every author whose first name starts with I → [journal/SESSIONS.md](journal/SESSIONS.md)
 - 2026-09-02 (later) — **`osz fetch` renamed to `osz backfill`** (code, all docs, test file; 300 tests green, doctor clean) and the **M6 delivery step designed** — [m6-delivery-design.md](stages/6P-predaja/docs/m6-delivery-design.md): `deliver <broj>` as the last gate (OSZ completeness → `/` filler → files nameable → katastarski broj `max+1` → approval → rename/file/SB write-back). Measuring the live SB/Drive found the queue-flag double-view trap and the 4 checkbox-group fields no reader can see yet → [journal/SESSIONS.md](journal/SESSIONS.md)
-- 2026-09-02 — **first productionization slice, v1.0→v1.3 the same evening**: `tools/build_prod.py` + templates generate versioned double-click launchers for `osz prefill` / `photos process` on the Drive (`!!!Digitalizacija/SurveyScraper5/`, self-installing to `%LOCALAPPDATA%\CaveDossier`); iterated on the user's real first runs — per-run logs + console font (v1.1), operator-side karta flow + Croatian PROCITAJ_ME (v1.2, caught+fixed the `_karta_newly_embedded` re-delivery bug), waiting snake + `PYTHONUNBUFFERED` streaming fix (v1.3) → [journal/SESSIONS.md](journal/SESSIONS.md)

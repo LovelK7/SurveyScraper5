@@ -21,6 +21,10 @@ import pytest
 DOCTOR = Path(__file__).resolve().parents[1] / "pipeline_doctor.py"
 REPO = Path(__file__).resolve().parents[2]
 
+README_WITH_CODE = '# 4O\n\nRuns `cavedossier osz prefill`. Code in osz/. See [design](docs/design.md).\n\nA code span: `[B11](M6)` and a fence:\n\n```\n[B6](B7)\n```\n\n<pre>\n[B10](M5) inside a raw HTML block\n</pre>\n'
+
+README_WITH_REAL_BREAK = '# 4O\n\nRuns `cavedossier osz prefill`. Code in osz/.\nSee [design](docs/design.md) and [gone](docs/gone.md).\n'
+
 
 def load_doctor():
     """A fresh module each time — the doctor accumulates into module globals."""
@@ -179,3 +183,21 @@ def test_starved_check_fails_even_with_no_findings(repo: Path):
 def test_real_repo_is_clean():
     """The actual repo must pass, with its real floors."""
     assert load_doctor().main(["--manifest", str(REPO / "pipeline.yaml")]) == 0
+
+def test_link_syntax_in_code_and_pre_is_not_a_link(repo: Path):
+    """[label](target) is not a link inside a code span, fence or <pre>.
+
+    GitHub does not parse markdown in any of those, so it renders literally.
+    The doctor used to scan raw text, which failed on this repo's own
+    ARCHITECTURE diagrams and on backlog entries quoting the syntax on purpose.
+    """
+    (repo / "stages" / "4O-osz" / "README.md").write_text(
+        README_WITH_CODE, encoding="utf-8")
+    assert run_relaxed(repo / "pipeline.yaml") == 0
+
+
+def test_a_real_broken_link_outside_code_still_fails(repo: Path):
+    """...but the same syntax in ordinary prose is still checked."""
+    (repo / "stages" / "4O-osz" / "README.md").write_text(
+        README_WITH_REAL_BREAK, encoding="utf-8")
+    assert run_relaxed(repo / "pipeline.yaml") == 1

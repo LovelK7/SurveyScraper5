@@ -305,3 +305,28 @@ when an idea's time comes. Nothing here is a commitment.
   (M5). Tlocrtna duljina, stvarna duljina and vis. razlika are survey outputs;
   today they only arrive via a filled OSZ, so a cave drafted before its zapisnik
   is completed prints four empty cells that the pipeline already knows.
+- 2026-09-19 — **split `docs/commands.md` into the stage READMEs.** The 494-line
+  operator view was parked verbatim at the root during the restructure; its
+  per-command sections belong in the stage that owns each command (the doctor
+  already enforces that every command appears there), leaving `commands.md` as
+  a thin index or nothing at all. Editorial work, deliberately not mixed into a
+  migration that needed auditing.
+- 2026-09-19 — **`docs/module-map.md` should become generated, or go.** It was
+  the feature `_INDEX.md`; `pipeline.yaml` now holds the module→stage mapping
+  as data and the doctor checks it, so the prose copy is a second source of
+  truth waiting to drift.
+- 2026-09-19 — **split `test_audit_and_photos.py`.** It straddles `sb.audit` and
+  `photos/`, so it sits in 2B on its lead subject while half of it belongs to
+  4F. Splitting is a content change; it was kept out of the move commits.
+- 2026-09-19 — **teach `rewrite_doc_links.py` about directory renames, or delete
+  it.** git records renames for files only, so four directory links survived the
+  automated pass pointing at the old path (one produced an identical relpath, so
+  the tool saw no change). Fine as a one-shot that the doctor backstops — but if
+  it is ever reused, that is the gap.
+- 2026-09-19 — ~~a doctor check for `[X](Y)` inside `<pre>` blocks~~ — resolved
+  the same day, the other way round: GitHub does not parse markdown inside a
+  `<pre>` block, a fence or a code span, so the doctor was raising FALSE
+  positives there. It now blanks those regions before scanning for links.
+- 2026-09-19 — **prod coverage for more commands.** `karta`, `osz backfill` and
+  `report` are stable enough to ship as Drive launchers; adding one is two edits
+  (`PROD_COMMANDS` + a `switch` branch in `bootstrap.ps1.template`).
