@@ -302,9 +302,12 @@ class Doctor:
                     fail(f"CLIDOC stage {stage['label']} claims '{command}' but has "
                          f"no README")
                     continue
-                if command not in readme.read_text(encoding="utf-8"):
+                # Require the INVOCATION, not a bare mention: "code in osz/"
+                # must not count as documenting the `osz` command.
+                if f"cavedossier {command}" not in readme.read_text(encoding="utf-8"):
                     fail(f"CLIDOC '{command}' is claimed by {stage['label']} but "
-                         f"absent from {stage['dir']}/README.md")
+                         f"{stage['dir']}/README.md never shows "
+                         f"`cavedossier {command}` being run")
             if command not in catalog and command not in self.bridge_exempt:
                 warnings.append(
                     f"BRIDGE subcommand '{command}' not named in ARCHITECTURE's "
