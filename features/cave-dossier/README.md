@@ -138,6 +138,15 @@ cavedossier people check                   # audit: people without an izjava · 
 cavedossier intake map                     # DRY RUN: map each leaf folder to its SB row
 cavedossier intake map --unmatched-only    # just the ones that need a human
 cavedossier intake map --apply             # rename the folders in place
+# Marks in the listing: `high`/`medi` = matched, `?` = nothing resolves (create
+# the SB row), `NEW` = config says the cave has no row yet, `SPLT` = the folder
+# holds several caves, `!` = STALE OVERRIDE.
+# `!` means config.yaml `intake.new_entries` still claims a cave has no SB row
+# while a row now matches it — the row was entered after the line was written.
+# Nothing is proposed for it. Check the row it names, then delete that line from
+# `intake.new_entries` and re-run; the folder maps on its own.
+# `SPLT` means one folder holds several caves (`intake.split_folders`). Make one
+# folder per cave using the printed `SB_<broj>_<Ime>` names, then re-run.
 
 # ── Satellite tables (part 2.2b) ───────────────────────────────────────
 cavedossier sat sync                       # Liburnija sheet vs SB: four review lists (read-only)

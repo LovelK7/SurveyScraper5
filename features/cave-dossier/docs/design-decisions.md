@@ -32,6 +32,8 @@ keeps the chronology.
 - [Izjava za katastar — filename scheme](#izjava-za-katastar--filename-scheme)
 - [People registry and the statement gates (2026-08-30)](#people-registry-and-the-statement-gates-2026-08-30)
 - [Field-data intake — matching design](#field-data-intake--matching-design)
+  - [A "confirmed absent" line is an observation, and observations go stale](#a-confirmed-absent-line-is-an-observation-and-observations-go-stale)
+  - [One folder, several caves](#one-folder-several-caves)
   - [The third source: the Liburnija LIDAR sheet](#the-third-source-the-liburnija-lidar-sheet)
 - [2.1b prefill rules (2026-08-30)](#21b-prefill-rules-2026-08-30)
 - [OSZ backfill → SB rules (2026-08-30)](#osz-backfill--sb-rules-2026-08-30)
@@ -539,6 +541,46 @@ Redni broj, for spelling variants like *Bilova* → *Billova ponikva*) and
 `intake.new_entries`, which marks a folder as a cave SB does not have yet —
 needed because a new cave often resembles an existing name (`Božur_Frustuck` is
 **not** *Božur* 1087).
+
+### A "confirmed absent" line is an observation, and observations go stale
+
+`intake.new_entries` used to be an unconditional veto: any folder matching a
+listed fragment had `match.cave` set to `None` and was reported as "confirmed
+absent from SB". But SB only ever grows, and such a line records what was true
+on the day it was written. By 2026-09-19 nine of the eighteen lines were
+suppressing **exact-name** hits on rows 1440–1456 — *Nikad više* (1456,
+051-837), *Ciciklama* (1440), *Mune14* (1441), *Munina* (1443), *Flaviator*
+(1444), *Mune24* (1447), *Logor špilja* (1448), *Ona je glonđa* (1453), *Jama
+na gradilištu* (1455) — all entered by V. Fabijančić weeks after the list was
+made. The run kept saying "confirmed absent from SB (overrides a lookalike
+match)" while quietly discarding the row it had just found, and the folders
+went unnumbered with no signal that anything was wrong. The message was doubly
+misleading: for the other nine lines there was no match to override at all.
+
+The fix is not to let the matcher win. That would mis-number exactly the case
+the list exists for — a genuinely new cave named like an existing row. Instead
+the override keeps winning but **stops destroying its evidence**: the discarded
+cave is kept on `IntakeMatch.overridden`, and `stale_override` flags the
+contradiction. `intake map` prints it as `!  STALE OVERRIDE` with the row it
+found, proposes nothing, and exits not-ready. This is the same rule the matcher
+already applies to disagreeing signals — *two that disagree are a finding in
+their own right and propose nothing* — extended to config-vs-SB disagreement.
+A human deletes the line or fixes the row; nothing resolves itself.
+
+The general lesson for this feature: **any hand-written assertion about SB must
+be re-checked against SB on every run.** A config list that is only read, never
+validated, decays silently into wrong answers.
+
+### One folder, several caves
+
+`vrazji prolaz 2kom` holds two caves — *VP1* (051-807, RB 1457) and *VP2*
+(051-801, RB 1458). A leaf folder is one cave's pre-SUE working identity, so
+there is no prefix that can be correct for it, and no automatic rename is
+possible. `intake.split_folders` (fragment → list of Redni brojevi, user
+2026-09-19) records what is inside; the run marks it `SPLT`, prints the
+`SB_<broj>_<Ime>` name each half should get, and proposes nothing. Once a human
+splits the folder, both halves match on their name alone and the config entry
+becomes inert — which is the intended end state, not a leak.
 
 ### The third source: the Liburnija LIDAR sheet
 

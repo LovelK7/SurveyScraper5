@@ -54,6 +54,34 @@ class IntakeMatch(PathMatch):
     #: often resembles an existing name (`Božur_Frustuck` is NOT *Božur* 1087).
     is_new_entry: bool = False  # per-instance, set by match_leaves
 
+    #: The cave the matcher HAD resolved before an `intake.new_entries` line
+    #: discarded it. SB only grows, so such a line is a point-in-time
+    #: observation that goes stale the moment someone enters the row: on
+    #: 2026-09-19 nine of them were suppressing exact-name hits on rows
+    #: 1440–1456, entered weeks after the list was written, and the run said
+    #: "confirmed absent from SB" every time. Keeping the discarded match is
+    #: what lets `stale_override` report the contradiction instead of erasing
+    #: it. Neither side wins automatically — see the property.
+    overridden: CaveCandidate | None = None
+    overridden_evidence: str | None = None
+
+    #: More than one cave in one folder (`vrazji prolaz 2kom` is VP1 + VP2).
+    #: A leaf is one cave's working identity, so this can never be prefixed;
+    #: it is reported with both target names for a human to split by hand.
+    split_into: tuple[CaveCandidate, ...] = ()
+
+    @property
+    def stale_override(self) -> bool:
+        """`intake.new_entries` says "not in SB", but a row now matches.
+
+        Reported, never resolved automatically. Trusting the matcher would
+        mis-number a genuinely new cave whose name resembles an existing one
+        (the `Božur_Frustuck` case the list exists for); trusting the config
+        is what produced the 2026-09-19 failure. Disagreeing evidence proposes
+        nothing and goes to a human — the same rule as `confidence="conflict"`.
+        """
+        return self.is_new_entry and self.overridden is not None
+
     @property
     def proposed_name(self) -> str | None:
         """``SB_<Redni broj>_<Ime objekta>_<original folder name>``.
@@ -64,6 +92,8 @@ class IntakeMatch(PathMatch):
         come off — that is what upgrades a pre-2026-08-30 ``<broj>_…`` rename
         to the ``SB_``-marked form instead of stacking the number twice.)
         """
+        if self.split_into:
+            return None
         if self.is_new_entry or self.cave is None or self.cave.serial_number is None:
             return None
         if self.confidence == "conflict" or self.already_correct:
@@ -142,6 +172,7 @@ def match_leaves(
     manual: dict[str, int] | None = None,
     new_entries: list[str] | None = None,
     sheet_rows: dict[str, object] | None = None,
+    split_folders: dict[str, list[int]] | None = None,
 ) -> list[IntakeMatch]:
     """Resolve leaf folders to SB rows. Leading numbers are NOT used — see above."""
     matches: list[IntakeMatch] = match_paths(  # type: ignore[assignment]
@@ -173,9 +204,27 @@ def match_leaves(
     for match in matches:
         if any(fragment in match.path.name.casefold() for fragment in fragments):
             match.is_new_entry = True
+            # The match is set aside, not destroyed: a `new_entries` line that
+            # now contradicts a live SB row is a finding, not a silent veto.
+            match.overridden = match.cave
+            match.overridden_evidence = match.evidence
             match.cave = None
             match.evidence = "potvrđeno: nema retka u SB"
             match.confidence = "new"
+
+    by_serial = {c.serial_number: c for c in candidates if c.serial_number is not None}
+    for fragment, serials in (split_folders or {}).items():
+        for match in matches:
+            if fragment.casefold() not in match.path.name.casefold():
+                continue
+            resolved = tuple(c for c in (by_serial.get(s) for s in serials) if c is not None)
+            if not resolved:
+                continue
+            match.split_into = resolved
+            match.cave = None
+            match.is_new_entry = False
+            match.confidence = "split"
+            match.evidence = "više objekata u jednoj mapi"
     return matches
 
 

@@ -278,3 +278,9 @@ when an idea's time comes. Nothing here is a commitment.
   addressed positionally (`osz/addresses.py`). The checkbox-group manifest that the
   delivery gate needs would be a second positional map; tagging the template once
   would collapse both maps into names that survive a layout change.
+- 2026-09-19 — `intake map` now reports `new_entries` lines a live SB row
+  contradicts (STALE OVERRIDE). The sibling rot is a line matching **no leaf at
+  all**: `kurvica_na_putu_ivana` is dead config — that folder was renamed on
+  Drive to `Kraljica trotoara` and matches SB 1446 on its own now. Same one-pass
+  check would flag every orphan line in `intake.new_entries`,
+  `intake.manual_matches` and `intake.split_folders`.

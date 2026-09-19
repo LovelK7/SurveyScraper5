@@ -104,6 +104,8 @@ intake:
     "M.Dol Pećina": 1272           # SB: "Pećina u Mudnoj doli"
     "kripanj_ivana": 1215          # SB: "Paraglajderska"
     "Solareva draga": 1312         # SB: "Jama u Solarevoj dragi"
+    "Dario8": 1450                 # SB: "Dmune8" (051-779) — user, 2026-09-19
+    "Dario9": 1449                 # SB: "Dmune9" (051-753) — user, 2026-09-19
     # Both Tingen-BP leaves hold the same object; SB 1122 is "BP".
     "Penj": 1122
     "Venio+Ličko": 1122
@@ -111,29 +113,29 @@ intake:
   # Confirmed NOT in SB. Every unresolved leaf is a new entry by default (user,
   # 2026-08-29), so this list is only needed to OVERRIDE a wrong automatic match:
   # Božur_Frustuck resembles "Božur" (1087) but is a different, new cave.
+  #
+  # A line here is a point-in-time claim and goes stale as soon as the row is
+  # entered. On 2026-09-19 nine of them were suppressing exact-name hits on
+  # rows 1440–1456 (entered by V. Fabijančić after the list was written) and
+  # were removed. `intake map` now re-checks every line and prints STALE
+  # OVERRIDE for any that a live row contradicts — trust that report, and keep
+  # this list to the caves that really have no row.
   new_entries:
     # Overrides a lookalike automatic match:
     - "Božur_Frustuck"           # resembles "Božur" (1087) but is a different cave
-    # Confirmed by the user 2026-08-29 — every remaining leaf is a cave SB does
-    # not have yet. They can only be numbered once their rows exist.
-    - "Ona je glonđa"
+    # Confirmed by the user 2026-08-29, re-checked 2026-09-19 — still no SB row.
     - "Špilja M.Dol"
     - "Ona mala špilja_Mileni"
-    - "Ciciklama_Flavio"
-    - "Mune_14_Flavio"
     - "Mune_Nat4_Natalija"
-    - "Munina_762_Renata"
-    - "Dario8_Ivana"
-    - "Dario9_Ivana"
     - "kurvica_na_putu_ivana"
-    - "Logor"
-    - "Mune24"
-    - "Flaviator"
     - "Monte Putin & Novak_Tin"
     - "Jama 9m_Venio"
-    - "Jama na gradilištu (110)_Venio"
-    - "Nikad više_Venio_837"
-    - "vrazji prolaz 2kom"
+
+  # One folder, several caves. A leaf is one cave's working identity, so these
+  # are never renamed — the run prints the target names and a human splits the
+  # folder by hand, after which the halves match on their own.
+  split_folders:
+    "vrazji prolaz 2kom": [1457, 1458]   # VP1 (051-807) + VP2 (051-801) — user, 2026-09-19
 
 # People registry — canonical authors + curated aliases + izjava linkage
 # (cave_dossier/people/). The JSON is committed (curated by hand, like the

@@ -90,6 +90,73 @@ def test_manual_mapping_resolves_a_folder_with_no_cave_name(tmp_path: Path) -> N
     assert match.proposed_name == "SB_752_Malenica_108_Renata"
 
 
+# ── intake.new_entries: an assertion that is re-checked, not trusted ──
+
+
+def test_new_entry_override_beats_a_lookalike(tmp_path: Path) -> None:
+    """The case the list exists for: a new cave whose name resembles an SB row."""
+    (tmp_path / "Sik Šits_Frustuck").mkdir()
+    leaves = find_leaf_folders(tmp_path)
+    match = match_leaves(leaves, CANDIDATES, new_entries=["Sik Šits_Frustuck"])[0]
+    assert match.is_new_entry
+    assert match.cave is None
+    assert match.proposed_name is None
+
+
+def test_a_new_entry_line_contradicted_by_sb_is_reported_not_obeyed(tmp_path: Path) -> None:
+    """The 2026-09-19 failure: the row was entered after the line was written.
+
+    Nine folders were held at "confirmed absent from SB" while exact-name hits
+    on live rows were being discarded in silence. The override still wins (a
+    lookalike would otherwise be mis-numbered), but it now has to say so.
+    """
+    (tmp_path / "Sik Šits_Sara").mkdir()
+    leaves = find_leaf_folders(tmp_path)
+    match = match_leaves(leaves, CANDIDATES, new_entries=["Sik Šits_Sara"])[0]
+    assert match.stale_override
+    assert match.overridden.serial_number == 1035
+    assert "Sik Šits" in match.overridden_evidence
+    assert match.proposed_name is None
+
+
+def test_a_new_entry_line_with_no_sb_row_is_not_stale(tmp_path: Path) -> None:
+    (tmp_path / "Monte Putin & Novak_Tin").mkdir()
+    leaves = find_leaf_folders(tmp_path)
+    match = match_leaves(leaves, CANDIDATES, new_entries=["Monte Putin"])[0]
+    assert match.is_new_entry
+    assert not match.stale_override
+    assert match.overridden is None
+
+
+# ── One folder, several caves ─────────────────────────────────────────
+
+
+def test_a_split_folder_is_reported_with_both_targets_and_never_renamed(tmp_path: Path) -> None:
+    """`vrazji prolaz 2kom` holds VP1 and VP2; a leaf is one cave's identity."""
+    (tmp_path / "vrazji prolaz 2kom").mkdir()
+    leaves = find_leaf_folders(tmp_path)
+    match = match_leaves(
+        leaves, CANDIDATES, split_folders={"vrazji prolaz": [1035, 811]}
+    )[0]
+    assert [c.serial_number for c in match.split_into] == [1035, 811]
+    assert match.cave is None
+    assert match.proposed_name is None
+
+
+def test_a_split_folder_overrides_a_new_entry_line(tmp_path: Path) -> None:
+    """Knowing which caves are inside beats "no row" — it is the later finding."""
+    (tmp_path / "vrazji prolaz 2kom").mkdir()
+    leaves = find_leaf_folders(tmp_path)
+    match = match_leaves(
+        leaves,
+        CANDIDATES,
+        new_entries=["vrazji prolaz 2kom"],
+        split_folders={"vrazji prolaz": [1035, 811]},
+    )[0]
+    assert not match.is_new_entry
+    assert len(match.split_into) == 2
+
+
 # ── The Liburnija sheet bridge ────────────────────────────────────────
 
 

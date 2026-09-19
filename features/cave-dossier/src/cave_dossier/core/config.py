@@ -1,4 +1,4 @@
-"""Configuration: committed config.yaml + gitignored .env, deliberately slim.
+﻿"""Configuration: committed config.yaml + gitignored .env, deliberately slim.
 
 crospeleo-automation's multi-society profile system (~900 lines across
 core/profile.py + core/config.py) is NOT ported — this tool serves one society.
@@ -69,8 +69,14 @@ class Settings:
     # Field-data intake: folder-name fragment -> Redni broj, for leaves whose
     # name carries no cave name at all (a LIDAR id, a surveyor first name).
     intake_manual_matches: dict[str, int] = field(default_factory=dict)
-    # Folder fragments confirmed to hold data for caves not yet in SB.
+    # Folder fragments confirmed to hold data for caves not yet in SB. A
+    # point-in-time claim: SB grows, so `intake map` re-checks each line and
+    # reports the ones a live row now contradicts instead of trusting them.
     intake_new_entries: list[str] = field(default_factory=list)
+    # Folder fragment -> the Redni brojevi of the several caves inside it.
+    # One leaf is one cave, so these are reported for a human to split, never
+    # renamed (`vrazji prolaz 2kom` holds VP1 and VP2).
+    intake_split_folders: dict[str, list[int]] = field(default_factory=dict)
     # Cached CSV of the Liburnija LIDAR sheet; see intake/liburnija.py.
     intake_sheet_csv: str | None = None
     # Per-satellite overrides (config.yaml `satellites`): satellite name ->
@@ -241,6 +247,11 @@ def load_settings() -> Settings:
         intake_new_entries=[
             str(value) for value in ((raw.get("intake") or {}).get("new_entries") or []) if value
         ],
+        intake_split_folders={
+            str(key): [int(serial) for serial in (value or [])]
+            for key, value in ((raw.get("intake") or {}).get("split_folders") or {}).items()
+            if value
+        },
         intake_sheet_csv=((raw.get("intake") or {}).get("sheet_csv") or None),
         satellites={
             str(name): dict(values or {})

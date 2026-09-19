@@ -15,6 +15,7 @@ from datetime import date
 from pathlib import Path
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
+from cave_dossier.core.matching import SB_PREFIX
 from cave_dossier.dossier import GateLevel, build_from_sb, evaluate, render
 from cave_dossier.photos import (
     apply_renames,
@@ -564,19 +565,32 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
     if sheet_rows:
         print(f"Liburnija sheet: {len(sheet_rows)} numbered rows from {sheet_csv.name}")
     matches = match_leaves(leaves, candidates, settings.intake_manual_matches,
-                           settings.intake_new_entries, sheet_rows)
+                           settings.intake_new_entries, sheet_rows,
+                           settings.intake_split_folders)
     by_path = {leaf.path: leaf for leaf in leaves}
 
     matched = [m for m in matches if m.cave is not None and m.confidence != "conflict"]
     conflicts = [m for m in matches if m.confidence == "conflict"]
     new_entries = [m for m in matches if m.is_new_entry]
-    unmatched = [m for m in matches if m.cave is None and not m.is_new_entry]
+    stale = [m for m in matches if m.stale_override]
+    splits = [m for m in matches if m.split_into]
+    unmatched = [
+        m for m in matches
+        if m.cave is None and not m.is_new_entry and not m.split_into
+    ]
 
     print(f"Intake root: {root}")
     print(f"  {len(leaves)} leaf folder(s) — mapped to an SB row: {len(matched)}"
           + (f", conflicting {len(conflicts)}" if conflicts else ""))
     print(f"  {len(new_entries) + len(unmatched)} with no SB row — new caves that need"
           f" a row before they can be numbered")
+    if splits:
+        print(f"  {len(splits)} folder(s) holding more than one cave — split by hand first")
+    if stale:
+        # Loud, above the listing: the config is asserting something SB now
+        # contradicts, and every such folder is silently going unnumbered.
+        print(f"  ⚠ {len(stale)} stale intake.new_entries line(s) — SB now has a row"
+              f" for these; see STALE OVERRIDE below")
     print(
         "APPLYING — folders will be renamed in place."
         if apply
@@ -596,10 +610,35 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
             group = leaf.group
             print()
             print(f"  [{group or '(top level)'}]")
-        mark = "NEW" if match.is_new_entry else ("?" if match.cave is None else match.confidence[:4])
+        if match.stale_override:
+            mark = "!"
+        elif match.split_into:
+            mark = "SPLT"
+        elif match.is_new_entry:
+            mark = "NEW"
+        elif match.cave is None:
+            mark = "?"
+        else:
+            mark = match.confidence[:4]
         print(f"    {mark:<4} {leaf.relative.name}   ({leaf.file_count} files)")
+        if match.split_into:
+            print(f"         → SPLIT: holds {len(match.split_into)} caves; make one folder each,"
+                  f" then re-run")
+            for cave in match.split_into:
+                print(f"           {SB_PREFIX}{cave.serial_number}_{cave.object_name}"
+                      f"   (pločica {cave.plaque_number or '—'})")
+            continue
+        if match.stale_override:
+            cave = match.overridden
+            print(f"         → STALE OVERRIDE: intake.new_entries says this cave has no SB"
+                  f" row, but one matches now")
+            print(f"           {cave.object_name} · Redni broj {cave.serial_number}"
+                  f" · SUE {cave.sue_number or '—'} · {match.overridden_evidence}")
+            print( "           Nothing proposed. Drop the line from intake.new_entries to"
+                  " accept it, or fix the row.")
+            continue
         if match.is_new_entry:
-            print("         → NEW: confirmed absent from SB (overrides a lookalike match)")
+            print("         → NEW: confirmed absent from SB; create the row, then re-run")
             continue
         if match.cave is None:
             print("         → NEW: no SB row resolves; create one, then re-run")
@@ -618,7 +657,8 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
         print(f"         {match.cave.object_name} · Redni broj {match.cave.serial_number}"
               f" · SUE {match.cave.sue_number or '—'} · {match.evidence}")
 
-    remaining = (len(unmatched) if unmatched_only else len(matches)) - shown
+    listed = [m for m in matches if m.cave is None] if unmatched_only else matches
+    remaining = len(listed) - shown
     if remaining > 0:
         print(f"\n  … {remaining} more (raise --limit)")
 
@@ -634,7 +674,7 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
         if problems:
             return EXIT_ERROR
 
-    return EXIT_READY if not unmatched and not conflicts else EXIT_NOT_READY
+    return EXIT_READY if not unmatched and not conflicts and not stale else EXIT_NOT_READY
 
 
 def cmd_sat_sync(
