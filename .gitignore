@@ -84,3 +84,43 @@ features/cave-dossier/osz-template/mockups/*.docx
 # Distribution copies are byte-identical to templates/ — the tracked pair there
 # (Zapisnik_OSZ_v10.dotx + _gdocs.docx) is the record of what was handed out
 features/cave-dossier/osz-template/distribution/
+
+# ========================================================================
+# === NEW LAYOUT (stages/ + prod/) =======================================
+# Added ahead of the restructure; the features/* rules above stay in force
+# until every move is done, then get pruned. See the restructure plan §8.
+#
+# LEADING SLASHES BELOW ARE LOAD-BEARING: a bare `runs/` or `data/` would
+# match at EVERY depth and silently start ignoring the tracked per-project
+# ground truth under stages/3N-nacrt/projects/*/runs/ (RUNLOG.md + the JSON
+# inspector reports). Anchor them to the repo root.
+# ========================================================================
+
+# Bulky reference material + real survey data kept inside a stage
+stages/*/literature/
+stages/*/example/
+
+# Workspace state at the repo root — one of each, mirroring the prod bundle
+/example/
+
+# SB <-> satellite sync runs: real society data; the README is the record
+/sb-sync/*
+!/sb-sync/README.md
+
+# Run artifacts (georef traces/screenshots, osz, sastavnica, people)
+/runs/
+
+# Downloaded geodata — regenerable via `cavedossier geo fetch-data`
+/data/*
+!/data/README.md
+# …except the people registry: curated by hand, so it IS the record
+!/data/people/
+!/data/people/**
+
+# Prod build staging; the published copy lives on the Drive
+/prod/dist/
+
+# OSZ template workbench (stages/4O-osz/template-workbench)
+stages/4O-osz/template-workbench/templates/archive/
+stages/4O-osz/template-workbench/mockups/*.docx
+stages/4O-osz/template-workbench/distribution/
