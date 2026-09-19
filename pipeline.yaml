@@ -1,0 +1,156 @@
+# The pipeline, machine-readable. tools/pipeline_doctor.py reads this and
+# CHECKS the prose against it — it never generates the prose. ARCHITECTURE.md
+# stays hand-written; this file is what stops it drifting from the tree.
+#
+# Label = <digit><letter>. The digit is the position in the pipeline, so the
+# folders list in the order data actually flows through them; the letter is
+# the Croatian name of the thing, so the label says what it is without a
+# lookup. "4O" is the OSZ builder; "2B" is the Speleo baza.
+#
+# Adding a stage: add it here, create stages/<dir>/README.md, and give it its
+# modules/commands. The doctor fails if a stage folder, a subpackage or a CLI
+# command exists that this file does not account for.
+
+version: 1
+package: cave_dossier
+workspace_marker: .cavedossier-workspace
+
+# Broken relative links inside these are WARN, not FAIL: they were migrated
+# verbatim and legitimately contain pre-migration paths.
+history_dirs: [sessions, projects, journal]
+
+# Never descended into when scanning docs or sources.
+skip_dirs:
+  - .git
+  - .venv
+  - .vscode
+  - .claude
+  - __pycache__
+  - .pytest_cache
+  - node_modules
+  - data
+  - runs
+  - sb-sync
+  - example
+  - literature
+  - dist
+
+# Subcommands that are deliberately absent from ARCHITECTURE's bridge catalog
+# (sub-verbs of a bridge, or one-off sweeps that are finished).
+bridge_exempt:
+  - columns
+  - inspect
+  - stats
+  - audit-authors
+  - unclassified
+  - check-flag
+  - za-istrazit
+
+stages:
+  - id: platform
+    label: "0P"
+    dir: stages/0P-platform
+    name: "Platform — the shared spine"
+    was: "(unlabelled)"
+    status: operational
+    modules: [core, cli]
+    commands: []
+
+  - id: teren
+    label: "1T"
+    dir: stages/1T-teren
+    name: "Teren — field capture and the intake-dir contract"
+    was: "1 + intake"
+    status: parked
+    modules: [intake]
+    commands: [intake]
+
+  - id: baza
+    label: "2B"
+    dir: stages/2B-baza
+    name: "Speleo baza — the master registry and its satellite tables"
+    was: "2.2a + 2.2b"
+    status: operational
+    modules: [sb, satellites]
+    commands: [sb, sat]
+
+  - id: nacrt
+    label: "3N"
+    dir: stages/3N-nacrt
+    name: "Nacrt — csx-to-survey, the route-A map producer"
+    was: "2.1a"
+    status: operational
+    modules: []
+    commands: []
+
+  - id: geo
+    label: "4G"
+    dir: stages/4G-geo
+    name: "Geo — locality and elevation finders"
+    was: "part of 2.1b"
+    status: operational
+    modules: [geo]
+    commands: [geo]
+
+  - id: isjecak
+    label: "4I"
+    dir: stages/4I-isjecak
+    name: "Isjecak karte — the georef.hr map excerpt"
+    was: "2.1c"
+    status: operational
+    modules: [georef]
+    commands: [karta]
+
+  - id: osz
+    label: "4O"
+    dir: stages/4O-osz
+    name: "OSZ builder — prefill and backfill over the v10 template"
+    was: "2.1b"
+    status: operational
+    modules: [osz]
+    commands: [osz]
+
+  - id: fotografije
+    label: "4F"
+    dir: stages/4F-fotografije
+    name: "Fotografije ulaza — entrance-photo processing"
+    was: "2.1d"
+    status: partial
+    commands: [photos]
+    modules: [photos]
+
+  - id: sastavnica
+    label: "4S"
+    dir: stages/4S-sastavnica
+    name: "Sastavnica — the Nacrt title block for the Illustrator route"
+    was: "2.1e"
+    status: operational
+    modules: [sastavnica]
+    commands: [sastavnica]
+
+  - id: osobe
+    label: "5O"
+    dir: stages/5O-osobe
+    name: "Osobe — the registar osoba and the izjave linkage"
+    was: "part of 2.1"
+    status: operational
+    modules: [people, archive]
+    commands: [people]
+
+  - id: dosje
+    label: "5D"
+    dir: stages/5D-dosje
+    name: "Dosje — the dossier model, the two gates and report"
+    was: "2.1"
+    status: partial
+    modules: [dossier]
+    commands: [report]
+
+  - id: predaja
+    label: "6P"
+    dir: stages/6P-predaja
+    name: "Predaja — delivery and SB write-back"
+    was: "M6"
+    status: planned
+    modules: []
+    commands: []

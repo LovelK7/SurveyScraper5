@@ -1,3 +1,30 @@
+# 3N — Nacrt
+
+**TopoDroid survey → the finished map (Nacrt).** Route A of two: this stage is
+the pipeline's own drafting route, via cSurvey. Route B is Adobe Illustrator,
+which the pipeline serves at exactly one point — [4S-sastavnica](../4S-sastavnica/README.md).
+
+Unlike the other stages this one is **not** part of the `cave_dossier` Python
+package. It is a documentation knowledge base plus a standalone operator
+toolkit, and it integrates with the rest of the pipeline through **artifacts**
+(the Nacrt PDF and the cave dimensions), never through imports.
+
+| Zone | What it holds |
+|---|---|
+| [`reference/`](reference/README.md) | How cSurvey works — subsystem docs grounded with `cSurvey/cSurveyPC/...` `path:line` citations, adversarially fact-checked |
+| [`production/`](production/README.md) | The shipped surface: the TDX processing protocol, the symbol matrix, and the Python tools |
+| [`projects/`](projects/README.md) | Dated R&D work items with their run logs and ground-truth snapshots |
+| [`decisions/`](decisions/roadmap-decisions.md) | The append-only portfolio strategy log |
+| `sessions/`, `backlog/` | **Frozen history.** The active journal is [`journal/`](../../journal/SESSIONS.md) at the repo root |
+
+The operator-facing drag-and-drop `.bat` kit that drives `production/tools/`
+is generated from [`prod/csx_templates/`](../../prod/csx_templates/) — see
+[`prod/README.md`](../../prod/README.md).
+
+Everything below is the original feature charter, unchanged.
+
+---
+
 # csx-to-survey-pipeline — TopoDroid → finished-map pipeline
 
 > **⚠ App source referenced by this feature lives in the read-only `cSurvey/` reference clone
