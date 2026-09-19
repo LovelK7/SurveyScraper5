@@ -152,7 +152,7 @@ Why a crosswalk rather than importing the sheet into SB:
   re-raised. This is habit 4 of [sb-satellite-tables.md](sb-satellite-tables.md),
   given a place to live.
 - **It is auditable.** ~410 rows of YAML committed under
-  `features/cave-dossier/crosswalk/liburnija.yaml` gives every link a git history:
+  `stages/2B-baza/crosswalk/liburnija.yaml` gives every link a git history:
   who decided, when, on what evidence. When a link later proves wrong, the diff
   says how it was made.
 - **It generalises.** `Literatura` and `Katastar RH` get their own file and the

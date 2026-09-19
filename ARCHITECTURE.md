@@ -79,19 +79,48 @@ names the exact command.*
 
 ## Part map
 
+### The labels
+
+Stage labels are **`<digit><letter>`**: the digit is the position in the
+pipeline, the letter is the Croatian name of the thing. The folders under
+`stages/` therefore list in the order data flows, and `4O` says "OSZ" without a
+lookup. The old part numbers are kept in the table below and throughout the
+historical logs, which were migrated verbatim.
+
+| New | Old | Stage |
+|---|---|---|
+| **0P** | — | [platform](stages/0P-platform/README.md) — config, the workspace anchor, the CLI |
+| **1T** | 1 | [teren](stages/1T-teren/README.md) — field capture (parked) + the intake-dir contract |
+| **2B** | 2.2a + 2.2b | [baza](stages/2B-baza/README.md) — SB master + satellite tables |
+| **3N** | 2.1a | [nacrt](stages/3N-nacrt/README.md) — csx-to-survey |
+| **4G** | part of 2.1b | [geo](stages/4G-geo/README.md) — locality + kota finders |
+| **4I** | 2.1c | [isjecak](stages/4I-isjecak/README.md) — isječak karte |
+| **4O** | 2.1b | [osz](stages/4O-osz/README.md) — the OSZ builder |
+| **4F** | 2.1d | [fotografije](stages/4F-fotografije/README.md) — entrance photos |
+| **4S** | 2.1e | [sastavnica](stages/4S-sastavnica/README.md) — the Nacrt title block |
+| **5O** | part of 2.1 | [osobe](stages/5O-osobe/README.md) — registar osoba + izjave |
+| **5D** | 2.1 | [dosje](stages/5D-dosje/README.md) — the dossier model and the two gates |
+| **6P** | M6 | [predaja](stages/6P-predaja/README.md) — delivery + SB write-back |
+
+Note what the renumbering fixed: the dossier builder used to be **2.1**, the
+umbrella number the whole feature was named after, with everything else nested
+beneath it. It is now **5D** — it *consumes* stages 1–4 rather than containing
+them. And 2.1a, a 95-file survey pipeline, is no longer a sibling of 2.1c, a
+seven-module map screenshot.
+
 | Part | What it is | Where it lives | Status |
 |---|---|---|---|
-| <a name="part-1"></a>**1** | Field mobile app (Android): voice→text description, photos→cloud, receive TopoDroid `.csx`, upload everything to Drive queue dirs | not started — to be built in Android Studio (via Gemini); user has a prior app to reuse as context | **PARKED** (manual workflow suffices; its only design interface is the intake dir contract, settled at 2.1's M2) |
-| <a name="part-2"></a>**2** | Stationary local app for postprocessing, run from VS Code (no GUI yet — function over form) | `features/` below | **ACTIVE** |
-| <a name="part-21"></a>**2.1** | Dossier builder — gathers all available data per cave, with warning/blocker gating (e.g. missing author izjava) | [features/cave-dossier/](docs/commands.md) | in development |
-| <a name="part-21a"></a>**2.1a** | csx-to-survey: TopoDroid TDX/CSX → processed survey → Nacrt (PDF/vector). Also yields cave dimensions → SB | [features/csx-to-survey-pipeline/](stages/3N-nacrt/README.md) — its own feature; integration via artifacts (Nacrt PDF + dimensions), never imports | operational (semi-manual pipeline) |
-| <a name="part-21b"></a>**2.1b** | OSZ builder: fills the society's blank OSZ template (SB primary data + 2.1a results + part-1 field data + 2.1c excerpt). `cavedossier osz prefill <Redni broj>` delivers `SB_<broj>_OSZ.docx` prefilled from SB + the `geo/` finders (locality via DGU/RGI, kota via the open DMV grid) with the excerpt embedded; `cavedossier osz backfill` reads a FILLED zapisnik back and proposes the SB backfill (pločica, ime→sinonimi, duljina/dubina, godina, autori via the alias registry) as a review CSV | `features/cave-dossier/` (modules `osz/` + `geo/`) | **prefill + backfill operational** (2026-08-30); real-zapisnik validation + the CroSpeleo-field reader (checkbox groups) pending |
-| <a name="part-21c"></a>**2.1c** | Isječak karte: map excerpt from georef.hr (HTRS96 coords → marker-centered PNG + record text). `cavedossier karta <Redni broj>` delivers `SB_<padded broj>.png` + a `!georef_zapisi.csv` row into the shared `!!Isječci karte` Drive dir | `features/cave-dossier/` (module `georef/`, ported from crospeleo-automation 2026-08-29) | **operational** (M3 done) |
-| <a name="part-21d"></a>**2.1d** | Entrance-photo processing, per cave, in three hops: a cave's photos arrive either in its `SB_<Redni broj>_…` **intake leaf** or in the `!!Fotografije ulaza za istražit` staging queue (`photos pull-staged` moves the queued ones into the leaf, creating it if needed); `photos process` then downsizes them (~1920 px / ~1.5 MB) into `SB_<broj>_<Ime>_<Autor>_<n>.jpg` copies, the author taken from the OSZ cell *Autor fotografije ulaza*; finally the **mover** files them into `!!Fotografije ulaza` under the archive convention `<padded SUE>_<ime>_…_<autor>.jpg`, which can only happen once the cave earns its SUE number. That move is manual today and routinely forgotten, so the tool also **flags staged photos whose cave already has a SUE number** — the leak that leaves old photos in the queue forever | `features/cave-dossier/` (module `photos/`) | matcher + staleness guard done 2026-08-28 (that staging sweep is finished and no longer run); **per-cave downsize + rename done 2026-09-01** (`photos process`, copies only); the mover into `!!Fotografije ulaza` under the katastarski broj is the remaining step |
-| <a name="part-21e"></a>**2.1e** | **Sastavnica prefill** — the Nacrt's title block (logo + 15 cells: numbers, name, koordinate, kota, lokacija, duljine/dubina, mjerilo, crtali/mjerili/istražili/ekipa, datum), prefilled from SB + the cave's filled OSZ + the geo finders. `cavedossier sastavnica <Redni broj>` delivers `SB_<padded broj>_sastavnica.pdf` into the cave's intake leaf, beside its OSZ. Serves **route B** below — the drafter places it into the Illustrator document instead of typing fifteen values by hand | `features/cave-dossier/` (module `sastavnica/`), template workbench in [sastavnica-template/](stages/4S-sastavnica/template-workbench/README.md) | **operational** (2026-09-19, same day as its design) — nine cells from SB alone, fourteen once the cave's zapisnik is filled; validated live on SB 1220 + 811. Rules + decisions: [sastavnica-design.md](stages/4S-sastavnica/docs/sastavnica-design.md). Outside the M-ladder — needs only M1 |
-| <a name="part-22"></a>**2.2** | **Registry communication** — everything the app knows about *which caves exist*. Not a side channel: 2.1 cannot start a dossier without it, and every finished dossier ends by writing back into it | `features/cave-dossier/` | in development |
-| <a name="part-22a"></a>**2.2a** | **SB (Speleo baza)** — the master registry of all caves (discovered + to-be-explored), an `.xlsm` on the Drive mount. Source of coordinates/year/etc. for the OSZ; updated with new data (dimensions) once a survey is finished. Everything else in the app treats it as ground truth | `features/cave-dossier/` (module `sb/`) | **M1 ✅**; write-back at M6 |
-| <a name="part-22b"></a>**2.2b** | **Satellite tables** — SB is the master but not the only table holding cave data. The *Liburnija* Google Sheet (the LiDAR Kristal table, live and edited in the field), plus `Literatura` and `Katastar RH` inside the workbook. None carries an SB row number, so they are joined on shared keys (pločica → `LiDAR Kristal N` synonym → coordinates), **never on a local row id**. `sat sync` compares a satellite against SB and emits four review lists a person carries out — it never writes to either side. This is how a LIDAR candidate becomes an SB row, and how the field sheet learns what happened to it | `features/cave-dossier/` (module `satellites/`), design in [docs/sb-liburnija-hub.md](stages/2B-baza/docs/sb-liburnija-hub.md) | **operational** — 126 rows entered SB from Liburnija 2026-08-29 |
+| <a name="part-1"></a>**1T** <sub>(was 1)</sub> | Field mobile app (Android): voice→text description, photos→cloud, receive TopoDroid `.csx`, upload everything to Drive queue dirs | not started — to be built in Android Studio (via Gemini); user has a prior app to reuse as context | **PARKED** (manual workflow suffices; its only design interface is the intake dir contract, settled at 2.1's M2) |
+| <a name="part-2"></a>**2** | Stationary local app for postprocessing, run from VS Code (no GUI yet — function over form) | `stages/` below | **ACTIVE** |
+| <a name="part-21"></a>**5D** <sub>(was 2.1)</sub> | Dossier builder — gathers all available data per cave, with warning/blocker gating (e.g. missing author izjava) | [5D](stages/5D-dosje/README.md) | in development |
+| <a name="part-21a"></a>**3N** <sub>(was 2.1a)</sub> | csx-to-survey: TopoDroid TDX/CSX → processed survey → Nacrt (PDF/vector). Also yields cave dimensions → SB | [3N](stages/3N-nacrt/README.md) — its own stage; integration via artifacts (Nacrt PDF + dimensions), never imports | operational (semi-manual pipeline) |
+| <a name="part-21b"></a>**4O** <sub>(was 2.1b)</sub> | OSZ builder: fills the society's blank OSZ template (SB primary data + 2.1a results + part-1 field data + 2.1c excerpt). `cavedossier osz prefill <Redni broj>` delivers `SB_<broj>_OSZ.docx` prefilled from SB + the `geo/` finders (locality via DGU/RGI, kota via the open DMV grid) with the excerpt embedded; `cavedossier osz backfill` reads a FILLED zapisnik back and proposes the SB backfill (pločica, ime→sinonimi, duljina/dubina, godina, autori via the alias registry) as a review CSV | [4O](stages/4O-osz/README.md) — with the finders in [4G](stages/4G-geo/README.md) | **prefill + backfill operational** (2026-08-30); real-zapisnik validation + the CroSpeleo-field reader (checkbox groups) pending |
+| <a name="part-21c"></a>**4I** <sub>(was 2.1c)</sub> | Isječak karte: map excerpt from georef.hr (HTRS96 coords → marker-centered PNG + record text). `cavedossier karta <Redni broj>` delivers `SB_<padded broj>.png` + a `!georef_zapisi.csv` row into the shared `!!Isječci karte` Drive dir | [4I](stages/4I-isjecak/README.md) — ported from crospeleo-automation 2026-08-29 | **operational** (M3 done) |
+| <a name="part-21d"></a>**4F** <sub>(was 2.1d)</sub> | Entrance-photo processing, per cave, in three hops: a cave's photos arrive either in its `SB_<Redni broj>_…` **intake leaf** or in the `!!Fotografije ulaza za istražit` staging queue (`photos pull-staged` moves the queued ones into the leaf, creating it if needed); `photos process` then downsizes them (~1920 px / ~1.5 MB) into `SB_<broj>_<Ime>_<Autor>_<n>.jpg` copies, the author taken from the OSZ cell *Autor fotografije ulaza*; finally the **mover** files them into `!!Fotografije ulaza` under the archive convention `<padded SUE>_<ime>_…_<autor>.jpg`, which can only happen once the cave earns its SUE number. That move is manual today and routinely forgotten, so the tool also **flags staged photos whose cave already has a SUE number** — the leak that leaves old photos in the queue forever | [4F](stages/4F-fotografije/README.md) | matcher + staleness guard done 2026-08-28 (that staging sweep is finished and no longer run); **per-cave downsize + rename done 2026-09-01** (`photos process`, copies only); the mover into `!!Fotografije ulaza` under the katastarski broj is the remaining step |
+| <a name="part-21e"></a>**4S** <sub>(was 2.1e)</sub> | **Sastavnica prefill** — the Nacrt's title block (logo + 15 cells: numbers, name, koordinate, kota, lokacija, duljine/dubina, mjerilo, crtali/mjerili/istražili/ekipa, datum), prefilled from SB + the cave's filled OSZ + the geo finders. `cavedossier sastavnica <Redni broj>` delivers `SB_<padded broj>_sastavnica.pdf` into the cave's intake leaf, beside its OSZ. Serves **route B** below — the drafter places it into the Illustrator document instead of typing fifteen values by hand | [4S](stages/4S-sastavnica/README.md), template workbench in [template-workbench/](stages/4S-sastavnica/template-workbench/README.md) | **operational** (2026-09-19, same day as its design) — nine cells from SB alone, fourteen once the cave's zapisnik is filled; validated live on SB 1220 + 811. Rules + decisions: [sastavnica-design.md](stages/4S-sastavnica/docs/sastavnica-design.md). Outside the M-ladder — needs only M1 |
+| <a name="part-22"></a>**2B** <sub>(was 2.2)</sub> | **Registry communication** — everything the app knows about *which caves exist*. Not a side channel: 2.1 cannot start a dossier without it, and every finished dossier ends by writing back into it | [2B](stages/2B-baza/README.md) | in development |
+| <a name="part-22a"></a>**2B** <sub>(was 2.2a)</sub> | **SB (Speleo baza)** — the master registry of all caves (discovered + to-be-explored), an `.xlsm` on the Drive mount. Source of coordinates/year/etc. for the OSZ; updated with new data (dimensions) once a survey is finished. Everything else in the app treats it as ground truth | [2B](stages/2B-baza/README.md) — module `sb/` | **M1 ✅**; write-back at M6 |
+| <a name="part-22b"></a>**2B** <sub>(was 2.2b)</sub> | **Satellite tables** — SB is the master but not the only table holding cave data. The *Liburnija* Google Sheet (the LiDAR Kristal table, live and edited in the field), plus `Literatura` and `Katastar RH` inside the workbook. None carries an SB row number, so they are joined on shared keys (pločica → `LiDAR Kristal N` synonym → coordinates), **never on a local row id**. `sat sync` compares a satellite against SB and emits four review lists a person carries out — it never writes to either side. This is how a LIDAR candidate becomes an SB row, and how the field sheet learns what happened to it | [2B](stages/2B-baza/README.md) — module `satellites/`; design in [sb-liburnija-hub.md](stages/2B-baza/docs/sb-liburnija-hub.md) | **operational** — 126 rows entered SB from Liburnija 2026-08-29 |
 
 ### Two routes to the Nacrt — cSurvey and Illustrator
 
@@ -308,12 +337,12 @@ The map answers "how do I get from A to B" as a bridge sequence:
   on a Google Drive Desktop mount. No Google API anywhere: all cloud access is
   locally-synced paths (`LOCAL_DRIVE_ROOT`). Reads are openpyxl (save physically
   impossible); the only safe write path is xlwings/Excel COM (Excel itself saves).
-  See `features/cave-dossier/docs/EXCEL_WORKBOOK_SAFETY.md`.
+  See `stages/0P-platform/docs/EXCEL_WORKBOOK_SAFETY.md`.
 - **Gating discipline** (inherited from crospeleo-automation): two tiers — *warnings*
   (advisory) vs *blockers* (hard gate on the final action). Statements ("Izjava za
   katastar") are checked **per author**, drawing and photo authors separately;
   statements live in their own Drive dir. Since 2026-08-30 the check goes through
-  the **registar osoba** (`features/cave-dossier/data/people/registry.json`): one
+  the **registar osoba** (`data/people/registry.json`): one
   canonical name per person with aliases derived automatically, so SB's
   `L.Kukuljan`, an OSZ's `Lovel Kukuljan` and `Izjava_LKukuljan.pdf` are one
   person, and a locality-scoped izjava no longer satisfies a cave elsewhere. A
@@ -351,7 +380,7 @@ The map answers "how do I get from A to B" as a bridge sequence:
   csx, descriptions) under gitignored `example/` zones; committed test fixtures are
   tiny and synthetic.
 - **Reuse by porting**: code is COPIED from read-only `../crospeleo-automation` and
-  adapted; every copy is logged in `features/cave-dossier/docs/PORTING.md`.
+  adapted; every copy is logged in `stages/0P-platform/docs/PORTING.md`.
 
 ## Dev vs prod — a duality to design for (first slice shipped 2026-09-02)
 
@@ -379,7 +408,7 @@ bundle, the `podaci/geo/` cloud copy, `_arhiva/`). First run installs locally to
 `%LOCALAPPDATA%\CaveDossier\v<X>` (guided system-Python setup, venv + pip,
 geo copy, `.env` with `LOCAL_DRIVE_ROOT` derived from the launcher's own
 location); everything on the Drive is generated by
-`features/cave-dossier/tools/build_prod.py --version X.Y --publish` — see
+`prod/build_prod.py --version X.Y --publish` — see
 the feature README §[Prod launchers on the
 Drive](docs/commands.md#prod-launchers-on-the-drive) and the
 decision record. Since v1.2 (same day) operator machines also run the

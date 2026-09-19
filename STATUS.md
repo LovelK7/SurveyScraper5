@@ -28,7 +28,7 @@ this table is where each one STANDS. Detailed checklists follow below.
 command 2026-09-19)** — `osz prefill` + `photos process` + `sastavnica` ship
 as versioned double-click launchers on the Drive (`!!!Digitalizacija/SurveyScraper5/`: launchers + versioned bundle +
 `podaci/geo` cloud copy + `_arhiva/`), generated/published by
-`features/cave-dossier/tools/build_prod.py --version X.Y --publish`. First run
+`prod/build_prod.py --version X.Y --publish`. First run
 self-installs to `%LOCALAPPDATA%\CaveDossier\v<X>` (guided Python 3.11+ setup,
 venv+pip, geo copy, derived `.env`). Validated end-to-end on the dev machine as
 operator (photos 1220 dry-run, prefill 1320 delivered). v1.1 same day after the
@@ -67,7 +67,7 @@ See ARCHITECTURE §Dev vs prod + README §Prod launchers.
       (by year), flagged by a `za istražit, <old broj>, <note>` prefix in
       **Napomena**; Za istražit becomes a Power Query view (like
       Istraženi/Nesređeni). Prompt for Claude in Excel:
-      [features/cave-dossier/docs/sb-restructure-excel-prompt.md](stages/2B-baza/docs/sb-restructure-excel-prompt.md)
+      [stages/2B-baza/docs/sb-restructure-excel-prompt.md](stages/2B-baza/docs/sb-restructure-excel-prompt.md)
 - [x] User executed the SB restructure in Excel → **`!Speleo_baza_SUE_v3.0.xlsm`**
       (2026-08-25). Single master `Svi objekti` (table `SO_v2_1`, header row 2,
       1301 rows, 24 cols — GK columns dropped); Istraženi / Nesređeni / **Za
@@ -218,7 +218,7 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 ## Waiting on user
 
 - ~~Society's blank OSZ template DOCX~~ → delivered 2026-08-23:
-  [features/cave-dossier/osz-template/templates/Zapisnik_OSZ_v10.docx](stages/4O-osz/src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx)
+  [stages/4O-osz/src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx](stages/4O-osz/src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx)
 - ~~Distribute OSZ v10 to recorders~~ → done 2026-08-25. Two cosmetic leftovers stay
   open (11 pt Literatura/Napomene, filled form runs to 5 pages), see
   [audit-v10.2.md](stages/4O-osz/template-workbench/docs/audit-v10.2.md) §"Sitnice";
@@ -301,7 +301,7 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
    **DONE — user applied it, verified against live 2026-08-29.** `NO_v2_1` now opens with
    `not Text.Contains([Napomena] ?? "", "za istražit") and ( … )`; the view holds **208 rows,
    0 of them za istražit** — exactly the predicted 221 → 208. M code kept for reference in
-   [features/cave-dossier/docs/sb-powerquery.md](stages/2B-baza/docs/sb-powerquery.md).
+   [stages/2B-baza/docs/sb-powerquery.md](stages/2B-baza/docs/sb-powerquery.md).
    (The earlier "ponor over-matches" note was **wrong** — all 5 ponor-only rows tag it
    deliberately: "ponor, možda kopati". No change was needed there.)
    *Minor:* the view is 2 rows behind the master (210 by the rule) because SB has grown to
@@ -309,6 +309,6 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 
 ## Recent sessions
 
-- 2026-09-19 — **2.1e sastavnica shipped, designed and built the same day**: the Illustrator drafting route gets its own pipeline branch in ARCHITECTURE (route A/B, part 2.1e, bridge B13) and `cavedossier sastavnica <broj>` prefills the Nacrt's title block from SB + the leaf's filled OSZ + the geo finders, delivered beside the OSZ. Blank template generated from the authored `.ai` export by content-stream surgery; the embedded `.ai` payload that made Illustrator open the TEMPLATE was found by the user on the first delivered file and stripped. Prod launcher **v1.4** published the same day. Also fixed a pre-existing `core/people.py` bug that ate the initial of every author whose first name starts with I → [features/cave-dossier/sessions/SESSIONS.md](journal/SESSIONS.md)
-- 2026-09-02 (later) — **`osz fetch` renamed to `osz backfill`** (code, all docs, test file; 300 tests green, doctor clean) and the **M6 delivery step designed** — [m6-delivery-design.md](stages/6P-predaja/docs/m6-delivery-design.md): `deliver <broj>` as the last gate (OSZ completeness → `/` filler → files nameable → katastarski broj `max+1` → approval → rename/file/SB write-back). Measuring the live SB/Drive found the queue-flag double-view trap and the 4 checkbox-group fields no reader can see yet → [features/cave-dossier/sessions/SESSIONS.md](journal/SESSIONS.md)
-- 2026-09-02 — **first productionization slice, v1.0→v1.3 the same evening**: `tools/build_prod.py` + templates generate versioned double-click launchers for `osz prefill` / `photos process` on the Drive (`!!!Digitalizacija/SurveyScraper5/`, self-installing to `%LOCALAPPDATA%\CaveDossier`); iterated on the user's real first runs — per-run logs + console font (v1.1), operator-side karta flow + Croatian PROCITAJ_ME (v1.2, caught+fixed the `_karta_newly_embedded` re-delivery bug), waiting snake + `PYTHONUNBUFFERED` streaming fix (v1.3) → [features/cave-dossier/sessions/SESSIONS.md](journal/SESSIONS.md)
+- 2026-09-19 — **2.1e sastavnica shipped, designed and built the same day**: the Illustrator drafting route gets its own pipeline branch in ARCHITECTURE (route A/B, part 2.1e, bridge B13) and `cavedossier sastavnica <broj>` prefills the Nacrt's title block from SB + the leaf's filled OSZ + the geo finders, delivered beside the OSZ. Blank template generated from the authored `.ai` export by content-stream surgery; the embedded `.ai` payload that made Illustrator open the TEMPLATE was found by the user on the first delivered file and stripped. Prod launcher **v1.4** published the same day. Also fixed a pre-existing `core/people.py` bug that ate the initial of every author whose first name starts with I → [journal/SESSIONS.md](journal/SESSIONS.md)
+- 2026-09-02 (later) — **`osz fetch` renamed to `osz backfill`** (code, all docs, test file; 300 tests green, doctor clean) and the **M6 delivery step designed** — [m6-delivery-design.md](stages/6P-predaja/docs/m6-delivery-design.md): `deliver <broj>` as the last gate (OSZ completeness → `/` filler → files nameable → katastarski broj `max+1` → approval → rename/file/SB write-back). Measuring the live SB/Drive found the queue-flag double-view trap and the 4 checkbox-group fields no reader can see yet → [journal/SESSIONS.md](journal/SESSIONS.md)
+- 2026-09-02 — **first productionization slice, v1.0→v1.3 the same evening**: `tools/build_prod.py` + templates generate versioned double-click launchers for `osz prefill` / `photos process` on the Drive (`!!!Digitalizacija/SurveyScraper5/`, self-installing to `%LOCALAPPDATA%\CaveDossier`); iterated on the user's real first runs — per-run logs + console font (v1.1), operator-side karta flow + Croatian PROCITAJ_ME (v1.2, caught+fixed the `_karta_newly_embedded` re-delivery bug), waiting snake + `PYTHONUNBUFFERED` streaming fix (v1.3) → [journal/SESSIONS.md](journal/SESSIONS.md)

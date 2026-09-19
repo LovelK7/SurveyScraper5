@@ -30,7 +30,7 @@ mockups/     v10.2_primjer_811.*        ← kako izgleda popunjen (ranije: v10.0
 Nakon svake izmjene predloška u Wordu:
 
 ```bash
-cd features/cave-dossier/osz-template
+cd stages/4O-osz/template-workbench
 
 # 1. što je unutra — kvačice po grupama, zastavice tekstualnih kontrola
 python tools/inspect_osz.py templates/Zapisnik_OSZ_v10.docx --mode controls

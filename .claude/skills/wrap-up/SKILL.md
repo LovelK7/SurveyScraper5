@@ -12,8 +12,10 @@ a single clean history.
 
 ## Guards (check before anything else)
 
-- Working directory must be `C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper5`
-  and `git rev-parse --show-toplevel` must resolve to it. **Never** run git in
+- `git rev-parse --show-toplevel` must resolve to a directory that has both
+  `pipeline.yaml` and `.cavedossier-workspace` — that is this repo, wherever
+  it has been cloned. (Hardcoding one machine's path made this guard useless
+  on any other.) **Never** run git in
   `../cSurvey` or `../crospeleo-automation` (read-only reference repos).
 - Branch must be `main`. If not, stop and ask the user.
 - If the session was conversational-only (no file changes, `git status` clean),
@@ -37,7 +39,7 @@ fixed, decisions made, things investigated but deliberately not changed (and why
 
 ### 3 — Append the session block
 
-To the touched feature's `sessions/SESSIONS.md` (newest on top), in the
+To `journal/SESSIONS.md` (newest on top), in the
 established format:
 
 ```
@@ -57,7 +59,7 @@ feature most affected, or the closest one.
 ### 4 — Capture ideas
 
 New ideas / "we should also" items that surfaced → append to the feature's
-`backlog/ideas.md` (one line each, dated). This is the implementation log for
+`journal/backlog.md` (one line each, dated). This is the implementation log for
 finding new ideas — don't lose them in chat history.
 
 ### 4b — Pipeline doctor (pre-commit gate)
@@ -67,7 +69,7 @@ python tools/pipeline_doctor.py
 ```
 
 Fix every FAIL before committing (broken doc links, CLI commands missing from
-the README, `_INDEX` drift); triage WARNs (fix cheap ones, backlog the rest);
+the stage README, a subpackage no stage claims); triage WARNs (fix cheap ones, backlog the rest);
 re-confirm the STALE? status claims — this session's work may have just
 invalidated one. If `/feature-dev` was followed, this is already clean.
 
