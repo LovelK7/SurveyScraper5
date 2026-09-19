@@ -24,16 +24,24 @@ dugačkog imena", pločica 051-580, …), which is what makes it a usable spec: 
 example is how the drafter's own typesetting choices — centring, per-cell
 shrink-to-fit, the 8/9/10 pt sizes — were measured.
 
-## What is planned here
+## What lives here
 
-Both are designed but **not yet built** — the full design, with every measured
-number, is [docs/sastavnica-design.md](../docs/sastavnica-design.md):
+Built 2026-09-19; the full design, with every measured number, is
+[docs/sastavnica-design.md](../docs/sastavnica-design.md):
 
 | Path | What |
 |---|---|
 | `templates/sastavnica_blank_v1.pdf` | the authored template with the fifteen example values stripped — the artifact the prefill fills |
-| `tools/build_blank.py` | generates that blank by content-stream surgery (drop every text operator drawn in the value colour `#030505`, keep labels, rules and the 59 logo paths) |
+| `tools/build_blank.py` | generates that blank by content-stream surgery (drop every text operator drawn in the value colour `#030505`, keep labels, rules and the 59 logo paths) — and strips the embedded `.ai` payload (see below) |
 | `tools/inspect_sastavnica.py` | dump any version's cells, colours, fonts and value bboxes — how the address map is re-derived |
 
-Do **not** use PyMuPDF redaction to strip the values; it eats label glyphs
-whose boxes overlap. The design note records the measurement.
+Two traps, both measured and both recorded in the design note:
+
+- Do **not** use PyMuPDF redaction to strip the values — it eats label glyphs
+  whose boxes overlap ("HTRS koordinate:" comes back as "HTRS koordin").
+- The authored export carries the whole `.ai` under the page's `/PieceInfo`
+  ("Preserve Illustrator Editing Capabilities"), and **Illustrator opens that
+  in preference to the page content**. A PDF edited without stripping it looks
+  correct in every viewer and shows the template's example values in
+  Illustrator. `build_blank.py` removes it — along with the stale `/Thumb`
+  preview and the XMP packet — which also takes the file from 226 KB to 45 KB.

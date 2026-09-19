@@ -290,7 +290,10 @@ cavedossier sastavnica 1234 --force        # overwrite a delivered file this too
 # refuses and says so. --force is the way past it. Otherwise re-runs simply
 # replace their own output.
 # Template: sastavnica-template/ holds the authored PDF from the Drive and the
-# generated blank the tool fills. After the drafter revises !SUE_sastavnica.ai,
+# generated blank the tool fills. The builder also strips the embedded .ai that
+# Illustrator's "Preserve Illustrator Editing Capabilities" export leaves in the
+# page — without that, opening the delivered PDF in Illustrator shows the
+# TEMPLATE's example values while every PDF viewer shows the real ones. After the drafter revises !SUE_sastavnica.ai,
 # refresh the copy and run:
 #   python sastavnica-template/tools/inspect_sastavnica.py --mode cells   # re-derive geometry
 #   python sastavnica-template/tools/build_blank.py                       # rebuild the blank
@@ -389,17 +392,18 @@ hand-managed Drive dirs.
 
 ### Prod launchers on the Drive
 
-The two operator commands (`osz prefill`, `photos process`) are published as
-**versioned, double-clickable launchers** in the dedicated Drive folder
-`!!!Digitalizacija/SurveyScraper5/`:
+The three operator commands (`osz prefill`, `photos process`, `sastavnica`)
+are published as **versioned, double-clickable launchers** in the dedicated
+Drive folder `!!!Digitalizacija/SurveyScraper5/`:
 
 ```text
 SurveyScraper5/
-├─ cavedossier_osz_prefill_v1.3.bat      ← operators double-click these
-├─ cavedossier_photos_process_v1.3.bat
+├─ cavedossier_osz_prefill_v1.4.bat      ← operators double-click these
+├─ cavedossier_photos_process_v1.4.bat
+├─ cavedossier_sastavnica_v1.4.bat
 ├─ PROCITAJ_ME.txt                        ← operator setup/troubleshooting guide
 ├─ VERZIJE.txt                            ← publish log, one line per release
-├─ v1.3/                                  ← bootstrap.ps1 + bundle.zip
+├─ v1.4/                                  ← bootstrap.ps1 + bundle.zip
 ├─ podaci/geo/                            ← cloud copy of data/geo (~280 MB)
 └─ _arhiva/                               ← superseded versions
 ```
@@ -414,7 +418,8 @@ diacritics render.
 A launcher's first double-click installs everything to
 `%LOCALAPPDATA%\CaveDossier\v<X>` — Python 3.11+ check (with guided install
 instructions when missing), bundle extract, venv + `pip install
-.[osz,photos,geo,karta]` + the Playwright Chromium download (~150 MB), local
+.[osz,photos,geo,karta,sastavnica]` + the Playwright Chromium download
+(~150 MB), local
 copy of `podaci/geo`, and a generated `.env` whose `LOCAL_DRIVE_ROOT` is
 derived by probing upward from the launcher's own location for the SB
 workbook — plus the shared georef.hr login, injected into the bootstrap at
@@ -433,6 +438,12 @@ python tools\build_prod.py --version 1.1 --publish    # stage + copy to Drive
 python tools\build_prod.py --version 1.1              # stage dist/prod/ only
 python tools\build_prod.py --version 1.1 --publish --skip-geo   # no geo sync
 ```
+
+Adding a command to prod takes two edits: an entry in `build_prod.py`'s
+`PROD_COMMANDS` and a branch in the `switch ($Command)` of
+`prod_templates/bootstrap.ps1.template` (plus whatever runtime input it needs
+in `BUNDLE_FILES` — `sastavnica` rides on the blank PDF template; its *font*
+is found on the machine, never bundled).
 
 Launcher/bootstrap/guide templates live in `tools/prod_templates/` (ASCII
 only — the build fails loudly otherwise). Publishing moves superseded

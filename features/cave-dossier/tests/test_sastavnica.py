@@ -84,6 +84,31 @@ def test_blank_template_keeps_labels_and_art(font):
     assert len(page.get_drawings()) == 59, "the logo and rules must be untouched"
 
 
+def test_blank_template_carries_no_embedded_illustrator_artwork(font):
+    """Regression (2026-09-19): the one defect no PDF viewer can show you.
+
+    The authored template was exported with *Preserve Illustrator Editing
+    Capabilities*, so the page carried the whole `.ai` as private data.
+    Illustrator opens THAT in preference to the page content — the delivered
+    sastavnica rendered correctly in Acrobat and showed the template's example
+    values in the one application it is made for.
+    """
+    doc = pymupdf.open(addresses.BLANK_TEMPLATE)
+    assert doc.xref_get_key(doc[0].xref, "PieceInfo")[0] == "null"
+    assert not any("AIPDFPrivateData" in doc.xref_object(x, compressed=True)
+                   for x in range(1, doc.xref_length()))
+
+
+def test_rendered_output_stays_free_of_it(font):
+    data, _ = render_mod.render(addresses.BLANK_TEMPLATE, {"ime_objekta": "Jama"},
+                                font.path)
+    doc = pymupdf.open("pdf", data)
+    assert doc.xref_get_key(doc[0].xref, "PieceInfo")[0] == "null"
+    # …and the old example values are nowhere in the file, not even as a thumbnail.
+    assert "Neka jama" not in doc[0].get_text()
+    assert doc.xref_get_key(doc[0].xref, "Thumb")[0] == "null"
+
+
 # ── geometry, against the drafter's own layout ───────────────────────
 def test_render_reproduces_the_authored_layout(font):
     values = {key: text for key, (text, _size) in AUTHORED.items()}

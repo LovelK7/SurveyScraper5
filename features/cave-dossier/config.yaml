@@ -113,6 +113,8 @@ intake:
     # Two objects in Mudni dol; the folders abbreviate it the same way.
     "M.Dol Pećina": 1272           # SB: "Pećina u Mudnoj doli"
     "Špilja M.Dol": 1452           # SB: "Špilja u Mudnoj doli" (051-773) — user, 2026-09-19
+    "Jama 9m_Venio": 1454          # SB: "Vmune" (051-769) — user, 2026-09-19
+    "Monte Putin": 1445            # SB: "Jenčarija abisso" (051-888) — user, 2026-09-19
     "kripanj_ivana": 1215          # SB: "Paraglajderska"
     "Solareva draga": 1312         # SB: "Jama u Solarevoj dragi"
     "Dario8": 1450                 # SB: "Dmune8" (051-779) — user, 2026-09-19
@@ -138,14 +140,15 @@ intake:
     - "Ona mala špilja_Mileni"
     - "Mune_Nat4_Natalija"
     - "kurvica_na_putu_ivana"
-    - "Monte Putin & Novak_Tin"
-    - "Jama 9m_Venio"
 
   # One folder, several caves. A leaf is one cave's working identity, so these
   # are never renamed — the run prints the target names and a human splits the
-  # folder by hand, after which the halves match on their own.
+  # folder by hand, after which the halves match on their own and the entry
+  # here is deleted. Empty is the healthy state.
+  #   "<folder fragment>": [<Redni broj>, <Redni broj>]
+  # Closed 2026-09-19: `vrazji prolaz 2kom` → VP1 (1457) + VP2 (1458). The user
+  # split it on Drive; both halves now match on their own names.
   split_folders:
-    "vrazji prolaz 2kom": [1457, 1458]   # VP1 (051-807) + VP2 (051-801) — user, 2026-09-19
 
 # People registry — canonical authors + curated aliases + izjava linkage
 # (cave_dossier/people/). The JSON is committed (curated by hand, like the

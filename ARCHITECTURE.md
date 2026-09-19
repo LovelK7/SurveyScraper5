@@ -371,9 +371,10 @@ not just entry-point scripts, but everything they stand on —
 - the committed inputs tools read at runtime (OSZ v10 template,
   `config/selectors.yaml`, `config.yaml`).
 
-**The first prod slice shipped 2026-09-02**: `osz prefill` and `photos
-process` run from versioned, double-clickable launchers in the dedicated
-Drive folder `!!!Digitalizacija/SurveyScraper5/` (launchers, the `v<X>/`
+**The first prod slice shipped 2026-09-02** and gained its third command
+2026-09-19: `osz prefill`, `photos process` and `sastavnica` run from
+versioned, double-clickable launchers in the dedicated Drive folder
+`!!!Digitalizacija/SurveyScraper5/` (launchers, the `v<X>/`
 bundle, the `podaci/geo/` cloud copy, `_arhiva/`). First run installs locally to
 `%LOCALAPPDATA%\CaveDossier\v<X>` (guided system-Python setup, venv + pip,
 geo copy, `.env` with `LOCAL_DRIVE_ROOT` derived from the launcher's own
@@ -384,7 +385,10 @@ Drive](features/cave-dossier/README.md#prod-launchers-on-the-drive) and the
 decision record. Since v1.2 (same day) operator machines also run the
 `[karta]` georef.hr flow themselves — prefill collects a missing excerpt on
 the spot; every run writes a log under `%LOCALAPPDATA%\CaveDossier\logs\`
-for remote debugging.
+for remote debugging. **v1.4 (2026-09-19)** added the
+[2.1e](#part-21e) `sastavnica` launcher — the first one aimed at the
+[Illustrator route](#two-routes-to-the-nacrt--csurvey-and-illustrator)'s
+drafters rather than at recorders.
 
 The standing portability rules remain in force for every new tool — they are
 what made the slice cheap:

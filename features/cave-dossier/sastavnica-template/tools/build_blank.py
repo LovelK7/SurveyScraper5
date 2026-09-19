@@ -104,6 +104,33 @@ def strip_values(doc: pymupdf.Document) -> tuple[int, tuple[float, ...]]:
     return removed, value_colour
 
 
+def strip_illustrator_private(doc: pymupdf.Document) -> bool:
+    """Remove the embedded ``.ai`` artwork; True when there was any.
+
+    The template was exported with **Preserve Illustrator Editing
+    Capabilities**, so the page carries
+    ``/PieceInfo << /Illustrator << /Private << /AIPDFPrivateData1 … >> >> >>``
+    — a complete copy of the original artwork. Every PDF *viewer* ignores it
+    and renders the page content stream, but **Illustrator prefers it**: open
+    the file there and you get the .ai, not the page. So editing the page
+    content alone produced a PDF that looked right everywhere except in the one
+    application it is made for — Illustrator showed the template's example
+    values (user, 2026-09-19).
+
+    Dropping it is the fix, and it costs nothing: the page content stream is the
+    same artwork, which Illustrator parses into editable paths and text. The
+    stale ``/Thumb`` preview (also still showing the example values) goes with
+    it, and so does the XMP packet, which names the authored file.
+    """
+    page = doc[0]
+    present = doc.xref_get_key(page.xref, "PieceInfo")[0] != "null"
+    if present:
+        doc.xref_set_key(page.xref, "PieceInfo", "null")
+    doc.xref_set_key(page.xref, "Thumb", "null")
+    doc.del_xml_metadata()
+    return present       # the orphaned streams go on the next garbage pass
+
+
 def verify(before: pymupdf.Document, after: pymupdf.Document) -> list[str]:
     """Everything that must still be true of the stripped page."""
     problems = []
@@ -125,10 +152,17 @@ def verify(before: pymupdf.Document, after: pymupdf.Document) -> list[str]:
     if len(a.get_drawings()) != len(b.get_drawings()):
         problems.append(f"vector art changed: {len(b.get_drawings())} paths -> "
                         f"{len(a.get_drawings())}")
-    if a.get_fonts():
-        pass          # the label font must stay embedded
-    else:
+    if not a.get_fonts():
         problems.append("the label font is no longer embedded")
+
+    # Invisible in every PDF viewer, fatal in Illustrator — assert it is gone.
+    if after.xref_get_key(a.xref, "PieceInfo")[0] != "null":
+        problems.append("the embedded Illustrator artwork (/PieceInfo) survived — "
+                        "Illustrator would open THAT instead of the page")
+    for xref in range(1, after.xref_length()):
+        if "AIPDFPrivateData" in after.xref_object(xref, compressed=True):
+            problems.append(f"Illustrator private data still referenced at xref {xref}")
+            break
     return problems
 
 
@@ -156,12 +190,16 @@ def main(argv: list[str] | None = None) -> int:
     doc = pymupdf.open(AUTHORED)
     removed, colour = strip_values(doc)
     print(f"Removed {removed} text operators drawn in CMYK {colour}")
+    if strip_illustrator_private(doc):
+        print("Removed the embedded Illustrator artwork (/PieceInfo), the stale "
+              "/Thumb preview and the XMP packet")
     if removed != EXPECTED_VALUES:
         print(f"ERROR: expected {EXPECTED_VALUES} placeholder values, removed {removed}",
               file=sys.stderr)
         return 1
 
     data = doc.tobytes(clean=True, garbage=4, deflate=True)
+    print(f"Size {AUTHORED.stat().st_size} -> {len(data)} bytes")
     problems = verify(original, pymupdf.open("pdf", data))
     for problem in problems:
         print(f"  FAIL {problem}", file=sys.stderr)

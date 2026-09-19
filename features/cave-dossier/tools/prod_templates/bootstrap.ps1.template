@@ -8,7 +8,7 @@
 #   2. find the society archive root (probe upward for !Speleo_baza_SUE_*.xlsm)
 #   3. first run / newer bundle.zip: install to %LOCALAPPDATA%\CaveDossier\v@VERSION@
 #      (Python 3.11+ check, extract bundle, venv, pip install
-#      .[osz,photos,geo,karta] + playwright chromium, copy podaci\geo locally,
+#      .[osz,photos,geo,karta,sastavnica] + playwright chromium, copy podaci\geo locally,
 #      generate .env with the derived LOCAL_DRIVE_ROOT + shared georef login)
 #   4. ask for the Redni broj (unless arguments were passed) and run the command
 # Everything (setup steps, pip, the command, stderr) is mirrored into
@@ -174,6 +174,10 @@ try {
             $cliVerb = @('photos', 'process')
             $label = 'Obrada fotografija ulaza - smanjene kopije SB_<broj>_<Ime>_<Autor>_<n>.jpg'
         }
+        'sastavnica' {
+            $cliVerb = @('sastavnica')
+            $label = 'Sastavnica nacrta - predispunjeni naslovni blok za crtanje u Illustratoru'
+        }
         default {
             W "GRESKA: nepoznata naredba '$Command'."
             Pause-Exit 1
@@ -273,7 +277,7 @@ try {
 
         W 'Instaliram pakete (pip; ovo je najduzi korak)...'
         Push-Location $installDir
-        $pipExit = Run-Logged $venvPy @('-m', 'pip', 'install', '--disable-pip-version-check', '-e', '.[osz,photos,geo,karta]')
+        $pipExit = Run-Logged $venvPy @('-m', 'pip', 'install', '--disable-pip-version-check', '-e', '.[osz,photos,geo,karta,sastavnica]')
         Pop-Location
         if ($pipExit -ne 0) {
             W ''

@@ -20,6 +20,20 @@ cavedossier_photos_process_v@VERSION@.bat
     smanjene KOPIJE nazvane SB_<broj>_<Ime>_<Autor>_<n>.jpg (autor se čita iz
     OSZ polja "Autor fotografije ulaza"). Originali ostaju netaknuti.
 
+cavedossier_sastavnica_v@VERSION@.bat
+    Predispuni sastavnicu (naslovni blok) nacrta za objekte koji se crtaju u
+    Adobe Illustratoru. Od 15 polja popuni sve što se zna: ime, pločica, HTRS
+    koordinate, nadmorska visina, lokacija (iz SB i geopodataka), a duljine,
+    dubinu, mjerili, ekipu i datum iz POPUNJENOG zapisnika objekta ako postoji
+    u njegovoj mapi. Gotov SB_<broj>_sastavnica.pdf sprema uz zapisnik u mapu
+    objekta pod !!!Digitalizacija/!Za digitalizirat - otvori ga ili ubaci
+    (File > Place) u svoj .ai dokument.
+    Katastarski broj namjerno ostaje 0000 (upisuje ga arhivar na kraju), a
+    Mjerilo ostaje "1:" - upisuješ ga sam pri crtanju. Sve što ostane prazno
+    naredba ispiše na kraju, da znaš što dopuniti rukom.
+    Ako u mapi već postoji sastavnica koju NIJE napravila ova naredba (npr. si
+    je uredio u Illustratoru), naredba je NEĆE prepisati nego će to javiti.
+
 Prvo pokretanje na računalu
 ---------------------------
 1. Potreban je Python 3.11 ili noviji. Ako ga nema, naredba će to reći i
@@ -41,6 +55,10 @@ Prvo pokretanje na računalu
 - Isječak karte se ne može dohvatiti (nema mreže, georef.hr ne radi,
   preglednik nije preuzet): zapisnik se svejedno napravi, samo okvir karte
   ostane prazan - ponovi prefill kasnije i karta će se ugraditi.
+- Sastavnica: "font ... nije nađen" znači da na računalu nema Illustratora
+  (odatle dolazi font Myriad Pro kojim je predložak pisan); sastavnica se
+  svejedno napravi, samo drugim fontom. Na računalu na kojem i crtaš toga
+  neće biti.
 - Prozor se odmah zatvori bez poruke: javi se razvijatelju.
 
 Dnevnik pokretanja (za prijavu problema)

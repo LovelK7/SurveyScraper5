@@ -31,6 +31,7 @@ def staged(tmp_path, monkeypatch):
 def test_stage_layout(staged):
     assert (staged / "cavedossier_osz_prefill_v9.9.bat").is_file()
     assert (staged / "cavedossier_photos_process_v9.9.bat").is_file()
+    assert (staged / "cavedossier_sastavnica_v9.9.bat").is_file()
     assert (staged / "PROCITAJ_ME.txt").is_file()
     assert (staged / "v9.9" / "bootstrap.ps1").is_file()
     assert (staged / "v9.9" / "bundle.zip").is_file()
@@ -84,7 +85,7 @@ def test_bootstrap_installs_karta_flow(staged):
     # Since v1.2 operator machines collect the isječak karte themselves:
     # the [karta] extra, the chromium download, and no unfilled GEOREF tokens.
     text = (staged / "v9.9" / "bootstrap.ps1").read_text(encoding="ascii")
-    assert ".[osz,photos,geo,karta]" in text
+    assert ".[osz,photos,geo,karta,sastavnica]" in text
     assert "'playwright', 'install', 'chromium'" in text
     assert "@GEOREF_" not in text
 

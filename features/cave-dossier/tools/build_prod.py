@@ -12,6 +12,7 @@ Drive-side layout (all generated here, nothing hand-edited on the Drive):
     SurveyScraper5/
     ├─ cavedossier_osz_prefill_v<X>.bat      ← operators double-click these
     ├─ cavedossier_photos_process_v<X>.bat
+    ├─ cavedossier_sastavnica_v<X>.bat
     ├─ PROCITAJ_ME.txt                        ← operator guide (Croatian)
     ├─ VERZIJE.txt                            ← publish log, one line per release
     ├─ v<X>/                                  ← support for the current version
@@ -21,7 +22,7 @@ Drive-side layout (all generated here, nothing hand-edited on the Drive):
     └─ _arhiva/                               ← superseded launchers + v-dirs
 
 First double-click on a machine installs to %LOCALAPPDATA%\\CaveDossier\\v<X>
-(bundle extracted, venv + pip install of [osz,photos,geo], .env generated with
+(bundle extracted, venv + pip install of [osz,photos,geo,sastavnica], .env generated with
 LOCAL_DRIVE_ROOT derived from the launcher's own location, podaci/geo copied
 locally). The [karta] extra is deliberately NOT installed: georef.hr excerpt
 collection (browser + shared credentials + server-side saves) stays a dev
@@ -66,6 +67,7 @@ TARGET_REL = Path("!!!Digitalizacija") / "SurveyScraper5"
 PROD_COMMANDS = {
     "osz_prefill": ("osz", "prefill"),
     "photos_process": ("photos", "process"),
+    "sastavnica": ("sastavnica",),
 }
 
 # What the code bundle carries — everything FEATURE_ROOT-relative that the two
@@ -77,6 +79,10 @@ BUNDLE_FILES = [
     ".env.example",
     "data/README.md",
     "osz-template/templates/Zapisnik_OSZ_v10.docx",
+    # 2.1e: the blank the sastavnica prefill fills. The FONT is not bundled —
+    # Myriad Pro is licensed with Illustrator and found on the machine
+    # (sastavnica/fonts.py), which every operator on that branch runs anyway.
+    "sastavnica-template/templates/sastavnica_blank_v1.pdf",
 ]
 BUNDLE_DIRS = [
     "src",

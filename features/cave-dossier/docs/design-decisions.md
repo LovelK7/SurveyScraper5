@@ -596,9 +596,14 @@ simply never appear in the one list that is supposed to be a to-do.
 there is no prefix that can be correct for it, and no automatic rename is
 possible. `intake.split_folders` (fragment → list of Redni brojevi, user
 2026-09-19) records what is inside; the run marks it `SPLT`, prints the
-`SB_<broj>_<Ime>` name each half should get, and proposes nothing. Once a human
-splits the folder, both halves match on their name alone and the config entry
-becomes inert — which is the intended end state, not a leak.
+`SB_<broj>_<Ime>` name each half should get, and proposes nothing.
+
+That is the whole life of an entry: it exists to tell a human what to do, and
+dies when they do it. `vrazji prolaz 2kom` was split on Drive the same day, both
+halves matched on their own names immediately (`VP1` → 1457, `VP2` → 1458), and
+the entry was deleted. **Empty is the healthy state for this map** — a line that
+outlives its folder is the orphan-config rot described above, just wearing a
+different hat.
 
 ### The third source: the Liburnija LIDAR sheet
 
@@ -853,6 +858,15 @@ things settled here are cross-cutting and belong in this record:
   `core.person_aliases.to_sb_shorthand`. On a map this is not cosmetic: full
   names shrank a three-person Ekipa cell to 6.25 pt where the drafter's own
   form sits at 9.5 pt.
+
+- **A PDF can carry a second, invisible copy of itself.** Illustrator's
+  *Preserve Illustrator Editing Capabilities* export embeds the whole `.ai`
+  under the page's `/PieceInfo`, and Illustrator opens THAT in preference to
+  the page content. Editing only the page content therefore produced a file
+  that was correct in every PDF viewer and wrong in the one application it was
+  made for. Generalisable: when a generated document is meant to be opened in
+  the authoring application, check what that application actually reads — and
+  strip any round-trip payload. Here it was also 80 % of the file size.
 
 Building it surfaced a **pre-existing bug in `core/people.py`** worth recording
 because it fed the izjava gates, not just this tool: the author-cell separator

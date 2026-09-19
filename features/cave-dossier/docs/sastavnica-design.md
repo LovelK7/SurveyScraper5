@@ -207,6 +207,20 @@ overlap the 5 pt label boxes above them, so `HTRS koordinate:` came back as
 `HTRS koordin` and `Nadmorska visina:` as `N`. Recorded so nobody
 re-discovers it.
 
+**It also strips the embedded `.ai`.** The authored PDF was exported with
+*Preserve Illustrator Editing Capabilities*, so the page carried
+`/PieceInfo → /Illustrator → /Private → /AIPDFPrivateData*` — a complete copy of
+the original artwork, 80 % of the file. Every PDF **viewer** ignores it and
+renders the page content; **Illustrator prefers it**. So the first delivered
+sastavnica looked right in Acrobat and opened in Illustrator showing the
+template's example values — the one defect that no PDF viewer can reveal (user,
+2026-09-19). The builder now drops `/PieceInfo`, the stale `/Thumb` preview
+(which also still pictured the example values) and the XMP packet naming the
+authored file; the blank went from 226 KB to 45 KB. Illustrator then parses the
+page content into editable paths and text, which is what it should have been
+doing all along. `verify()` asserts the payload is gone, and
+`tests/test_sastavnica.py` asserts it on both the blank and a rendered output.
+
 The alternative — asking the drafter to save a values-deleted `.ai` by hand — is
 strictly simpler and stays available; the builder exists so the repo can derive
 the blank from whatever the drafter authors, without a second file to keep in
@@ -292,12 +306,22 @@ this is `tests/test_sastavnica.py` (31 tests):
 
 ## Prod
 
-Nothing new is required: the blank template and the fallback font ride in the
-bundle exactly as the OSZ template does, the command takes only a Redni broj,
-and output lands in a Drive dir that tolerates hand management. Once it
-stabilizes it gets a launcher from `tools/build_prod.py` like the other two.
-Worth noting that this branch's operators are the *Illustrator* users —
-arguably the group that benefits most from a double-click launcher.
+**Shipped as prod v1.4 on 2026-09-19, the same day** —
+`cavedossier_sastavnica_v1.4.bat` sits beside the `osz prefill` and
+`photos process` launchers in `!!!Digitalizacija/SurveyScraper5/`. Nothing new
+was required of the prod machinery: an entry in `build_prod.py`'s
+`PROD_COMMANDS`, a branch in the bootstrap's `switch ($Command)`, the blank PDF
+added to `BUNDLE_FILES`, and `sastavnica` (PyMuPDF) added to the pip extras.
+
+The **font is the one thing that does not ride along** — Myriad Pro is licensed
+with Illustrator, so it is found on the machine. That is sound precisely here:
+this launcher's audience is the people who already run Illustrator, which makes
+it arguably the best-fitting of the three.
+
+Validated the way the others were: a clean install from the published folder
+(`%LOCALAPPDATA%\CaveDossier1.4` — Python check, bundle, venv, pip,
+Chromium, geo copy) followed by a real delivery of SB 1220's sastavnica, with
+the run resolving `MyriadPro-Regular.otf [myriad]` from the prod install.
 
 ## Settled (user, 2026-09-19)
 
@@ -355,6 +379,3 @@ not just this tool. Regression test in `tests/test_people.py`.
 - **A vendored OFL fallback font** (Source Sans 3) for a machine without
   Illustrator. Not a blocker — such a machine is not drafting in Illustrator
   either — so it stays a backlog item rather than a bundled binary.
-- **A prod launcher**, once the command has seen real drafter use. This
-  branch's operators are the Illustrator users, arguably the group that
-  benefits most from a double-click.
