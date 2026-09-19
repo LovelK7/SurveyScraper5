@@ -20,12 +20,12 @@ from cave_dossier.dossier.model import (
 _WIDTH = 74
 
 _SOURCE_LABELS: dict[Source, str] = {
-    Source.SB: "SB (2.2)",
-    Source.ARCHIVE: "arhiva na Driveu (2.1)",
-    Source.STATEMENTS: "izjave + registar osoba (2.1)",
-    Source.SURVEY: "survey (2.1a)",
-    Source.OSZ: "zapisnik (2.1b)",
-    Source.MAP: "isječak karte (2.1c)",
+    Source.SB: "SB (2B)",
+    Source.ARCHIVE: "arhiva na Driveu (5D)",
+    Source.STATEMENTS: "izjave + registar osoba (5O)",
+    Source.SURVEY: "survey (3N)",
+    Source.OSZ: "zapisnik (4O)",
+    Source.MAP: "isječak karte (4I)",
     Source.PHOTOS: "obrada fotografija (2.1d)",
 }
 
