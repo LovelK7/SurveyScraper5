@@ -90,6 +90,35 @@ def test_manual_mapping_resolves_a_folder_with_no_cave_name(tmp_path: Path) -> N
     assert match.proposed_name == "SB_752_Malenica_108_Renata"
 
 
+# ── Leaves that are not caves ─────────────────────────────────────────
+
+
+def test_an_ignored_leaf_is_flagged_not_dropped(tmp_path: Path) -> None:
+    """`primjeri` is sample material; the run must still be able to say so."""
+    _tree(tmp_path)
+    (tmp_path / "!!!Veprinac" / "primjeri").mkdir(parents=True)
+    by_name = {leaf.path.name: leaf for leaf in find_leaf_folders(tmp_path, ["primjeri"])}
+    assert by_name["primjeri"].ignored
+    assert not by_name["Sik Šits_Sara"].ignored
+
+
+def test_ignore_patterns_are_fnmatch_and_case_insensitive(tmp_path: Path) -> None:
+    (tmp_path / "PRIMJERI 2").mkdir()
+    (tmp_path / "Sik Šits_Sara").mkdir()
+    by_name = {leaf.path.name: leaf for leaf in find_leaf_folders(tmp_path, ["primjeri*"])}
+    assert by_name["PRIMJERI 2"].ignored
+    assert not by_name["Sik Šits_Sara"].ignored
+
+
+def test_a_pattern_with_a_separator_scopes_to_one_group(tmp_path: Path) -> None:
+    """`<group>/primjeri` must not rule out a cave called *primjeri* elsewhere."""
+    (tmp_path / "!!!Veprinac" / "primjeri").mkdir(parents=True)
+    (tmp_path / "Tin" / "primjeri").mkdir(parents=True)
+    leaves = find_leaf_folders(tmp_path, ["!!!Veprinac/primjeri"])
+    ignored = {str(leaf.relative) for leaf in leaves if leaf.ignored}
+    assert ignored == {str(Path("!!!Veprinac") / "primjeri")}
+
+
 # ── intake.new_entries: an assertion that is re-checked, not trusted ──
 
 

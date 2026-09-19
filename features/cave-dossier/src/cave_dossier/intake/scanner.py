@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import ClassVar
 
@@ -108,6 +109,9 @@ class LeafFolder:
     path: Path
     relative: Path       # relative to the intake root, for display
     file_count: int
+    #: Ruled out by `intake.ignore_folders` — not a cave's folder at all.
+    #: Still discovered, so the run can say what it skipped.
+    ignored: bool = False
 
     @property
     def group(self) -> str:
@@ -141,11 +145,39 @@ def find_cave_leaf(root: Path, serial: int) -> Path | None:
     return None
 
 
-def find_leaf_folders(root: Path) -> list[LeafFolder]:
+def is_ignored(relative: Path, ignore_names: list[str] | None) -> bool:
+    """A leaf that is not a cave's folder at all.
+
+    `primjeri` in the Veprinac expedition group is sample material, not a cave
+    (user, 2026-09-19). Nothing about the folder says so, so left alone it sits
+    in the report forever as a cave whose SB row nobody can find — noise in the
+    one list that is supposed to be a to-do.
+
+    fnmatch patterns, like `photos.ignore_filenames`. A pattern containing a
+    separator is matched against the path relative to the intake root instead
+    of the bare name, so one group's `primjeri` can be ruled out without ruling
+    out every folder of that name.
+    """
+    name = relative.name.casefold()
+    path = relative.as_posix().casefold()
+    for pattern in ignore_names or ():
+        folded = pattern.casefold().replace("\\", "/")
+        target = path if "/" in folded else name
+        if fnmatch(target, folded):
+            return True
+    return False
+
+
+def find_leaf_folders(
+    root: Path, ignore_names: list[str] | None = None
+) -> list[LeafFolder]:
     """Every folder under ``root`` that contains no further folders.
 
     Depth is not assumed: today the tree is 1–3 levels deep (`Tin/Tingen-BP/Penj`),
     and a leaf can sit at any of them.
+
+    Folders ruled out by ``ignore_names`` are returned FLAGGED, not dropped:
+    the caller decides, and the run reports what it skipped.
     """
     if not root.is_dir():
         return []
@@ -160,8 +192,14 @@ def find_leaf_folders(root: Path) -> list[LeafFolder]:
             for child in path.iterdir()
             if child.is_file() and child.name.lower() not in _SYSTEM_FILENAMES
         ]
+        relative = path.relative_to(root)
         leaves.append(
-            LeafFolder(path=path, relative=path.relative_to(root), file_count=len(files))
+            LeafFolder(
+                path=path,
+                relative=relative,
+                file_count=len(files),
+                ignored=is_ignored(relative, ignore_names),
+            )
         )
     return leaves
 
@@ -297,6 +335,7 @@ __all__ = [
     "LeafFolder",
     "find_leaf_folders",
     "intake_root",
+    "is_ignored",
     "match_leaves",
     "old_queue_candidates",
     "sheet_number_tokens",

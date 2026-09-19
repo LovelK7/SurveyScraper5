@@ -73,6 +73,10 @@ class Settings:
     # point-in-time claim: SB grows, so `intake map` re-checks each line and
     # reports the ones a live row now contradicts instead of trusting them.
     intake_new_entries: list[str] = field(default_factory=list)
+    # Leaf folders that are not caves at all (sample material). fnmatch
+    # patterns against the folder name, or the path relative to the intake
+    # root when the pattern contains a separator.
+    intake_ignore_folders: list[str] = field(default_factory=list)
     # Folder fragment -> the Redni brojevi of the several caves inside it.
     # One leaf is one cave, so these are reported for a human to split, never
     # renamed (`vrazji prolaz 2kom` holds VP1 and VP2).
@@ -246,6 +250,10 @@ def load_settings() -> Settings:
         },
         intake_new_entries=[
             str(value) for value in ((raw.get("intake") or {}).get("new_entries") or []) if value
+        ],
+        intake_ignore_folders=[
+            str(value) for value in ((raw.get("intake") or {}).get("ignore_folders") or [])
+            if value
         ],
         intake_split_folders={
             str(key): [int(serial) for serial in (value or [])]

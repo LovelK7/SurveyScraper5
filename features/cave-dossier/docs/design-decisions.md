@@ -33,6 +33,7 @@ keeps the chronology.
 - [People registry and the statement gates (2026-08-30)](#people-registry-and-the-statement-gates-2026-08-30)
 - [Field-data intake — matching design](#field-data-intake--matching-design)
   - [A "confirmed absent" line is an observation, and observations go stale](#a-confirmed-absent-line-is-an-observation-and-observations-go-stale)
+  - [Leaves that are not caves](#leaves-that-are-not-caves)
   - [One folder, several caves](#one-folder-several-caves)
   - [The third source: the Liburnija LIDAR sheet](#the-third-source-the-liburnija-lidar-sheet)
 - [2.1b prefill rules (2026-08-30)](#21b-prefill-rules-2026-08-30)
@@ -570,6 +571,23 @@ A human deletes the line or fixes the row; nothing resolves itself.
 The general lesson for this feature: **any hand-written assertion about SB must
 be re-checked against SB on every run.** A config list that is only read, never
 validated, decays silently into wrong answers.
+
+### Leaves that are not caves
+
+`find_leaf_folders` calls any folder with no subfolders a cave's folder, which
+is right for the intake tree but not universally: `!!!Ekspedicija
+Veprinac_2026/primjeri` is sample material (user, 2026-09-19). Nothing about
+such a folder distinguishes it, so it is config — `intake.ignore_folders`,
+fnmatch patterns like `photos.ignore_filenames`, matched against the folder
+name, or against the path under the intake root when the pattern contains a
+separator (so one group's `primjeri` can go without ruling out every folder of
+that name).
+
+They are **flagged, not dropped**: `find_leaf_folders` still returns them with
+`LeafFolder.ignored`, and the run names every one it skipped. The same reason
+`photos.ignore_filenames` reports rather than drops — a pattern that quietly
+swallowed a real cave folder would otherwise be invisible, and the cave would
+simply never appear in the one list that is supposed to be a to-do.
 
 ### One folder, several caves
 

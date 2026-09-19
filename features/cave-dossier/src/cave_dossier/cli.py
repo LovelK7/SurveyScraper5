@@ -555,7 +555,9 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
         print("`archive.intake_dir` in config.yaml.", file=sys.stderr)
         return EXIT_ERROR
 
-    leaves = find_leaf_folders(root)
+    discovered = find_leaf_folders(root, settings.intake_ignore_folders)
+    ignored = [leaf for leaf in discovered if leaf.ignored]
+    leaves = [leaf for leaf in discovered if not leaf.ignored]
     if not leaves:
         print(f"No leaf folders under {root}")
         return EXIT_NOT_READY
@@ -584,6 +586,11 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
           + (f", conflicting {len(conflicts)}" if conflicts else ""))
     print(f"  {len(new_entries) + len(unmatched)} with no SB row — new caves that need"
           f" a row before they can be numbered")
+    if ignored:
+        # Named, not just counted: an ignore pattern that quietly swallowed a
+        # real cave folder would be invisible otherwise.
+        print(f"  {len(ignored)} ignored (intake.ignore_folders): "
+              + ", ".join(str(leaf.relative) for leaf in ignored))
     if splits:
         print(f"  {len(splits)} folder(s) holding more than one cave — split by hand first")
     if stale:

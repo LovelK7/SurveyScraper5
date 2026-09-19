@@ -96,6 +96,15 @@ intake:
   # later architecture decision (user, 2026-08-29).
   sheet_csv: "example/liburnija_pot_speleo.csv"
 
+  # Leaf folders that hold no cave data at all — sample/scratch material that
+  # happens to sit in the intake tree (user, 2026-09-19). fnmatch patterns,
+  # matched case-insensitively against the folder name; a pattern containing
+  # "/" is matched against the path relative to the intake root instead, so one
+  # group's folder can be ruled out without ruling out every folder of that
+  # name. Listed as skipped on every run, never dropped in silence.
+  ignore_folders:
+    - "primjeri"                   # examples, not a cave
+
   manual_matches:
     "Bilova ponikva": 976          # SB spells it "Billova ponikva"
     "Golobreška nanoekspedicija": 1103   # SB: "Golobreška mikroekspedicija"

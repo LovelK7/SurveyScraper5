@@ -147,6 +147,10 @@ cavedossier intake map --apply             # rename the folders in place
 # `intake.new_entries` and re-run; the folder maps on its own.
 # `SPLT` means one folder holds several caves (`intake.split_folders`). Make one
 # folder per cave using the printed `SB_<broj>_<Ime>` names, then re-run.
+# Folders that are not caves at all (sample material like `primjeri`) go in
+# config.yaml `intake.ignore_folders` — fnmatch patterns against the folder
+# name, or the path under the intake root if the pattern contains "/". They are
+# named on every run, never skipped silently.
 
 # ── Satellite tables (part 2.2b) ───────────────────────────────────────
 cavedossier sat sync                       # Liburnija sheet vs SB: four review lists (read-only)
