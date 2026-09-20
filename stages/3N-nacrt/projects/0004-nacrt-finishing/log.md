@@ -165,3 +165,62 @@ Brief: [brief.md](brief.md)
   as wanted. The bar at `bbox.maxx + 1 m` and `PAD_M = 0.5` read fine on this cave — left as is.
 - **Evidence:** this commit (103 tests green, doctor 0 fail); PDFs in the session scratchpad only.
 - **Next:** T2 — productionize the driver (`tasks/T2-csurvey-driver.md`).
+
+### 2026-09-20 — T2: the production driver, and the first end-to-end Nacrt (agent) ✅
+
+- **Did:** promoted `findings/csurvey_headless_probe.ps1` into
+  `production/tools/csurvey_headless.ps1` (every reflection poke kept verbatim and still asserted
+  by name; `info` / `recalc` / `print` / new `dimensions`; `-Design Plan|Profile|Both`;
+  `-CSurveyDir` / `-Printer` from `CSURVEY_DIR` / `CSURVEY_PRINTER`; optional `-ScaleMode`
+  / `-Scale` / `-Landscape` overrides applied to the in-memory `_preview.*` and never saved back;
+  exit codes 0/2/3/4/5/6, one line on stderr each; PDFs named `<cave>_plan.pdf` after the
+  `_lt_fin`/`_lt`/`_pp` chain is stripped) and wrote `production/tools/csurvey_driver.py` beside
+  it — `run` / `info` / `recalc` / `print_pdfs` / `dimensions` / `finish_and_print`, exit codes
+  mapped onto one `DriverError`, the timeout the script cannot enforce on itself, and
+  `CSURVEY_*` read from the environment then the workspace `.env` (marker walk, no
+  `cave_dossier` import, so it travels into the kit).
+- **Result: the chain runs end to end and the Nacrt is real.** On a fresh copy of the SB 1103
+  raw `_lt`: `nacrt_finish.py --yes` → `finish_and_print` → two A4-portrait PDFs
+  (`SB_1103_golobreska_plan.pdf` 19.8 KB, `..._profile.pdf` 15.9 KB) and
+  `SB_1103_golobreska_dimenzije.json`. `dimensions` reads
+  `{"l": 10, "pl": 4, "ml": 102, "pvr": 1, "nvr": 9, "drop": 10, "vr": 10, "qmx": 7.53,
+  "qmn": -2.06, "es": "2", "caves": 1, "calculated": true}` — exactly the numbers brief §2.2
+  predicted, with `es` the station **T1 chose**, so the two halves of KORAK 3 agree.
+- **T1's last open acceptance is now closed.** Rendering the printed profile shows the
+  Dislivello label `-9 m`, computed by cSurvey at paint time from our `quotavalue="0"` + entrance
+  `2`; the plan shows the 0–5 m scale bar with 1 m ticks and a north arrow labelled a plain **`N`**
+  (Manual + Geographic, not Auto's `Nm 2024`). Measured ink: plan 101.6 × 58.2 mm against the
+  sidecar's predicted 101.2 × 61.0 mm, profile 67.9 × 121.2 mm against 70.9 × 122.2 mm — so T1's
+  bbox + `PAD_M = 0.5` model predicts the printed extent to a couple of millimetres, which is what
+  T3 will place by.
+- **Brief §2.2 amended (dated):** *a therion failure does not fail the calculation.* This machine
+  has `therion.path` set and Therion installed but no Survex `cavern` at all; therion's run dies
+  with `'cavern' is not recognized` on **stderr** and `Calculate(True)` still returns `Result=True`
+  with a correct `<sms>`. Hence the driver's rule: judge by the exit code, never by stderr being
+  empty. Two further notes for whoever reads the JSON: `cSpeleometric.VerticalRange` **is**
+  `pvr + nvr` once an entrance exists (cSpeleometric.vb:166-225) and is not written to `<sms>`, so
+  it ships as `vr` — a free cross-check on `drop`; and `pvr`/`nvr`/`es` exist **only** on the
+  per-cave row, never on the whole-complex or per-branch ones, so `caves` ships too and a
+  multi-cave survey gets a stderr warning instead of a silently wrong row.
+- **Two deliberate deviations from the T2 prompt.** (a) The prompt's parameter list omitted the
+  `-ScaleMode`/`-Landscape` overrides that §3.3 asks for; they are in, because
+  `cOptionsPreview.ScaleMode`/`Scale`/`PageLandscape` are **public** and the preview form reads
+  them in its constructor, so it costs no new reflection surface. (b) The dimensions JSON is named
+  `<cave>_dimenzije.json` (matching the PDFs) and not §3.2's `SB_<broj>_dimenzije.json`: the driver
+  is handed a file, not a Redni broj. **T5 renames on delivery into the cave leaf** — it is the
+  step that knows the number.
+- **Also:** `.ps1` is ASCII-only with a UTF-8 BOM (PowerShell 5.1 reads a BOM-less script in the
+  ANSI codepage and an em dash in a comment is a parse error — it bit us once), and it sets
+  `[Console]::OutputEncoding` to UTF-8 so a Croatian cave name survives the pipe.
+  `.env.example` gained `CSURVEY_DIR`/`CSURVEY_PRINTER`; `prod/build_csx_kit.py` `TOOLS` gained all
+  five KORAK 3 files; the probe's header says it is superseded.
+- **Evidence:** `python -m pytest stages/3N-nacrt/tests -q` → **138 passed** (35 new: exit-code
+  mapping per code, a hang killed and named, stderr-on-success is not a failure, JSON parsing incl.
+  a stray line, the `.env` fallback, suffix stripping, a silent printer caught, recalc-before-print
+  ordering, the sidecar merge — plus one live end-to-end against the installed cSurvey, which runs
+  on this machine and skips where cSurvey or the fixture is absent);
+  `python tools/pipeline_doctor.py` → **0 fail · 3 warn** (the same pre-existing historical links).
+- **Next:** T3 (`compose_a4.py`) — it now has everything it needs: two vector PDFs at a known true
+  scale, the placements in millimetres, and `Mjerilo`/lengths/depth for the 4S sastavnica cells,
+  all in `<cave>_dimenzije.json`. Then T5 wires KORAK 3 into a launcher. Still unproven: the driver
+  on a **second** machine (definition of done), and any cave but SB 1103.

@@ -77,6 +77,15 @@ TOOLS = [
     "parse_tdr.py",
     "sb_select.py",
     "tdx-mapping.json",
+    # KORAK 3, the Nacrt finishing chain (project 0004). nacrt_finish.py imports
+    # nacrt_layout.py and reads nacrt_finish_compass.xml from beside itself;
+    # csurvey_driver.py runs csurvey_headless.ps1 the same way. Miss one and the
+    # KORAK 3 launcher ImportErrors on an operator machine while working here.
+    "nacrt_layout.py",
+    "nacrt_finish.py",
+    "nacrt_finish_compass.xml",
+    "csurvey_headless.ps1",
+    "csurvey_driver.py",
 ]
 # Rendered like the launchers, but Croatian with real diacritics: UTF-8 BOM so
 # Notepad is sure, exactly what build_prod.py does for PROCITAJ_ME.txt.

@@ -1,3 +1,6 @@
+# SUPERSEDED 2026-09-20 by production/tools/csurvey_headless.ps1 (T2), which promotes every
+# poke below into the tool the KORAK 3 launcher calls. Kept as the record of the experiment.
+#
 # csurvey_headless_probe.ps1 — drive the INSTALLED cSurvey (C:\csurvey64\cSurveyPC.exe) as a
 # library from Windows PowerShell 5.1, with no compiler, no source build, no DevExpress licence.
 #

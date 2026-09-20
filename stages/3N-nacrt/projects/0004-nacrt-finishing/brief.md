@@ -1,7 +1,7 @@
 # Task brief: Nacrt finishing — automate the post-import manual steps and the PDF export
 
 - **ID:** 0004-nacrt-finishing
-- **Status:** `in progress` — research done 2026-09-20; the user confirmed the task split (§3.3) and set the scale/layout rules (§3.4) the same day. **T4 (chooser) and T1 (`nacrt_finish.py`) are built and green**; §2.1/§3.1 amended from what T1 found in practice. Next: T2 (the headless driver)
+- **Status:** `in progress` — research done 2026-09-20; the user confirmed the task split (§3.3) and set the scale/layout rules (§3.4) the same day. **T4 (chooser), T1 (`nacrt_finish.py`) and T2 (the headless driver) are built and green, and the chain has produced a real Nacrt end to end on SB 1103**; §2.1/§2.2/§3.1 amended from what T1 and T2 found in practice. Next: T3 (`compose_a4.py`)
 - **Owner:** both
 - **Opened:** 2026-09-20 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [cSurvey/CLAUDE.md](../../../../../cSurvey/CLAUDE.md), [README.md](../../README.md), [production/tdx-processing-protocol.md](../../production/tdx-processing-protocol.md) (the four steps that precede this), [reference/exports-and-printing.md](../../reference/exports-and-printing.md), [reference/automation-surface.md](../../reference/automation-surface.md)
@@ -125,7 +125,7 @@ SB 1103 file:
 | Call | Access | Result |
 |---|---|---|
 | `New cSurvey` · `Load(path)` · `Invalidate()` · `SaveTo(path)` | Public | ✅ 57 shots / 58 stations, round-trips |
-| `Calculate.Calculate(True)` | Friend → reflection | ✅ therion ran, `cActionResult.Result=True`, `<sms>` refreshed with `es/pvr/nvr` |
+| `Calculate.Calculate(True)` | Friend → reflection | ✅ `cActionResult.Result=True`, `<sms>` refreshed with `es/pvr/nvr` (therion is invoked but is not load-bearing — see the constraints below) |
 | `New frmPreview(survey, Preview, Plan\|Profile)` | Friend → reflection, never shown | ✅ DevExpress initialised without a licence prompt; ctor runs `pOptionsRestore` from the file |
 | `frmPreview._oDoc` (the `WithEvents` backing field) → `PrinterSettings.PrintToFile=True`, `PrintFileName=…`, `Print()` | private field → reflection | ✅ **plan and profile PDFs written with no dialog**, byte-for-byte the same look as the user's manual `profil.pdf` |
 
@@ -135,7 +135,14 @@ Constraints that came with it: must run `powershell -STA`; PowerShell variables 
 case-insensitive (`$Survey` and `$survey` collide — bit us twice); the sync `ExecuteTherion` pops a
 MsgBox after 120 s on huge surveys (ours take ~2 s); `Microsoft Print to PDF` must be installed
 (Windows 10/11 default); `therion.path` must be in the registry (it is on any machine that runs
-cSurvey at all). The `csc.exe`/`vbc.exe` in `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\` are
+cSurvey at all).
+**Amended 2026-09-20 (T2): a therion failure does not fail the calculation.** This dev machine has
+`therion.path` set and Therion installed but no Survex `cavern` anywhere; therion's run dies with
+`'cavern' is not recognized` on **stderr** and `Calculate(True)` still returns `Result=True` with a
+correct `<sms>` (`l=10 pl=4 pvr=1 nvr=9 es=2` on SB 1103 — the speleometrics come from cSurvey's own
+plot data, not from therion). So the driver judges a run by its **exit code**, never by stderr being
+empty; stdout stays clean, which is what lets `dimensions` emit bare JSON on it.
+The `csc.exe`/`vbc.exe` in `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\` are
 also present on every Windows box if a compiled net48 driver is ever preferred over the script.
 
 This removes DevExpress, Visual Studio, the `cAutomation` facade and the source build from the

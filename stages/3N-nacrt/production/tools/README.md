@@ -146,6 +146,20 @@ what the operator still does by hand inside cSurvey after the import is finished
 |---|---|---|
 | [`nacrt_finish.py`](nacrt_finish.py) | The XML finisher. Takes the corrected `_lt.csx`/`.csz` and writes `<name>_lt_fin.<same ext>` + `<name>_lt_fin.layout.json`: flags the entrance `<trigpoint>`, adds the Dislivello quota at the profile's lowest floor point, the horizontal scale bar right of the plan and the `N` arrow above it, then writes the A4 print layout into `_preview.plan`/`_preview.profile` and the render quality into `<sharedsettings>`. Never touches the input, and preserves every other byte of it | Right after the sketch is corrected and saved in cSurvey, before the headless print: `python nacrt_finish.py <file>_lt.csx` (or `<intake> --sb 1103`). `--dry-run` reports without writing; `--yes` / `--layout N` skip the layout menu |
 | [`nacrt_layout.py`](nacrt_layout.py) | Scale + page-arrangement chooser: picks the largest of 1:100 / 1:200 / 1:250 / 1:300 / 1:400 / 1:500 at which each design fits (plan and profile independently — `scalemode` 1/2/3/4/99+`scale`/5 — but never more than one rung apart), stacks them in the band below the sastavnica title block (profil on top) or side by side, and returns the `Mjerilo` string plus up to three alternatives | Called by the finisher (it supplies the `_preview.*` scale) and by the compositor; or by hand, `python nacrt_layout.py <plan_w> <plan_h> <profile_w> <profile_h>` (metres), to preview the proposal and its alternatives as a numbered menu |
+| [`csurvey_driver.py`](csurvey_driver.py) | The Python face of the headless driver: runs the `.ps1` below, enforces the timeout it cannot enforce on itself, maps its exit codes onto one `DriverError` and parses its JSON. `finish_and_print()` is the whole step in one call — recalculate, print both PDFs, read the dimensions, and write `<name>_dimenzije.json` next to them with the finisher's `mjerilo`/scales/placements merged in | After the finisher, on the `_lt_fin` file: `python csurvey_driver.py finish <file>_lt_fin.csx -o <dir>` (or `<intake> --sb 1103`). Also `info` / `recalc` / `print` / `dimensions` one at a time |
+| [`csurvey_headless.ps1`](csurvey_headless.ps1) | Drives the **installed** `cSurveyPC.exe` as a library by reflection — no build, no DevExpress licence, no dialog. `info`, `recalc` (this is what fills `<sms>` with the entrance-relative `pvr`/`nvr`/`es`), `print` (the `_preview.*` options in the file decide scale and paper), `dimensions` (one JSON object on stdout) | Normally only through `csurvey_driver.py`; by hand for debugging, `powershell -STA -NoProfile -ExecutionPolicy Bypass -File csurvey_headless.ps1 -Survey <f> -Command info` |
+
+**The driver's two per-machine facts** are `CSURVEY_DIR` (default `C:\csurvey64`) and
+`CSURVEY_PRINTER` (default `Microsoft Print to PDF`), read from the environment and
+then from the workspace `.env` — see [`.env.example`](../../../../.env.example).
+The `.ps1` **must** run under Windows PowerShell 5.1 with `-STA` (the print path
+constructs a WinForms form, never shown), which is why the wrapper spawns it rather
+than importing anything. Exit codes are `0` ok · `2` usage · `3` cSurvey internals
+changed (the missing member is named) · `4` load · `5` calculate · `6` print. A clean
+run can still write to stderr: cSurvey shells out to therion's `cavern`, and a machine
+without it on PATH says so while the calculation itself succeeds — judge a run by its
+exit code. Everything is fail-soft: with no cSurvey installed the finisher's `.csx`
+is still there for the operator to open and print in two clicks.
 
 Stdlib only and free of repo imports, like every tool here, so they travel into the
 operator kit — `nacrt_finish.py` ships with one asset beside it,
