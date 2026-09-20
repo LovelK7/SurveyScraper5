@@ -299,6 +299,33 @@ cavedossier sastavnica 1234 --force        # overwrite a delivered file this too
 #   python sastavnica-template/tools/build_blank.py                       # rebuild the blank
 # then update sastavnica/addresses.py from the cells dump.
 
+# ── Nacrt (part 3N KORAK 3 + 2.1e — the finished Nacrt for the cSURVEY
+#    drafting route; composes the printed plan and profile onto that same
+#    title block and delivers SB_<broj>_nacrt.pdf into the intake leaf) ────
+cavedossier nacrt 1103                     # the leaf's KORAK 3 trio + SB -> one A4 PDF
+cavedossier nacrt 1103 --offline           # local RGI gpkg + cached DEM only, no network
+cavedossier nacrt 1103 --local             # keep the run copy, skip Drive delivery
+cavedossier nacrt 1103 --force             # overwrite a delivered file this tool did not write
+# Needs the cave to have been through 3N's KORAK 3, which leaves three files in
+# its intake leaf: <name>_plan.pdf and <name>_profile.pdf (each printed by
+# cSurvey at a true fixed scale, alone on an A4 page) and <name>_dimenzije.json
+# (the speleometrics plus the layout the finisher chose). Make them with
+#   production/tools/nacrt_finish.py  then  production/tools/csurvey_driver.py finish
+# Each printed page is cropped to its ink and dropped, AT ITS OWN SIZE, centred
+# on the rectangle the layout reserved. Nothing is ever rescaled — the point of
+# a fixed scale is that a 5 m bar measures 50 mm at 1:100. If a drawing does not
+# fit its rectangle, or would cross the title block, the margin or the other
+# drawing, the run REFUSES and prints the millimetres; re-run nacrt_finish.py
+# with --layout N and pick another arrangement.
+# The title block is prefilled as by `sastavnica`, with one source added: the
+# dimensions JSON outranks the zapisnik and SB for Stvarna duljina, Tlocrtna
+# duljina and Dubina (measured off the very survey being composed) and fills
+# Mjerilo with the scale actually printed — two lines, "profil 1:200" over
+# "tlocrt 1:100", when the two designs differ. That supersedes the "1:" stub
+# on THIS route only; `cavedossier sastavnica` never reads the file.
+# Collision: the delivered nacrt carries its OWN metadata stamp, so a nacrt and
+# a sastavnica never overwrite each other, and an edited file is refused.
+
 # ── OSZ backfill → SB (part 2.1b — reads a FILLED zapisnik back) ──
 cavedossier osz backfill 1234                # find the cave's SB_<broj>_… dir in the intake
                                              #   tree (!Za digitalizirat), read the OSZ DOCX

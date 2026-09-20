@@ -93,6 +93,13 @@ BASELINE_LIFT = 4.6
 # Side padding inside a cell before shrinking starts. 2 pt is what the drafter's
 # own 8 pt choice for the Ekipa cell implies.
 SIDE_PADDING = 2.0
+# A cell that may carry TWO lines (only Mjerilo does, and only on the cSurvey
+# route, where plan and profile can be printed at different scales — see
+# render.MULTILINE). The two baselines sit at these fractions of the cell
+# height below its top rule; a third and two thirds keeps both lines clear of
+# the rules above and below, and their gap caps the font size so the lines
+# cannot collide.
+MULTILINE_BASELINES = (1 / 3, 2 / 3)
 MAX_FONT_SIZE = 10.0
 MIN_FONT_SIZE = 6.0
 FONT_STEP = 0.25

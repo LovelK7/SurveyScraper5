@@ -315,6 +315,7 @@ What each label actually runs. One line here; flags and details in the
 | <a name="b11"></a>**B11** | *(M6, planned)* `cavedossier deliver <broj>` | dossier → katastarski broj + every file filed under it + SB write-back | gate 1 passes; designed in [m6-delivery-design.md](stages/6P-predaja/docs/m6-delivery-design.md) |
 | <a name="b12"></a>**B12** | `cavedossier people list/check` | people registry ↔ izjave dir ↔ SB author cells → audit + `statements-index.json` | a new izjava or author appeared, or periodically — it never changes anything |
 | <a name="b13"></a>**B13** | `cavedossier sastavnica <broj>` | SB + the leaf's filled OSZ + geo → `SB_<padded>_sastavnica.pdf` in the cave's intake leaf | a cave is about to be drafted in Illustrator ([route B](#two-routes-to-the-nacrt--csurvey-and-illustrator)); best after the zapisnik is filled, but useful before it |
+| <a name="b14"></a>**B14** | `cavedossier nacrt <broj>` | KORAK 3's printed plan + profile + dimensions → `SB_<padded>_nacrt.pdf` in the cave's intake leaf | a cave's sketch has been corrected and printed ([route A](#two-routes-to-the-nacrt--csurvey-and-illustrator)); it composes both drawings onto the 4S title block at true scale |
 | <a name="h1"></a>**H1** | a person, in Excel | any `dopune-*.csv` / review list → `Svi objekti` | after B1 / B6 / B7 produce one |
 | <a name="h2"></a>**H2** | the recorder, in the field | prefilled DOCX → completed zapisnik → cave's intake dir | after B6, around the exploration |
 

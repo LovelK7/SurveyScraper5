@@ -1,7 +1,7 @@
 # Task brief: Nacrt finishing — automate the post-import manual steps and the PDF export
 
 - **ID:** 0004-nacrt-finishing
-- **Status:** `in progress` — research done 2026-09-20; the user confirmed the task split (§3.3) and set the scale/layout rules (§3.4) the same day. **T4 (chooser), T1 (`nacrt_finish.py`) and T2 (the headless driver) are built and green, and the chain has produced a real Nacrt end to end on SB 1103**; §2.1/§2.2/§3.1 amended from what T1 and T2 found in practice. Next: T3 (`compose_a4.py`)
+- **Status:** `in progress` — research done 2026-09-20; the user confirmed the task split (§3.3) and set the scale/layout rules (§3.4) the same day. **T4, T1, T2 and T3 are built and green — the cSurvey route delivers a finished `SB_<broj>_nacrt.pdf`, validated on SB 1103 (a 5 m bar measures 50.00 mm at 1:100)**; §2.1/§2.2/§3.1 amended from what T1-T3 found in practice. Next: T5 (the operator launcher), which needs the user's call on the KORAK 3 numbering clash
 - **Owner:** both
 - **Opened:** 2026-09-20 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [cSurvey/CLAUDE.md](../../../../../cSurvey/CLAUDE.md), [README.md](../../README.md), [production/tdx-processing-protocol.md](../../production/tdx-processing-protocol.md) (the four steps that precede this), [reference/exports-and-printing.md](../../reference/exports-and-printing.md), [reference/automation-surface.md](../../reference/automation-surface.md)

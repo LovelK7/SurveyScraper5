@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 from cave_dossier.osz.models import FieldValue, SBUpdate
 
-__all__ = ["FieldValue", "SBUpdate", "PlacedField", "SastavnicaResult"]
+__all__ = ["FieldValue", "SBUpdate", "PlacedField", "SastavnicaResult",
+           "PlacedDrawing", "NacrtResult"]
 
 
 class PlacedField(BaseModel):
@@ -34,5 +35,41 @@ class SastavnicaResult(BaseModel):
     fields: dict[str, FieldValue] = Field(default_factory=dict)
     placed: list[PlacedField] = Field(default_factory=list)
     osz_source: str | None = None       # the filled OSZ the survey data came from
+    # The KORAK 3 dimensions JSON, when `cavedossier nacrt` read one.
+    dimensions_source: str | None = None
     notes: list[str] = Field(default_factory=list)
     sb_updates: list[SBUpdate] = Field(default_factory=list)
+
+
+class PlacedDrawing(BaseModel):
+    """One printed design as it landed on the composed sheet.
+
+    ``ink_mm`` vs ``reserved_mm`` is the number worth keeping: the layout was
+    chosen from the survey's bounding box plus a padding guess, and this pair
+    says how close that guess was on a real print.
+    """
+
+    design: str                       # "plan" | "profile"
+    source: str
+    scale: int                        # the denominator it was printed at
+    ink_mm: list[float]               # [width, height] of the cropped drawing
+    reserved_mm: list[float]          # [width, height] the layout kept free
+    x_mm: float                       # where the crop landed, from the page's
+    y_mm: float                       # top-left corner
+
+
+class NacrtResult(BaseModel):
+    """``nacrt.json`` for one cave's composition run."""
+
+    serial: int
+    cave_name: str
+    sue_number: str | None = None
+    # The title block exactly as it was prefilled onto this sheet.
+    sastavnica: SastavnicaResult
+    inputs: list[str] = Field(default_factory=list)
+    mjerilo: str = ""
+    arrangement: str = ""
+    plan_scale: int | None = None
+    profile_scale: int | None = None
+    drawings: list[PlacedDrawing] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)

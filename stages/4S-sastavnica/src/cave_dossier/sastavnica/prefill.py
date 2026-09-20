@@ -58,6 +58,11 @@ RUNS_DIR = workspace("runs", "sastavnica")
 # safe to apply without also refusing every ordinary re-run.
 STAMP = "cave-dossier sastavnica prefill"
 
+# `cavedossier nacrt` reuses this prefill to get the title-block PAGE, not a
+# delivered sastavnica, so it passes local_only=True — and then drops this one
+# note, which would otherwise read like a flag the operator had set.
+LOCAL_SKIP_NOTE = "--local: isporuka na Drive preskočena."
+
 
 class SastavnicaError(RuntimeError):
     """Hard failure — no document produced; message is CLI-ready."""
@@ -73,7 +78,14 @@ class SastavnicaOutcome:
 
 
 def run_prefill(settings: Settings, serial: int, *, offline: bool = False,
-                local_only: bool = False, force: bool = False) -> SastavnicaOutcome:
+                local_only: bool = False, force: bool = False,
+                use_dimensions: bool = False) -> SastavnicaOutcome:
+    """``use_dimensions`` switches on the **cSurvey route's** extra source: the
+    ``<name>_dimenzije.json`` KORAK 3 leaves in the leaf, which knows the three
+    lengths and the printed Mjerilo exactly. Only ``cavedossier nacrt`` sets it;
+    plain ``cavedossier sastavnica`` serves the Illustrator route and keeps the
+    ``1:`` stub of decision 3 (docs/sastavnica-design.md).
+    """
     reader = SBReader(settings)
     cave = georef.find_by_serial(reader, settings, serial)
     if cave is None:
@@ -96,6 +108,7 @@ def run_prefill(settings: Settings, serial: int, *, offline: bool = False,
 
     intake_folder = _intake_folder(settings, serial)
     osz_values = _read_osz(intake_folder, result)
+    dims = _read_dimensions(intake_folder, result) if use_dimensions else None
 
     x_htrs = _sb_float(cave, settings.sb_x_htrs_column)
     y_htrs = _sb_float(cave, settings.sb_y_htrs_column)
@@ -116,7 +129,8 @@ def run_prefill(settings: Settings, serial: int, *, offline: bool = False,
         )
 
     _resolve_fields(settings, cave, result, osz_values, x_htrs, y_htrs,
-                    finding, kota_finding)
+                    finding, kota_finding, dims=dims,
+                    font_path=font.path)
 
     values = {key: fv.value for key, fv in result.fields.items() if fv.value}
     try:
@@ -150,7 +164,7 @@ def run_prefill(settings: Settings, serial: int, *, offline: bool = False,
 
     delivered_path = None
     if local_only:
-        result.notes.append("--local: isporuka na Drive preskočena.")
+        result.notes.append(LOCAL_SKIP_NOTE)
     else:
         delivered_path = _deliver(settings, cave, serial, pdf_path, pdf_name,
                                   result, intake_folder=intake_folder, force=force)
@@ -170,8 +184,15 @@ def run_prefill(settings: Settings, serial: int, *, offline: bool = False,
 # ── field resolution ─────────────────────────────────────────────────
 def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
                     osz: dict[str, str | None], x_htrs: float | None,
-                    y_htrs: float | None, finding, kota_finding) -> None:
+                    y_htrs: float | None, finding, kota_finding,
+                    dims: dict | None = None,
+                    font_path: Path | None = None) -> None:
     fields = result.fields
+    # The cSurvey route's own numbers, when `cavedossier nacrt` asked for them:
+    # measured off the very survey that is being composed onto this page, so
+    # they outrank both the zapisnik and SB for the three dimension cells and
+    # they are the only source that knows the printed Mjerilo.
+    measured = _dimension_values(dims, font_path) if dims else {}
 
     for key, text in addresses.CONSTANTS.items():
         fields[key] = FieldValue(value=text, source="constant")
@@ -194,14 +215,20 @@ def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
     # Survey facts: the OSZ wins. SB's "Autori nacrta ili izvor" holds the
     # SOURCE for a queued cave (often a literature citation), not the drafter,
     # so it is only the fallback.
+    if measured.get("mjerilo"):
+        fields["mjerilo"] = FieldValue(value=measured["mjerilo"], source="nacrt")
+
     _set_first(fields, "stvarna_duljina", [
+        (measured.get("stvarna_duljina"), "nacrt"),
         (_metres(osz.get("duljina")), "osz"),
         (_metres(_sb_text(cave, _field_column(settings, "length_m"))), "sb"),
     ])
     _set_first(fields, "tlocrtna_duljina", [
+        (measured.get("tlocrtna_duljina"), "nacrt"),
         (_metres(osz.get("horizontalna_duljina")), "osz"),
     ])
     _set_first(fields, "dubina", [
+        (measured.get("dubina"), "nacrt"),
         (_metres(osz.get("visinska_razlika")), "osz"),
         (_depth(osz.get("dubina")), "osz"),
         (_depth(_sb_text(cave, _field_column(settings, "depth_m"))), "sb"),
@@ -230,9 +257,11 @@ def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
     missing = [addresses.V1[key].label for key in addresses.V1
                if not (fields.get(key) and fields[key].value)]
     if missing:
-        result.notes.append(
-            "Prazno (popuni u Illustratoru): " + ", ".join(missing)
-        )
+        # Route-aware wording: on the cSurvey route the delivered page is a
+        # finished nacrt, not an Illustrator asset, so "fill it in in
+        # Illustrator" would be an instruction the operator cannot follow.
+        where = "dopuni prije predaje" if measured else "popuni u Illustratoru"
+        result.notes.append(f"Prazno ({where}): " + ", ".join(missing))
 
 
 def _resolve_kota(settings: Settings, cave: CaveRow, result: SastavnicaResult,
@@ -306,6 +335,120 @@ def _resolve_lokacija(settings: Settings, cave: CaveRow, result: SastavnicaResul
         result.fields["lokacija"] = FieldValue(value=text, source=source)
 
 
+# ── the cSurvey route's measured numbers ─────────────────────────────
+def _read_dimensions(folder: Path | None, result: SastavnicaResult) -> dict | None:
+    """``<name>_dimenzije.json`` from the leaf, or None.
+
+    Fail-soft like everything else here: a cave that has not been through
+    KORAK 3 simply falls back to the zapisnik and SB, with a note.
+    """
+    from cave_dossier.sastavnica import compose as compose_mod
+
+    if folder is None:
+        return None
+    found = sorted(folder.glob("*_dimenzije.json"),
+                   key=lambda path: path.stat().st_mtime, reverse=True)
+    if not found:
+        result.notes.append(
+            f"U mapi {folder.name} nema <ime>_dimenzije.json — duljine i "
+            "mjerilo dolaze iz zapisnika/SB-a, ne iz izmjere."
+        )
+        return None
+    try:
+        data = compose_mod.read_dimensions(found[0])
+    except compose_mod.ComposeError as exc:
+        result.notes.append(f"{exc} — duljine i mjerilo iz zapisnika/SB-a.")
+        return None
+    result.dimensions_source = found[0].name
+    if not data.get("calculated"):
+        result.notes.append(
+            f"{found[0].name} kaže da survey nije izracunat — provjeri duljine."
+        )
+    return data
+
+
+# Below this the combined Dubina form (-9/+1 m) is dropped for the depth alone.
+# The cell is 43 pt wide and shrink-to-fit floors at 6 pt, so without a bar like
+# this a four-digit cave would print its two numbers at the floor size where the
+# depth alone would have sat at the authored 10 pt — smaller AND less legible
+# for the sake of a number the cell is not named after.
+MIN_COMBINED_SIZE = 7.0
+
+
+def _measuring_font(font_path: Path | None):
+    """A PyMuPDF font for width measurement, or None when it cannot be had.
+
+    Only ``_drop`` needs one — the combined Dubina form is used *if it fits*,
+    and fitting can only be decided by measuring. Without a font the combined
+    form is used unconditionally; the renderer's own fit-and-shrink then keeps
+    it legible either way.
+    """
+    if font_path is None:
+        return None
+    try:
+        import pymupdf
+
+        return pymupdf.Font(fontfile=str(font_path))
+    except Exception:  # noqa: BLE001 - measurement is a nicety, never a blocker
+        return None
+
+
+def _dimension_values(dims: dict, font_path: Path | None) -> dict[str, str]:
+    """The four title-block cells the dimensions JSON can answer.
+
+    ``l``/``pl``/``nvr``/``pvr`` are whole metres straight out of cSurvey's
+    per-cave speleometrics; ``mjerilo`` is the scale the two designs were
+    actually printed at, which is why it supersedes decision 3's ``1:`` stub
+    on this route.
+    """
+    out: dict[str, str] = {}
+    length = _metres(_dim_number(dims.get("l")))
+    if length:
+        out["stvarna_duljina"] = length
+    plan_length = _metres(_dim_number(dims.get("pl")))
+    if plan_length:
+        out["tlocrtna_duljina"] = plan_length
+    drop = _drop(dims.get("nvr"), dims.get("pvr"), _measuring_font(font_path))
+    if drop:
+        out["dubina"] = drop
+    mjerilo = (dims.get("mjerilo") or "").strip()
+    if mjerilo:
+        out["mjerilo"] = mjerilo
+    return out
+
+
+def _dim_number(value) -> str | None:
+    """A JSON number as the text the length formatters expect."""
+    if value is None:
+        return None
+    return _number(float(value))
+
+
+def _drop(nvr, pvr, font) -> str | None:
+    """Dubina from the speleometrics: ``-9 m``, or ``-9/+1 m`` when it fits.
+
+    A cave with a chimney above its entrance has both numbers, and the drafter's
+    own form shows them together — but the cell is 43 pt wide, so the combined
+    form is only used when it still fits above the floor size. Otherwise the
+    depth alone is printed, which is what the cell is called after.
+    """
+    down = abs(float(nvr)) if nvr not in (None, "") else 0.0
+    up = abs(float(pvr)) if pvr not in (None, "") else 0.0
+    if not down and not up:
+        return None
+    if not down:
+        return f"+{_number(up)} m"          # a cave that only goes up
+    plain = f"{_number(-down)} m"
+    if not up:
+        return plain
+    combined = f"{_number(-down)}/+{_number(up)} m"
+    if font is None:
+        return combined
+    size, _width, overflowed = render_mod.fit_size(
+        font, combined, addresses.V1["dubina"])
+    return plain if overflowed or size < MIN_COMBINED_SIZE else combined
+
+
 # ── the filled OSZ in the cave's leaf ────────────────────────────────
 def _read_osz(folder: Path | None, result: SastavnicaResult) -> dict[str, str | None]:
     """Every v10 cell of the leaf's filled zapisnik, or {} when there is none.
@@ -356,7 +499,8 @@ def _read_osz(folder: Path | None, result: SastavnicaResult) -> dict[str, str | 
 # ── delivery ─────────────────────────────────────────────────────────
 def _deliver(settings: Settings, cave: CaveRow, serial: int, pdf_path: Path,
              pdf_name: str, result: SastavnicaResult, *,
-             intake_folder: Path | None, force: bool) -> Path | None:
+             intake_folder: Path | None, force: bool,
+             stamp: str = STAMP) -> Path | None:
     """Copy into the cave's intake leaf, beside its OSZ.
 
     Collision rule (user, 2026-09-19): a drafter names their own PDF
@@ -387,7 +531,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, pdf_path: Path,
             result.notes.append(f"Stvorena intake mapa: {folder.name}")
         target = folder / pdf_name
 
-        if target.exists() and not force and not _is_ours(target):
+        if target.exists() and not force and not _is_ours(target, stamp):
             result.notes.append(
                 f"{target.name} već postoji i NIJE ga napravio ovaj alat "
                 "(vjerojatno ga je netko uredio) — isporuka odbijena da se rad ne "
@@ -405,8 +549,13 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, pdf_path: Path,
     return target
 
 
-def _is_ours(path: Path) -> bool:
-    """Does this PDF still carry our stamp? An Illustrator re-save does not."""
+def _is_ours(path: Path, stamp: str = STAMP) -> bool:
+    """Does this PDF still carry our stamp? An Illustrator re-save does not.
+
+    ``stamp`` is a parameter because `cavedossier nacrt` delivers a different
+    document under a different name with its own stamp, and the two must not
+    recognise each other's output as replaceable.
+    """
     try:
         import pymupdf
 
@@ -414,7 +563,7 @@ def _is_ours(path: Path) -> bool:
             meta = doc.metadata or {}
     except Exception:  # noqa: BLE001 — unreadable means "not provably ours"
         return False
-    return STAMP in f"{meta.get('creator', '')} {meta.get('producer', '')}"
+    return stamp in f"{meta.get('creator', '')} {meta.get('producer', '')}"
 
 
 def _intake_folder(settings: Settings, serial: int) -> Path | None:

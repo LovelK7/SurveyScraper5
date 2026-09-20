@@ -224,3 +224,59 @@ Brief: [brief.md](brief.md)
   scale, the placements in millimetres, and `Mjerilo`/lengths/depth for the 4S sastavnica cells,
   all in `<cave>_dimenzije.json`. Then T5 wires KORAK 3 into a launcher. Still unproven: the driver
   on a **second** machine (definition of done), and any cave but SB 1103.
+
+### 2026-09-20 — T3: `cavedossier nacrt` — the Nacrt exists (agent) ✅
+
+- **Did:** built the composition in the 4S package, as the research session decided —
+  `sastavnica/compose.py` (pure geometry: ink bbox, placement, the refusals) and
+  `sastavnica/nacrt.py` (orchestrator), exposed as **`cavedossier nacrt <broj>`** with the same
+  `--offline/--local/--force` flags and the same ours-or-refuse delivery as `sastavnica`, under its
+  **own** metadata stamp so a nacrt and a sastavnica can never overwrite each other. Each printed
+  page is cropped to its ink and dropped *at its own size*, centred on the rectangle T4 reserved;
+  an ink that overruns its rectangle by more than the padding, or that would cross the title block,
+  the margin or the other drawing, **refuses with the millimetres** instead of shrinking.
+  `prefill` gained one opt-in source (`use_dimensions=True`): the KORAK 3 `<name>_dimenzije.json`
+  outranks the zapisnik and SB for the three dimension cells and fills Mjerilo with the scale
+  actually printed. `render` gained `MULTILINE = {"mjerilo"}` for the two-line
+  `profil 1:200` / `tlocrt 1:100` form.
+- **Result: the cSurvey route produces a finished Nacrt.** On SB 1103, from the leaf's own KORAK 3
+  files: profile on top, plan below, both at 1:100, the title block reading
+  `10 m` / `4 m` / `-9/+1 m` / `1:100` — every one of those measured off the survey being composed,
+  not typed. **The acceptance check passes exactly: the 5 m scale bar measures 141.72 pt = 50.00 mm
+  on the delivered page**, and the file is 101 KB (< 500 KB). Ink vs. the reserved rectangles:
+  profile 67.9 × 121.2 mm in 70.9 × 122.2, plan 101.6 × 58.2 mm in 101.2 × 61.0 — T1's
+  bbox + `PAD_M = 0.5` model predicts the printed extent to about 3 mm, which is what makes
+  "centre the ink in the rectangle" honest.
+- **Decisions taken while building, all in the docs with the date:**
+  - **Decision 3 is superseded on the cSurvey route only.** `cavedossier sastavnica` still writes
+    the `1:` stub and is byte-for-byte unchanged; the new source is reachable only through
+    `run_prefill(use_dimensions=True)`, which only `nacrt` sets. Recorded in the decision table.
+  - **The combined Dubina (`-9/+1 m`) is used only while it stays legible** — `MIN_COMBINED_SIZE
+    = 7 pt`. Shrink-to-fit floors at 6 pt, so without that bar a four-digit cave would print both
+    numbers at the floor where the depth alone would have sat at the authored 10 pt.
+  - **The empty-cells note is route-aware**: "popuni u Illustratoru" is an instruction an operator
+    on this route cannot follow, so with measured numbers present it reads "dopuni prije predaje".
+  - **`pad_m` now travels** in the dimensions JSON (added to `csurvey_driver.LAYOUT_KEYS`), with the
+    finisher's own `*.layout.json` and then 0.5 as fallbacks, so a file written before this change
+    still composes.
+- **Evidence:** `python -m pytest stages/4S-sastavnica/tests stages/3N-nacrt/tests -q` →
+  **213 passed** (42 new in `test_compose.py`: ink bbox, centring, no-rescale proven from the
+  placed XObjects' sizes, each refusal separately, the trio found by stem so two runs can never
+  mix, `pad_m` recovery, the two-line Mjerilo inside its cell rules, the single-value form
+  unchanged, the dimensions source outranking the zapisnik, `sastavnica` untouched, delivery +
+  stamp + refusal + `--local`, and one live composition of the real SB 1103 outputs that asserts
+  the 50 mm bar); `python tools/pipeline_doctor.py` → **0 fail · 3 warn** (the same pre-existing
+  historical links). `nacrt` registered in `pipeline.yaml` (4S), `docs/commands.md`, the 4S README
+  and ARCHITECTURE's bridge catalog as **B14**.
+- **Two things for the user to look at:**
+  1. **The plan sits left of centre on the sheet.** Its ink bbox includes the scale bar and the
+     north arrow, which T1 places a metre to the right of the drawing, so centring the *ink* puts
+     the cave itself off to the left with the furniture balancing it. It reads fine, but it is a
+     composition choice nobody has approved — the alternative is to centre on the cave's own bbox
+     and let the furniture hang right.
+  2. **The KORAK 3 numbering clash.** The rescue launcher is already
+     `csurvey_3_oporavi_iz_zipa.bat` and this step is also "KORAK 3". Flagged in the protocol doc;
+     T5 cannot ship a launcher until one of them moves. Still a user decision.
+- **Next:** T5 — the `csurvey_3_dovrsi_nacrt.bat` launcher (SB prompt → finisher → driver →
+  `cavedossier nacrt`), the `PROCITAJ_ME` paragraph, and that renaming. Still unproven: a second
+  machine, and any cave but SB 1103.

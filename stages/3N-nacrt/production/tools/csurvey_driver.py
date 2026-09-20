@@ -71,8 +71,11 @@ STEP_SUFFIXES = ("_fin", "_lt", "_pp")
 
 # What finish_and_print copies out of nacrt_finish.py's sidecar into the
 # dimensions JSON, so 4S and the compositor read one file.
+# `pad_m` is not a layout value the operator sees, but the compositor needs it:
+# it is the slack it allows between a printed drawing's ink and the rectangle
+# the layout reserved for it.
 LAYOUT_KEYS = ("mjerilo", "plan_scale", "profile_scale", "arrangement",
-               "plan_mm", "profile_mm")
+               "plan_mm", "profile_mm", "pad_m")
 
 
 class DriverError(RuntimeError):

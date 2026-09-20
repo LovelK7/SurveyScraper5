@@ -1,7 +1,9 @@
 # 4S — Sastavnica
 
-**The Nacrt's title block, prefilled.** This is the one point where the pipeline
-serves the **Illustrator** drafting route.
+**The Nacrt's title block, prefilled — and, on the cSurvey route, the finished
+Nacrt built around it.** This is the one point where the pipeline serves the
+**Illustrator** drafting route, and since 2026-09-20 also the last step of the
+**cSurvey** one.
 
 ## What it does
 
@@ -18,10 +20,53 @@ cavedossier sastavnica 1220             # SB + filled OSZ + geo -> the PDF
 cavedossier sastavnica 1220 --offline   # local RGI gpkg + cached DEM tiles only
 cavedossier sastavnica 1220 --local     # keep the runs/ copy; do not deliver
 cavedossier sastavnica 1220 --force     # overwrite a delivered file we did not produce
+
+cavedossier nacrt 1103                  # the same block + the printed plan and
+                                        # profile -> SB_<broj>_nacrt.pdf
+cavedossier nacrt 1103 --local --force  # same flags, same meanings
 ```
 
 **Nine cells** come from SB alone, **fourteen** once the cave's zapisnik is
 filled — so it is useful before the exploration and better after it.
+
+## `cavedossier nacrt` — the cSurvey route's finished sheet
+
+cSurvey prints **one design per sheet** and always centres it, so the Nacrt is
+made by printing plan and profile separately at a *fixed* scale and composing
+both onto one A4 that already carries this title block. `nacrt` is that last
+step. It needs a cave that has been through
+[3N's KORAK 3](../3N-nacrt/production/tools/README.md#nacrt-finishing-korak-3),
+which leaves three files in the intake leaf:
+
+| File | From | Carries |
+|---|---|---|
+| `<name>_plan.pdf` | `csurvey_driver.py print` | the plan, printed at a true scale, alone on an A4 page |
+| `<name>_profile.pdf` | the same run | the profile, likewise |
+| `<name>_dimenzije.json` | `csurvey_driver.py finish` | the speleometrics (`l`, `pl`, `nvr`, `pvr`…) **plus** the layout the finisher chose: `mjerilo`, both scales, and each drawing's rectangle in millimetres |
+
+The command crops each printed page to its ink and drops that crop, **at its own
+size**, centred on the rectangle the layout reserved — nothing is ever rescaled,
+because the whole point of a fixed scale is that a 5 m scale bar measures 50 mm
+at 1:100. When a drawing does not fit its rectangle, or would cross the title
+block, the margin or the other drawing, the run **refuses with the millimetres**
+rather than shrinking; re-run `nacrt_finish.py --layout N` and pick another
+arrangement.
+
+The title block itself is prefilled as always, with one source added: the
+dimensions JSON outranks the zapisnik and SB for **Stvarna duljina**, **Tlocrtna
+duljina** and **Dubina** (all measured off the very survey being composed), and
+fills **Mjerilo** with the scale the designs were actually printed at. That
+supersedes decision 3's `1:` stub **on this route only** — plain `cavedossier
+sastavnica` never reads the file and is byte-for-byte unchanged.
+
+**The two-line Mjerilo.** When plan and profile print at different scales the
+cell reads `profil 1:200` over `tlocrt 1:100` — the only two-line cell in the
+template, since `profil/tlocrt: 1:200/1:100` does not fit 43 pt on one line at
+any readable size. See `render.MULTILINE`.
+
+Delivered as `SB_<padded broj>_nacrt.pdf` beside the OSZ, with its **own**
+metadata stamp: a delivered nacrt and a delivered sastavnica are different
+documents and neither may overwrite the other.
 
 ## Why route B gets served at all
 
@@ -50,7 +95,9 @@ produced, so an edited one is refused rather than silently overwritten.
 
 ## Where things are
 
-- Code: [`src/cave_dossier/sastavnica/`](src/cave_dossier/sastavnica/)
+- Code: [`src/cave_dossier/sastavnica/`](src/cave_dossier/sastavnica/) —
+  `render.py`/`compose.py` are pure geometry (no SB, no Drive),
+  `prefill.py`/`nacrt.py` orchestrate the two commands
 - **Runtime asset, inside the package**: `templates/sastavnica_blank_v1.pdf`
 - **[`template-workbench/`](template-workbench/README.md)** — the authored
   `!SUE_sastavnica.pdf` Illustrator export plus `build_blank.py`, which generates
@@ -63,4 +110,7 @@ produced, so an edited one is refused rather than silently overwritten.
 ## Status
 
 Operational (2026-09-19, the same day as its design); validated live on SB 1220
-and 811. Outside the M-ladder — it needs only M1.
+and 811. `cavedossier nacrt` added 2026-09-20 (project
+[0004-nacrt-finishing](../3N-nacrt/projects/0004-nacrt-finishing/brief.md), T3)
+and validated on SB 1103 — a measured 50.00 mm for a 5 m bar at 1:100. Outside
+the M-ladder — it needs only M1.

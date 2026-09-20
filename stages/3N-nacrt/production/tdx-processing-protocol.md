@@ -98,7 +98,14 @@ in [`production/tools/`](tools/) and re-publish; never edit the Drive copy.
    `python stages\3N-nacrt\production\tools\fix_imported_linetypes.py <saved>.csz`
    / `… "<...>\!Za digitalizirat" --sb 1103`
    → `<saved>_lt.<same ext>`; **open that one and do all mapping in it** — it is the finished import (decorated lines, sizes, water brush). This is what flips imported slope/gradient/etc. lines from *Line style: Straight line* (decorations hidden) to *Splines* so their graphics render; cSurvey stamps decorations per straight segment and only spline lines take the curve branch. Skipping this step is why decorated lines show up plain. The fixer **blocks** (with instructions) if you hand it a not-yet-imported file, and is safe to re-run.
-5. **Optional:** `inspect_survey.py --json` snapshots before/after any step for diffable ground truth (protocol: [pipeline-a-instrumented-run.md](methods/instrumented-run.md)).
+5. **Finish the nacrt (KORAK 3) — *in validation*, no launcher yet (T5):** correct the sketch in the `_lt` file and save it, then run the three steps that used to be all hand-work inside cSurvey:
+   `python stagesN-nacrt\production	ools
+acrt_finish.py <saved>_lt.csx` → `<saved>_lt_fin.csx` + a layout sidecar (entrance flagged, Dislivello quota, scale bar, north arrow, A4 print options at a scale chosen per design);
+   `python stagesN-nacrt\production	ools\csurvey_driver.py finish <saved>_lt_fin.csx -o <cave folder>` → `<name>_plan.pdf`, `<name>_profile.pdf` and `<name>_dimenzije.json`, printed headlessly out of the installed cSurvey;
+   `cavedossier nacrt <broj>` → **`SB_<broj>_nacrt.pdf`** in the cave's intake leaf: both drawings composed onto the 4S sastavnica page at true scale.
+   Validated end to end on SB 1103 (2026-09-20): a 5 m scale bar measures 50.00 mm at 1:100 on the delivered sheet. Background, rules and every decision: [projects/0004-nacrt-finishing](../projects/0004-nacrt-finishing/brief.md).
+   > **Numbering clash, for the user to settle (T5):** this is "KORAK 3" in the brief, and the *rescue* launcher above is already called `csurvey_3_oporavi_iz_zipa.bat`. One of the two has to move before the KORAK 3 launcher ships.
+6. **Optional:** `inspect_survey.py --json` snapshots before/after any step for diffable ground truth (protocol: [pipeline-a-instrumented-run.md](methods/instrumented-run.md)).
 
 **Tuning the mapping:** edit `stages\3N-nacrt\production\tools\tdx-mapping.json` directly, or visually — `python stages\3N-nacrt\production\tools\make_signs_catalog.py`, open `tdx-mapping-workbench.html` (+ `cs-targets.html` side by side), type target numbers (`105 r`, `12 o90`, `label:!`, `leave`), export, replace the json. Sizes/water/splines live in the json's `postimport` section. Re-run the protocol steps after changes, and `python prod\build_csx_kit.py --publish` to push the new mapping into `csurvey_alati\`.
 

@@ -1060,6 +1060,57 @@ def cmd_sastavnica(settings: Settings, serial: int, offline: bool,
     return 0
 
 
+def cmd_nacrt(settings: Settings, serial: int, offline: bool,
+              local_only: bool, force: bool) -> int:
+    """Part 3N KORAK 3 / 2.1e: the printed plan + profile composed onto the
+    sastavnica page, at true scale, as SB_<broj>_nacrt.pdf."""
+    from cave_dossier.sastavnica import nacrt as nacrt_mod
+    from cave_dossier.sastavnica import prefill as sastavnica_prefill
+
+    if settings.sb_mode != "LIVE":
+        print(f"⚠ {settings.sb_mode} workbook: SB data comes from a local copy,")
+        print("  which may lag the live SB. Verify before delivering the nacrt.")
+        print()
+    try:
+        outcome = nacrt_mod.run_nacrt(
+            settings, serial, offline=offline, local_only=local_only, force=force
+        )
+    except (nacrt_mod.ComposeError, sastavnica_prefill.SastavnicaError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    result = outcome.result
+    print(f"Redni broj {serial}: {result.cave_name or '<no name>'}"
+          + (f" (SUE {result.sue_number})" if result.sue_number else ""))
+    print("Ulazi (KORAK 3):")
+    for name in result.inputs:
+        print(f"  {name}")
+    print(f"Raspored: {result.arrangement}, mjerilo {result.mjerilo or '—'}"
+          f"  (profil 1:{result.profile_scale}, tlocrt 1:{result.plan_scale})")
+    for drawing in result.drawings:
+        print(f"  {drawing.design:<8} nacrtano {drawing.ink_mm[0]:.1f} x "
+              f"{drawing.ink_mm[1]:.1f} mm  u rezervirano "
+              f"{drawing.reserved_mm[0]:.1f} x {drawing.reserved_mm[1]:.1f} mm "
+              f"@ x={drawing.x_mm:.1f} y={drawing.y_mm:.1f} mm")
+    from cave_dossier.sastavnica.compose import DIMENSION_FIELDS
+
+    measured = {key: fv for key, fv in result.sastavnica.fields.items()
+                if key in DIMENSION_FIELDS}
+    print("Iz izmjere u sastavnicu:")
+    for key in DIMENSION_FIELDS:
+        fv = measured.get(key)
+        value = fv.value if fv else "—"
+        source = f"  [{fv.source}]" if fv and fv.source else ""
+        print(f"  {key:<18} {value}{source}")
+    for note in result.notes:
+        print(f"  ! {note}")
+    print()
+    if outcome.delivered_path is not None:
+        print(f"Delivered: {outcome.delivered_path}")
+    print(f"Run dir:   {outcome.pdf_path.parent}")
+    return 0
+
+
 def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
                   osz_dir_arg: str | None) -> int:
     """Part 2.1b, the reverse of `osz prefill`: read a FILLED OSZ and
@@ -1476,6 +1527,34 @@ def build_parser() -> argparse.ArgumentParser:
              "(by default such a file is refused, so an edited one survives)",
     )
 
+    nacrt = subparsers.add_parser(
+        "nacrt",
+        help="Part 3N KORAK 3 — compose the printed plan + profile onto the "
+             "sastavnica page and deliver SB_<broj>_nacrt.pdf",
+    )
+    nacrt.add_argument(
+        "redni_broj",
+        type=int,
+        help="SB Redni broj of the cave (the only input; everything else is derived)",
+    )
+    nacrt.add_argument(
+        "--offline",
+        action="store_true",
+        help="Never touch the network: local RGI gpkg + cached DEM tiles only",
+    )
+    nacrt.add_argument(
+        "--local",
+        action="store_true",
+        dest="local_only",
+        help="Keep the run-dir copy only; do not deliver into the intake leaf",
+    )
+    nacrt.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite a delivered nacrt this tool did not produce "
+             "(by default such a file is refused, so an edited one survives)",
+    )
+
     geo = subparsers.add_parser(
         "geo",
         help="Part 2.1b — locality + elevation finders over HTRS96 coordinates",
@@ -1734,6 +1813,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "sastavnica":
             return cmd_sastavnica(settings, args.redni_broj, args.offline,
                                   args.local_only, args.force)
+        if args.command == "nacrt":
+            return cmd_nacrt(settings, args.redni_broj, args.offline,
+                             args.local_only, args.force)
         if args.command == "geo":
             if args.geo_command == "fetch-data":
                 return cmd_geo_fetch_data(settings, args.include_au)
