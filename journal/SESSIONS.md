@@ -12,6 +12,44 @@ numbers through the mapping in
 
 ---
 
+### 2026-09-20 — 3N: Nacrt finishing explored, headless cSurvey proven (agent) ✅
+
+- **Did:** opened [project 0004](../stages/3N-nacrt/projects/0004-nacrt-finishing/brief.md)
+  on the manual steps that follow the `_lt` file (scale, compass, entrance, Dislivello,
+  dimensions, print layout, PDF, plan+profile on one A4). Ground truth came from the user's
+  own SB 1103 session: the raw `_lt` and cSurvey's autosave after the manual work differ in
+  exactly the attributes to write (kept locally as `example/finishing/*_{raw,finished}.csx`,
+  gitignored). Three read-only Explore digs into `cSurvey/` grounded compass/scale items, the
+  Quota Drop value formula, the `<sms>` speleometrics and the print pipeline. Then probed the
+  installed `C:\csurvey64\cSurveyPC.exe` from Windows PowerShell 5.1 via reflection and got the
+  whole loop working with **no compiler and no source build**: `Load` → Friend
+  `Calculate.Calculate(True)` → `SaveTo`, plus an unseen `frmPreview` whose `PrintDocument`
+  prints plan and profile to "Microsoft Print to PDF" as files, no dialog
+  (`findings/csurvey_headless_probe.ps1`, validated `info`/`recalc`/`print`). Wrote the
+  automation matrix, the pipeline shape (Python XML finisher → PowerShell driver → PyMuPDF
+  compositor) and five self-contained delegable tasks T1–T5; recorded the decision in the 3N
+  roadmap log and corrected two reference docs.
+- **Result:** every manual step except sketch correction is automatable: XML writes for
+  entrance/quota/scale/compass/print options + `sharedsettings` quality, headless recalc for
+  the dimensions (`l=10 pl=4 pvr=1 nvr=9 es=2` on SB 1103 — the `-9 m` the user read by hand),
+  headless print for the PDF. Two hard limits confirmed and routed downstream: cSurvey centres
+  the drawing with no offset (only asymmetric margins move it) and prints one design per sheet
+  (compose with PyMuPDF). Nothing built yet — the user picks the task order.
+- **Learned:** (1) `scalemode` in `_preview.*` is the scale combo **index** (1 = 1:100,
+  2 = 1:200, 5 = 1:500), not the stale `ScaleModeEnum`; (2) render quality is
+  `sharedsettings/preview.designquality`, not a preview attribute; (3) the "horizontal scale"
+  the user adds is a Quota of type 6, not the `Scale=14` item; compass `m="1"` = Manual, and
+  Auto prints `Nm <year>` whenever `nordcorrectionmode=0` and GPS is off; (4) profile design-Y
+  is depth (Z positive downward), so "highest station" = min z among non-splay stations;
+  (5) VB `WithEvents` fields hide behind `_name` backing fields; PowerShell variables are
+  case-insensitive (`$Survey` vs `$survey` bit twice); the form needs `-STA`; DevExpress
+  initialises headless without a licence prompt; (6) `csc.exe`/`vbc.exe` ship with every
+  Windows .NET 4.x install if a compiled driver is ever preferred.
+- **Next:** user picks from T1–T5 (suggested T4 scale chooser → T1 XML finisher → T2 driver →
+  T3 compositor → T5 launcher); each is a paste-ready prompt in brief §3.3.
+
+---
+
 ### 2026-09-19 — Codebase restructured around the pipeline (agent) ✅
 
 - **Did:** (1) *The shape.* `features/` dissolved into **twelve stage folders**

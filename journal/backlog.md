@@ -330,3 +330,11 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-09-19 — **prod coverage for more commands.** `karta`, `osz backfill` and
   `report` are stable enough to ship as Drive launchers; adding one is two edits
   (`PROD_COMMANDS` + a `switch` branch in `bootstrap.ps1.template`).
+- 2026-09-20 — **headless import for KORAK 2–3** (3N): the same PowerShell driver can do
+  `Load(FixTopoDroid)` → `SaveTo`, folding "open `_pp` in cSurvey, Save As" into the launcher.
+- 2026-09-20 — **MCP over the driver** (3N): `reference/mcp-blueprint.md` Stage 1 no longer needs a
+  build; a stdio server can shell out to `csurvey_headless.ps1` per tool call.
+- 2026-09-20 — **dimensions → 4S / 5D** (3N→4S): `SB_<broj>_dimenzije.json` from the finishing step
+  should feed the sastavnica's Duljina/Dubina cells and the dossier report (bridge B10).
+- 2026-09-20 — **entrance rule guard** (3N): "highest station = entrance" is wrong for ponors and
+  some horizontal caves; the finisher must warn when origin ≠ highest or stations tie.

@@ -38,10 +38,11 @@ data (`validation`) → promote outputs and close (`closed`).
 | 0001 | Stage-0 survey inspector | ✅ closed | [brief](0001-stage0-inspector/brief.md) | `inspect_survey.py` built + verified against the 9-file corpus and the first real TopoDroid export; promoted to `production/tools/`. |
 | 0002 | TDX → cSurvey symbol mapping | ✅ closed | [brief](0002-tdx-symbol-mapping/brief.md) | Full pipeline (mapping json → pre-process → import → post-fix) accepted on real surveys 2026-07-26; promoted to `production/` + the symbol matrix. |
 | 0003 | TDX 6.4.99 export recovery (zip→csx) | ✅ closed | [brief](0003-tdx-zip-recovery/brief.md) | Root cause pinned (tdr format change 604088–604098 + silent version gate at DrawingIO.java:750); recovered surveys imported successfully in cSurvey 2026-08-16; promoted to `production/tools/` (`tdx_zip_to_csx.py` batch mode + `recover_tdx.bat` drag-and-drop in the TDX folder). |
+| 0004 | Nacrt finishing — post-import manual steps + PDF export | ◐ proposal | [brief](0004-nacrt-finishing/brief.md) | Research done 2026-09-20: every manual step except sketch correction is plain XML; the installed exe drives headless from PowerShell (no build) incl. **print-to-PDF with no dialog**. Five delegable tasks T1–T5 in the brief await the user's pick. |
 
 ### Next up (not yet briefed)
 
-- **Headless driver / reflection hypothesis** — automate steps 3–4 of the TDX protocol (a net48 driver
-  beside the installed exe calling Public `Load`/`SaveTo`), collapsing the pipeline into one command and
-  setting up the MCP surface. Queued as the top item in [decisions/roadmap-decisions.md](../decisions/roadmap-decisions.md);
-  design in [reference/mcp-blueprint.md](../reference/mcp-blueprint.md). Start it as `0004-headless-driver`.
+- **Headless import (steps 3–4 of the TDX protocol)** — the reflection hypothesis is now confirmed by
+  project 0004 (`findings/csurvey_headless_probe.ps1`: `Load` → `Calculate` → `SaveTo` from PowerShell, no
+  build). Collapsing import + Save As into the same script is a small follow-on; the MCP surface
+  ([reference/mcp-blueprint.md](../reference/mcp-blueprint.md)) becomes a thin wrapper over it.

@@ -4,6 +4,36 @@ A running record of strategy decisions for the automation goal, and the findings
 
 ---
 
+## 2026-09-20 — The headless driver is a script, not a build: the installed exe prints PDFs unattended
+
+The reflection hypothesis (2026-07-16, "can a net48 driver call Public `Load`/`SaveTo` without a source
+build?") is confirmed — from **Windows PowerShell 5.1**, with nothing compiled. Loading
+`C:\csurvey64\cSurveyPC.exe` via `Assembly.LoadFrom` and replacing the WinForms startup with three
+reflection pokes (`modMain.sApplicationPath`, `LoadLocalizedStrings`, `My.Application.ReloadSettings` +
+an empty `RuntimeSettings`) gives a working `cSurvey`: `Load`, the Friend `Calculate.Calculate(True)`
+(therion round-trip), `SaveTo`, and — the part nobody predicted — a `frmPreview` constructed but never
+shown, whose `PrintDocument` prints plan and profile to **"Microsoft Print to PDF" as files with no
+dialog**, using the `_preview.*` options stored in the survey. DevExpress initialised silently.
+Evidence and the script: [projects/0004-nacrt-finishing](../projects/0004-nacrt-finishing/brief.md) §2.2,
+`findings/csurvey_headless_probe.ps1`.
+
+**Strategic consequence:** DevExpress, Visual Studio and the `cAutomation` facade leave the critical
+path. The blueprint's architecture (b) stays, implemented as a PowerShell driver called from Python
+(`-STA`, install dir + printer name from `.env`). What was "Stage 1, 1–2 weeks, gated on the build" in
+[mcp-blueprint.md](../reference/mcp-blueprint.md) is now a day of scripting. The cost is version
+fragility — every non-public poke is asserted by name so a new cSurvey build fails loudly rather than
+silently — and an STA requirement.
+
+**The Nacrt route's remaining manual work is inventoried** (brief §3.1): of the eight post-import steps
+only sketch correction stays human; scale/compass/entrance/Dislivello/print options are XML attribute
+writes (ground truth from the user's own SB 1103 session), dimensions come from `<calculate><sms>`
+after a headless recalc, the PDF from the driver. Two hard limits stand and are solved downstream:
+cSurvey centres the drawing on the page with no offset, and prints one design per sheet — plan and
+profile go onto one A4 by PyMuPDF composition of two same-scale PDFs. Five delegable tasks (T1–T5) are
+specified in the brief; the user picks the order.
+
+---
+
 ## 2026-08-16 — TopoDroid 6.4.99 broke the handoff; zip is now the durable interchange, and we can mint csx from it ourselves
 
 TopoDroid 6.4.99-36 shipped two export regressions that cut the phone→cSurvey path: the csx exporter crashes (0-byte file) and its `.tdr` sketches (format bumped at 6.4.88/6.4.96/6.4.98) are **silently discarded** by any older TopoDroid on zip import — the reader returns an empty sketch with no error (`DrawingIO.java:750`), so users see "zip lost my drawings" when nothing was lost. Diagnosis + recovery in [projects/0003-tdx-zip-recovery](../projects/0003-tdx-zip-recovery/brief.md): `tdx_zip_to_csx.py` replays TopoDroid's csx exporter offline from the project zip (survey.sql + tdr), validated on both affected real surveys (geometry exact vs the app's own th2; inspector clean; protocol preprocessor applies unchanged).
