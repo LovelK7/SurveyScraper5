@@ -278,8 +278,9 @@ synthetic long-profile case (profile 40 × 12 m, plan 6 × 8 m ⇒ profile 1:200
 **T5 — operator surface.** `csurvey_3_dovrsi_nacrt.bat` in `prod/build_csx_kit.py` (SB prompt →
 pick the `_lt` file → T1 → T2 → T3 → deliver `SB_<broj>_nacrt.pdf` + `SB_<broj>_dimenzije.json` into
 the leaf), a KORAK 3 paragraph in `csurvey_0_PROCITAJ_ME.txt` (Croatian, no diacritics in the
-`.bat`), and the protocol doc updated. Rename the current rescue launcher to KORAK 4 or keep it
-`3_oporavi` and use `3b`? — user decision.
+`.bat`), and the protocol doc updated. **User decision 2026-09-20:** the finisher is KORAK 3 (`csurvey_3_dovrsi_nacrt.bat`); the rescue
+leaves the running order and becomes KORAK 9 (`csurvey_9_oporavi_iz_zipa.bat`). The plan's
+ink-centred placement on the composed page stays. Prompt: [`tasks/T5-launcher.md`](tasks/T5-launcher.md).
 
 **T6 — reference corrections (done in this session, see §5).**
 

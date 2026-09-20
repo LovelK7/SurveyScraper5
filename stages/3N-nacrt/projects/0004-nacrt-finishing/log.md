@@ -382,3 +382,14 @@ with six things. All six are done; two of them changed a rule rather than a numb
   the finisher and driver ride in `csurvey_alati/`, but `cavedossier nacrt` needs an entry in
   `build_prod.PROD_COMMANDS` and a branch in the bootstrap's `switch`), and what is still
   unproven. Linked from brief §3.3.
+
+### 2026-09-20 — T1–T3 handoff reviewed; T5 unblocked (agent) ✅
+
+- **Did:** re-ran 3N + 4S tests (248 green) and the doctor; checked the delivered
+  `SB_1103_nacrt.pdf` (title block v1.0 filled, profile top with `-9 m`, plan beneath with bar +
+  `N`, 5 m bar = 50 mm). The review rounds were already swept into the checkpoint commits
+  (`5d6118e`, `5fc3cbc`, `c494efb`) — tree clean. Put the two open decisions to the user.
+- **Result:** user ruled — finisher is KORAK 3, rescue moves to KORAK 9; plan placement stays.
+  T5 prompt written (`tasks/T5-launcher.md`) incl. the `nacrt` prod launcher wiring.
+- **Evidence:** this commit.
+- **Next:** T5 in a separate session; then the second-machine and second-cave checks before close.
