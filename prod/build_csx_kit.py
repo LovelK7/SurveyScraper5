@@ -68,7 +68,9 @@ TARGET_REL = Path("!!!Digitalizacija") / "SurveyScraper5"
 # v1.0 (2026-09-20): first prod version of the TopoDroid -> cSurvey kit.
 # v1.1 (2026-09-20): KORAK 3 (csurvey_3_dovrsi_nacrt.bat, project 0004) joins the
 # running order and the zip rescue moves out of it to KORAK 9.
-KIT_VERSION = "1.1"
+# v1.2 (2026-09-20): KORAK 2 also shrinks the entrance sign to size 1 -
+# cSurvey imports it at size 2 on the plan, where it draws too big.
+KIT_VERSION = "1.2"
 # Subfolder holding the machinery, beside the launchers.
 PAYLOAD_DIR = "csurvey_alati"
 

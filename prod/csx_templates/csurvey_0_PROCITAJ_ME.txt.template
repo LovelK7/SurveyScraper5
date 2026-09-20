@@ -88,6 +88,9 @@ KORAK 2 - DOVRŠI UVOZ  (NAPRAVI PRIJE NEGO IŠTA NACRTAŠ)
   pokazuju svoje strelice i crtice. KORAK 2 ih prebaci u "Splines", pa
   se grafika vidi. Ako preskočiš KORAK 2 i počneš crtati u datoteci iz
   Save As, te linije ostaju gole - to je greška broj jedan.
+  Isti korak ujedno smanji znak ulaza (marker) na veličinu 1 - cSurvey
+  ga na tlocrtu uveze prevelikog, pa ga nakon ovoga i tlocrt i profil
+  imaju jednako malog.
 
 CRTANJE U cSURVEYU (ručno)
   * U  _lt  datoteci ispravi i dovrši skicu, pa je spremi.

@@ -93,7 +93,7 @@
     "spline_linetypes": true,
     "nonstandard_water": true,
     "sign_sizes": {
-      "entrance": "large",
+      "entrance": "verysmall",
       "air-draught": "medium",
       "stalactite": "medium",
       "stalagmite": "medium"
