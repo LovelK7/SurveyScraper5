@@ -10,13 +10,15 @@ only by picking among SCALES.
 
 The scale of a design is written into `_preview.plan` / `_preview.profile` as
 `scalemode`, which is the print dialog's **combo index**, not a denominator:
-1 = 1:100, 2 = 1:200, 4 = 1:300, 5 = 1:500 (brief 2.1).
+1 = 1:100, 2 = 1:200, 3 = 1:250, 4 = 1:300, 5 = 1:500 (brief 2.1).
 
-The rules are the user's, 2026-09-20 (brief 3.4): scale per design (profile
-1:200 with plan 1:100 is the common case), profile primary, plan promoted to a
-larger scale when the two bboxes differ drastically, gaps and margins
-respected, semi-automatic — the tool proposes, the operator may pick an
-alternative from the numbered menu.
+The rules are the user's, 2026-09-20 (brief 3.4, amended the same day after
+reviewing the drawn proposals): scale per design (profile 1:200 with plan 1:100
+is the common case), profile primary, plan promoted to a larger scale when the
+two bboxes differ drastically — but **never more than a factor of 2 apart**, so
+the reader switches scale at most once per sheet; gaps and margins respected;
+semi-automatic — the tool proposes, the operator may pick an alternative from
+the numbered menu.
 
 Stdlib only, no imports from the rest of the repo, like its siblings in this
 folder: it travels into the operator kit beside the tools that call it.
@@ -46,14 +48,22 @@ A4_PORTRAIT_MM = (210.0, 297.0)
 _BLOCK_PT = (39.85, 49.58, 291.43, 149.94)  # x0, y0, x1, y1
 
 # cSurvey scalemode = the print dialog's combo index (0 fit, 1 1:100, 2 1:200,
-# 3 1:250, 4 1:300, 5 1:500, 6 1:1000, 99 custom).
-SCALES = (100, 200, 300, 500)
-SCALEMODE = {100: 1, 200: 2, 300: 4, 500: 5}
+# 3 1:250, 4 1:300, 5 1:500, 6 1:1000, 99 custom). 1:250 joined the ladder on
+# the user's review of the drawn proposals, 2026-09-20: a 40 m profile misses
+# 1:200 by 10 mm and dropping it straight to 1:300 gives away more than it must.
+SCALES = (100, 200, 250, 300, 500)
+SCALEMODE = {100: 1, 200: 2, 250: 3, 300: 4, 500: 5}
 
 # A drawing counts as "tall and narrow" above this aspect (height / width).
 TALL_ASPECT = 1.3
 # "Drastically different" bboxes: profile's larger dimension over the plan's.
 DRASTIC_RATIO = 1.6
+# How far apart the two designs' scales may be on one sheet (user, 2026-09-20:
+# "two steps apart is too much, accept a single step diff"). A factor of 2 is
+# exactly one step of the ladder as it stood when that was decided — 1:200 with
+# 1:100, the blessed common case — and it stays meaningful now that 1:250 sits
+# between the rungs, where counting index positions no longer would.
+MAX_SCALE_RATIO = 2.0
 
 _EPS = 1e-9
 _ARRANGEMENTS = ("vertical", "side_by_side")
@@ -134,28 +144,21 @@ class Layout:
 
 @dataclass(frozen=True)
 class _Free:
-    """What is left of the page: an L around the title block.
+    """The one band the drawings may use: full page width, below the title block.
 
-    The full-width band below the block, plus the band to the right of it at
-    the block's own height (where a side-by-side pair, or a narrow profile, may
-    reach up to the top margin). Nothing is ever placed left of the block: only
-    ~4 mm of page lives there.
+    The page also leaves a strip free to the right of the block, and an earlier
+    version of this module would push a narrow pair up into it to buy a larger
+    scale. The user rejected that sheet on sight, 2026-09-20 — half the page
+    empty beside a column of drawing — so the strip stays unused and every
+    drawing starts below the block. Nothing is ever placed left of the block
+    either: only ~4 mm of page lives there.
     """
 
     left: float
     right: float
     top: float
     bottom: float
-    block_right: float
-    block_top: float
-    block_bottom: float
     gap: float
-
-    def x_span(self, y0, y1):
-        """Horizontal room for a rectangle spanning [y0, y1] vertically."""
-        if y1 > self.block_top - self.gap and y0 < self.block_bottom + self.gap:
-            return self.block_right + self.gap, self.right
-        return self.left, self.right
 
     @property
     def width(self):
@@ -163,19 +166,15 @@ class _Free:
 
     @property
     def height(self):
-        """Height of the full-width band below the title block."""
-        return self.bottom - (self.block_bottom + self.gap)
+        return self.bottom - self.top
 
 
 def _free_area(page, title_block, margin_mm, gap_mm):
     return _Free(
         left=margin_mm,
         right=page[0] - margin_mm,
-        top=margin_mm,
+        top=title_block.bottom + gap_mm,
         bottom=page[1] - margin_mm,
-        block_right=title_block.right,
-        block_top=title_block.y,
-        block_bottom=title_block.bottom,
         gap=gap_mm,
     )
 
@@ -189,46 +188,37 @@ def _size_mm(bbox, scale):
 
 
 def _centred(free, w, h, y):
-    """Centre a w x h rectangle horizontally in the band available at y."""
-    x0, x1 = free.x_span(y, y + h)
-    if w > (x1 - x0) + _EPS or y + h > free.bottom + _EPS:
+    """Centre a w x h rectangle horizontally in the band, or None if it spills."""
+    if w > free.width + _EPS or y + h > free.bottom + _EPS:
         return None
-    return Placement(round(x0 + (x1 - x0 - w) / 2.0, 1), round(y, 1),
+    return Placement(round(free.left + (free.width - w) / 2.0, 1), round(y, 1),
                      round(w, 1), round(h, 1))
 
 
 def _arrange(arrangement, prof_mm, plan_mm, free):
-    """Place both drawings: (profile, plan, raised) or None when they don't fit.
+    """Place both drawings in the band, or None when they do not fit.
 
-    Two tops are tried, in order: the natural one just below the title block
-    (full page width), then — only as a fallback — raised to the top margin,
-    which squeezes the drawings into the narrower band right of the block but
-    buys the height of the block back. `raised` says which one was used; a
-    raised placement is ranked behind a natural one, because "vertical only
-    fits raised" is what makes side by side the better arrangement.
+    The profile's top edge is the top of the band either way: packed to the top,
+    so the leftover page collects at the bottom of the sheet where it reads as
+    margin rather than as a hole (user, 2026-09-20).
     """
     pw, ph = prof_mm
     lw, lh = plan_mm
-    for raised, top in enumerate((free.block_bottom + free.gap, free.top)):
-        if arrangement == "vertical":
-            profile = _centred(free, pw, ph, top)
-            if profile is None:
-                continue
-            plan = _centred(free, lw, lh, top + ph + free.gap)
-            if plan is None:
-                continue
-            return profile, plan, raised
-        total = pw + free.gap + lw
-        tall = max(ph, lh)
-        x0, x1 = free.x_span(top, top + tall)
-        if total > (x1 - x0) + _EPS or top + tall > free.bottom + _EPS:
-            continue
-        x = x0 + (x1 - x0 - total) / 2.0
-        return (Placement(round(x, 1), round(top, 1), round(pw, 1), round(ph, 1)),
-                Placement(round(x + pw + free.gap, 1), round(top, 1),
-                          round(lw, 1), round(lh, 1)),
-                raised)
-    return None
+    if arrangement == "vertical":
+        profile = _centred(free, pw, ph, free.top)
+        if profile is None:
+            return None
+        plan = _centred(free, lw, lh, free.top + ph + free.gap)
+        if plan is None:
+            return None
+        return profile, plan
+    total = pw + free.gap + lw
+    if total > free.width + _EPS or free.top + max(ph, lh) > free.bottom + _EPS:
+        return None
+    x = free.left + (free.width - total) / 2.0
+    return (Placement(round(x, 1), round(free.top, 1), round(pw, 1), round(ph, 1)),
+            Placement(round(x + pw + free.gap, 1), round(free.top, 1),
+                      round(lw, 1), round(lh, 1)))
 
 
 def _waste(profile, plan):
@@ -280,8 +270,7 @@ def choose_layout(plan, profile, *, page=A4_PORTRAIT_MM, title_block=TITLE_BLOCK
     # Vertical is the default arrangement (profile primary, on top). Side by
     # side only competes on equal terms when *both* drawings are tall and
     # narrow; even then vertical wins a tie, so it takes a real advantage —
-    # a larger scale, or fitting without being raised beside the title block —
-    # for the drawings to end up next to each other.
+    # a larger scale for one of the designs — to put them next to each other.
     both_tall = profile.aspect > TALL_ASPECT and plan.aspect > TALL_ASPECT
     # Drastically different bboxes -> the plan wants the larger scale, so that a
     # small plan does not get dragged down to the scale a long profile needs.
@@ -291,12 +280,16 @@ def choose_layout(plan, profile, *, page=A4_PORTRAIT_MM, title_block=TITLE_BLOCK
     for profile_scale in SCALES:
         prof_mm = _size_mm(profile, profile_scale)
         for plan_scale in SCALES:
+            # One sheet, at most one step between the two scales.
+            if max(profile_scale, plan_scale) > MAX_SCALE_RATIO * min(profile_scale,
+                                                                     plan_scale):
+                continue
             plan_mm = _size_mm(plan, plan_scale)
             for arrangement in _ARRANGEMENTS:
                 placed = _arrange(arrangement, prof_mm, plan_mm, free)
                 if placed is None:
                     continue
-                profile_at, plan_at, raised = placed
+                profile_at, plan_at = placed
                 layout = Layout(
                     plan_scale=plan_scale,
                     profile_scale=profile_scale,
@@ -313,7 +306,6 @@ def choose_layout(plan, profile, *, page=A4_PORTRAIT_MM, title_block=TITLE_BLOCK
                     pi + li,                                # largest scales first
                     0 if (not drastic or li < pi) else 1,   # plan promoted a step
                     pi,                                     # profile is the primary design
-                    raised,                                 # the full-width band first
                     0 if (arrangement == "vertical" or both_tall) else 1,
                     round(_waste(profile_at, plan_at), 1),  # least empty page
                     _ARRANGEMENTS.index(arrangement),       # ties go to vertical

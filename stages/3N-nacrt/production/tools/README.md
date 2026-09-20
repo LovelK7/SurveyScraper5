@@ -144,7 +144,7 @@ what the operator still does by hand inside cSurvey after the import is finished
 
 | Tool | Role | Run when |
 |---|---|---|
-| [`nacrt_layout.py`](nacrt_layout.py) | Scale + page-arrangement chooser: picks the largest of 1:100 / 1:200 / 1:300 / 1:500 at which each design fits (plan and profile independently — `scalemode` 1/2/4/5), arranges them on the 4S sastavnica A4 around its title block, and returns the `Mjerilo` string plus up to three alternatives | Called by the finisher (it supplies the `_preview.*` scale) and by the compositor; or by hand, `python nacrt_layout.py <plan_w> <plan_h> <profile_w> <profile_h>` (metres), to preview the proposal and its alternatives as a numbered menu |
+| [`nacrt_layout.py`](nacrt_layout.py) | Scale + page-arrangement chooser: picks the largest of 1:100 / 1:200 / 1:250 / 1:300 / 1:500 at which each design fits (plan and profile independently — `scalemode` 1/2/3/4/5 — but never more than a factor of 2 apart), stacks them in the band below the sastavnica title block (profil on top) or side by side, and returns the `Mjerilo` string plus up to three alternatives | Called by the finisher (it supplies the `_preview.*` scale) and by the compositor; or by hand, `python nacrt_layout.py <plan_w> <plan_h> <profile_w> <profile_h>` (metres), to preview the proposal and its alternatives as a numbered menu |
 
 Stdlib only and free of repo imports, like every tool here, so it travels into the
 operator kit. The page geometry is derived from the cell table in

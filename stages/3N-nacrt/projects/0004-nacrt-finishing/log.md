@@ -65,3 +65,29 @@ Brief: [brief.md](brief.md)
   revisiting once real bboxes arrive: whether the "raised" band beside the title block is a
   placement an operator actually accepts, and whether 1.3 is the right tall-and-narrow threshold
   (SB 1103 is 2.0 / 2.25 and still wants vertical, so the tie goes to vertical by design).
+
+### 2026-09-20 — T4 review: the drawn proposals, and four rule changes (user + agent) ✅
+
+- **Did:** rendered eight cases through `choose_layout()` onto the real A4 sastavnica page (an
+  artifact page, one sheet per case with its three alternatives) so the proposals could be judged
+  by eye rather than from console text. The user reviewed them and settled four open questions.
+- **Result:** all four folded into `nacrt_layout.py`, its tests, the tool README and §3.1/§3.4 above.
+  1. **The strip beside the sastavnica is out.** Placing a narrow pair in the 87 mm band right of
+     the title block bought a scale step but left half the sheet empty — rejected on sight. The
+     free area is now just the full-width band below the block (190 × 224.1 mm) and `_Free` lost
+     its L shape, so every drawing starts at y 62.9.
+  2. **1:250 is on the ladder** (`scalemode` 3): `SCALES = (100, 200, 250, 300, 500)`. A 40 m
+     profile misses 1:200 by 10 mm and now lands on 1:250 (160 mm) instead of 1:300.
+  3. **At most one step between the two scales.** Implemented as `MAX_SCALE_RATIO = 2.0` rather
+     than adjacency in `SCALES`: a factor of 2 *is* one step of the ladder as it stood when the
+     user decided this (1:200 with 1:100, the blessed common case), and it keeps its meaning now
+     that 1:250 sits between the rungs, where counting index positions would not. So the old
+     `1:300/1:100` proposals are gone; a long profile now pulls the plan to `1:300/1:200`.
+  4. **Top-packed and centred stays** — the leftover page collects at the bottom of the sheet.
+- **Evidence:** `python -m pytest stages/3N-nacrt/tests -q` → **57 passed** (new tests: 1:250 is
+  used, 1:300 only when 1:250 misses, the one-step cap holds across best *and* alternatives,
+  nothing is ever placed beside the title block); `pipeline_doctor.py` 0 fail. Review page:
+  https://claude.ai/code/artifact/d41299c3-e175-4393-83f4-59652cadf819 (republished with the new
+  proposals). Working tree still uncommitted.
+- **Next:** unchanged — T1 imports `choose_layout` for the `_preview.*` scale, T3 consumes the
+  placements. The chooser's remaining unknown is real bboxes: every case here but SB 1103 is synthetic.

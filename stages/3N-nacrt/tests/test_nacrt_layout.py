@@ -1,9 +1,11 @@
 """nacrt_layout — the scale + page-arrangement chooser for the Nacrt finishing step.
 
-The rules under test are the user's (brief 3.4 of projects/0004-nacrt-finishing):
-a scale per design out of 1:100 / 1:200 / 1:300 / 1:500, profile primary, the
-plan promoted to a larger scale when the bboxes differ drastically, nothing ever
-rescaled to fit, and no overlap with the 4S sastavnica title block.
+The rules under test are the user's (brief 3.4 of projects/0004-nacrt-finishing,
+as amended on reviewing the drawn proposals): a scale per design out of
+1:100 / 1:200 / 1:250 / 1:300 / 1:500, profile primary, the plan promoted to a
+larger scale when the bboxes differ drastically but never more than a factor of
+2 from the profile's, nothing ever rescaled to fit, and every drawing below the
+4S sastavnica title block — never in the strip beside it.
 """
 
 import re
@@ -37,11 +39,8 @@ def inside_margins(placement, page=nacrt_layout.A4_PORTRAIT_MM):
 
 
 def clear_of_title_block(placement):
-    """No overlap with the title block, gap included."""
-    block = nacrt_layout.TITLE_BLOCK_MM
-    inflated = nacrt_layout.Placement(block.x - GAP, block.y - GAP,
-                                      block.width + 2 * GAP, block.height + 2 * GAP)
-    return not placement.overlaps(inflated, tol=TOL)
+    """Below the title block by at least the gap — never in the strip beside it."""
+    return placement.y >= nacrt_layout.TITLE_BLOCK_MM.bottom + GAP - TOL
 
 
 def check_layout(layout):
@@ -53,6 +52,9 @@ def check_layout(layout):
         assert inside_margins(placement), placement
         assert clear_of_title_block(placement), placement
     assert not layout.profile.overlaps(layout.plan, tol=TOL)
+    # At most one step apart, so the reader switches scale once per sheet.
+    denominators = (layout.profile_scale, layout.plan_scale)
+    assert max(denominators) <= nacrt_layout.MAX_SCALE_RATIO * min(denominators)
     match = MJERILO.match(layout.mjerilo)
     assert match, layout.mjerilo
     if layout.profile_scale == layout.plan_scale:
@@ -80,7 +82,7 @@ def test_title_block_derived_from_the_sastavnica_cell_table():
 
 
 def test_scalemode_is_the_print_dialog_combo_index():
-    assert nacrt_layout.SCALEMODE == {100: 1, 200: 2, 300: 4, 500: 5}
+    assert nacrt_layout.SCALEMODE == {100: 1, 200: 2, 250: 3, 300: 4, 500: 5}
     assert tuple(nacrt_layout.SCALEMODE) == nacrt_layout.SCALES
 
 
@@ -126,46 +128,78 @@ def test_long_profile_and_small_plan_get_different_scales():
     assert (best.plan.width, best.plan.height) == pytest.approx((60.0, 80.0))
 
 
-def test_a_40_m_profile_needs_1_300_because_1_200_is_200_mm_wide():
-    # The case named in the task brief. 40 m at 1:200 is 200 mm, and the page
-    # only offers 210 - 2 x 10 = 190 mm, so the next step down is what fits.
+def test_a_40_m_profile_lands_on_1_250():
+    # The case named in the task brief. 40 m at 1:200 is 200 mm and the page
+    # offers 210 - 2 x 10 = 190 mm, so it misses by 10 mm — which is why 1:250
+    # (scalemode 3) was added to the ladder rather than dropping to 1:300.
     best, _, _ = choose_layout(BBox(6, 8), BBox(40, 12))
 
-    assert best.profile_scale == 300
-    assert best.plan_scale == 100
-    assert best.mjerilo == "profil/tlocrt: 1:300/1:100"
+    assert best.profile_scale == 250
+    assert best.scalemodes[0] == 3
+    assert best.mjerilo == "profil/tlocrt: 1:250/1:200"
+    assert best.profile.width == pytest.approx(160.0)
     check_layout(best)
 
 
 # --- 1:300 earns its place ----------------------------------------------
 
 
-def test_1_300_is_used_when_1_200_misses():
-    # Profile 45 x 30 m: 225 x 150 mm at 1:200 (too wide), 150 x 100 mm at 1:300.
-    plan, profile = BBox(6, 8), BBox(45, 30)
-    assert scale_of(profile, 200)[0] > 190.0
+def test_1_300_is_used_when_1_250_misses():
+    # Profile 50 x 30 m: 200 x 120 mm at 1:250 (too wide), 166.7 x 100 at 1:300.
+    plan, profile = BBox(6, 8), BBox(50, 30)
+    assert scale_of(profile, 250)[0] > 190.0
     assert scale_of(profile, 300)[0] <= 190.0
 
     best, alternatives, _ = choose_layout(plan, profile)
 
     assert best.profile_scale == 300
-    assert 200 not in [alt.profile_scale for alt in alternatives]
+    assert 250 not in [alt.profile_scale for alt in alternatives]
     check_layout(best)
+
+
+# --- one sheet, one step -------------------------------------------------
+
+
+def test_the_two_scales_never_differ_by_more_than_one_step():
+    # A tiny plan beside a long profile: the plan would be legible at 1:100, but
+    # a 1:300 profile above a 1:100 plan makes the reader switch scale twice.
+    best, alternatives, _ = choose_layout(BBox(3, 4), BBox(50, 30))
+
+    assert best.profile_scale == 300
+    assert best.plan_scale == 200                      # not 100
+    for layout in [best] + alternatives:
+        assert max(layout.profile_scale, layout.plan_scale) <= \
+            2.0 * min(layout.profile_scale, layout.plan_scale)
 
 
 # --- tall and narrow ------------------------------------------------------
 
 
 def test_two_tall_narrow_designs_go_side_by_side():
-    # Profile 3 x 25 m, plan 2 x 12 m: stacking them wastes the page width and
-    # forces a coarser scale; beside each other they stay at 1:100.
+    # Profile 3 x 25 m, plan 2 x 12 m: stacked they are 255 mm tall and the band
+    # holds 224.1, which would cost the plan a scale step; beside each other the
+    # plan keeps 1:100 against the profile's 1:200.
     best, _, _ = choose_layout(BBox(2, 12), BBox(3, 25))
 
     assert best.arrangement == "side_by_side"
+    assert (best.profile_scale, best.plan_scale) == (200, 100)
     assert best.profile.x < best.plan.x          # profile left, plan right
     assert best.plan.x >= best.profile.right + GAP - TOL
     assert best.profile.y == pytest.approx(best.plan.y, abs=TOL)
     check_layout(best)
+
+
+def test_nothing_is_ever_placed_beside_the_title_block():
+    # The strip right of the sastavnica buys a scale step for a narrow pair, and
+    # the user rejected that sheet on sight (2026-09-20): half the page empty.
+    band_top = nacrt_layout.TITLE_BLOCK_MM.bottom + GAP
+    for plan, profile in [(BBox(2, 12), BBox(3, 25)),
+                          (BBox(1.5, 20), BBox(2, 26)),
+                          (BBox(3, 18), BBox(4, 30))]:
+        best, alternatives, _ = choose_layout(plan, profile)
+        for layout in [best] + alternatives:
+            assert layout.profile.y >= band_top - TOL
+            assert layout.plan.y >= band_top - TOL
 
 
 def test_a_wide_pair_is_not_sent_side_by_side():
@@ -223,7 +257,7 @@ def test_max_alternatives_is_honoured():
 def test_wider_margins_shrink_the_usable_area():
     # 36 m at 1:200 is 180 mm: it fits 10 mm margins but not 20 mm ones.
     tight, _, _ = choose_layout(BBox(6, 8), BBox(36, 12), margin_mm=20.0)
-    assert tight.profile_scale == 300
+    assert tight.profile_scale == 250
 
 
 # --- the console menu ----------------------------------------------------
