@@ -12,6 +12,29 @@ numbers through the mapping in
 
 ---
 
+### 2026-09-20 (evening) — 3N/4S: KORAK 3 shipped — the cSurvey route delivers a Nacrt (agent + delegated sessions) ✅
+
+- **Did:** orchestrated five delegated sessions from project 0004's task prompts and reviewed each
+  handoff here: T4 `nacrt_layout.py` (per-design scale ladder 1:100…1:500 incl. 1:250/1:400, one
+  rung apart, Pareto-pruned menu), T1 `nacrt_finish.py` (entrance by two witnesses — highest
+  station and TopoDroid's entrance sign — Dislivello, scale bar, compass, print options, sidecar),
+  T2 `csurvey_headless.ps1` + `csurvey_driver.py` (recalc / print / dimensions, exit codes not
+  stderr), T3 `cavedossier nacrt` (PyMuPDF composition onto the sastavnica page, template v1.0 in
+  Microsoft Sans Serif, two-line cells, stubs, dimensions as first source), T5 the KORAK 3
+  launcher (rescue renumbered to KORAK 9). Published prod v1.5 (+ `cavedossier_nacrt`) and csx kit
+  v1.3; ran the chain on SB 1103 and SB 1256.
+- **Result:** `SB_1103_nacrt.pdf` and `SB_1256_nacrt.pdf` delivered into their leaves; a 5 m bar
+  measures 50 mm at 1:100. The second cave moved two rules (bar length settled by fixed point;
+  Dislivello 1 m clear of the drawing) and left five constants untouched.
+- **Learned:** cSurvey's `pvr` counts a symbol drawn above the entrance as cave — height/depth
+  now come from the boundary wall or a shot; PowerShell 5.1 parses a BOM-less script in the ANSI
+  codepage (an em dash is a syntax error); therion writes to stderr on every run here (`cavern`
+  missing) and still succeeds; the kit's publish never sweeps old launcher names — archived the
+  stale KORAK 3 rescue by hand.
+- **Next:** second-machine check (backlog), then close project 0004.
+
+---
+
 ### 2026-09-20 — 3N: Nacrt finishing explored, headless cSurvey proven (agent) ✅
 
 - **Did:** opened [project 0004](../stages/3N-nacrt/projects/0004-nacrt-finishing/brief.md)

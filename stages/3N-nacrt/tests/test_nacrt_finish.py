@@ -360,7 +360,7 @@ def test_dislivello_sits_at_the_lowest_borders_point_and_names_the_entrance(tmp_
     # profile Borders span (-1, -2) to (7, 3); depth grows with y, so (7, 3).
     assert sidecar["dislivello"]["lowest"] == [7.0, 3.0]
     assert sidecar["dislivello"]["source"] == "Borders"
-    assert sidecar["dislivello"]["points"] == [7.3, 3.0, 7.65, 3.35]
+    assert sidecar["dislivello"]["points"] == [8.0, 3.0, 8.35, 3.35]
     root = ET.parse(str(out)).getroot()
     quotas = [i for i in items_of(root, "profile") if i.get("quotatype") == "3"]
     assert len(quotas) == 1
@@ -371,7 +371,7 @@ def test_dislivello_sits_at_the_lowest_borders_point_and_names_the_entrance(tmp_
     assert item.get("cave") == "Jama" and item.get("branch") == "1"
     # cSurvey computes the printed depth at paint time from quotavalue=0.
     assert item.get("text") == "" and item.get("quotavalue") == "0"
-    assert item.find("points").get("data") == "7.30 3.00 7.65 3.35 "
+    assert item.find("points").get("data") == "8.00 3.00 8.35 3.35 "
     # cItemQuota has HavePen/HaveBrush False, so cSurvey writes neither.
     assert [child.tag for child in item] == ["points", "font"]
 
@@ -471,10 +471,10 @@ def test_the_label_sits_beside_the_floor_not_beside_the_ceiling(tmp_path):
         tmp_path, origin="B",
         profile_borders="0.00 -5.00 20.00 -5.00 0.00 3.00 4.00 3.00 ")
     assert sidecar["dislivello"]["right_at_depth"] == 4.0
-    assert sidecar["dislivello"]["points"][0] == 4.3            # 4.0 + the gap
+    assert sidecar["dislivello"]["points"][0] == 5.0            # 4.0 + the gap
     root = ET.parse(str(out)).getroot()
     quota = [i for i in items_of(root, "profile") if i.get("quotatype") == "3"][0]
-    assert quota.find("points").get("data").startswith("4.30 3.00 ")
+    assert quota.find("points").get("data").startswith("5.00 3.00 ")
 
 
 # ---------------------------------------------------------------------------
@@ -879,3 +879,29 @@ def test_sb1103_dry_run_reports_the_drawing_and_the_centerline(tmp_path, capsys)
     assert "11.22 m" in out          # profile bbox height
     assert "l=10.00" in out and "pl=4.00" in out
     assert "znak ulaza:             2" in out
+
+
+# the bar-length / plan-scale fixed point (SB 1256, 2026-09-20)
+
+
+def test_bar_is_sized_for_the_scale_the_widened_plan_ends_up_with(tmp_path):
+    # SB 1256's geometry: plan 6 x 13 m, profile 14.6 x 15 m. Untouched, the
+    # plan fits 1:100; with a 5 m bar + gap it no longer stacks under the
+    # profile and drops to 1:200 - where the bar should have been 10 m.
+    out, sidecar = finish_to(tmp_path, plan_borders="-1.72 -6.42 4.29 6.63 ",
+                             profile_borders="-6.25 -0.76 8.34 14.24 ")
+    assert sidecar["plan_scale"] == 200
+    assert sidecar["scale_bar"]["length_m"] == 10.0
+    assert sidecar["scale_bar"]["for_scale"] == 200
+    assert not warned(sidecar, "duzina mjerila")
+
+
+def test_settle_plan_scale_is_a_fixed_point():
+    import nacrt_finish
+    # a plan that fits 1:100 even with its bar: one round, stays 100
+    assert nacrt_finish.settle_plan_scale((0, 0, 3, 4), (0, 0, 4, 5)) == (100, 1)
+    # SB 1256: 100 -> 200, then stable
+    scale, rounds = nacrt_finish.settle_plan_scale((-1.72, -6.42, 4.29, 6.63),
+                                                   (-6.25, -0.76, 8.34, 14.24))
+    assert scale == 200 and rounds == 2
+    assert nacrt_finish.settle_plan_scale(None, (0, 0, 4, 5)) == (100, 0)

@@ -437,3 +437,20 @@ with six things. All six are done; two of them changed a rule rather than a numb
   --publish` (this is what puts `cavedossier_nacrt_v1.5.bat` in the folder and lets KORAK 3 finish
   on an operator machine) then `python prod\build_csx_kit.py --publish`. Then the second-machine
   and second-cave checks, then close the project.
+
+### 2026-09-20 — published; second cave (SB 1256) through the whole chain (agent) ✅
+
+- **Did:** `build_prod.py --version 1.5 --publish` (adds `cavedossier_nacrt_v1.5.bat`) and the csx
+  kit (v1.1 → 1.3 after two fixes below); archived the stale `csurvey_3_oporavi_iz_zipa.bat` into
+  `_arhiva/` on the Drive. Ran KORAK 3 end to end on **SB 1256 Paralelka** (plan 6 × 13 m,
+  profile 14.6 × 15 m): entrance `4` by both witnesses, depth 13.65 m from Borders + stations
+  (cSurvey `qmn` −13.49), both designs at 1:200 vertical, `SB_1256_nacrt.pdf` delivered.
+- **Result:** two rules moved on the second cave, both now tested: (1) the scale bar was sized
+  for the *provisional* 1:100 while the widened plan ended at 1:200 — replaced the one-shot
+  provisional pass with a fixed point (`settle_plan_scale`, converges in ≤ 2 rounds); (2) the
+  Dislivello 0.3 m right of the drawing collided with station `0`'s label at the profile's end —
+  `QUOTA_SHIFT_M` is 1.0 m. `TALL_ASPECT`, `DRASTIC_RATIO`, `PAD_M`, `QUOTA_BAND_M`,
+  `COMPASS_ABOVE_M` did not need to move. 267 tests green, doctor 0 fail.
+- **Evidence:** this commit; `runs/sastavnica/1256/SB_1256_nacrt.pdf`; Drive folder listing
+  (`csurvey_1/2/3/9_*.bat`, `cavedossier_*_v1.5.bat`, `csurvey_alati/KIT_VERSION.txt` = v1.3).
+- **Next:** the second-machine check (backlog, deferred by the user); then close.

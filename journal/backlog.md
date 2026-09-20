@@ -338,3 +338,7 @@ when an idea's time comes. Nothing here is a commitment.
   should feed the sastavnica's Duljina/Dubina cells and the dossier report (bridge B10).
 - 2026-09-20 — **entrance rule guard** (3N): "highest station = entrance" is wrong for ponors and
   some horizontal caves; the finisher must warn when origin ≠ highest or stations tie.
+- 2026-09-20 — **KORAK 3 on a second machine** (3N, project 0004 close-out): an operator machine with
+  cSurvey installed double-clicks the published `csurvey_3_dovrsi_nacrt.bat` on SB 1103 and sends the
+  console output — proves `CSURVEY_DIR`/printer portability and that `powershell -STA` is there.
+  Deferred by the user 2026-09-20 ("we will test the device later").

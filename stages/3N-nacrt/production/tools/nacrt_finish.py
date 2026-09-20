@@ -81,7 +81,8 @@ SCALE_GAP_M = 1.0      # scale bar this far right of the plan bbox
 # North arrow this far above the bar (smaller y = up). 1.0 m = 10 mm at 1:100;
 # 2.0 m left a hole between the two (user, 2026-09-20, on the first composed sheet).
 COMPASS_ABOVE_M = 1.0
-QUOTA_SHIFT_M = 0.3    # quota this far right of whatever is drawn beside it
+QUOTA_SHIFT_M = 1.0    # quota this far right of whatever is drawn beside it - room for a
+                       # station label too (0.3 collided with one on SB 1256, 2026-09-20)
 # The quota clears everything drawn within this much of the floor's depth, and
 # nothing higher up. Measuring against the whole design pushed the label a metre
 # out past a ceiling that is nowhere near it (user, 2026-09-20).
@@ -745,6 +746,40 @@ def add_dislivello(root, entrance, warn):
             "relative_trigpoint": entrance or ""}
 
 
+def bar_length_m(plan_scale):
+    """5 m at 1:100, 10 m otherwise (50 mm on paper either way, near enough)."""
+    return 5.0 if plan_scale == 100 else 10.0
+
+
+def settle_plan_scale(plan_before, profile_before, max_rounds=4):
+    """The plan scale the bar must be sized for — found by fixed point.
+
+    The bar's length depends on the plan's scale, which depends on the plan's
+    bbox *after* the bar widens it. Simulate the widening (gap + bar; the
+    compass sits above the bar, never right of it) and re-choose until the
+    scale stops moving. It converges in one or two rounds: a longer bar can
+    only push the scale down, and a smaller scale only asks for the same or a
+    longer bar. Returns (scale, rounds) — SB 1256 (2026-09-20) was the case
+    where the untouched bbox said 1:100 and the widened one 1:200.
+    """
+    scale = 100
+    if plan_before is None:
+        return scale, 0
+    seen = []
+    for rounds in range(1, max_rounds + 1):
+        widened = (plan_before[0], plan_before[1],
+                   plan_before[2] + SCALE_GAP_M + bar_length_m(scale), plan_before[3])
+        best, _alts, _reason = choose(widened, profile_before)
+        new_scale = best.plan_scale if best else scale
+        if new_scale == scale:
+            return scale, rounds
+        if new_scale in seen:            # a 100<->200 flip-flop: take the smaller scale
+            return max(scale, new_scale), rounds
+        seen.append(scale)
+        scale = new_scale
+    return scale, max_rounds
+
+
 def add_scale_bar(root, bbox, plan_scale, warn):
     """The horizontal scale bar right of the plan (brief §3.1 row 2).
 
@@ -765,7 +800,7 @@ def add_scale_bar(root, bbox, plan_scale, warn):
     items = signs_items(design, warn, "tlocrt")
     if items is None:
         return None
-    length = 5.0 if plan_scale == 100 else 10.0
+    length = bar_length_m(plan_scale)
     tick, label = (1.0, 5.0) if length == 5.0 else (2.0, 10.0)
     x0 = bbox[2] + SCALE_GAP_M
     y0 = bbox[3]
@@ -1111,11 +1146,9 @@ def finish(inp, out_path, args, report):
                            if k in sm))
 
     # The scale bar's length depends on the plan's scale, which depends on the
-    # bbox *after* the bar widens it. Break the loop with a provisional pass on
-    # the untouched bboxes, then re-choose for real at the end and say so if the
-    # two disagree.
-    provisional, _alts, _reason = choose(plan_before, profile_before)
-    provisional_plan_scale = provisional.plan_scale if provisional else 100
+    # bbox *after* the bar widens it: settle the fixed point first, then add the
+    # bar for that scale; the real choice below should agree (warn if not).
+    provisional_plan_scale, _rounds = settle_plan_scale(plan_before, profile_before)
 
     # --- 2-4. the three items -------------------------------------------
     dislivello = add_dislivello(root, entrance, warn)
