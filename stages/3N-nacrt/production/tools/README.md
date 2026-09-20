@@ -144,9 +144,21 @@ what the operator still does by hand inside cSurvey after the import is finished
 
 | Tool | Role | Run when |
 |---|---|---|
+| [`nacrt_finish.py`](nacrt_finish.py) | The XML finisher. Takes the corrected `_lt.csx`/`.csz` and writes `<name>_lt_fin.<same ext>` + `<name>_lt_fin.layout.json`: flags the entrance `<trigpoint>`, adds the Dislivello quota at the profile's lowest floor point, the horizontal scale bar right of the plan and the `N` arrow above it, then writes the A4 print layout into `_preview.plan`/`_preview.profile` and the render quality into `<sharedsettings>`. Never touches the input, and preserves every other byte of it | Right after the sketch is corrected and saved in cSurvey, before the headless print: `python nacrt_finish.py <file>_lt.csx` (or `<intake> --sb 1103`). `--dry-run` reports without writing; `--yes` / `--layout N` skip the layout menu |
 | [`nacrt_layout.py`](nacrt_layout.py) | Scale + page-arrangement chooser: picks the largest of 1:100 / 1:200 / 1:250 / 1:300 / 1:400 / 1:500 at which each design fits (plan and profile independently — `scalemode` 1/2/3/4/99+`scale`/5 — but never more than one rung apart), stacks them in the band below the sastavnica title block (profil on top) or side by side, and returns the `Mjerilo` string plus up to three alternatives | Called by the finisher (it supplies the `_preview.*` scale) and by the compositor; or by hand, `python nacrt_layout.py <plan_w> <plan_h> <profile_w> <profile_h>` (metres), to preview the proposal and its alternatives as a numbered menu |
 
-Stdlib only and free of repo imports, like every tool here, so it travels into the
-operator kit. The page geometry is derived from the cell table in
+Stdlib only and free of repo imports, like every tool here, so they travel into the
+operator kit — `nacrt_finish.py` ships with one asset beside it,
+[`nacrt_finish_compass.xml`](nacrt_finish_compass.xml), the `compass3.svg` clipart
+element it splices into a survey that does not already carry a north arrow. The page
+geometry is derived from the cell table in
 [4S sastavnica-design.md](../../../4S-sastavnica/docs/sastavnica-design.md); the
 scale and arrangement rules are the user's, recorded in brief §3.4.
+
+**Two things the finisher deliberately does not do.** The depth label the profile
+shows next to the Dislivello (`-9 m` on SB 1103) is written by cSurvey at paint
+time out of `quotavalue="0"` and the entrance station, not by us — the item goes
+out with `text=""`. And the entrance decision is two independent witnesses
+(highest station by `z`, plus the entrance sign the surveyor drew), reported
+separately in the sidecar JSON and in `--dry-run`, so the rule can be re-weighed
+once more than one real cave has been through it.

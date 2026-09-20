@@ -1,7 +1,7 @@
 # Task brief: Nacrt finishing — automate the post-import manual steps and the PDF export
 
 - **ID:** 0004-nacrt-finishing
-- **Status:** `proposal` — research done 2026-09-20; the user confirmed the task split (§3.3) and set the scale/layout rules (§3.4) the same day. Next: run T4
+- **Status:** `in progress` — research done 2026-09-20; the user confirmed the task split (§3.3) and set the scale/layout rules (§3.4) the same day. **T4 (chooser) and T1 (`nacrt_finish.py`) are built and green**; §2.1/§3.1 amended from what T1 found in practice. Next: T2 (the headless driver)
 - **Owner:** both
 - **Opened:** 2026-09-20 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [cSurvey/CLAUDE.md](../../../../../cSurvey/CLAUDE.md), [README.md](../../README.md), [production/tdx-processing-protocol.md](../../production/tdx-processing-protocol.md) (the four steps that precede this), [reference/exports-and-printing.md](../../reference/exports-and-printing.md), [reference/automation-surface.md](../../reference/automation-surface.md)
@@ -67,6 +67,24 @@ Semantics behind those attributes (source-grounded by three read-only digs into 
 - **Quota HorizontalScale** (`quotatype="6"`): bar length = distance between its two points, in
   metres; tick every `quotatickfrequency`, label every `quotaticklabelfrequency`. Scales with the
   map automatically because it lives in world metres.
+- **A Quota carries no pen and no brush** (added 2026-09-20 while building T1): `cItemQuota`
+  overrides `HavePen` and `HaveBrush` to `False` (cItemQuota.vb:261-271), and the base loader only
+  reads a `<pen>`/`<brush>` child when the item claims to have one (cItem.vb:507-520). Both quota
+  items in the finished fixture are therefore just `<points>` + `<font type="0"/>`, and writing a
+  `<pen>`/`<brush>` into one would be ignored on load and dropped on the next save. The compass
+  (`cItemCompass`, both `True`) does take `<pen type="10"/>` + `<brush type="7"/>`, plus
+  `<font type="1"/>`.
+- **Where a design's coordinates come from** (confirmed 2026-09-20 in T1, and what makes the
+  entrance-sign witness possible): a **plan** design point is the station's `<p x y>` directly; a
+  **profile** design point is `(<p d>, <p z>)` — the projected distance along the profile and the
+  depth (frmMain.vb:17386 builds a profile translation from exactly that pair). On SB 1103 every
+  `d` is `0`, which is correct for a cave whose shots are near-vertical but means the profile
+  witness has little to discriminate with there.
+- **`.csz` cliparts** (confirmed 2026-09-20 in T1): `<clipart @data>` holds the *path*
+  `_data\cliparts\<id>.svg` with **backslashes**, while the zip entry itself uses forward slashes —
+  the loader normalizes zip names to the platform separator before looking the path up
+  (cFile.vb:388, cCliparts.vb:495-497), so a forward-slash `@data` resolves to nothing and takes
+  cSurvey down on load. `<clipart @id>` is the uppercase SHA-1 of the SVG bytes.
 - **Item Scale=14 / Compass=15 vs. the print gadgets**: `_preview.*` also carries
   `drawscale/scaleposition`, `drawcompass/compassposition` (corner enums 0..3) with
   `<scaleoptions meters steps step>` / `<compassoptions text>` — page-furniture drawn *after*
@@ -140,12 +158,12 @@ chosen scale fits.
 | # | Manual step | Automatable? | How | Layer |
 |---|---|---|---|---|
 | 1 | correct the sketch | **no** (by design) | stays the human step between KORAK 2 and the new KORAK 3 | — |
-| 2 | horizontal scale next to plan | **yes** | write a `quotatype="6"` item in the plan's Signs layer: two points, `bbox.right + gap` at `bbox.bottom`, length = 5 m for 1:100, 10 m for 1:200/1:500 (ticks 1/labels 5 vs 2/10); or the `drawscale` gadget in a page corner | XML (Python) |
+| 2 | horizontal scale next to plan | **yes** | write a `quotatype="6"` item in the plan's Signs layer: two points, `bbox.maxx + 1 m` at `bbox.maxy`, length = 5 m for 1:100, 10 m otherwise (ticks 1/labels 5 vs 2/10); or the `drawscale` gadget in a page corner. **Amended 2026-09-20 (T1):** the bar's length depends on the plan's scale and the plan's scale depends on the bbox *the bar widens* — so the tool chooses a provisional scale from the untouched bboxes, sizes the bar from it, and re-chooses for real afterwards, warning if the two differ. `quotarelativetrigpoint` stays **empty** on a HorizontalScale (it measures nothing against a station), as on the bar cSurvey writes itself | XML (Python) |
 | 3 | compass `N` above it | **yes** | write a `type="15" category="83" m="1"` item with `data` = the `compass3.svg` clipart id. The clipart must exist in `<signs><cliparts>` (copy the `<clipart>` element incl. its base64 SVG from the finished SB 1103 file — in `.csx` the SVG is inline in `@data`; in `.csz` it is a zip entry `_data/cliparts/<id>.svg`). Fallback per cItemCompass.vb:468-470: an unresolved id falls back to the built-in `clipart_defaultcompass` — verify visually before relying on it | XML (Python) |
-| 4a | highest station = entrance | **yes** | among non-splay stations (`<t n>` without `(`), the one with **min** `z` (Z is positive downward); set `entrance="2"` on its `<trigpoint>`; **warn** when this differs from `properties@origin` or when several stations tie within 0.5 m — a ponor / horizontal cave can violate the rule | XML (Python) |
-| 4b | Dislivello at the deepest point | **yes** | lowest point of the profile floor = max Y over the profile Borders-layer points (or, equivalently, `nvr`); write a `quotatype="3"` item with two points 0.3 m apart there, `quotarelativetrigpoint` = the entrance, `quotavalue="0"` so cSurvey computes the text at paint time | XML (Python) |
+| 4a | highest station = entrance | **yes** | **Amended 2026-09-20 (T1): two independent witnesses, not one.** (a) among non-splay stations (`<t n>` without `(`), the one with **min** `z` (Z is positive downward); (b) the entrance sign the surveyor drew — `<item type="6" category="80" sign="263">` (`cIItemSign.vb:44`) — resolved to the nearest non-splay station in that design's coordinates (plan = `<p x y>`, profile = `<p d z>`), plan preferred over profile, with the sign's bound segment as a cross-check. Agree ⇒ confident; disagree ⇒ **the sign wins** and both are named in a warning (a ponor rarely has its entrance at the top); no sign ⇒ (a), and **warn** when it differs from `properties@origin` or when another station ties within 0.5 m in z. Then `entrance="2"` on its `<trigpoint>` — the *constant* `MainCaveEntrace` (`cTrigPoint.vb:109`), which on SB 1103 reads like the station name "2" by coincidence. Both witnesses go into the sidecar JSON and the `--dry-run` report so the rule can be re-weighed on real caves | XML (Python) |
+| 4b | Dislivello at the deepest point | **yes** | lowest point of the profile floor = max Y over the profile Borders-layer points (or, equivalently, `nvr`); write a `quotatype="3"` item with two points 0.3 m apart there, `quotarelativetrigpoint` = the entrance, `quotavalue="0"` so cSurvey computes the text at paint time (confirmed 2026-09-20 in T1: the points go 0.35 m apart diagonally, and the item carries **no** `<pen>`/`<brush>` — see §2.1) | XML (Python) |
 | 5 | cave dimensions | **yes** | after 4a run **`recalc`** (headless), then read the per-cave `<sm>`: total length `l`, horizontal length `pl`, depth `nvr`, height `pvr`, total drop `pvr+nvr`, altitude span `qmx−qmn`. Emit `SB_<broj>_dimenzije.json` into the cave leaf for 4S/5D to consume | driver + Python |
-| 6 | print layout | **yes** | write `_preview.plan` / `_preview.profile`: `pageformat="A4"`, `pagelandscape` from the bbox aspect, `scalemode` ∈ {1,2,3,4,99+`scale=400`,5} (1:100 / 1:200 / 1:250 / 1:300 / 1:400 / 1:500) chosen per design by the rule in §3.4 (the two designs may differ: typically profile 1:200, plan 1:100), `designstyle="0"` (*Survey* — the user's default, 2026-09-20; not *Combined*), `drawsplay="0"`, `drawscale/drawcompass` per taste, `printername`; plus `sharedsettings` `preview.designquality="2"`, `preview.manualrefresh="0"`. **Plan and profile get their own scale** — see §3.4 | XML (Python) |
+| 6 | print layout | **yes** | write `_preview.plan` / `_preview.profile`: `pageformat="A4"`, `pagelandscape` **removed/omitted** (amended 2026-09-20 in T1: the sastavnica page T3 composes onto is A4 portrait, and cSurvey centres on whatever page it is given, so landscape buys nothing), `scalemode` ∈ {1,2,3,4,99+`scale=400`,5} (1:100 / 1:200 / 1:250 / 1:300 / 1:400 / 1:500) chosen per design by the rule in §3.4 (the two designs may differ: typically profile 1:200, plan 1:100), `designstyle="0"` (*Survey* — the user's default, 2026-09-20; not *Combined*), `drawsplay="0"`, `drawscale/drawcompass` per taste, `printername`; plus `sharedsettings` `preview.designquality="2"`, `preview.manualrefresh="0"`. **Plan and profile get their own scale** — see §3.4 | XML (Python) |
 | 7 | PDF export | **yes** | `csurvey_headless_probe.ps1 -Command print` — no dialog | driver |
 | 8a | off-centre placement | **partly in-app, fully downstream** | in-app only via asymmetric `pagemargins`; the clean solution is 8b | — |
 | 8b | plan + profile on one A4 | **yes, downstream, together with 4S** | cSurvey cannot. Print each design at its own fixed scale (vector PDF from the Microsoft driver), then compose with PyMuPDF onto the **4S sastavnica page** (A4 portrait, title block upper-left, already PyMuPDF-based): crop each page to its ink bbox, place per §3.4, never rescale so the printed scale stays true. 4S is extended to carry the speleometrics (Stvarna/Tlocrtna duljina, Dubina from `<sms>`) and the scale(s) — `Mjerilo` becomes `1:100` or, when they differ, `profil/tlocrt: 1:200/1:100` (a custom layout of that cell) | Python (3N + 4S) |

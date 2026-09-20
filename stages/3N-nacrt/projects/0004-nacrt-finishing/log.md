@@ -107,3 +107,47 @@ Brief: [brief.md](brief.md)
   SB 1103 menu is now the proposal + one side-by-side alternative; 6 × 8 / 50 × 30 ⇒ `1:300/1:250`.
 - **Evidence:** this commit; `python nacrt_layout.py 6 8 58 20` shows the 1:400 custom case.
 - **Next:** T1 (prompt in `tasks/T1-nacrt-finish.md`, updated).
+
+### 2026-09-20 — T1: `nacrt_finish.py`, the XML finisher (agent) ✅
+
+- **Did:** built `production/tools/nacrt_finish.py` — the six edits of the T1 prompt on a corrected
+  `_lt.csx`/`.csz`, output `<name>_lt_fin.<same ext>` + `<name>_lt_fin.layout.json`, input never
+  touched. Entrance from **two independent witnesses** (`witness_highest`, `witness_sign`, each
+  with its own tests, combined in `decide_entrance` — the sign wins a disagreement and both go
+  into the sidecar); Dislivello at the profile's max-y Borders point relative to that station;
+  HorizontalScale bar right of the plan bbox; compass `m="1"` with the `compass3.svg` clipart
+  spliced in from a shipped asset; `_preview.*` + `<sharedsettings>` print options with the scale
+  from `nacrt_layout.choose_layout()` (T4) and a numbered menu (`--yes` / `--layout N` /
+  `--dry-run`); sidecar JSON for T3. CLI shaped like `fix_imported_linetypes.py`, `--sb` via
+  `sb_select`, Croatian console text without diacritics.
+- **Result:** on the SB 1103 fixture pair, from the raw `_lt`, the tool reproduces the manual
+  result: entrance station `2` by **both** witnesses (`origin` says `1`, so the sign + min-z pair is
+  what gets it right), a `quotatype="3"` item in the profile bound to `2`, a `quotatype="6"` and a
+  `type="15" m="1"` item in the plan, `pageformat="A4"` + `scalemode="1"`/`scale="100"` on both
+  designs, `preview.designquality="2"`. Every attribute of our three items equals the oracle's bar
+  `text` (cSurvey fills that at paint time) — asserted test-side against
+  `…_lt_finished.csx`. The whole-file diff of input vs output is **34 lines**: three items, one
+  clipart, and the five lines we edit.
+- **Three things the prompt had slightly wrong, now amended in the brief with the date:**
+  a Quota carries **no** `<pen>`/`<brush>` (`cItemQuota` HavePen/HaveBrush `False`, so both would
+  be dropped on the next save — §2.1); `quotarelativetrigpoint` stays **empty** on the scale bar,
+  not the entrance (§3.1 row 2); and the bar's length and the plan's scale are **mutually
+  dependent** — the tool picks a provisional scale from the untouched bboxes, sizes the bar, then
+  re-chooses for real and warns if the two disagree (§3.1 row 2). Also recorded in §2.1: profile
+  design coordinates are `(<p d>, <p z>)`, and a `.csz` clipart's `@data` path needs **backslashes**
+  while its zip entry needs forward slashes — a forward-slash `@data` would crash cSurvey on load.
+- **Evidence:** `python -m pytest stages/3N-nacrt/tests -q` → **103 passed** (44 of them new:
+  the two witnesses separately and their disagreement, tie and `origin` warnings, the entrance
+  constant vs. the station name, Dislivello placement + Borders fallback, bar length by scale,
+  the clipart spliced in / reused, print options, the `scalemode="99"` custom scale, the no-fit
+  `scalemode="0"` fallback, `--layout N`, a `.csz` round-trip that keeps every zip entry,
+  line-ending and declaration fidelity, byte-exact idempotence, `--dry-run` writing nothing);
+  `python tools/pipeline_doctor.py` → **0 fail · 3 warn** (the same pre-existing historical links).
+  Tool row added to [production/tools/README.md](../../production/tools/README.md). Working tree
+  left uncommitted, as the prompt asked.
+- **Next:** T2 (`csurvey_headless.ps1` + `csurvey_driver.py`) can now run `recalc` → `print` on a
+  `_lt_fin` file; T3 composes from the sidecar without recomputing. Two things only a real print
+  will settle: whether the bar at `bbox.maxx + 1 m` / `bbox.maxy` reads well on the page (cSurvey
+  put SB 1103's at `3.43` where our rule says `2.90`), and whether `PAD_M = 0.5` is enough room for
+  station labels — both are single constants at the top of the tool. Also unverified until T2: that
+  the generated file opens in cSurvey and the profile prints `-9 m`.
