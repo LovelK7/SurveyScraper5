@@ -25,7 +25,7 @@ still does everything by hand inside cSurvey before the Nacrt exists:
 5. read the cave dimensions off *Survey › Informations* (total length, horizontal length, depth)
    and record them by hand;
 6. set up the print layout for plan and profile separately: A4, a fixed scale chosen as the
-   largest of 1:100 / 1:200 / 1:500 at which the drawing fits, Style *Combined*, splays off,
+   largest of 1:100 / 1:200 / 1:500 at which the drawing fits, Style *Survey* (no areas), splays off,
    render quality *High*;
 7. print each design to PDF through the print dialog;
 8. and then live with two shortcomings: cSurvey always centres the drawing on the page, and it
