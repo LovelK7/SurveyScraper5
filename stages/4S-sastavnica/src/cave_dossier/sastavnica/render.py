@@ -22,7 +22,8 @@ from cave_dossier.sastavnica.addresses import (
     FONT_STEP,
     MAX_FONT_SIZE,
     MIN_FONT_SIZE,
-    MULTILINE_BASELINES,
+    MULTILINE_PADDING,
+    WRAP_BELOW_SIZE,
     SIDE_PADDING,
     V1,
     VALUE_COLOR,
@@ -56,13 +57,17 @@ def fit_size(font, text: str, cell: Cell,
     return size, width, width > available
 
 
-# The one cell that may carry two lines. On the cSurvey route plan and profile
-# can be printed at different scales, and T4 then renders Mjerilo as
-# "profil/tlocrt: 1:200/1:100" — which does not fit the 43 pt cell on one line
-# at any readable size. Everything else in this template is one line by rule
-# (see docs/sastavnica-design.md, "Typesetting rules"), and the single-value
-# form of Mjerilo is untouched.
-MULTILINE = {"mjerilo"}
+# The cells that may carry two lines. Everything else in this template is one
+# line by rule (docs/sastavnica-design.md, "Typesetting rules"); these two earn
+# the exception for different reasons, and both come from the drafter's own
+# v1.0 example:
+#   mjerilo — on the cSurvey route plan and profile can print at different
+#     scales, and T4 then renders "profil/tlocrt: 1:200/1:100", which does not
+#     fit the 43 pt cell on one line at any readable size. A single-value
+#     Mjerilo is untouched.
+#   ekipa  — a three-person team drops to 6.75 pt on one line in Microsoft Sans
+#     Serif, where the drafter chose 8; a four-person one does not fit at all.
+MULTILINE = {"mjerilo", "ekipa"}
 
 _TWO_VALUE = re.compile(r"^\s*([^/:]+?)\s*/\s*([^/:]+?)\s*:\s*(\S+)\s*/\s*(\S+)\s*$")
 
@@ -83,24 +88,64 @@ def split_lines(key: str, text: str) -> list[str]:
     return [f"{left} {first}", f"{right} {second}"]
 
 
-def _baselines(cell: Cell, count: int) -> list[float]:
-    """Where the baselines of `count` lines sit inside one cell."""
-    if count == 1:
-        return [cell.y1 - BASELINE_LIFT]
-    height = cell.y1 - cell.y0
-    return [cell.y0 + fraction * height for fraction in MULTILINE_BASELINES[:count]]
+def lay_out_lines(font, cell: Cell, key: str, text: str) -> list[str]:
+    """The lines to set in one cell — usually just ``[text]``.
+
+    A multi-line cell takes a second line only when it needs one: Mjerilo when
+    the value is the two-scale form, Ekipa (and anything else added to
+    ``MULTILINE``) when one line would have to be set below ``WRAP_BELOW_SIZE``.
+    Whatever fits stays on one line, at one line's size.
+    """
+    if key not in MULTILINE:
+        return [text]
+    fixed = split_lines(key, text)
+    if len(fixed) > 1:
+        return fixed
+    size, _width, overflowed = fit_size(font, text, cell)
+    if size >= WRAP_BELOW_SIZE and not overflowed:
+        return [text]
+    return _wrap_at_comma(font, text) or [text]
 
 
-def _line_cap(cell: Cell, count: int) -> float:
-    """Largest font size that keeps `count` lines from colliding in one cell.
+def _wrap_at_comma(font, text: str) -> list[str] | None:
+    """Split a comma-separated list into the two most even halves, or None.
 
-    The baseline gap is the hard limit: a size above it would put one line's
-    descenders through the next line's ascenders.
+    Names, so the break goes at a comma and the comma stays on the first line —
+    the drafter's own form. Evenness is measured, not counted: two short names
+    beside one long one should not make a ragged pair.
+    """
+    parts = [part.strip() for part in text.split(",") if part.strip()]
+    if len(parts) < 2:
+        return None
+    best = None
+    for cut in range(1, len(parts)):
+        pair = [", ".join(parts[:cut]) + ",", ", ".join(parts[cut:])]
+        widest = max(font.text_length(line, MAX_FONT_SIZE) for line in pair)
+        if best is None or widest < best[0]:
+            best = (widest, pair)
+    return best[1]
+
+
+def _multiline(font, cell: Cell, count: int,
+               size: float | None = None) -> tuple[list[float], float]:
+    """(baselines, largest usable size) for `count` lines in one cell.
+
+    One line keeps the template's own rule — a constant lift above the bottom
+    rule. Two or more are set as a block centred in the cell, at a size small
+    enough that the block fits between the rules: the face's ascent-to-descent
+    span is what decides that, not a guess about where the baselines go. Pass
+    `size` on a second call to re-centre the block once each line has been fitted.
     """
     if count == 1:
-        return MAX_FONT_SIZE
-    baselines = _baselines(cell, count)
-    return min(MAX_FONT_SIZE, baselines[1] - baselines[0])
+        return [cell.y1 - BASELINE_LIFT], MAX_FONT_SIZE
+    height = cell.y1 - cell.y0
+    line_height = font.ascender - font.descender          # in em
+    cap = min(MAX_FONT_SIZE,
+              (height - 2 * MULTILINE_PADDING) / (count * line_height))
+    used = cap if size is None else min(size, cap)
+    top = cell.y0 + (height - count * line_height * used) / 2
+    return ([top + font.ascender * used + i * line_height * used
+             for i in range(count)], cap)
 
 
 def render(blank_path: Path, values: dict[str, str], font_path: Path,
@@ -143,12 +188,19 @@ def render(blank_path: Path, values: dict[str, str], font_path: Path,
         text = (values.get(key) or "").strip()
         if not text:
             continue
-        lines = split_lines(key, text)
-        baselines = _baselines(cell, len(lines))
-        cap = _line_cap(cell, len(lines))
+        lines = lay_out_lines(font, cell, key, text)
+        _baselines, cap = _multiline(font, cell, len(lines))
+        # One size for the whole cell — the tightest line sets it. Two lines of
+        # a name list at different sizes read as a mistake, not as typesetting.
+        size = min(fit_size(font, line, cell, max_size=cap)[0] for line in lines)
+        # Re-centre the block on the size the lines actually landed at, so a
+        # pair that had to shrink does not sit high in its cell.
+        baselines, _cap = _multiline(font, cell, len(lines), size=size)
+        available = cell.width - 2 * SIDE_PADDING
+        fitted = [(size, font.text_length(line, size),
+                   font.text_length(line, size) > available) for line in lines]
         sizes, widths, overflows = [], [], []
-        for line, baseline in zip(lines, baselines):
-            size, width, overflowed = fit_size(font, line, cell, max_size=cap)
+        for line, baseline, (size, width, overflowed) in zip(lines, baselines, fitted):
             page.insert_text(
                 (cell.centre_x - width / 2, baseline),
                 line,
@@ -167,4 +219,59 @@ def render(blank_path: Path, values: dict[str, str], font_path: Path,
     if metadata:
         doc.set_metadata({**(doc.metadata or {}), **metadata})
     doc.subset_fonts()          # embed only the glyphs actually used
+    use_postscript_font_name(doc, font_path)
     return doc.tobytes(garbage=4, deflate=True), placed
+
+
+def use_postscript_font_name(doc, font_path: Path) -> list[str]:
+    """Rewrite the inserted font's ``/BaseFont`` to its PostScript name.
+
+    PyMuPDF writes the face's *display* name there — ``/Microsoft#20Sans#20
+    Serif#20Regular``, spaces escaped — which matches no installed font, so
+    **Illustrator opens the prefilled values as a missing font**, red-underlined
+    and not editable (user, 2026-09-20; the same symptom under the old Myriad
+    Pro template). PDF 32000-1 §9.7.6.1 says a Type 0 font's BaseFont shall be
+    its descendant CIDFont's, and that one is the PostScript name, so this is a
+    correctness fix as much as a compatibility one. The subset tag (``ABCDEF+``)
+    is kept.
+
+    Only fonts *we* inserted are touched: the template's own embedded face
+    already carries a proper name.
+    """
+    import re
+
+    proper = _postscript_name(font_path)
+    if not proper:
+        return []
+    renamed = []
+    for xref in range(1, doc.xref_length()):
+        if doc.xref_get_key(xref, "Subtype")[1] != "/Type0":
+            continue
+        current = (doc.xref_get_key(xref, "BaseFont")[1] or "").lstrip("/")
+        if not current:
+            continue
+        tag, _plus, bare = current.rpartition("+")
+        if bare == proper:
+            continue                       # the template's own face, or already fixed
+        tag = tag + "+" if tag else ""
+        fixed = "/" + tag + proper
+        doc.xref_set_key(xref, "BaseFont", fixed)
+        renamed.append(current)
+        for target in _descendants(doc, xref, re):
+            doc.xref_set_key(target, "BaseFont", fixed)
+            descriptor = re.search(
+                r"(\d+) 0 R", doc.xref_get_key(target, "FontDescriptor")[1] or "")
+            if descriptor:
+                doc.xref_set_key(int(descriptor.group(1)), "FontName", fixed)
+    return renamed
+
+
+def _descendants(doc, xref: int, re) -> list[int]:
+    value = doc.xref_get_key(xref, "DescendantFonts")[1] or ""
+    return [int(found) for found in re.findall(r"(\d+) 0 R", value)]
+
+
+def _postscript_name(font_path: Path) -> str | None:
+    from cave_dossier.sastavnica.fonts import postscript_name
+
+    return postscript_name(Path(font_path))

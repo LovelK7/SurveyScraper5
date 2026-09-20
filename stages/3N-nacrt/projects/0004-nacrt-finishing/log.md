@@ -280,3 +280,70 @@ Brief: [brief.md](brief.md)
 - **Next:** T5 — the `csurvey_3_dovrsi_nacrt.bat` launcher (SB prompt → finisher → driver →
   `cavedossier nacrt`), the `PROCITAJ_ME` paragraph, and that renaming. Still unproven: a second
   machine, and any cave but SB 1103.
+
+### 2026-09-20 — user review of the first Nacrt: six fixes (agent) ✅
+
+The user opened `SB_1103_nacrt.pdf` in Illustrator and in a viewer and came back
+with six things. All six are done; two of them changed a rule rather than a number.
+
+- **No cell is delivered empty.** An empty cell in Illustrator is not an empty text box — it is
+  *no* text box, so filling it in means drawing one first. Every cell no source could fill now
+  carries a stub: `?` where somebody could still record the value, `/` where there is nothing to
+  record (`addresses.STUB_UNKNOWN` / `STUB_NOT_APPLICABLE`, `STUBS` for the per-cell override).
+  Stubs are `source="stub"` and are **not** counted as filled fields on the run. *Open:* which
+  cells should read `/` rather than `?` — the tool cannot derive that, so `STUBS` is empty and
+  everything is `?` until the society says.
+- **Template v1.0 + Microsoft Sans Serif.** The delivered PDF's values opened in Illustrator as
+  `Myriad#20Pro#20Regular*` — a missing font, red-underlined, not editable. Two causes, both
+  fixed: (a) PyMuPDF writes the face's *display* name into `/BaseFont` while the descendant
+  CIDFont carries the PostScript name, so nothing installed answers to it — `render.
+  use_postscript_font_name` now rewrites it from the face's own `name` table after subsetting
+  (which PDF 32000-1 §9.7.6.1 asks for anyway); (b) Myriad Pro is only on a machine because
+  Illustrator put it there. The user supplied `!SUE_sastavnica_v1.0.pdf`, re-authored in
+  **Microsoft Sans Serif**; it is installed as the authored template and the blank rebuilt from
+  it. Its geometry is identical to the old one — all 59 vector paths match to the hundredth of a
+  point — so `addresses.py` is untouched.
+  Found on the way: **`build_blank.py` wrote the blank into the workbench, not into the package**,
+  where the runtime actually reads it. Since the stage restructure any rebuild silently left the
+  real asset stale. Fixed.
+- **North arrow closer to the scale bar** — `COMPASS_ABOVE_M` 2.0 → 1.0 m (10 mm at 1:100).
+- **Dislivello label closer to the profile** — it now clears only what is drawn **within 0.5 m of
+  the floor's depth** (`right_of_depth`, `QUOTA_BAND_M`) instead of the whole design's right edge,
+  which on SB 1103 was a ceiling 5 m higher and a metre further out. 4.64 m → 3.64 m.
+- **`pvr` must be 0, not 1** — *the one that changed a rule.* cSurvey's `pvr`/`nvr` come from the
+  profile design's **whole bounding box** (`cCalculate.Plot.cSpeleometrics.vb:88-96` takes
+  `oProfileBounds.Top/Bottom`), so SB 1103's entrance *symbol*, drawn 1.4 m above station `2`,
+  made a cave that does not rise above its entrance report `pvr = 1 m`. The user's rule: **only a
+  boundary wall or a shot may bound the height or the depth.** `nacrt_finish.vertical_extent`
+  computes it that way — min/max over the profile Borders layer and the non-splay stations,
+  relative to the entrance — and ships `pvr_m` / `nvr_m` / `vertical_from` in the sidecar, through
+  `csurvey_driver.LAYOUT_KEYS`, into the dimensions JSON, where the sastavnica prefers them over
+  cSurvey's. SB 1103 now reads `pvr_m 0.18 / nvr_m 8.96` beside cSurvey's `pvr 1 / nvr 9`, and the
+  Dubina cell prints **`-9 m`** where it printed `-9/+1 m`. Both numbers travel so the disagreement
+  stays auditable.
+- **Two-line Mjerilo re-done on font metrics.** The fixed "a third and two thirds of the cell
+  height" baselines put the two lines 0.9 pt into each other once the face changed; they are now
+  derived from the face's own ascent and descent (`_multiline`, `MULTILINE_PADDING`), and the
+  block is re-centred on the size the lines actually reached.
+- **Evidence:** the whole chain re-run on SB 1103 into the Drive leaf — finisher → driver →
+  `cavedossier nacrt`. The 5 m bar still measures **50.00 mm**; the delivered page's three fonts
+  are now all `…+MicrosoftSansSerif`; Mjerili and Ekipa read `?`; Dubina reads `-9 m`.
+  `python -m pytest -q` → **556 passed** (13 new: the symbol-above-the-entrance case, a shot
+  outside the drawing, the label's band, stubs on every cell and not counted as data, the
+  PostScript name, whole-metre depths); `python tools/pipeline_doctor.py` → **0 fail · 3 warn**.
+- **Two things still open for the user**, both flagged before and both now sharper:
+  1. **Ekipa wants two lines too.** v1.0's own example sets it over two, because Microsoft Sans
+     Serif is wider: our fitter puts a three-person team at **6.75 pt** where the drafter chose 8.
+     `MULTILINE` is ready for it, but a word-wrap rule is not the same thing as Mjerilo's
+     two-value split, so it is not guessed at here.
+  2. **The plan still sits left of centre**, because its ink bbox includes the scale bar and the
+     arrow and the composition centres the ink.
+
+  **The two open questions, answered by the user the same day and implemented:**
+  - **`/` for Broj pločice and Ekipa**, `?` for everything else — "Ekipa might genuinely be empty
+    since some caves can be soloed". `addresses.STUBS` carries the two.
+  - **Ekipa wraps onto two lines**, like Mjerilo. It takes the second line only when one would
+    have to go below 8 pt — the drafter's own size for that cell — so a two-person team still
+    sits at 10 pt on one line while a three-person one goes from 6.75 pt on one line to 8.33 pt on
+    two. The break is at a comma, the comma stays on the first line, and the halves are chosen by
+    measured width so one long name pulls the break. Both lines take one size, the tighter one's.

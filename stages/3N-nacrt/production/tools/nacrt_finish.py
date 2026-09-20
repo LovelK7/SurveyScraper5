@@ -78,8 +78,14 @@ PRINTER = "Microsoft Print to PDF"
 # Placement constants, brief §3.1 rows 2-4b.
 PAD_M = 0.5            # room for station labels around each design
 SCALE_GAP_M = 1.0      # scale bar this far right of the plan bbox
-COMPASS_ABOVE_M = 2.0  # north arrow this far above the bar (smaller y = up)
-QUOTA_SHIFT_M = 0.3    # quota this far right of the profile's rightmost point (at the floor's depth)
+# North arrow this far above the bar (smaller y = up). 1.0 m = 10 mm at 1:100;
+# 2.0 m left a hole between the two (user, 2026-09-20, on the first composed sheet).
+COMPASS_ABOVE_M = 1.0
+QUOTA_SHIFT_M = 0.3    # quota this far right of whatever is drawn beside it
+# The quota clears everything drawn within this much of the floor's depth, and
+# nothing higher up. Measuring against the whole design pushed the label a metre
+# out past a ceiling that is nowhere near it (user, 2026-09-20).
+QUOTA_BAND_M = 0.5
 QUOTA_SPAN_M = 0.35    # the quota's two mandatory points, diagonally apart
 TIE_Z_M = 0.5          # two stations this close in z make the entrance a guess
 
@@ -325,6 +331,57 @@ def items_bbox(items):
 def design_bbox(design):
     """The design's extent, computed the way inspect_survey.inspect_design does."""
     return items_bbox(iter_items(design))
+
+
+def right_of_depth(design, depth, band=QUOTA_BAND_M):
+    """Rightmost x among everything drawn within `band` of that depth, or None.
+
+    Where the Dislivello label goes. Two earlier rules both missed: beside the
+    lowest point itself buried the label in the floor debris, and beside the
+    whole design's right edge pushed it a metre out past a ceiling that is
+    nowhere near the floor (user, 2026-09-20, on the first two composed sheets).
+    The label only has to clear what is drawn beside it, so only that band is
+    measured.
+    """
+    right = None
+    for item in iter_items(design):
+        for x, y, _flags in item_points(item):
+            if abs(y - depth) <= band and (right is None or x > right):
+                right = x
+    return right
+
+
+def vertical_extent(root, entrance, stations):
+    """Height above and depth below the entrance, in metres, or None.
+
+    **Only the boundary wall and the shots count** (user, 2026-09-20): cSurvey's
+    own `pvr`/`nvr` come from the profile design's *whole* bounding box
+    (cCalculate.Plot.cSpeleometrics.vb:88-96 takes `oProfileBounds.Top/Bottom`),
+    so a symbol drawn above the entrance inflates the height. On SB 1103 the
+    entrance sign sits 1.4 m above station `2` and cSurvey reported `pvr=1`
+    where the cave does not rise above its entrance at all.
+
+    Profile design y and a station's z are the same axis — depth, positive
+    downward — so the two sources compare directly.
+    """
+    if entrance is None:
+        return None
+    entrance_z = next((s.z for s in stations if s.name == entrance), None)
+    if entrance_z is None:
+        return None
+    borders = items_bbox(iter_items(root.find("profile"), (LAYER_BORDERS,)))
+    tops = [s.z for s in stations]
+    bottoms = list(tops)
+    if borders is not None:
+        tops.append(borders[1])
+        bottoms.append(borders[3])
+    if not tops:
+        return None
+    return {
+        "pvr_m": round(max(0.0, entrance_z - min(tops)), 2),
+        "nvr_m": round(max(0.0, max(bottoms) - entrance_z), 2),
+        "from": "Borders + stanice" if borders is not None else "stanice",
+    }
 
 
 def lowest_floor_point(design):
@@ -671,12 +728,8 @@ def add_dislivello(root, entrance, warn):
     if items is None:
         return None
     cave, branch = cave_branch(owner)
-    # At the floor's depth, but clear of the drawing: the first print (T1 review,
-    # 2026-09-20) put the label inside the debris when it sat 0.3 m right of the
-    # lowest point itself. The user's own placement was off to the side too.
-    bbox = design_bbox(design)
-    right = bbox[2] if bbox else x
-    x0, y0 = right + QUOTA_SHIFT_M, y
+    right = right_of_depth(design, y)
+    x0, y0 = (x if right is None else right) + QUOTA_SHIFT_M, y
     x1, y1 = x0 + QUOTA_SPAN_M, y0 + QUOTA_SPAN_M
     item = quota_item(cave, branch, "3", entrance or "")
     ET.SubElement(item, "points", {"data": "%s %s %s %s " % (num(x0), num(y0),
@@ -687,7 +740,7 @@ def add_dislivello(root, entrance, warn):
         warn("profil: sloj Borders je prazan, najnizu tocku sam uzeo iz svih "
              "slojeva - provjeri gdje je dislivello")
     return {"lowest": [round(x, 2), round(y, 2)], "source": source,
-            "right_of_profile": round(right, 2),
+            "right_at_depth": None if right is None else round(right, 2),
             "points": [round(x0, 2), round(y0, 2), round(x1, 2), round(y1, 2)],
             "relative_trigpoint": entrance or ""}
 
@@ -1029,6 +1082,10 @@ def finish(inp, out_path, args, report):
     report("   odluka:                 %s  (%s)" % (entrance or "-",
                                                     witnesses["decision"]))
     changed_entrance = set_entrance(root, entrance, warn)
+    vertical = vertical_extent(root, entrance, stations)
+    if vertical:
+        report("   visina/dubina:          +%.2f / -%.2f m od ulaza  (%s)"
+               % (vertical["pvr_m"], vertical["nvr_m"], vertical["from"]))
 
     # --- bboxes before the furniture, and a provisional scale ------------
     plan_before = design_bbox(root.find("plan"))
@@ -1137,6 +1194,10 @@ def finish(inp, out_path, args, report):
                                if k != "sign_detail"},
         "entrance_sign": sign,
         "dislivello": dislivello,
+        # Ours, not cSurvey's: bounded by the boundary wall and the shots only.
+        "pvr_m": None if vertical is None else vertical["pvr_m"],
+        "nvr_m": None if vertical is None else vertical["nvr_m"],
+        "vertical_from": None if vertical is None else vertical["from"],
         "scale_bar": scale_bar,
         "compass": None if compass is None
                    else {k: v for k, v in compass.items() if k != "extra_entries"},

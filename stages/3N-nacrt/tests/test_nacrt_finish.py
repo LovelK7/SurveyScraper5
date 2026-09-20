@@ -395,6 +395,89 @@ def test_dislivello_is_skipped_when_one_is_already_there(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# height and depth: the boundary wall and the shots, nothing else
+
+
+def test_vertical_extent_ignores_a_symbol_drawn_above_the_entrance(tmp_path):
+    """The bug this rule exists for (user, 2026-09-20).
+
+    cSurvey takes the profile design's whole bounding box, so SB 1103's
+    entrance sign — drawn 1.4 m above station `2` — made a cave that does not
+    rise above its entrance at all report `pvr = 1 m`.
+    """
+    root, _csz, _style = nacrt_finish.load_root(str(make_csx(
+        tmp_path / "s.csx",
+        # the Borders run from 1 m above the entrance to 4 m below it
+        profile_borders="-1.00 -6.00 7.00 -1.00 ",
+        # ...and a sign floats 3 m higher again
+        profile_sign=(2.0, -9.0, SEG_BC),
+        # every station is between the walls, so the walls are the only bound
+        stations=[("A", 0.0, 0.0, -2.0, 0.0), ("B", 3.0, 0.0, -5.0, 3.0),
+                  ("C", 6.0, 0.0, -3.0, 6.0)])))
+    stations = nacrt_finish.read_stations(root)
+    extent = nacrt_finish.vertical_extent(root, "B", stations)
+    # entrance B is at z -5: the wall reaches -6 (1 m above) and -1 (4 m below);
+    # the sign at -9 is 4 m higher still and must not count.
+    assert extent["pvr_m"] == 1.0
+    assert extent["nvr_m"] == 4.0
+    assert "Borders" in extent["from"]
+
+
+def test_vertical_extent_counts_a_shot_outside_the_drawing(tmp_path):
+    """A wall is not the only bound: a station below the traced floor counts."""
+    root, _csz, _style = nacrt_finish.load_root(str(make_csx(
+        tmp_path / "s.csx", profile_borders="-1.00 -6.00 7.00 -1.00 ")))
+    stations = nacrt_finish.read_stations(root)
+    # C sits at z 2, five metres below the entrance B and below the wall's -1
+    assert nacrt_finish.vertical_extent(root, "B", stations)["nvr_m"] == 7.0
+
+
+def test_vertical_extent_is_none_without_an_entrance(tmp_path):
+    root, _csz, _style = nacrt_finish.load_root(str(make_csx(tmp_path / "s.csx")))
+    stations = nacrt_finish.read_stations(root)
+    assert nacrt_finish.vertical_extent(root, None, stations) is None
+    assert nacrt_finish.vertical_extent(root, "nema", stations) is None
+
+
+def test_the_extents_reach_the_sidecar(tmp_path):
+    _out, sidecar = finish_to(tmp_path, origin="B")
+    # entrance B is the highest of everything (stations 0/-5/2, Borders -2..3),
+    # so nothing is above it and the floor is 8 m below
+    assert sidecar["pvr_m"] == 0.0
+    assert sidecar["nvr_m"] == 8.0
+    assert sidecar["vertical_from"] == "Borders + stanice"
+
+
+# ---------------------------------------------------------------------------
+# where the Dislivello label goes
+
+
+def test_the_label_clears_only_what_is_drawn_beside_it(tmp_path):
+    """Not the whole design: a ceiling far above the floor must not push the
+    label out (user, 2026-09-20)."""
+    root, _csz, _style = nacrt_finish.load_root(str(make_csx(
+        tmp_path / "s.csx",
+        # a wide ceiling at y -5, a narrow floor at y 3
+        profile_borders="0.00 -5.00 20.00 -5.00 0.00 3.00 4.00 3.00 ")))
+    design = root.find("profile")
+    assert nacrt_finish.right_of_depth(design, 3.0) == 4.0      # the floor only
+    assert nacrt_finish.right_of_depth(design, -5.0) == 20.0    # the ceiling only
+    # a band wide enough to reach both sees both
+    assert nacrt_finish.right_of_depth(design, 3.0, band=10.0) == 20.0
+
+
+def test_the_label_sits_beside_the_floor_not_beside_the_ceiling(tmp_path):
+    out, sidecar = finish_to(
+        tmp_path, origin="B",
+        profile_borders="0.00 -5.00 20.00 -5.00 0.00 3.00 4.00 3.00 ")
+    assert sidecar["dislivello"]["right_at_depth"] == 4.0
+    assert sidecar["dislivello"]["points"][0] == 4.3            # 4.0 + the gap
+    root = ET.parse(str(out)).getroot()
+    quota = [i for i in items_of(root, "profile") if i.get("quotatype") == "3"][0]
+    assert quota.find("points").get("data").startswith("4.30 3.00 ")
+
+
+# ---------------------------------------------------------------------------
 # the horizontal scale bar
 
 
@@ -466,8 +549,9 @@ def test_compass_clipart_is_spliced_in_when_missing(tmp_path):
     assert compass.get("m") == "1"
     assert compass.get("n") is None
     assert [child.tag for child in compass] == ["pen", "brush", "points", "font"]
-    # above the middle of the bar: bar starts at 8.0, is 5 m long, maxy is 5.0
-    assert compass.find("points").get("data") == "10.50 3.00 "
+    # above the middle of the bar: bar starts at 8.0, is 5 m long, maxy is 5.0,
+    # and the arrow sits COMPASS_ABOVE_M up from it
+    assert compass.find("points").get("data") == "10.50 4.00 "
 
 
 def test_an_existing_compass_clipart_is_reused(tmp_path):

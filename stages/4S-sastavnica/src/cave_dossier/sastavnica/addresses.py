@@ -95,11 +95,17 @@ BASELINE_LIFT = 4.6
 SIDE_PADDING = 2.0
 # A cell that may carry TWO lines (only Mjerilo does, and only on the cSurvey
 # route, where plan and profile can be printed at different scales — see
-# render.MULTILINE). The two baselines sit at these fractions of the cell
-# height below its top rule; a third and two thirds keeps both lines clear of
-# the rules above and below, and their gap caps the font size so the lines
-# cannot collide.
-MULTILINE_BASELINES = (1 / 3, 2 / 3)
+# render.MULTILINE). The lines are set as a block centred in the cell, their
+# size capped so the block fits between the rules with this much clearance at
+# each end. Derived from the face's own ascent and descent rather than from
+# fixed baseline fractions, because those only hold for one font: the first
+# try, a third and two thirds of the cell height, put the two lines 0.9 pt into
+# each other once the template moved from Myriad Pro to Microsoft Sans Serif.
+MULTILINE_PADDING = 0.6
+# A one-line value that would have to be set below this takes a second line
+# instead, where its cell allows one. The drafter's own Ekipa is 8 pt, and
+# their v1.0 example wraps that cell rather than going under it.
+WRAP_BELOW_SIZE = 8.0
 MAX_FONT_SIZE = 10.0
 MIN_FONT_SIZE = 6.0
 FONT_STEP = 0.25
@@ -116,3 +122,23 @@ CONSTANTS: dict[str, str] = {
     "katastarski_broj": "0000",
     "mjerilo": "1:",
 }
+
+# ── stubs: no cell is ever delivered empty ───────────────────────────
+# A finished sastavnica is edited in Illustrator, and an EMPTY cell there is not
+# an empty text box — it is *no* text box, so filling it in means drawing one
+# first, at the right size, in the right place. A stub costs one click instead
+# (user, 2026-09-20). Two of them:
+STUB_UNKNOWN = "?"            # nobody recorded it, and somebody could
+STUB_NOT_APPLICABLE = "/"     # there is nothing to record
+# Per-field override; everything not listed gets STUB_UNKNOWN. Which cells are
+# "not applicable" rather than merely unknown is the society's call, not a thing
+# the tool can derive — these two are the user's (2026-09-20): a cave with no
+# plaque has no plaque number, and a cave surveyed solo has no team.
+STUBS: dict[str, str] = {
+    "broj_plocice": STUB_NOT_APPLICABLE,
+    "ekipa": STUB_NOT_APPLICABLE,
+}
+
+
+def stub_for(key: str) -> str:
+    return STUBS.get(key, STUB_UNKNOWN)

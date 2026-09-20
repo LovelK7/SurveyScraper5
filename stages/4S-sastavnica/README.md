@@ -88,10 +88,17 @@ same gates. Route B needs no second dossier builder and gets none.
 
 Pure PDF geometry. `addresses.py` holds the measured cell rectangles in PDF
 points (origin top-left); `render.py` centres each value, shrinks it to fit, and
-never wraps. The font is **not** bundled — Myriad Pro is licensed with
-Illustrator and found on the machines that run this branch, with system
-fallbacks after it. A `STAMP` in the PDF metadata marks files this tool
-produced, so an edited one is refused rather than silently overwritten.
+never wraps except in two named cells — Mjerilo in its two-scale form, and
+Ekipa when a team would otherwise be set below the drafter's own 8 pt. The font is **not** bundled —
+**Microsoft Sans Serif**, the face template v1.0 is authored in, is found on
+the machine, with system fallbacks after it. A `STAMP` in the PDF metadata
+marks files this tool produced, so an edited one is refused rather than
+silently overwritten.
+
+**No cell goes out empty**: what no source could fill carries `?`, or `/` for
+Broj pločice and Ekipa, where there may be nothing to record (a cave with no
+plaque, a cave surveyed solo). Finishing the document in Illustrator is then
+typing over a text box instead of drawing one.
 
 ## Where things are
 
@@ -110,7 +117,8 @@ produced, so an edited one is refused rather than silently overwritten.
 ## Status
 
 Operational (2026-09-19, the same day as its design); validated live on SB 1220
-and 811. `cavedossier nacrt` added 2026-09-20 (project
+and 811. **Template v1.0 (2026-09-20)** re-authored in Microsoft Sans Serif —
+same geometry, a face Illustrator can resolve. `cavedossier nacrt` added 2026-09-20 (project
 [0004-nacrt-finishing](../3N-nacrt/projects/0004-nacrt-finishing/brief.md), T3)
 and validated on SB 1103 — a measured 50.00 mm for a 5 m bar at 1:100. Outside
 the M-ladder — it needs only M1.

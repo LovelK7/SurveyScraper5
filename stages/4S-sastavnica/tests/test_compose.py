@@ -36,6 +36,12 @@ from cave_dossier.sastavnica.compose import ComposeError, Layout
 MM = compose_mod.MM
 A4 = compose_mod.A4_PORTRAIT_PT
 
+
+def plain(text: str) -> str:
+    """Extracted text with the face's no-break spaces normalised — PyMuPDF's
+    generated ToUnicode maps the shared space/nbspace glyph to U+00A0."""
+    return text.replace(" ", " ")
+
 # The SB 1103 layout, as KORAK 3 actually produced it: both designs at 1:100,
 # profile on top of the plan in the band below the title block.
 LAYOUT_JSON = {
@@ -241,7 +247,7 @@ def test_the_title_block_survives_untouched(sastavnica_page, designs):
     data = compose_mod.compose_nacrt(sastavnica_page, plan, profile, layout_of())
     after = pymupdf.open("pdf", data)[0].get_text(clip=block)
     assert after == before
-    assert "Testna jama" in after
+    assert "Testna jama" in plain(after)
 
 
 def test_the_composed_page_stays_a4_portrait(sastavnica_page, designs):
@@ -350,7 +356,7 @@ def test_two_value_mjerilo_renders_two_lines_inside_the_cell(font):
         addresses.BLANK_TEMPLATE, {"mjerilo": "profil/tlocrt: 1:200/1:100"},
         font.path)
     spans = _mjerilo_spans(data)
-    assert [span["text"] for span in spans] == ["profil 1:200", "tlocrt 1:100"]
+    assert [plain(span["text"]) for span in spans] == ["profil 1:200", "tlocrt 1:100"]
     cell = addresses.V1["mjerilo"]
     for span in spans:
         x0, y0, x1, y1 = span["bbox"]
@@ -376,6 +382,80 @@ def test_single_value_mjerilo_is_unchanged(font):
     # the one-line rule: baseline a constant lift above the cell's bottom rule
     baseline = addresses.V1["mjerilo"].y1 - addresses.BASELINE_LIFT
     assert spans[0]["origin"][1] == pytest.approx(baseline, abs=0.01)
+
+
+# ── Ekipa takes a second line rather than shrinking ──────────────────
+
+def _cell_spans(data: bytes, key: str):
+    cell = addresses.V1[key]
+    page = pymupdf.open("pdf", data)[0]
+    spans = [span for block in page.get_text("dict")["blocks"]
+             for line in block.get("lines", []) for span in line["spans"]
+             if span["size"] >= 6
+             and cell.x0 <= (span["bbox"][0] + span["bbox"][2]) / 2 <= cell.x1
+             and cell.y0 <= (span["bbox"][1] + span["bbox"][3]) / 2 <= cell.y1]
+    return sorted(spans, key=lambda span: span["bbox"][1])
+
+
+def test_a_short_team_stays_on_one_line(font):
+    data, placed = render_mod.render(addresses.BLANK_TEMPLATE,
+                                     {"ekipa": "A. Anić, I. Ivić"}, font.path)
+    spans = _cell_spans(data, "ekipa")
+    assert [plain(s["text"]) for s in spans] == ["A. Anić, I. Ivić"]
+    assert spans[0]["size"] == pytest.approx(addresses.MAX_FONT_SIZE)
+
+
+def test_a_long_team_wraps_instead_of_shrinking(font):
+    """Microsoft Sans Serif puts three names at 6.75 pt on one line; the
+    drafter's own v1.0 example wraps that cell instead (user, 2026-09-20)."""
+    team = "T. Tepavac, S. Mikičić, T. Milićević"
+    face = pymupdf.Font(fontfile=str(font.path))
+    one_line, _w, _o = render_mod.fit_size(face, team, addresses.V1["ekipa"])
+    assert one_line < addresses.WRAP_BELOW_SIZE       # the reason to wrap
+
+    data, placed = render_mod.render(addresses.BLANK_TEMPLATE,
+                                     {"ekipa": team}, font.path)
+    spans = _cell_spans(data, "ekipa")
+    assert len(spans) == 2
+    assert "".join(plain(s["text"]) for s in spans).replace(",", ", ").split()         == team.split()
+    # the break goes at a comma, and the comma stays on the first line
+    assert plain(spans[0]["text"]).endswith(",")
+    # one size for the whole cell, and bigger than the single line would be
+    assert spans[0]["size"] == spans[1]["size"] > one_line
+    cell = addresses.V1["ekipa"]
+    for span in spans:
+        assert cell.y0 < span["bbox"][1] and span["bbox"][3] < cell.y1
+        assert abs((span["bbox"][0] + span["bbox"][2]) / 2 - cell.centre_x) < 0.5
+    assert spans[0]["bbox"][3] <= spans[1]["bbox"][1] + 0.1
+    record = next(p for p in placed if p.key == "ekipa")
+    assert record.text == team and not record.overflowed
+
+
+def test_the_wrap_splits_the_two_halves_evenly(font):
+    """Evenness is measured, not counted — one long name pulls the break."""
+    face = pymupdf.Font(fontfile=str(font.path))
+    names = ["A. A", "B. Bbbbbbbbbbbbbbbb", "C. C", "D. D"]
+    pair = render_mod._wrap_at_comma(face, ", ".join(names))
+
+    def widest(lines):
+        return max(face.text_length(line, 10) for line in lines)
+
+    others = [[", ".join(names[:cut]) + ",", ", ".join(names[cut:])]
+              for cut in range(1, len(names))]
+    assert widest(pair) == min(widest(other) for other in others)
+    assert pair[0].endswith(",")                    # the comma stays up
+    assert ", ".join(names) == (pair[0] + " " + pair[1]).replace(", ,", ",")
+    # nothing to split on
+    assert render_mod._wrap_at_comma(face, "A. Anić") is None
+
+
+def test_a_cell_that_may_not_wrap_never_does(font):
+    """Only MULTILINE cells take a second line, however tight they get."""
+    long_name = "A. Prvi, B. Drugi, C. Treći, D. Četvrti, E. Peti, F. Šesti"
+    data, _ = render_mod.render(addresses.BLANK_TEMPLATE,
+                                {"crtali": long_name}, font.path)
+    assert "crtali" not in render_mod.MULTILINE
+    assert len(_cell_spans(data, "crtali")) == 1
 
 
 # ── the dimensions JSON as a field source ────────────────────────────
@@ -435,6 +515,27 @@ def test_the_measured_numbers_outrank_the_zapisnik_and_sb(drive, wired):
                ("stvarna_duljina", "tlocrtna_duljina", "dubina", "mjerilo"))
 
 
+def test_the_finishers_own_height_and_depth_win(drive, wired, tmp_path):
+    """SB 1103's defect (user, 2026-09-20): cSurvey reads the profile design's
+    whole bounding box, so the entrance symbol drawn above station 2 reported
+    `pvr = 1 m` for a cave that does not rise above its entrance. The finisher
+    measures against the boundary wall and the shots and says 0.18 m."""
+    settings, leaf = drive
+    (leaf / "Cave-1p_dimenzije.json").write_text(
+        json.dumps({**LAYOUT_JSON, "pvr": 1, "nvr": 9,
+                    "pvr_m": 0.18, "nvr_m": 8.96,
+                    "vertical_from": "Borders + stanice"}), encoding="utf-8")
+    fields = prefill.run_prefill(settings, 1, use_dimensions=True).result.fields
+    assert fields["dubina"].value == "-9 m"        # not "-9/+1 m"
+
+
+def test_whole_metres_on_the_page(font):
+    """The finisher measures to the centimetre; a printed nacrt shows metres."""
+    measuring = prefill._measuring_font(font.path)
+    assert prefill._drop(8.96, 0.18, measuring) == "-9 m"
+    assert prefill._drop(8.96, 1.4, measuring) == "-9/+1 m"
+
+
 def test_the_sastavnica_command_is_untouched(drive, wired):
     """Same cave, same leaf, WITHOUT use_dimensions: today's behaviour exactly."""
     settings, _leaf = drive
@@ -478,6 +579,81 @@ def test_the_combined_drop_is_dropped_when_it_stops_being_legible(
     """The cell is 43 pt wide; below MIN_COMBINED_SIZE the depth alone, at the
     authored 10 pt, reads better than both numbers squeezed to the floor."""
     assert prefill._drop(nvr, pvr, prefill._measuring_font(font.path)) == expected
+
+
+# ── stubs: nothing is delivered empty ────────────────────────────────
+
+def test_every_cell_carries_something(drive, wired):
+    """An empty cell in Illustrator is no text box at all, so filling it in
+    means drawing one first (user, 2026-09-20)."""
+    settings, _leaf = drive
+    fields = prefill.run_prefill(settings, 1).result.fields
+    assert set(fields) == set(addresses.V1)
+    assert all(fv.value for fv in fields.values())
+    stubs = {key for key, fv in fields.items() if fv.source == "stub"}
+    assert "mjerili" in stubs and "ekipa" in stubs      # no zapisnik names them
+    # "?" where somebody could still record it, "/" where there may be nothing
+    # to record — a cave can be surveyed solo, and may carry no plaque
+    # (user, 2026-09-20).
+    assert fields["mjerili"].value == addresses.STUB_UNKNOWN
+    assert fields["ekipa"].value == addresses.STUB_NOT_APPLICABLE
+    assert fields["broj_plocice"].value != addresses.STUB_NOT_APPLICABLE  # SB has one
+    assert all(fields[key].value in (addresses.STUB_UNKNOWN,
+                                     addresses.STUB_NOT_APPLICABLE)
+               for key in stubs)
+    # the two constant cells keep their own placeholders, not a stub
+    assert fields["katastarski_broj"].value == "0000"
+    assert fields["mjerilo"].value == "1:"
+    assert not stubs & {"katastarski_broj", "mjerilo", "ime_objekta"}
+
+
+def test_a_stub_is_not_counted_as_data(drive, wired):
+    settings, _leaf = drive
+    result = prefill.run_prefill(settings, 1).result
+    assert any("Bez podatka" in note for note in result.notes)
+    # and it is on the page, so there is a box to type over
+    data = pymupdf.open(str(prefill.run_prefill(settings, 1).pdf_path))
+    cell = addresses.V1["ekipa"]
+    texts = [s["text"] for b in data[0].get_text("dict")["blocks"]
+             for l in b.get("lines", []) for s in l["spans"]
+             if s["size"] >= 6
+             and cell.x0 <= (s["bbox"][0] + s["bbox"][2]) / 2 <= cell.x1
+             and cell.y0 <= (s["bbox"][1] + s["bbox"][3]) / 2 <= cell.y1]
+    assert texts == [addresses.stub_for("ekipa")]
+
+
+def test_the_dimensions_source_still_wins_over_a_stub(drive, wired):
+    settings, _leaf = drive
+    fields = prefill.run_prefill(settings, 1, use_dimensions=True).result.fields
+    assert fields["mjerilo"].value == "1:100" and fields["mjerilo"].source == "nacrt"
+
+
+# ── the embedded font Illustrator has to resolve ─────────────────────
+
+def test_the_inserted_font_carries_its_postscript_name(font):
+    """`/BaseFont /Microsoft#20Sans#20Serif#20Regular` matches no installed
+    font, and Illustrator marks such text as missing (user, 2026-09-20)."""
+    data, _ = render_mod.render(addresses.BLANK_TEMPLATE,
+                                {"ime_objekta": "Testna jama"}, font.path)
+    proper = fonts.postscript_name(font.path)
+    assert proper and " " not in proper
+    for _xref, _ext, _type, name, ref, _enc, _simple in (
+            pymupdf.open("pdf", data)[0].get_fonts(full=True)):
+        assert " " not in name, f"{ref}: {name} is a display name, not PostScript"
+        if ref == "sastavnica":
+            assert name.split("+")[-1] == proper
+
+
+def test_the_template_and_the_values_use_the_same_face(font):
+    """v1.0 is authored in the face the renderer resolves, so the page carries
+    one family rather than two."""
+    assert fonts.postscript_name(font.path) == "MicrosoftSansSerif"
+    data, _ = render_mod.render(addresses.BLANK_TEMPLATE,
+                                {"ime_objekta": "Testna jama"}, font.path)
+    families = {name.split("+")[-1]
+                for _x, _e, _t, name, _r, _en, _s
+                in pymupdf.open("pdf", data)[0].get_fonts(full=True)}
+    assert families == {"MicrosoftSansSerif"}
 
 
 # ── the command ──────────────────────────────────────────────────────
@@ -592,4 +768,4 @@ def test_sb1103_composes_at_true_scale(sastavnica_page):
 
     # the title block is still readable text, not covered by a drawing
     block = pymupdf.Rect(*addresses.BLOCK)
-    assert "Testna jama" in page.get_text(clip=block)
+    assert "Testna jama" in plain(page.get_text(clip=block))

@@ -73,9 +73,13 @@ STEP_SUFFIXES = ("_fin", "_lt", "_pp")
 # dimensions JSON, so 4S and the compositor read one file.
 # `pad_m` is not a layout value the operator sees, but the compositor needs it:
 # it is the slack it allows between a printed drawing's ink and the rectangle
-# the layout reserved for it.
+# the layout reserved for it. `pvr_m`/`nvr_m` are the finisher's own height and depth, measured against the
+# boundary wall and the shots only. cSurvey's `pvr`/`nvr` beside them come from
+# the profile design's whole bounding box, which a symbol drawn above the
+# entrance inflates — both travel so the two can be compared.
 LAYOUT_KEYS = ("mjerilo", "plan_scale", "profile_scale", "arrangement",
-               "plan_mm", "profile_mm", "pad_m")
+               "plan_mm", "profile_mm", "pad_m",
+               "pvr_m", "nvr_m", "vertical_from")
 
 
 class DriverError(RuntimeError):

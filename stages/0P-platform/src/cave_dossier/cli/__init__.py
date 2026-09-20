@@ -1038,7 +1038,10 @@ def cmd_sastavnica(settings: Settings, serial: int, offline: bool,
     print(f"Predložak {result.template_version}, font {result.font} "
           f"[{result.font_tier}]"
           + (f", zapisnik {result.osz_source}" if result.osz_source else ""))
-    filled = {k: v for k, v in result.fields.items() if v.value}
+    # A stub is a placeholder, not a value: counting it as "filled" would say
+    # the document is finished when it is only ready to be finished.
+    filled = {k: v for k, v in result.fields.items()
+              if v.value and v.source != "stub"}
     sizes = {p.key: p.font_size for p in result.placed}
     from cave_dossier.sastavnica.addresses import V1
 

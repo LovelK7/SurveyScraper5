@@ -281,10 +281,19 @@ cavedossier sastavnica 1234 --force        # overwrite a delivered file this too
 # Every value is centred and SHRUNK TO FIT its cell, 10 pt down to 6 pt — the
 # same thing the drafter does by hand. A value that will not fit even at 6 pt
 # is set anyway and named in a warning.
-# Font: Myriad Pro (the template's own face) is found in the local Illustrator
-# install; without it a system face is used and the run says so. Override with
-# sastavnica.font_path in config.yaml. Myriad Pro is licensed with
-# Illustrator — found, never bundled.
+# No cell is delivered EMPTY: whatever no source could fill carries a stub, "?"
+# where somebody could still record the value and "/" for Broj pločice and
+# Ekipa, which may have nothing to record (no plaque; surveyed solo). An empty
+# cell in Illustrator is no text box at all, so a stub turns "draw a box, then
+# type" into "type".
+# Two cells may take a second line rather than shrink: Mjerilo in its two-scale
+# form (profil 1:200 / tlocrt 1:100) and Ekipa when a team would otherwise be
+# set below 8 pt.
+# Font: Microsoft Sans Serif, the face template v1.0 is authored in; it ships
+# with Windows, so it is found on the machine, never bundled. Without it a
+# system face is used and the run says so. Override with sastavnica.font_path
+# in config.yaml. (Until 2026-09-20 this was Myriad Pro, which Illustrator
+# could not resolve in the delivered PDF — see docs/sastavnica-design.md.)
 # Collision: a delivered PDF that this tool did not write (or that someone
 # EDITED — editing strips the metadata stamp) is never overwritten; the run
 # refuses and says so. --force is the way past it. Otherwise re-runs simply

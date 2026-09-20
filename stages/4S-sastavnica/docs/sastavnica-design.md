@@ -65,11 +65,11 @@ stay the house convention: **1** delivered, **0** nothing to do, **99** error.
 | Fact | Value |
 |---|---|
 | Authored in | Adobe Illustrator 24.0 → `!SUE_sastavnica.ai` (Drive), exported as PDF 1.5 |
-| Committed copy | [`sastavnica-template/templates/!SUE_sastavnica.pdf`](../template-workbench/templates) |
+| Committed copy | [`template-workbench/templates/!SUE_sastavnica.pdf`](../template-workbench/templates) — **v1.0, 2026-09-20**, re-authored in Microsoft Sans Serif (see [The font question](#the-font-question)); same page, same 59 vector paths, same cell rules to the hundredth of a point, so the geometry below is unchanged |
 | Pages | 1, A4 portrait (595.28 × 841.89 pt), no rotation |
 | Form fields | **none** — not an AcroForm; there is nothing to "fill" in the PDF sense |
 | Images | **none** — the mammoth logo is 59 vector paths, so output stays fully vector |
-| Fonts | one embedded subset, `ECYHUF+MyriadPro-Regular` (Type1/CFF, custom encoding) |
+| Fonts | one embedded subset — `ZJSHCV+MicrosoftSansSerif` in v1.0 (`ECYHUF+MyriadPro-Regular` before it), custom encoding either way |
 | The block | (39.85, 49.58) → (291.43, 149.94) = **251.58 × 100.36 pt ≈ 88.7 × 35.4 mm**, top-left of the page |
 | Rows | five bands of ~20.08 pt; bottoms at y = 69.66 · 89.74 · 109.82 · 129.88 · 149.94 |
 | Logo cell | (39.85, 49.58) → (81.35, 109.82) — spans the first three rows |
@@ -166,47 +166,84 @@ Derived by measuring the authored values, then confirmed by reproducing them:
   `Font.text_length(text, size) > cell_width − 2 × 2 pt`, floor at ~6 pt. The
   2 pt side padding is what the drafter's own 8 pt choice for *Ekipa* implies.
 - **Colour** `#030505`, the authored value colour.
-- **Never wrap.** Every cell is one line; a value too long even at the floor
-  size is set at the floor size and named in a printed warning. **One
-  exception, added 2026-09-20:** `mjerilo` may carry **two** lines, and only
-  in the two-value form the cSurvey route produces when plan and profile print
-  at different scales (`profil/tlocrt: 1:200/1:100` does not fit 43 pt on one
-  line at any readable size). `render.MULTILINE` names the cells allowed to do
-  it; the two baselines sit at a third and two thirds of the cell height
-  (`addresses.MULTILINE_BASELINES`), and their gap caps the font size so the
-  lines cannot collide. Every single-value Mjerilo — including the `1:` stub —
-  renders exactly as before.
+- **One line, with two named exceptions** (2026-09-20). `render.MULTILINE` is
+  the set of cells allowed a second line, and it holds `mjerilo` and `ekipa`;
+  every other cell is one line, and a value too long even at the floor size is
+  set at the floor size and named in a printed warning.
+  - **Mjerilo** wraps only in the two-value form the cSurvey route produces
+    when plan and profile print at different scales — `profil/tlocrt:
+    1:200/1:100` does not fit 43 pt on one line at any readable size, so it is
+    set as `profil 1:200` over `tlocrt 1:100`. A single-value Mjerilo,
+    including the `1:` stub, renders exactly as before.
+  - **Ekipa** wraps when one line would have to go below `WRAP_BELOW_SIZE`
+    (8 pt, the drafter's own size for that cell): Microsoft Sans Serif puts a
+    three-person team at 6.75 pt on one line and does not fit a four-person one
+    at all, which is why the v1.0 example itself sets that cell over two. The
+    break goes at a comma, the comma stays on the first line, and the two
+    halves are chosen by **measured** width so one long name pulls the break.
+  - Both lines of a wrapped cell take **one size** — the tighter line's. The
+    block is centred in the cell and its size capped so it fits between the
+    rules, derived from the face's own ascent and descent
+    (`addresses.MULTILINE_PADDING`) rather than from fixed baseline fractions:
+    the first try, a third and two thirds of the cell height, put the two lines
+    0.9 pt into each other once the template moved to Microsoft Sans Serif.
 - **The value is formatted the drafter's way before it is measured** — names
   abbreviated, kota rounded, depth signed, a zero dropped. That is what keeps a
   three-person Ekipa at 9.5 pt instead of 6.25; see
   [Decided while building](#decided-while-building-2026-09-19).
 
-Nothing is inserted for an empty value — the cell simply stays blank, ready for
-the drafter to type into in Illustrator.
+**No cell is delivered empty** (user, 2026-09-20). An empty cell in Illustrator
+is not an empty text box — it is *no* text box, so filling it in means drawing
+one first, at the right size in the right place. Every cell the sources could
+not fill therefore carries a stub: `?` where somebody could still record the
+value (`addresses.STUB_UNKNOWN`), `/` where there is nothing to record
+(`STUB_NOT_APPLICABLE`). The stubs are `source="stub"` in the sidecar and are
+not counted as filled fields on the run. `addresses.STUBS` maps the cells that
+read `/` instead of `?` — **Broj pločice** (a cave may carry no plaque) and
+**Ekipa** (a cave may have been surveyed solo), the user's two, 2026-09-20.
 
 ## The font question
 
-The template's own font is a **subset** of Myriad Pro carrying only the glyphs
-its example text used. Typesetting new values with it would fail on the first
-letter the example lacks, so the generator brings its own font. Three tiers, in
-order:
+The template's own font is a **subset** carrying only the glyphs its example
+text used. Typesetting new values with it would fail on the first letter the
+example lacks, so the generator brings its own font, resolved in tiers:
 
-1. **Myriad Pro**, when the machine has it. Every machine on this branch runs
-   Illustrator, which installs
-   `…/Adobe Illustrator <year>/Support Files/Required/Fonts/MyriadPro-Regular.otf`
-   — present and verified on the dev machine, full Croatian coverage. Using it
-   makes the output typographically identical to the authored labels.
-2. A **vendored OFL fallback** for any machine without it — Source Sans 3 is the
-   closest free match (same designer lineage as Myriad) and is redistributable,
-   so it can ride in the prod bundle the way the OSZ template does.
-3. A configurable override in `config.yaml`, for a society that uses another face.
+1. A configurable override in `config.yaml` (`sastavnica.font_path`).
+2. **Microsoft Sans Serif** (`C:\Windows\Fonts\micross.ttf`) — the face the
+   v1.0 template is authored in, and part of Windows, so it is on every machine
+   that will ever open a sastavnica.
+3. A system fallback (Arial / Segoe UI / Calibri), named in a run note.
 
-Never redistribute Myriad Pro itself — it is licensed with Illustrator, so it is
-*found*, never bundled.
+### Why it is no longer Myriad Pro (user, 2026-09-20)
 
-**Validation:** with Myriad Pro the computed widths reproduce the authored ones
-exactly — `0000` 20.52/20.52 pt, `051-580` 33.85/33.85, `339823 5037995`
-68.81/68.81, `L. Kukuljan` at 9 pt 40.68/40.66. The metric model is right.
+Until v1.0 the template was set in Myriad Pro, so the renderer used it too —
+found in the local Illustrator install, never bundled, because it is licensed
+with Illustrator. It looked right in every PDF viewer and was **broken in the
+one application the document is made for.** Opened in Illustrator, the
+prefilled values came up as `Myriad#20Pro#20Regular*`, red-underlined as a
+missing font and therefore not editable.
+
+Two separate causes, and both are fixed:
+
+- **The name.** PyMuPDF embeds an inserted face as a Type0/Identity-H CID
+  subset whose `/BaseFont` carries the font's *display* name, spaces and all
+  (`/Microsoft#20Sans#20Serif#20Regular`), while the descendant CIDFont carries
+  the PostScript name. Nothing installed answers to the display name, so no
+  reader can resolve it. `render.use_postscript_font_name` rewrites it from the
+  face's own `name` table (nameID 6, `fonts.postscript_name`) after subsetting,
+  keeping the `ABCDEF+` tag — which PDF 32000-1 §9.7.6.1 asks for anyway: a
+  Type 0 font's BaseFont shall be its descendant's.
+- **The face.** Myriad Pro is on a machine only because Illustrator put it
+  there. Microsoft Sans Serif ships with Windows, so the labels and the values
+  now resolve to the same installed family on any machine.
+
+Two consequences worth knowing. Microsoft Sans Serif is **wider** than Myriad,
+so the drafter's own sizes came down with it (most 10 pt values are 9 pt in
+v1.0) and the Ekipa cell no longer holds a three-person team on one line —
+which is why v1.0 sets that cell over two. And PyMuPDF's generated `ToUnicode`
+maps this face's space glyph to U+00A0, because space and no-break space share
+it: the drawn page is identical, only extracted text differs, so comparisons
+normalise it.
 
 ## The blank-template builder
 

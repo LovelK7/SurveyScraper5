@@ -1,21 +1,25 @@
 """Which font the sastavnica's values are typeset in.
 
-The template's own font is a **subset** of Myriad Pro carrying only the glyphs
-its example text used, so it cannot set new text — the first letter the example
-lacks would come out blank. The renderer brings its own face instead, resolved
-in three tiers:
+The template's own font is a **subset** carrying only the glyphs its example
+text used, so it cannot set new text — the first letter the example lacks would
+come out blank. The renderer brings its own face instead, resolved in tiers:
 
 1. ``config.yaml`` ``sastavnica.font_path`` — an explicit choice always wins.
-2. **Myriad Pro**, if the machine has it. Everyone on this branch runs
-   Illustrator, which installs ``MyriadPro-Regular.otf`` under its own Support
-   Files; using it makes the values typographically identical to the labels the
-   template prints.
-3. A system fallback (Calibri / Segoe UI / Arial) — close enough to read as one
-   design, and reported on every run so nobody mistakes it for the real thing.
+2. **Microsoft Sans Serif**, the face the v1.0 template itself is set in.
+3. A system fallback (Arial / Segoe UI / Calibri), reported on every run.
 
-Myriad Pro is licensed with Illustrator: it is *found*, never bundled. Vendoring
-an OFL substitute (Source Sans 3) for machines without Illustrator is a backlog
-item, not a blocker — those machines are not drafting in Illustrator either.
+**Why not Myriad Pro** (user, 2026-09-20). Until v1.0 the template was set in
+Myriad Pro, so the renderer used it too — found in the local Illustrator
+install, never bundled, because it is licensed with Illustrator. It looked
+right in every PDF viewer and was **broken in the one application the document
+is made for**: opened in Illustrator the prefilled values came up as
+``Myriad#20Pro#20Regular*``, red-underlined as a missing font. PyMuPDF embeds an
+inserted face as a Type0/Identity-H CID subset whose BaseFont carries the font's
+*display* name, spaces and all — which matches no installed PostScript name, so
+Illustrator cannot resolve it and the text is not editable. The society
+re-authored the template in **Microsoft Sans Serif**, which ships with Windows,
+and the renderer follows it: the same face in the labels and the values, and one
+Illustrator resolves on any machine.
 
 Croatian coverage is verified, not assumed: a face that cannot draw č ć ž š đ
 is rejected even if it is the configured one.
@@ -29,18 +33,18 @@ from pathlib import Path
 
 CROATIAN_GLYPHS = "čćžšđČĆŽŠĐ"
 
-# Illustrator's bundled-font dir, across install years and CC/CS naming.
-MYRIAD_PATTERNS = (
-    r"C:\Program Files\Adobe\Adobe Illustrator *\Support Files\Required\Fonts\MyriadPro-Regular.otf",
-    r"C:\Program Files\Common Files\Adobe\Fonts\MyriadPro-Regular.otf",
-    r"C:\Windows\Fonts\MyriadPro-Regular.otf",
-    r"C:\Windows\Fonts\MyriadPro-Regular.ttf",
+# The template's own face, v1.0 onward. Part of Windows since forever, so it is
+# on every machine that opens a sastavnica — found, like Myriad Pro was, never
+# bundled, but this one needs no Illustrator licence behind it.
+TEMPLATE_FONT_PATTERNS = (
+    r"C:\Windows\Fonts\micross.ttf",
+    r"C:\Windows\Fonts\MicrosoftSansSerif.ttf",
 )
 
 SYSTEM_FALLBACKS = (
-    r"C:\Windows\Fonts\calibri.ttf",
-    r"C:\Windows\Fonts\segoeui.ttf",
     r"C:\Windows\Fonts\arial.ttf",
+    r"C:\Windows\Fonts\segoeui.ttf",
+    r"C:\Windows\Fonts\calibri.ttf",
 )
 
 
@@ -51,7 +55,7 @@ class FontUnavailable(RuntimeError):
 @dataclass(frozen=True)
 class ResolvedFont:
     path: Path
-    tier: str           # "config" | "myriad" | "fallback"
+    tier: str           # "config" | "template" | "fallback"
     note: str | None = None
 
 
@@ -72,11 +76,11 @@ def resolve(configured: str | None = None) -> ResolvedFont:
             )
         return ResolvedFont(path, "config")
 
-    for pattern in MYRIAD_PATTERNS:
-        for found in sorted(glob.glob(pattern), reverse=True):   # newest install first
+    for pattern in TEMPLATE_FONT_PATTERNS:
+        for found in sorted(glob.glob(pattern)):
             path = Path(found)
             if _covers_croatian(path):
-                return ResolvedFont(path, "myriad")
+                return ResolvedFont(path, "template")
             tried.append(path.name)
 
     for candidate in SYSTEM_FALLBACKS:
@@ -84,9 +88,9 @@ def resolve(configured: str | None = None) -> ResolvedFont:
         if path.exists() and _covers_croatian(path):
             return ResolvedFont(
                 path, "fallback",
-                note=(f"Myriad Pro nije nađen — vrijednosti su složene u {path.stem}. "
-                      "Izgled se malo razlikuje od naslova na predlošku; instaliraj "
-                      "Illustrator ili postavi sastavnica.font_path."),
+                note=(f"Microsoft Sans Serif nije nađen — vrijednosti su složene u "
+                      f"{path.stem}. Izgled se malo razlikuje od naslova na "
+                      "predlošku; postavi sastavnica.font_path ako smeta."),
             )
         tried.append(path.name)
 
@@ -94,6 +98,47 @@ def resolve(configured: str | None = None) -> ResolvedFont:
         "No usable font found (tried: " + ", ".join(tried or ["nothing"]) + "). "
         "Set sastavnica.font_path in config.yaml to a TTF/OTF with Croatian coverage."
     )
+
+
+def postscript_name(path: Path) -> str | None:
+    """The face's PostScript name (``MicrosoftSansSerif``), out of its own file.
+
+    Not the display name PyMuPDF's ``Font.name`` gives (``Microsoft Sans Serif
+    Regular``) — that one, written into a PDF's ``/BaseFont``, matches nothing
+    installed and is what made Illustrator mark our text as a missing font. Read
+    from the sfnt ``name`` table, nameID 6, which both TTF and OTF carry.
+    """
+    import struct
+
+    try:
+        data = path.read_bytes()
+        (num_tables,) = struct.unpack(">H", data[4:6])
+        table = None
+        for i in range(num_tables):
+            tag, _sum, offset, length = struct.unpack(
+                ">4sIII", data[12 + 16 * i:28 + 16 * i])
+            if tag == b"name":
+                table = (offset, length)
+                break
+        if table is None:
+            return None
+        offset, _length = table
+        count, string_offset = struct.unpack(">HH", data[offset + 2:offset + 6])
+        best = None
+        for i in range(count):
+            platform, encoding, _lang, name_id, size, at = struct.unpack(
+                ">HHHHHH", data[offset + 6 + 12 * i:offset + 18 + 12 * i])
+            if name_id != 6:
+                continue
+            raw = data[offset + string_offset + at:offset + string_offset + at + size]
+            text = (raw.decode("utf-16-be", "ignore") if platform == 3
+                    else raw.decode("latin-1", "ignore"))
+            text = text.strip()
+            if text and (best is None or platform == 3):
+                best = text
+        return best
+    except Exception:       # noqa: BLE001 — a name we cannot read is simply absent
+        return None
 
 
 def _covers_croatian(path: Path) -> bool:

@@ -40,10 +40,20 @@ import pymupdf
 
 TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates"
 AUTHORED = TEMPLATE_DIR / "!SUE_sastavnica.pdf"
-BLANK = TEMPLATE_DIR / "sastavnica_blank_v1.pdf"
+# The blank is a RUNTIME asset and lives inside the package, beside the code
+# that fills it and inside the prod bundle — not here in the build-time
+# workbench. (It was written here until 2026-09-20, which silently left the
+# package copy stale whenever the template was rebuilt.)
+BLANK = (Path(__file__).resolve().parents[2] / "src" / "cave_dossier"
+         / "sastavnica" / "templates" / "sastavnica_blank_v1.pdf")
 
-EXPECTED_VALUES = 15
-EXPECTED_LABELS = 15
+# Text operators, not cells: the v1.0 template (2026-09-20) sets **Ekipa on two
+# lines**, so sixteen value operators fill fifteen cells. The label count rises
+# with it because the export emits a stray 5 pt space span beside "Katastarski
+# broj:". Both are counts of what the drafter's file happens to contain — a
+# revised .ai moves them, and that is exactly what these assertions are for.
+EXPECTED_VALUES = 16
+EXPECTED_LABELS = 16
 
 # Operator forms that show text. Illustrator only emits Tj/TJ here; ' and "
 # are listed so a future export cannot slip a value through.

@@ -254,14 +254,21 @@ def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
         (_sb_text(cave, settings.sb_exploration_period_column), "sb"),
     ])
 
-    missing = [addresses.V1[key].label for key in addresses.V1
-               if not (fields.get(key) and fields[key].value)]
+    # Nothing is delivered empty: a cell with no value gets a stub, so the
+    # person finishing the document types over a text box instead of creating
+    # one (user, 2026-09-20). See addresses.STUB_UNKNOWN.
+    missing = []
+    for key in addresses.V1:
+        if fields.get(key) and fields[key].value:
+            continue
+        missing.append(addresses.V1[key].label)
+        fields[key] = FieldValue(value=addresses.stub_for(key), source="stub")
     if missing:
         # Route-aware wording: on the cSurvey route the delivered page is a
         # finished nacrt, not an Illustrator asset, so "fill it in in
         # Illustrator" would be an instruction the operator cannot follow.
         where = "dopuni prije predaje" if measured else "popuni u Illustratoru"
-        result.notes.append(f"Prazno ({where}): " + ", ".join(missing))
+        result.notes.append(f"Bez podatka ({where}): " + ", ".join(missing))
 
 
 def _resolve_kota(settings: Settings, cave: CaveRow, result: SastavnicaResult,
@@ -408,7 +415,14 @@ def _dimension_values(dims: dict, font_path: Path | None) -> dict[str, str]:
     plan_length = _metres(_dim_number(dims.get("pl")))
     if plan_length:
         out["tlocrtna_duljina"] = plan_length
-    drop = _drop(dims.get("nvr"), dims.get("pvr"), _measuring_font(font_path))
+    # The finisher's own height and depth win where it measured them: they are
+    # bounded by the boundary wall and the shots, where cSurvey's pvr/nvr take
+    # the profile design's whole bounding box and so count a symbol drawn above
+    # the entrance as cave (user, 2026-09-20; SB 1103's entrance sign made a
+    # cave that does not rise above its entrance report pvr = 1 m).
+    nvr = dims["nvr_m"] if dims.get("nvr_m") is not None else dims.get("nvr")
+    pvr = dims["pvr_m"] if dims.get("pvr_m") is not None else dims.get("pvr")
+    drop = _drop(nvr, pvr, _measuring_font(font_path))
     if drop:
         out["dubina"] = drop
     mjerilo = (dims.get("mjerilo") or "").strip()
@@ -432,8 +446,10 @@ def _drop(nvr, pvr, font) -> str | None:
     form is only used when it still fits above the floor size. Otherwise the
     depth alone is printed, which is what the cell is called after.
     """
-    down = abs(float(nvr)) if nvr not in (None, "") else 0.0
-    up = abs(float(pvr)) if pvr not in (None, "") else 0.0
+    # Whole metres, like the kota: the finisher measures to the centimetre and
+    # sub-metre precision is noise on a printed nacrt.
+    down = round(abs(float(nvr))) if nvr not in (None, "") else 0
+    up = round(abs(float(pvr))) if pvr not in (None, "") else 0
     if not down and not up:
         return None
     if not down:
