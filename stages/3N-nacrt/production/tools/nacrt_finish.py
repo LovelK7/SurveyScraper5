@@ -79,7 +79,7 @@ PRINTER = "Microsoft Print to PDF"
 PAD_M = 0.5            # room for station labels around each design
 SCALE_GAP_M = 1.0      # scale bar this far right of the plan bbox
 COMPASS_ABOVE_M = 2.0  # north arrow this far above the bar (smaller y = up)
-QUOTA_SHIFT_M = 0.3    # quota this far right of the lowest floor point
+QUOTA_SHIFT_M = 0.3    # quota this far right of the profile's rightmost point (at the floor's depth)
 QUOTA_SPAN_M = 0.35    # the quota's two mandatory points, diagonally apart
 TIE_Z_M = 0.5          # two stations this close in z make the entrance a guess
 
@@ -671,7 +671,12 @@ def add_dislivello(root, entrance, warn):
     if items is None:
         return None
     cave, branch = cave_branch(owner)
-    x0, y0 = x + QUOTA_SHIFT_M, y
+    # At the floor's depth, but clear of the drawing: the first print (T1 review,
+    # 2026-09-20) put the label inside the debris when it sat 0.3 m right of the
+    # lowest point itself. The user's own placement was off to the side too.
+    bbox = design_bbox(design)
+    right = bbox[2] if bbox else x
+    x0, y0 = right + QUOTA_SHIFT_M, y
     x1, y1 = x0 + QUOTA_SPAN_M, y0 + QUOTA_SPAN_M
     item = quota_item(cave, branch, "3", entrance or "")
     ET.SubElement(item, "points", {"data": "%s %s %s %s " % (num(x0), num(y0),
@@ -682,6 +687,7 @@ def add_dislivello(root, entrance, warn):
         warn("profil: sloj Borders je prazan, najnizu tocku sam uzeo iz svih "
              "slojeva - provjeri gdje je dislivello")
     return {"lowest": [round(x, 2), round(y, 2)], "source": source,
+            "right_of_profile": round(right, 2),
             "points": [round(x0, 2), round(y0, 2), round(x1, 2), round(y1, 2)],
             "relative_trigpoint": entrance or ""}
 

@@ -151,3 +151,17 @@ Brief: [brief.md](brief.md)
   put SB 1103's at `3.43` where our rule says `2.90`), and whether `PAD_M = 0.5` is enough room for
   station labels — both are single constants at the top of the tool. Also unverified until T2: that
   the generated file opens in cSurvey and the profile prints `-9 m`.
+
+### 2026-09-20 — T1 reviewed: first real print of a finisher-made file (agent) ✅
+
+- **Did:** ran `nacrt_finish.py --yes` on the raw SB 1103 fixture, then the headless probe
+  (`recalc` → `print`) on its output — the first time a file authored by our tools went through
+  cSurvey end to end.
+- **Result:** cSurvey loads the file, recalculates (`pvr=1 nvr=9 es=2`) and prints both designs:
+  the plan with the 5 m bar and a plain `N`, the profile with `-9 m` computed by cSurvey at paint
+  time. One placement flaw found and fixed: the Dislivello sat inside the floor debris when placed
+  0.3 m right of the lowest point; it now goes 0.3 m right of the profile's rightmost point at
+  that depth, which is where the user had put it by hand. Style *Survey* prints without area fill,
+  as wanted. The bar at `bbox.maxx + 1 m` and `PAD_M = 0.5` read fine on this cave — left as is.
+- **Evidence:** this commit (103 tests green, doctor 0 fail); PDFs in the session scratchpad only.
+- **Next:** T2 — productionize the driver (`tasks/T2-csurvey-driver.md`).
