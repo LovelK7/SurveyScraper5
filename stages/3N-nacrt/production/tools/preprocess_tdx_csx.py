@@ -40,11 +40,13 @@ string as `tdxpp:<name>` for audit.
 Usage:
   python production/tools/preprocess_tdx_csx.py INPUT.csx [more.csx ...] [-o OUTPUT.csx] [--force]
   python production/tools/preprocess_tdx_csx.py FOLDER          # every raw TopoDroid csx under it
+  python production/tools/preprocess_tdx_csx.py INTAKE --sb 811 908   # only those caves' folders
 
 A FOLDER argument is scanned recursively for raw TopoDroid .csx files (creatid="TopoDroid",
 no creat_postprocessed); *_pp.csx outputs and post-import saves are skipped automatically.
-No-typing path: csurvey_preprocess_tdx.bat in !!!Digitalizacija (double-click = scan !Za digitalizirat;
-or drag .csx files onto it).
+--sb narrows that scan to the `SB_<broj>_…` leaf folders of the named caves (sb_select.py).
+No-typing path: csurvey_1_pripremi_csx.bat in !!!Digitalizacija\SurveyScraper5 (double-click asks
+which SB numbers to prepare; or drag .csx files onto it).
 """
 
 import argparse
@@ -52,6 +54,12 @@ import json
 import os
 import sys
 import xml.etree.ElementTree as ET
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# The kit runs from a shared Drive folder; don't litter it with
+# __pycache__ (it would sync to everyone and outlive these tools).
+sys.dont_write_bytecode = True
+import sb_select
 
 DEFAULT_MAP = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "tdx-mapping.json")
@@ -343,6 +351,9 @@ def main(argv=None):
                     help="output path (default: <input>_pp.csx; single input only)")
     ap.add_argument("--force", action="store_true",
                     help="overwrite an existing output file")
+    ap.add_argument("--sb", nargs="+", metavar="BROJ",
+                    help="with a folder input: only the SB_<broj>_... leaf "
+                         "folders of these caves (Redni broj from the SB)")
     ap.add_argument("--map", dest="map_file", default=DEFAULT_MAP,
                     help="mapping file (default: tdx-mapping.json next to "
                          "this script; built-in defaults if absent)")
@@ -354,8 +365,19 @@ def main(argv=None):
     else:
         print("mapping: built-in defaults (%s not found)" % args.map_file)
 
+    inputs = args.inputs
+    if args.sb:
+        roots = [a for a in inputs if os.path.isdir(a)]
+        if len(roots) != len(inputs) or len(roots) != 1:
+            print("ERROR: --sb takes exactly one folder (the intake dir) as input",
+                  file=sys.stderr)
+            return 1
+        inputs = sb_select.resolve(roots[0], args.sb)
+        if inputs is None:
+            return 1
+
     files = []
-    for a in args.inputs:
+    for a in inputs:
         if os.path.isdir(a):
             for dirpath, _dirs, names in os.walk(a):
                 for fn in sorted(names):

@@ -1,0 +1,129 @@
+==================================================================
+ KAKO OD TOPODROID IZMJERE NAPRAVITI cSURVEY NACRT
+ Jednostavan popis koraka. Idi od vrha prema dnu.
+ csurvey komplet v@VERSION@ (@DATE@)
+==================================================================
+
+Koristiš tri ".bat" datoteke koje stoje u ovoj istoj mapi
+(!!!Digitalizacija\SurveyScraper5, uz cavedossier naredbe). Brojevi u
+nazivu su redoslijed kojim se koriste:
+
+   csurvey_1_pripremi_csx.bat      KORAK 1
+   csurvey_2_dovrsi_uvoz.bat       KORAK 2
+   csurvey_3_oporavi_iz_zipa.bat   KORAK 3 - samo ako je nešto pokvareno
+
+Alate koje one pokreću drži mapa csurvey_alati pokraj njih - nju ostavi
+gdje jest.
+
+Svaku od njih možeš pokrenuti dvoklikom ili na nju povući datoteke.
+Kad završi, ostaje otvoren crni prozor s porukom. PROČITAJ TU PORUKU -
+ona kaže je li uspjelo i što dalje. Kad si pročitao, pritisni bilo koju
+tipku (ili zatvori prozor).
+
+
+------------------------------------------------------------------
+ ŠTO ZNAČI "POVUCI I PUSTI"
+------------------------------------------------------------------
+1. Otvori mapu u Exploreru tako da vidiš datoteku.
+2. Pokaži mišem na datoteku, pritisni i DRŽI lijevu tipku.
+3. Pomakni miš (i dalje držiš) dok nije iznad ikone .bat datoteke.
+4. Pusti tipku. .bat se pokreće s tom datotekom.
+Možeš prvo označiti više datoteka pa ih povući sve zajedno.
+
+
+------------------------------------------------------------------
+ KORACI
+------------------------------------------------------------------
+
+NA MOBITELU (TopoDroid)
+  * Nacrtaj skicu.
+  * Izvezi JEDAN .csx u mapu tog objekta pod !Za digitalizirat
+    (taj .csx sadrži i tlocrt i profil).
+  * IZVEZI I PROJEKTNI ZIP svaki put (izbornik Survey > Archive).
+    Možda ti nikad neće trebati, ali je tvoja sigurnosna kopija
+    (vidi KORAK 3).
+
+KORAK 1 - PRIPREMI DATOTEKU (na računalu)
+  * Dvoklik na  csurvey_1_pripremi_csx.bat
+    Pita te Redni broj objekta iz Speleo baze - onaj iz naziva mape
+    SB_<broj>_... Upiši ga i pritisni Enter.
+      - više objekata odjednom: brojeve odvoji razmakom (811 908)
+      - SVE = obradi sve objekte pod !Za digitalizirat
+      - samo Enter = odustani, ništa se ne mijenja
+  * Ili, ako ti je lakše: povuci svoj .csx s mobitela na tu ikonu.
+  * Nastaje nova datoteka pokraj polazne, naziva koji završava na  _pp
+    Primjer:  spilja.csx  ->  spilja_pp.csx
+  * Pročitaj retke koji počinju s WARNING - oni kažu koji nacrtani
+    simboli neće prijeći u cSurvey.
+
+UVOZ U cSURVEY (ručno)
+  * Pokreni cSurvey.
+  * Otvori  _pp  datoteku (onu iz KORAKA 1).   <-- otvaraš _pp!
+  * cSurvey sam uveze i izračuna.
+  * Odaberi  File > Save As  i spremi svoju radnu datoteku. Naziv je
+    svejedno. Svejedno je i spremaš li .csz ili .csx.
+
+KORAK 2 - DOVRŠI UVOZ  (NAPRAVI PRIJE NEGO IŠTA NACRTAŠ)
+  * Dvoklik na  csurvey_2_dovrsi_uvoz.bat  i upiši Redni broj objekta
+    (isto kao u KORAKU 1).
+      - ako u mapi objekta ima više .csz/.csx datoteka, ispisat će ih
+        numerirano i pitati "Koju datoteku dovršiti?" - upiši broj
+      - uz svaku piše i je li već spremljena iz cSurveya ili je još
+        s mobitela; dovršava se ona spremljena iz cSurveya
+      - ako je u mapi samo jedna, uzima nju i javi koju
+      - SVE = sve ponuđene, samo Enter = odustani
+  * Ili, ako ti je lakše: povuci datoteku koju si upravo spremio na
+    tu ikonu.
+  * Nastaje nova datoteka pokraj nje, naziva koji završava na  _lt
+    Primjer:  spilja_rad.csz  ->  spilja_rad_lt.csz
+  * U cSurveyu OTVORI TU  _lt  DATOTEKU i u njoj crtaj sve dalje.
+
+  ZAŠTO OVAJ KORAK POSTOJI: kad cSurvey uveze linije s mobitela, radi
+  ih kao "Straight line", a u tom načinu linije kosine i slične NE
+  pokazuju svoje strelice i crtice. KORAK 2 ih prebaci u "Splines", pa
+  se grafika vidi. Ako preskočiš KORAK 2 i počneš crtati u datoteci iz
+  Save As, te linije ostaju gole - to je greška broj jedan.
+
+KORAK 3 - SAMO AKO JE .csx POKVAREN
+  Radi ovo SAMO ako: .csx nema, ima 0 bajtova ili se otvori bez skice.
+  Inače preskoči na KORAK 1.
+  * Dvoklik na  csurvey_3_oporavi_iz_zipa.bat  i upiši Redni broj
+    (isto kao u KORAKU 1), ili povuci projektni .zip na tu ikonu.
+  * Nastaje  <objekt>_recovered_pp.csx  -> nju uvozi u cSurvey, i
+    preskoči KORAK 1 (oporavak ga je već odradio).
+
+
+------------------------------------------------------------------
+ NASTAVCI U NAZIVU (da ti naziv kaže gdje si)
+------------------------------------------------------------------
+   (bez nastavka)  sirova datoteka s mobitela
+   _pp             PRIPREMLJENA - nju UVOZIŠ u cSurvey
+   _recovered      obnovljena iz zipa (KORAK 3)
+   _lt             GOTOVA - nju OTVARAŠ I U NJOJ CRTAŠ (KORAK 2)
+
+Pravilo u jednoj rečenici:  UVEZI _pp datoteku  ->  CRTAJ U _lt datoteci.
+
+
+------------------------------------------------------------------
+ AKO CRNI PROZOR JAVI...
+------------------------------------------------------------------
+ "OK ... _lt ..."   Uspjeh. Otvori _lt datoteku u cSurveyu i crtaj.
+
+ "BLOCKED"          Dao si csurvey_2_dovrsi_uvoz.bat datoteku koja
+                    još nije uvezena u cSurvey (npr. _pp). Prvo je
+                    uvezi i spremi (Save As), pa tu spremljenu
+                    datoteku odaberi (ili povuci na ikonu).
+
+ "WARNING"          Nije kobno. Obično znači "ovaj nacrtani simbol
+                    neće prijeći". Korak je svejedno završio.
+
+ "UPOZORENJE: nema mape SB_<broj>_..."
+                    Taj Redni broj nema svoju mapu pod
+                    !Za digitalizirat. Provjeri broj ili napravi mapu.
+
+ "ERROR"            Pročitaj rečenicu iza - piše što popraviti
+                    (npr. datoteka se ne može pročitati).
+
+Svaki korak možeš ponoviti bez straha; nikad ne mijenja tvoju polaznu
+datoteku, nego uvijek radi novu.
+==================================================================

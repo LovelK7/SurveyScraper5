@@ -35,7 +35,7 @@ launcher itself sits, so nobody has to type it.
 | `!!Osnovni zapisnici` | `osz_dir` | the M6 delivery | [6P](../stages/6P-predaja/README.md) |
 | `!!Nacrti` | `drawings_dir` | the M6 delivery | [6P](../stages/6P-predaja/README.md) |
 | `!!!Digitalizacija/SurveyScraper5` | `build_prod.TARGET_REL` | `build_prod.py --publish` | [prod](README.md) |
-| `!!!Digitalizacija` (the `csurvey_*` kit + `csurvey_alati/`) | `build_csx_kit.TARGET_REL` | `build_csx_kit.py --publish` | [3N](../stages/3N-nacrt/README.md) |
+| `!!!Digitalizacija/SurveyScraper5` (the `csurvey_*` kit + `csurvey_alati/`) | `build_csx_kit.TARGET_REL` | `build_csx_kit.py --publish` | [3N](../stages/3N-nacrt/README.md) |
 
 The `!` prefixes are the society's own convention for sorting these to the top
 of a Drive listing. They are part of the names — do not "clean them up".

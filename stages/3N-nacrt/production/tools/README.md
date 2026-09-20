@@ -1,6 +1,6 @@
 # production/tools — Stage 0 survey inspector (+ TDX recovery tools)
 
-## TopoDroid zip → csx recovery (`tdx_zip_to_csx.py`, `parse_tdr.py`, `csurvey_recover_tdx.bat`)
+## TopoDroid zip → csx recovery (`tdx_zip_to_csx.py`, `parse_tdr.py`, `csurvey_3_oporavi_iz_zipa.bat`)
 
 Regenerates a raw-TopoDroid `.csx` (centerline **and** sketch) from a TopoDroid **project zip**
 (`manifest` + `survey.sql` + `.tdr`), replaying TopoDroid's own csx exporter offline. Built in
@@ -9,32 +9,35 @@ Regenerates a raw-TopoDroid `.csx` (centerline **and** sketch) from a TopoDroid 
 (sketches vanish on cross-version zip import — the data is fine, the readers aren't).
 
 ```
-python production/tools/tdx_zip_to_csx.py <project.zip | folder> [more.zip ...] [--raw-only]
+python production/tools/tdx_zip_to_csx.py <project.zip | folder> [more.zip ...] [--sb 811 908] [--raw-only]
 ```
 
 - A folder argument is scanned recursively for project zips (non-project zips are skipped by a
-  manifest+survey.sql sniff). Outputs land next to each zip: `<survey>_recovered.csx` and — via an
+  manifest+survey.sql sniff); `--sb` narrows that scan to the named caves' `SB_<broj>_…` leaves
+  ([`sb_select.py`](sb_select.py), shared with the pre-processor). Outputs land next to each zip: `<survey>_recovered.csx` and — via an
   automatic `preprocess_tdx_csx.py` pass — `<survey>_recovered_pp.csx`, the one to import.
-- **No-typing path:** `csurvey_recover_tdx.bat` (published to `!!!Digitalizacija/` by
-  [`prod/build_csx_kit.py`](../../../../prod/build_csx_kit.py)) — double-click to process every
-  project zip under `!Za digitalizirat`, or drag zips onto it. Its sibling
-  **`csurvey_preprocess_tdx.bat`** does the same for the normal (non-recovery) flow: double-click =
-  preprocess every *raw* TopoDroid csx in that tree (sniffed by `creatid="TopoDroid"` without
-  `creat_postprocessed`; `_pp.csx` outputs and post-import saves skipped), or drag csx files onto
-  it. A third, **`csurvey_fix_tdx.bat`**,
+- **No-typing path:** `csurvey_3_oporavi_iz_zipa.bat` (published to
+  `!!!Digitalizacija/SurveyScraper5/` by [`prod/build_csx_kit.py`](../../../../prod/build_csx_kit.py))
+  — double-click, type the Redni broj of the caves to recover (or `SVE`), or drag zips onto it. Its
+  sibling **`csurvey_1_pripremi_csx.bat`** does the same for the normal (non-recovery) flow:
+  double-click and name the caves = preprocess their *raw* TopoDroid csx (sniffed by
+  `creatid="TopoDroid"` without `creat_postprocessed`; `_pp.csx` outputs and post-import saves
+  skipped), or drag csx files onto it. A third, **`csurvey_2_dovrsi_uvoz.bat`** (double-click = Redni broj, then pick the file to finish
+  from a numbered menu of that cave's `.csz`/`.csx`, each annotated with whether cSurvey has saved
+  it yet),
   runs the *post-import* fixer (`fix_imported_linetypes.py`) — drag the file you made with **Save
   As** after importing onto it to get `<name>_lt.<same ext>` (splines so decorations render, sizes,
   water brush); run it right after Save As and map in the `_lt` file. It accepts **both `.csz` and
   `.csx`** (whichever you saved — the rich zip is rewritten in place, all other entries preserved)
   and **blocks with instructions** if handed a not-yet-imported (raw/`_pp`) file, so you can't run
-  the wrong step. All three .bats print a runtime STEP banner and carry a runtime "what to do next"
-  footer; they are **generated** from [`prod/csx_templates/`](../../../../prod/csx_templates/) and
+  the wrong step. The digit in each name is the running order, and all three print a runtime KORAK
+  banner and carry a runtime "what to do next" footer, in Croatian; they are **generated** from [`prod/csx_templates/`](../../../../prod/csx_templates/) and
   find these tools in the `csurvey_alati/` folder published beside them, so they work on any
   machine (a developer path is only the last fallback rung). `preprocess_tdx_csx.py`
   and `fix_imported_linetypes.py` both also accept multiple files (the latter a folder-worth of
-  dragged files) directly. **A plain-language operator guide — `csurvey_READ ME FIRST - process a
-  survey.txt` — is published beside the launchers** (the human entry point; the markdown protocol
-  is its technical counterpart).
+  dragged files) directly. **A plain-language Croatian operator guide — `csurvey_0_PROCITAJ_ME.txt` — is
+  published beside the launchers** (the human entry point; the markdown protocol is its technical
+  counterpart).
 - `parse_tdr.py FILE.tdr [--items] [--json out]` is the underlying all-version `.tdr` binary reader
   (also a standalone diagnostic: proves whether a sketch file is intact).
 - Only project zips work as input — TopoDroid's "export bundle" zips (csx/dxf/csv collections)

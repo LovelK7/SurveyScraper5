@@ -20,13 +20,15 @@ Known simplifications (fine for these surveys, logged when encountered):
 Usage:
   python tdx_zip_to_csx.py <project.zip> [more.zip ...]     one or more zips
   python tdx_zip_to_csx.py <folder>                         every *.zip under the folder (recursive)
+  python tdx_zip_to_csx.py <intake folder> --sb 811 908     only those caves' SB_<broj>_... folders
   python tdx_zip_to_csx.py <project.zip> -o out.csx         explicit output (single input only)
   --raw-only        skip the symbol-mapping preprocessor (preprocess_tdx_csx.py, run
                     automatically when found next to this script; output <name>_recovered_pp.csx)
 
 Outputs land next to each zip: <survey>_recovered.csx (raw) and <survey>_recovered_pp.csx
 (import this one into cSurvey). Paths with spaces are fine — quote them, or use the
-csurvey_recover_tdx.bat drag-and-drop wrapper published in !!!Digitalizacija.
+csurvey_3_oporavi_iz_zipa.bat drag-and-drop wrapper published in
+!!!Digitalizacija\SurveyScraper5 (double-click asks which SB numbers to recover).
 """
 import io
 import os
@@ -36,6 +38,10 @@ import zipfile
 from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# The kit runs from a shared Drive folder; don't litter it with
+# __pycache__ (it would sync to everyone and outlive these tools).
+sys.dont_write_bytecode = True
+import sb_select
 from parse_tdr import parse_tdr_bytes
 
 CENTER_X, CENTER_Y, SCALE = 100.0, 120.0, 20.0
@@ -448,10 +454,29 @@ def main(argv):
         out = argv[i + 1]
         del argv[i:i + 2]
     raw_only = "--raw-only" in argv
+    sb = []
+    if "--sb" in argv:
+        i = argv.index("--sb")
+        j = i + 1
+        while j < len(argv) and not argv[j].startswith("-"):
+            j += 1
+        sb = argv[i + 1:j]
+        del argv[i:j]
     argv = [a for a in argv if not a.startswith("--")]
     if not argv:
         print(__doc__)
         return 1
+
+    if sb:
+        # --sb narrows a folder scan to the named caves' intake leaves.
+        dirs = [a for a in argv if os.path.isdir(a)]
+        if len(dirs) != len(argv) or len(dirs) != 1:
+            print("ERROR: --sb takes exactly one folder (the intake dir) as input")
+            return 1
+        resolved = sb_select.resolve(dirs[0], sb)
+        if resolved is None:
+            return 1
+        argv = resolved
 
     # expand: each arg is a zip, an extracted dir, or a folder to scan
     inputs = []

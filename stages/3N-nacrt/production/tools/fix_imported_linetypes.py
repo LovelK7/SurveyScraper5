@@ -19,7 +19,7 @@ identical, decorations start rendering.
 Accepts BOTH the rich .csz (zip) you get from a normal Save and the bare .csx —
 whichever you saved, drag it in. Output keeps the same container (_lt.csz /
 _lt.csx). Never modifies the input. Re-open the _lt output in cSurvey and do
-all mapping there. For drag-and-drop convenience use csurvey_fix_tdx.bat.
+all mapping there. For drag-and-drop convenience use csurvey_2_dovrsi_uvoz.bat.
 
 It refuses a file that has NOT been imported into cSurvey yet (a raw/phone or
 _pp file), telling you to import + Save As first — so you cannot run it on the
@@ -28,6 +28,12 @@ wrong step by accident.
 Usage:
   python production/tools/fix_imported_linetypes.py INPUT.csx|INPUT.csz [-o OUT] [--force]
   python production/tools/fix_imported_linetypes.py FILE1 FILE2 ...   (batch / drag-drop)
+  python production/tools/fix_imported_linetypes.py INTAKE --sb 1103  (pick from that cave's folder)
+
+With --sb the input is the intake folder: the cave's SB_<broj>_... leaf is
+resolved (sb_select.py), its .csz/.csx files are listed with whether each has
+been imported into cSurvey yet, and you pick one by number — the no-typing path
+behind a double-click on csurvey_2_dovrsi_uvoz.bat.
 """
 
 import argparse
@@ -36,6 +42,12 @@ import os
 import sys
 import zipfile
 import xml.etree.ElementTree as ET
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# The kit runs from a shared Drive folder; don't litter it with
+# __pycache__ (it would sync to everyone and outlive these tools).
+sys.dont_write_bytecode = True
+import sb_select
 
 DEFAULT_MAP = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "tdx-mapping.json")
@@ -112,6 +124,56 @@ def not_yet_imported(root):
     return False
 
 
+def import_state(path):
+    """Short Croatian label for the menu: has cSurvey already saved this file?
+
+    cSurvey stamps its own GUID into <csurvey id="..."> the first time it saves;
+    a phone export and our _pp both carry an empty id and creatid="TopoDroid".
+    That is a sharper signal than not_yet_imported()'s layer check, which an
+    empty sketch cannot answer — but the BLOCKED gate below stays on the layer
+    check, since that is what decides whether the fix would do anything.
+    """
+    try:
+        root, _is_csz = load_root(path)
+    except Exception:
+        return "ne mogu procitati"
+    if (root.get("id") or "").strip():
+        return "spremljeno iz cSurveya - ovo dovrsavas"
+    props = root.find("properties")
+    phone = (props is not None
+             and "topodroid" in (props.get("creatid") or "").lower())
+    tail = "_pp" if os.path.splitext(path)[0].lower().endswith("_pp") else ""
+    if phone:
+        return ("pripremljeno (_pp) - prvo uvezi u cSurvey" if tail
+                else "s mobitela - prvo uvezi u cSurvey")
+    return "nepoznato - jos nije spremljeno iz cSurveya"
+
+
+def pick_by_sb(inputs, sb):
+    """--sb: intake folder + Redni broj -> the file(s) to fix, or None to stop.
+
+    The cave folder holds the phone export, the _pp, and whatever came out of
+    Save As, so the menu says which of them is actually at this step — picking
+    a not-yet-imported one would only earn a BLOCKED message.
+    """
+    dirs = [a for a in inputs if os.path.isdir(a)]
+    if len(dirs) != len(inputs) or len(dirs) != 1:
+        print("ERROR: --sb takes exactly one folder (the intake dir) as input",
+              file=sys.stderr)
+        return None
+    intake = dirs[0]
+    leaves = sb_select.resolve(intake, sb)
+    if leaves is None:
+        return None
+    files = sb_select.list_files(leaves, (".csz", ".csx"), skip_suffixes=("_lt",))
+    if not files:
+        print("nothing to do - u toj mapi nema .csz ni .csx datoteke")
+        return None
+    labels = [import_state(f) for f in files]
+    return sb_select.choose(files, labels=labels, root=intake,
+                            prompt="Koju datoteku dovrsiti? ")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("input", nargs="+",
@@ -125,7 +187,17 @@ def main(argv=None):
                     help="tdx-mapping.json (its `postimport` section drives "
                          "the rules; defaults: spline_linetypes on)")
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--sb", nargs="+", metavar="BROJ",
+                    help="with a folder input: pick the file to fix from that "
+                         "cave's SB_<broj>_... leaf (asks when there is more "
+                         "than one)")
     args = ap.parse_args(argv)
+
+    if args.sb:
+        picked = pick_by_sb(args.input, args.sb)
+        if picked is None:
+            return 1
+        args.input = picked
 
     if args.out and len(args.input) > 1:
         print("ERROR: -o/--out works with a single input only", file=sys.stderr)

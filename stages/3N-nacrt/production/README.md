@@ -15,12 +15,13 @@ for routine survey processing.
 
 | Tool | Role | Run when |
 |---|---|---|
-| [`csurvey_READ ME FIRST - process a survey.txt`](../../../prod/csx_templates/csurvey_READ%20ME%20FIRST%20-%20process%20a%20survey.txt) (published into `!!!Digitalizacija/`) | plain-language, jargon-free operator checklist for the whole routine (drag-drop, `_pp`/`_lt` endings, black-window messages) | the human starting point — read before running anything |
+| [`csurvey_0_PROCITAJ_ME.txt`](../../../prod/csx_templates/csurvey_0_PROCITAJ_ME.txt.template) (published into `!!!Digitalizacija/SurveyScraper5/`) | the Croatian operator guide for the whole routine (drag-drop, the SB-number prompt, `_pp`/`_lt` endings, black-window messages) | the human starting point — read before running anything |
 | [`inspect_survey.py`](tools/inspect_survey.py) | read-only stats/diff report for any `.csz`/`.csx` (Stage 0) — see [tools/README.md](tools/README.md) | inspecting or diffing any survey, before/after any step |
 | [`preprocess_tdx_csx.py`](tools/preprocess_tdx_csx.py) | rewrites a raw TDX export so symbols survive import (renames, label conversions, stroke reversal, orientation) | on the raw phone export, before opening in cSurvey |
-| [`fix_imported_linetypes.py`](tools/fix_imported_linetypes.py) (drag-drop: `csurvey_fix_tdx.bat`) | post-import fixer for what import can't express (**spline linetypes so slope/gradient/etc. line decorations render**, non-standard water brush, sign/label sizes) | right after **Save As**, before mapping — then map in the `_lt.csx` |
+| [`fix_imported_linetypes.py`](tools/fix_imported_linetypes.py) (drag-drop: `csurvey_2_dovrsi_uvoz.bat`) | post-import fixer for what import can't express (**spline linetypes so slope/gradient/etc. line decorations render**, non-standard water brush, sign/label sizes) | right after **Save As**, before mapping — then map in the `_lt.csx` |
 | [`make_signs_catalog.py`](tools/make_signs_catalog.py) → `tdx-mapping-workbench.html` + `cs-targets.html` | visual mapping editor: every TDX tool → numbered cSurvey targets; exports the mapping json | when tuning the mapping |
 | [`tdx-mapping.json`](tools/tdx-mapping.json) | **the user-owned mapping** the pre/post-processors read | edit to change how symbols map |
+| [`sb_select.py`](tools/sb_select.py) | turns the Redni broj an operator types into that cave's `SB_<broj>_…` intake leaf, and asks which of the files found there to work on (`--sb` on all three tools) | whenever a launcher asks which caves, or which file |
 | [`signs-pack/`](tools/signs-pack) | 8 SVG glyphs for mapped-but-artwork-less signs; installed into cSurvey's Signs gallery | after a cSurvey upgrade (re-copy) |
 
 ## Methods (`methods/`)

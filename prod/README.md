@@ -49,27 +49,41 @@ being on that path.
 ### 2. The `csurvey` TDX kit — for people processing TopoDroid surveys
 
 Drag-and-drop `.bat` files plus the Python tools they drive, published together
-into `!!!Digitalizacija/` — the digitalization folder itself, beside the surveys
-(user decision 2026-09-20; before that they sat in a `Share/TDX` handoff folder).
-The `csurvey_` prefix keeps them legible in a folder they share with the
-society's own documents, the way `cavedossier_*` does one level down.
+into `!!!Digitalizacija/SurveyScraper5/` — the same prod folder as the
+`cavedossier_*` launchers, so everything an operator double-clicks is in one
+place (user decision 2026-09-20; before that they sat in a `Share/TDX` handoff
+folder). The `csurvey_` prefix is what keeps the two kits apart in that listing,
+and `_archive_old()` in `build_prod.py` only ever sweeps `cavedossier_*`.
 
-| File | Step |
+The **digit in each filename is the running order** — named after their tools
+they sorted alphabetically into the wrong sequence (user, 2026-09-20). The
+launchers, the guide and the protocol all speak the same KORAK numbers.
+
+| File | KORAK |
 |---|---|
-| [`csx_templates/csurvey_recover_tdx.bat.template`](csx_templates/csurvey_recover_tdx.bat.template) | 1b — rebuild a broken `.csx` from the TopoDroid project `.zip` |
-| [`csx_templates/csurvey_preprocess_tdx.bat.template`](csx_templates/csurvey_preprocess_tdx.bat.template) | 2 — raw `.csx` → import-ready `_pp.csx` |
-| [`csx_templates/csurvey_fix_tdx.bat.template`](csx_templates/csurvey_fix_tdx.bat.template) | 4 — after cSurvey "Save As", before drawing |
-| [`csx_templates/csurvey_READ ME FIRST - process a survey.txt`](csx_templates/csurvey_READ%20ME%20FIRST%20-%20process%20a%20survey.txt) | The jargon-free operator checklist |
+| [`csx_templates/csurvey_0_PROCITAJ_ME.txt.template`](csx_templates/csurvey_0_PROCITAJ_ME.txt.template) | 0 — the Croatian operator guide (diacritics, UTF-8 BOM) |
+| [`csx_templates/csurvey_1_pripremi_csx.bat.template`](csx_templates/csurvey_1_pripremi_csx.bat.template) | 1 — raw `.csx` → import-ready `_pp.csx` |
+| [`csx_templates/csurvey_2_dovrsi_uvoz.bat.template`](csx_templates/csurvey_2_dovrsi_uvoz.bat.template) | 2 — after cSurvey "Save As", before drawing |
+| [`csx_templates/csurvey_3_oporavi_iz_zipa.bat.template`](csx_templates/csurvey_3_oporavi_iz_zipa.bat.template) | 3 — rescue: rebuild a broken `.csx` from the TopoDroid project `.zip` |
 | [`build_csx_kit.py`](build_csx_kit.py) | Generates and publishes the kit (`--publish`); `csurvey_alati/` carries the Python tools |
+
+**Operator-facing text is Croatian.** The `.txt` guide keeps real diacritics and
+is written UTF-8 with a BOM; the `.bat` consoles are Croatian *without* them,
+because a cp852 console cannot print them. `build_csx_kit.py` enforces both.
 
 ```powershell
 python prod\build_csx_kit.py                  # stage into prod/dist/csx-kit
-python prod\build_csx_kit.py --publish        # + copy to !!!Digitalizacija
+python prod\build_csx_kit.py --publish        # + copy to the prod folder
 ```
 
-A double-click scans `!Za digitalizirat` (from `config.yaml`'s `intake_dir`),
-which is where the per-cave folders are; dragging files onto a launcher works
-from anywhere. Step 3 is manual: open the `_pp.csx` in cSurvey and Save As. The
+A double-click **asks which caves to process** — Redni broj (SB), several at a
+time, `SVE` for everything, Enter to cancel — and resolves each number to that
+cave's `SB_<broj>_…` leaf under `..\!Za digitalizirat` (the intake tree one level
+up, derived at build time from `config.yaml`'s `intake_dir` and kept relative).
+Sweeping the whole tree is now opt-in, not the default (user, 2026-09-20).
+KORAK 2 goes one step further and asks *which file* in that cave's folder to
+finish, annotating each with whether cSurvey has already saved it. Dragging
+files onto a launcher skips both prompts and works from anywhere. Step 3 is manual: open the `_pp.csx` in cSurvey and Save As. The
 protocol is
 [`stages/3N-nacrt/production/tdx-processing-protocol.md`](../stages/3N-nacrt/production/tdx-processing-protocol.md);
 the Python tools live in
