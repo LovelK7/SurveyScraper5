@@ -347,3 +347,38 @@ with six things. All six are done; two of them changed a rule rather than a numb
     sits at 10 pt on one line while a three-person one goes from 6.75 pt on one line to 8.33 pt on
     two. The break is at a comma, the comma stays on the first line, and the halves are chosen by
     measured width so one long name pulls the break. Both lines take one size, the tighter one's.
+
+### 2026-09-20 — second review: the block matches the template, the arrow sits on the bar (agent) ✅
+
+- **The sastavnica was bigger than the template it copies.** Two causes, both re-measured off the
+  v1.0 authored file. (a) **Size is per cell, not one ceiling**: the drafter sets row 1 at 10 pt,
+  rows 2-4 at 9 and row 5 at 8 — they were all 10 under Myriad, and the renderer had a single
+  `MAX_FONT_SIZE = 10` for every cell. `Cell.size` now carries the authored size and shrink-to-fit
+  starts there. (b) **`BASELINE_LIFT` 4.6 → 4.3**: v1.0's baselines cluster at 4.11-4.59 below the
+  cell's bottom rule (median 4.34), so every value had been sitting a quarter-point high. All
+  fifteen cells now reproduce the drafter's own size exactly.
+- **Istražili abbreviates a list.** One society stays written out (`SU Estavela`); two or more go
+  to the form a caver writes anyway (`SUE, SOV`), because the cell is 55 pt wide and two written
+  out do not fit at a readable size. `core.people.society_shorthand` implements the
+  `<type-prefix><named-entity-initial>` rule — the prefix table and the parent-acronym skip
+  (`SO PDS Velebit` → `SOV`) are adapted from crospeleo-automation's
+  `services/organization_alias_generator.py`; logged in
+  [PORTING.md](../../../0P-platform/docs/PORTING.md). A name outside the four caving-org patterns
+  is never abbreviated, which is also what keeps a single canonical's `, <Grad>` tail from
+  counting as a second society.
+- **The north arrow now sits on the scale bar.** `textalignment="1"` is **Left**, not Center
+  (`cIItemText.vb:50-54`: Center 0, Left 1, Right 2) — cItemCompass.vb:398-404 offsets the glyph
+  by half its width only for Center and by nothing for Left, so the arrow was anchored at its own
+  left edge and stood 1.19 mm right of the bar's midpoint. cSurvey's own UI writes Left, and this
+  tool had copied that from the fixture. Writing `textalignment="0"` centres it: measured offset
+  on the re-printed plan is **0.00 mm**.
+- **Evidence:** chain re-run on SB 1103 into the Drive leaf. `python -m pytest -q` → **578 passed**
+  (14 new: the per-cell authored size against all fifteen v1.0 values, the re-measured baseline,
+  the shorthand rule and its non-matches, the one-vs-many Istražili rule, two societies fitting
+  the cell once abbreviated); `python tools/pipeline_doctor.py` → **0 fail · 3 warn**.
+
+- **Handoff written:** [tasks/T1-T3-handoff.md](tasks/T1-T3-handoff.md) — what landed, the three
+  file contracts, the eight review decisions, the paste-in facts for T5 (it spans **two** kits:
+  the finisher and driver ride in `csurvey_alati/`, but `cavedossier nacrt` needs an entry in
+  `build_prod.PROD_COMMANDS` and a branch in the bootstrap's `switch`), and what is still
+  unproven. Linked from brief §3.3.

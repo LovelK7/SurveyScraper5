@@ -856,6 +856,15 @@ def add_compass(root, bbox, scale_bar, is_csz, warn):
     `m="1"` is CompassModeEnum.Manual and no `n` attribute means Geographic, so
     the arrow is labelled a plain `N` — Auto would print `Nm <year>` because the
     drawing is in magnetic north (cItemCompass.vb:344-373).
+
+    `textalignment="0"` is **Center** (`cIItemText.vb:50-54`: Center 0, Left 1,
+    Right 2), and that is what puts the arrow *on* its point rather than beside
+    it: cItemCompass.vb:398-404 offsets the glyph by half its width only in that
+    case, and by nothing at all for Left. With Left — what cSurvey's own UI
+    wrote, and what this tool copied from it — the arrow stood a millimetre
+    right of the scale bar it is supposed to sit over (user, 2026-09-20).
+    Vertical alignment is left unset, which is Middle, so the point is the
+    glyph's centre.
     """
     design = root.find("plan")
     if design is None:
@@ -881,7 +890,7 @@ def add_compass(root, bbox, scale_bar, is_csz, warn):
     for key, value in (("layer", LAYER_SIGNS), ("cave", cave),
                        ("branch", branch), ("type", "15"), ("category", "83"),
                        ("da", "1"), ("data", cid), ("dataformat", "2"),
-                       ("m", "1"), ("textalignment", "1")):
+                       ("m", "1"), ("textalignment", "0")):
         item.set(key, value)
     ET.SubElement(item, "pen", {"type": "10"})
     ET.SubElement(item, "brush", {"type": "7"})

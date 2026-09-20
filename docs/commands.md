@@ -288,7 +288,8 @@ cavedossier sastavnica 1234 --force        # overwrite a delivered file this too
 # type" into "type".
 # Two cells may take a second line rather than shrink: Mjerilo in its two-scale
 # form (profil 1:200 / tlocrt 1:100) and Ekipa when a team would otherwise be
-# set below 8 pt.
+# set below 8 pt. Istražili abbreviates only when it names more than one
+# society: "SU Estavela" stays, "SU Estavela, SO Velebit" becomes "SUE, SOV".
 # Font: Microsoft Sans Serif, the face template v1.0 is authored in; it ships
 # with Windows, so it is found on the machine, never bundled. Without it a
 # system face is used and the run says so. Override with sastavnica.font_path

@@ -230,7 +230,7 @@ can open and print in two clicks.
 ### 3.3 Delegable tasks (each is a self-contained prompt for a separate, cheap session)
 
 Every task below names its inputs, its output, and its acceptance check; none needs the research
-above re-derived. Paste-ready prompts live in [`tasks/`](tasks/) (T4 first). Fixture pair: `stages/3N-nacrt/example/finishing/SB_1103_golobreska_lt_{raw,finished}.csx`
+above re-derived. Paste-ready prompts live in [`tasks/`](tasks/) (T4 first). **Two handoffs sit beside them:** [T4-handoff.md](tasks/T4-handoff.md) for the chooser and [T1-T3-handoff.md](tasks/T1-T3-handoff.md) for the three tasks that consume it — read the second before writing T5, it carries the contracts, the user's review decisions and the one open blocker. Fixture pair: `stages/3N-nacrt/example/finishing/SB_1103_golobreska_lt_{raw,finished}.csx`
 (the finished one is the oracle for T1). Log results in [log.md](log.md).
 
 **T1 — `nacrt_finish.py` (XML finisher).** *Input:* a `_lt.csx`/`.csz` after KORAK 2. *Output:*

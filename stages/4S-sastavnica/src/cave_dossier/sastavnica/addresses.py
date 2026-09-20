@@ -43,13 +43,22 @@ AUTHORED_TEMPLATE = (
 @dataclass(frozen=True)
 class Cell:
     """One labelled box. ``label`` is only for messages — the label text is
-    printed by the template itself and is never written by this code."""
+    printed by the template itself and is never written by this code.
+
+    ``size`` is the size the **drafter** set that cell's value at in the
+    authored template, and it is where the renderer starts: shrink-to-fit only
+    ever goes down from here. It is per cell because the drafter's own choice
+    is per cell — v1.0 sets row 1 at 10 pt, rows 2 to 4 at 9 and row 5 at 8 —
+    and starting every cell at 10 instead made the output visibly bigger than
+    the template it is meant to match (user, 2026-09-20).
+    """
 
     label: str
     x0: float
     y0: float
     x1: float
     y1: float
+    size: float = 10.0
 
     @property
     def width(self) -> float:
@@ -63,21 +72,21 @@ class Cell:
 # Field key -> cell. Keys are the sastavnica's own; where a key names the same
 # thing as an OSZ v10 field the spelling is kept identical on purpose.
 V1: dict[str, Cell] = {
-    "katastarski_broj": Cell("Katastarski broj", 81.35, 49.58, 120.18, 69.66),
-    "ime_objekta": Cell("Ime speleološkog objekta", 120.18, 49.58, 291.43, 69.66),
-    "broj_plocice": Cell("Broj pločice", 81.35, 69.66, 120.18, 89.74),
-    "htrs": Cell("HTRS koordinate", 120.18, 69.66, 248.12, 89.74),
-    "nadmorska_visina": Cell("Nadmorska visina", 248.12, 69.66, 291.43, 89.74),
-    "lokacija": Cell("Lokacija", 81.35, 89.74, 204.82, 109.82),
-    "stvarna_duljina": Cell("Stvarna duljina", 204.82, 89.74, 248.12, 109.82),
-    "tlocrtna_duljina": Cell("Tlocrtna duljina", 248.12, 89.74, 291.43, 109.82),
-    "crtali": Cell("Crtali", 39.85, 109.82, 120.18, 129.88),
-    "mjerili": Cell("Mjerili", 120.18, 109.82, 204.82, 129.88),
-    "dubina": Cell("Dubina/vis. razlika", 204.82, 109.82, 248.12, 129.88),
-    "mjerilo": Cell("Mjerilo", 248.12, 109.82, 291.43, 129.88),
-    "istrazili": Cell("Istražili", 39.85, 129.88, 95.03, 149.94),
-    "ekipa": Cell("Ekipa", 95.03, 129.88, 204.82, 149.94),
-    "datum": Cell("Datum/razdoblje istraživanja", 204.82, 129.88, 291.43, 149.94),
+    "katastarski_broj": Cell("Katastarski broj", 81.35, 49.58, 120.18, 69.66, 10),
+    "ime_objekta": Cell("Ime speleološkog objekta", 120.18, 49.58, 291.43, 69.66, 10),
+    "broj_plocice": Cell("Broj pločice", 81.35, 69.66, 120.18, 89.74, 9),
+    "htrs": Cell("HTRS koordinate", 120.18, 69.66, 248.12, 89.74, 9),
+    "nadmorska_visina": Cell("Nadmorska visina", 248.12, 69.66, 291.43, 89.74, 9),
+    "lokacija": Cell("Lokacija", 81.35, 89.74, 204.82, 109.82, 9),
+    "stvarna_duljina": Cell("Stvarna duljina", 204.82, 89.74, 248.12, 109.82, 9),
+    "tlocrtna_duljina": Cell("Tlocrtna duljina", 248.12, 89.74, 291.43, 109.82, 9),
+    "crtali": Cell("Crtali", 39.85, 109.82, 120.18, 129.88, 9),
+    "mjerili": Cell("Mjerili", 120.18, 109.82, 204.82, 129.88, 9),
+    "dubina": Cell("Dubina/vis. razlika", 204.82, 109.82, 248.12, 129.88, 9),
+    "mjerilo": Cell("Mjerilo", 248.12, 109.82, 291.43, 129.88, 9),
+    "istrazili": Cell("Istražili", 39.85, 129.88, 95.03, 149.94, 8),
+    "ekipa": Cell("Ekipa", 95.03, 129.88, 204.82, 149.94, 8),
+    "datum": Cell("Datum/razdoblje istraživanja", 204.82, 129.88, 291.43, 149.94, 9),
 }
 
 # The block itself, for the record: 251.58 x 100.36 pt ~ 88.7 x 35.4 mm at the
@@ -86,10 +95,13 @@ V1: dict[str, Cell] = {
 BLOCK = (39.85, 49.58, 291.43, 149.94)
 
 # ── typesetting, measured off the authored values ────────────────────
-# Baseline sits a constant distance above the cell's bottom rule. The authored
-# baselines cluster at 4.47-4.70 below it, with a few hand nudges up to 5.96;
-# one uniform rule reads better than fifteen copied numbers.
-BASELINE_LIFT = 4.6
+# Baseline sits a constant distance above the cell's bottom rule. In v1.0 the
+# authored baselines cluster at 4.11-4.59 below it (median 4.34); the four in
+# row 2 and `datum` sit at 3.2, hand nudges the drafter made in Illustrator.
+# One uniform rule reads better than fifteen copied numbers. Re-measured
+# 2026-09-20 for v1.0 — it was 4.6 under the Myriad template, which put every
+# value a quarter-point high.
+BASELINE_LIFT = 4.3
 # Side padding inside a cell before shrinking starts. 2 pt is what the drafter's
 # own 8 pt choice for the Ekipa cell implies.
 SIDE_PADDING = 2.0
@@ -106,6 +118,7 @@ MULTILINE_PADDING = 0.6
 # instead, where its cell allows one. The drafter's own Ekipa is 8 pt, and
 # their v1.0 example wraps that cell rather than going under it.
 WRAP_BELOW_SIZE = 8.0
+# The ceiling across every cell; each cell's own starting size is Cell.size.
 MAX_FONT_SIZE = 10.0
 MIN_FONT_SIZE = 6.0
 FONT_STEP = 0.25

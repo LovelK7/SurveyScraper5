@@ -368,7 +368,7 @@ def test_two_value_mjerilo_renders_two_lines_inside_the_cell(font):
     # one record per cell, carrying the tightest line
     record = next(p for p in placed if p.key == "mjerilo")
     assert record.text == "profil/tlocrt: 1:200/1:100"
-    assert record.font_size < addresses.MAX_FONT_SIZE
+    assert record.font_size < addresses.V1["mjerilo"].size
 
 
 def test_single_value_mjerilo_is_unchanged(font):
@@ -378,7 +378,7 @@ def test_single_value_mjerilo_is_unchanged(font):
     spans = _mjerilo_spans(one)
     assert len(spans) == 1
     assert spans[0]["text"] == "1:500"
-    assert spans[0]["size"] == pytest.approx(addresses.MAX_FONT_SIZE)
+    assert spans[0]["size"] == pytest.approx(addresses.V1["mjerilo"].size)
     # the one-line rule: baseline a constant lift above the cell's bottom rule
     baseline = addresses.V1["mjerilo"].y1 - addresses.BASELINE_LIFT
     assert spans[0]["origin"][1] == pytest.approx(baseline, abs=0.01)
@@ -402,7 +402,7 @@ def test_a_short_team_stays_on_one_line(font):
                                      {"ekipa": "A. Anić, I. Ivić"}, font.path)
     spans = _cell_spans(data, "ekipa")
     assert [plain(s["text"]) for s in spans] == ["A. Anić, I. Ivić"]
-    assert spans[0]["size"] == pytest.approx(addresses.MAX_FONT_SIZE)
+    assert spans[0]["size"] == pytest.approx(addresses.V1["ekipa"].size)
 
 
 def test_a_long_team_wraps_instead_of_shrinking(font):
@@ -626,6 +626,99 @@ def test_the_dimensions_source_still_wins_over_a_stub(drive, wired):
     settings, _leaf = drive
     fields = prefill.run_prefill(settings, 1, use_dimensions=True).result.fields
     assert fields["mjerilo"].value == "1:100" and fields["mjerilo"].source == "nacrt"
+
+
+# ── every cell starts at the size the drafter set it at ──────────────
+
+AUTHORED_V1 = {
+    "katastarski_broj": ("0000", 10), "ime_objekta": ("Neka jama", 10),
+    "broj_plocice": ("051-580", 9), "htrs": ("339823 5037995", 9),
+    "nadmorska_visina": ("1033 m", 9), "lokacija": ("Obruč, Jelenje", 9),
+    "stvarna_duljina": ("75 m", 9), "tlocrtna_duljina": ("15 m", 9),
+    "crtali": ("L. Kukuljan", 9), "mjerili": ("I. Dujmović", 9),
+    "dubina": ("-60 m", 9), "mjerilo": ("1:500", 9),
+    "istrazili": ("SU Estavela", 8), "ekipa": ("A. Anić", 8),
+    "datum": ("10.12.2023.", 9),
+}
+
+
+def test_a_value_is_set_at_its_cells_authored_size(font):
+    """Starting every cell at 10 pt made the output visibly bigger than the
+    template it copies (user, 2026-09-20): v1.0 sets row 1 at 10, rows 2-4 at
+    9 and row 5 at 8, and short values never need to shrink from there."""
+    face = pymupdf.Font(fontfile=str(font.path))
+    for key, (text, authored) in AUTHORED_V1.items():
+        assert addresses.V1[key].size == authored, key
+        size, _width, overflowed = render_mod.fit_size(face, text,
+                                                       addresses.V1[key])
+        assert not overflowed
+        assert size == pytest.approx(authored), key
+
+
+def test_a_long_value_still_shrinks_from_its_own_size(font):
+    face = pymupdf.Font(fontfile=str(font.path))
+    cell = addresses.V1["lokacija"]
+    size, _w, _o = render_mod.fit_size(
+        face, "Obruč, Jelenje, Gorski kotar, i još malo teksta", cell)
+    assert size < cell.size
+
+
+def test_the_baseline_matches_the_authored_template(font):
+    """Re-measured for v1.0: the drafter's baselines cluster 4.11-4.59 below
+    the cell's bottom rule, so 4.3 sits in the middle of them."""
+    assert 4.1 <= addresses.BASELINE_LIFT <= 4.6
+    data, _ = render_mod.render(addresses.BLANK_TEMPLATE,
+                                {"crtali": "L. Kukuljan"}, font.path)
+    span = _cell_spans(data, "crtali")[0]
+    cell = addresses.V1["crtali"]
+    assert span["origin"][1] == pytest.approx(cell.y1 - addresses.BASELINE_LIFT,
+                                              abs=0.01)
+
+
+# ── Istražili: one society written out, several abbreviated ──────────
+
+@pytest.mark.parametrize("raw, expected", [
+    # one society stays as written — the cell holds it comfortably
+    ("SU Estavela", "SU Estavela"),
+    # ...including a full canonical, whose ", Grad" tail is not a second society
+    ('Speleološka udruga "Estavela", Kastav',
+     'Speleološka udruga "Estavela", Kastav'),
+    # two or more: the short form a caver writes anyway (user, 2026-09-20)
+    ("SU Estavela, SO Velebit", "SUE, SOV"),
+    ("SU Estavela, SO Velebit, SK Ozren", "SUE, SOV, SKO"),
+    ("Speleološki odsjek HPD Željezničar, SU Estavela", "SOŽ, SUE"),
+    # nothing recognisable is ever abbreviated
+    ("HPS Zagreb, Nekakva grupa", "HPS Zagreb, Nekakva grupa"),
+    (None, None),
+])
+def test_the_istrazili_cell_abbreviates_only_a_list(raw, expected):
+    assert prefill._societies(raw) == expected
+
+
+@pytest.mark.parametrize("name, expected", [
+    ("SU Estavela", "SUE"),
+    ("SO Velebit", "SOV"),
+    ("SO PDS Velebit", "SOV"),              # the parent acronym is skipped
+    ('Speleološki odsjek HPD "Željezničar", Zagreb', "SOŽ"),
+    ("Speleološko društvo Velebit", "SDV"),
+    ("HPS", None),                          # not one of the four patterns
+    ("Estavela", None),
+])
+def test_the_society_shorthand_rule(name, expected):
+    from cave_dossier.core.people import society_shorthand
+
+    assert society_shorthand(name) == expected
+
+
+def test_two_societies_fit_the_cell_once_abbreviated(font):
+    face = pymupdf.Font(fontfile=str(font.path))
+    cell = addresses.V1["istrazili"]
+    written_out = "SU Estavela, SO Velebit"
+    short = prefill._societies(written_out)
+    long_size, _w, _o = render_mod.fit_size(face, written_out, cell)
+    short_size, _w, _o = render_mod.fit_size(face, short, cell)
+    assert long_size < cell.size          # written out, it has to shrink
+    assert short_size == pytest.approx(cell.size)
 
 
 # ── the embedded font Illustrator has to resolve ─────────────────────

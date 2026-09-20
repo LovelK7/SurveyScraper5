@@ -57,6 +57,61 @@ def split_person_names(raw: str | None) -> list[str]:
 _SOCIETY_SUFFIX_RE = re.compile(r"\s*\(([^()]{1,40})\)\s*$")
 
 
+# Croatian caving-organisation type prefixes, long form and short. The
+# abbreviation a member writes glues the short prefix straight onto the named
+# entity's initial: "Speleološka udruga Estavela" / "SU Estavela" -> "SUE",
+# "SO Velebit" -> "SOV", "SO HPD Željezničar" -> "SOŽ". Rule and prefix table
+# adapted from crospeleo-automation's
+# services/organization_alias_generator.py — see docs/PORTING.md.
+_SOCIETY_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("speleoloski odsjek", "SO"),
+    ("speleolosko drustvo", "SD"),
+    ("speleoloski klub", "SK"),
+    ("speleoloska udruga", "SU"),
+    ("so", "SO"),
+    ("sd", "SD"),
+    ("sk", "SK"),
+    ("su", "SU"),
+)
+# A section canonical may carry its parent society's acronym between the type
+# prefix and the named entity ("SO PDS Velebit"); the abbreviation skips it.
+_PARENT_ACRONYMS = frozenset({"hpd", "pds", "pd", "pk"})
+
+_FOLD = str.maketrans("čćžšđČĆŽŠĐ", "cczsdCCZSD")
+
+
+def society_shorthand(name: str | None) -> str | None:
+    """``SU Estavela`` -> ``SUE``; None when the name is not of that shape.
+
+    The Sastavnica's Istražili cell is 55 pt wide and holds one society
+    comfortably. Two do not fit written out, and the abbreviation is what a
+    caver writes anyway, so a list of societies is set in short form (user,
+    2026-09-20). A name that does not follow the four caving-organisation
+    patterns comes back as None and is left exactly as written — this never
+    invents an abbreviation.
+    """
+    if not name:
+        return None
+    # A canonical ends in ", <City>"; the entity is before that.
+    head = name.split(",")[0].replace('"', " ").replace("„", " ").replace("”", " ")
+    tokens = [token for token in head.split() if token]
+    if len(tokens) < 2:
+        return None
+    folded = [token.translate(_FOLD).casefold().strip(".") for token in tokens]
+
+    for long_form, short in _SOCIETY_PREFIXES:
+        words = long_form.split()
+        if folded[:len(words)] != words:
+            continue
+        rest = tokens[len(words):]
+        while rest and rest[0].translate(_FOLD).casefold().strip(".") in _PARENT_ACRONYMS:
+            rest = rest[1:]
+        if not rest or not rest[0][:1].isalpha():
+            return None
+        return short + rest[0][:1].upper()
+    return None
+
+
 def split_authors(raw: str | None) -> tuple[list[str], dict[str, str]]:
     """Split an author cell into ``(names, {name: society})``.
 

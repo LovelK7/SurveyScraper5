@@ -95,6 +95,10 @@ the machine, with system fallbacks after it. A `STAMP` in the PDF metadata
 marks files this tool produced, so an edited one is refused rather than
 silently overwritten.
 
+**Istražili holds one society written out and several abbreviated** —
+`SU Estavela` alone, but `SUE, SOV` for two, because the cell is 55 pt wide and
+that is the form a caver writes anyway.
+
 **No cell goes out empty**: what no source could fill carries `?`, or `/` for
 Broj pločice and Ekipa, where there may be nothing to record (a cave with no
 plaque, a cave surveyed solo). Finishing the document in Illustrator is then

@@ -5,10 +5,12 @@ Pure geometry — no SB, no config, no delivery: a blank PDF plus
 testable against the authored template without a workbook anywhere near.
 
 The rules come from measuring the drafter's own choices (see
-``addresses.py``): every value is **centred** in its cell, sits on a baseline a
-constant lift above the cell's bottom rule, and is **shrunk until it fits** —
-which is exactly what the drafter does by hand, and why the authored example
-carries values at 10, 9 and 8 pt. Nothing ever wraps: a cell is one line.
+``addresses.py``): every value is **centred** in its cell, starts at the size
+the drafter set that cell at — 10, 9 or 8 pt, per cell — sits on a baseline a
+constant lift above the cell's bottom rule, and is **shrunk until it fits**,
+which is exactly what the drafter does by hand. A cell is one line, except the
+two in ``MULTILINE`` that may take a second rather than shrink out of
+legibility.
 """
 
 from __future__ import annotations
@@ -47,10 +49,14 @@ class RenderError(RuntimeError):
 
 
 def fit_size(font, text: str, cell: Cell,
-             max_size: float = MAX_FONT_SIZE) -> tuple[float, float, bool]:
-    """(font size, drawn width, overflowed) for one value in one cell."""
+             max_size: float | None = None) -> tuple[float, float, bool]:
+    """(font size, drawn width, overflowed) for one value in one cell.
+
+    Starts at the cell's **authored** size — what the drafter set that cell at —
+    and shrinks from there; never grows past it.
+    """
     available = cell.width - 2 * SIDE_PADDING
-    size = max_size
+    size = cell.size if max_size is None else min(max_size, cell.size)
     while size > MIN_FONT_SIZE and font.text_length(text, size) > available:
         size -= FONT_STEP
     width = font.text_length(text, size)
@@ -121,6 +127,7 @@ def _wrap_at_comma(font, text: str) -> list[str] | None:
     for cut in range(1, len(parts)):
         pair = [", ".join(parts[:cut]) + ",", ", ".join(parts[cut:])]
         widest = max(font.text_length(line, MAX_FONT_SIZE) for line in pair)
+        # measured at one size for both halves, so the comparison is fair
         if best is None or widest < best[0]:
             best = (widest, pair)
     return best[1]
@@ -137,10 +144,10 @@ def _multiline(font, cell: Cell, count: int,
     `size` on a second call to re-centre the block once each line has been fitted.
     """
     if count == 1:
-        return [cell.y1 - BASELINE_LIFT], MAX_FONT_SIZE
+        return [cell.y1 - BASELINE_LIFT], cell.size
     height = cell.y1 - cell.y0
     line_height = font.ascender - font.descender          # in em
-    cap = min(MAX_FONT_SIZE,
+    cap = min(cell.size,
               (height - 2 * MULTILINE_PADDING) / (count * line_height))
     used = cap if size is None else min(size, cap)
     top = cell.y0 + (height - count * line_height * used) / 2

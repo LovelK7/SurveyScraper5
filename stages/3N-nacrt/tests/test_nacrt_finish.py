@@ -852,7 +852,12 @@ def test_sb1103_matches_what_cSurvey_itself_wrote(tmp_path):
             ("plan", lambda i: i.get("type") == "15")):
         mine, theirs = only(ours, design, predicate), only(oracle, design, predicate)
         for key, value in theirs.attrib.items():
-            if key in ("text", "data"):       # paint-time text; clipart id below
+            # text: cSurvey fills it at paint time, so ours is empty.
+            # data: the clipart id, compared on its own below.
+            # textalignment: a deliberate divergence — cSurvey's UI wrote Left
+            #   (1), which anchors the compass glyph at its left edge and left
+            #   the arrow a millimetre right of the scale bar; we write Center.
+            if key in ("text", "data", "textalignment"):
                 continue
             assert mine.get(key) == value, (design, key, mine.get(key), value)
         assert [c.tag for c in mine] == [c.tag for c in theirs]
@@ -860,6 +865,9 @@ def test_sb1103_matches_what_cSurvey_itself_wrote(tmp_path):
     # the same clipart, resolved out of our shipped asset rather than the file
     assert (only(ours, "plan", lambda i: i.get("type") == "15").get("data")
             == only(oracle, "plan", lambda i: i.get("type") == "15").get("data"))
+    # ...but centred on its point, which cSurvey's own item is not
+    assert only(ours, "plan", lambda i: i.get("type") == "15").get(
+        "textalignment") == "0"
 
 
 @needs_fixture

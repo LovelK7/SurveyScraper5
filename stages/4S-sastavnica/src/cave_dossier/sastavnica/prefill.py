@@ -34,7 +34,7 @@ from cave_dossier import georef
 from cave_dossier.core.config import Settings
 from cave_dossier.core.paths import workspace
 from cave_dossier.core.normalization import parse_optional_float
-from cave_dossier.core.people import split_authors
+from cave_dossier.core.people import society_shorthand, split_authors
 from cave_dossier.core.person_aliases import to_sb_shorthand
 from cave_dossier.geo import elevation as elevation_mod
 from cave_dossier.geo import locality as locality_mod
@@ -246,8 +246,9 @@ def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
     ])
     # Istražili: whatever the OSZ names, else this society (user, 2026-09-19).
     _set_first(fields, "istrazili", [
-        (_join(osz.get("istrazile_udruge"), osz.get("istrazile_udruge_2")), "osz"),
-        (settings.sastavnica_society, "default"),
+        (_societies(_join(osz.get("istrazile_udruge"),
+                          osz.get("istrazile_udruge_2"))), "osz"),
+        (_societies(settings.sastavnica_society), "default"),
     ])
     _set_first(fields, "datum", [
         (osz.get("datum_istrazivanja"), "osz"),
@@ -674,6 +675,27 @@ def _strict_float(text: str) -> float | None:
 
 # "F.Karabaić" -> "F. Karabaić": the template's own spacing.
 _SHORTHAND_SPACING = re.compile(r"(?<=\.)(?=[^\W\d_])", re.UNICODE)
+
+
+def _societies(raw: str | None) -> str | None:
+    """The Istražili cell: one society written out, several abbreviated.
+
+    The cell is 55 pt wide and holds ``SU Estavela`` comfortably; a second
+    society written out does not fit at any readable size, and the abbreviation
+    (``SUE``, ``SOV``) is the form a caver writes anyway (user, 2026-09-20).
+    Abbreviating a lone society would only make the common case harder to read,
+    so the short form is used **only when two or more** entries are recognisable
+    societies. Anything the rule does not recognise is left exactly as written —
+    including the ``, <Grad>`` tail of a canonical name, which is why a single
+    canonical does not trip the count.
+    """
+    if not raw:
+        return None
+    parts = [part.strip() for part in raw.split(",") if part.strip()]
+    shorthands = [society_shorthand(part) for part in parts]
+    if sum(1 for short in shorthands if short) < 2:
+        return raw
+    return ", ".join(short or part for short, part in zip(shorthands, parts))
 
 
 def _people(raw: str | None) -> str | None:
