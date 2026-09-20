@@ -230,7 +230,7 @@ def test_prefill_from_sb_alone(settings, run):
     assert fields["nadmorska_visina"].value == "500 m"
     assert fields["nadmorska_visina"].source == "sb"
     # Lokalitet + Najbliže mjesto, and nothing else (user, 2026-09-19).
-    assert fields["lokacija"].value == "Testni kras, Testno Selo"
+    assert fields["lokacija"].value == "Testno Selo, Testni kras"
     # No zapisnik: SB's own dimensions carry the two cells it can.
     assert fields["stvarna_duljina"].value == "40 m"
     assert fields["dubina"].value == "-12 m"          # depth is signed

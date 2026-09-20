@@ -140,7 +140,7 @@ out as a `dopune-sb.csv` review row for a person to paste.
 | Broj pločice | SB `Broj pločice` | |
 | HTRS koordinate | SB `X HTRS` + `Y HTRS` | `"<X> <Y>"`, integer metres — the authored form |
 | Nadmorska visina | SB `Z` → `geo.elevation` kota | `"<n> m"`, **whole metres**; SB wins, a mismatch is a note |
-| Lokacija | `geo.locality` finding / SB `Lokalitet` · `Najbliže mjesto` | `Lokalitet, Najbliže mjesto` — those two only ([decision 1](#settled-user-2026-09-19)) |
+| Lokacija | `geo.locality` finding / SB `Lokalitet` · `Najbliže mjesto` | `Najbliže mjesto, Lokalitet` — those two only, settlement first ([decision 1](#settled-user-2026-09-19), order reversed by the user 2026-09-20) |
 | Stvarna duljina | *(`nacrt`: `l`)* → OSZ `duljina` → SB `Duljina` | `"<n> m"`; a **0** means "not surveyed yet" and stays blank |
 | Tlocrtna duljina | *(`nacrt`: `pl`)* → OSZ `horizontalna_duljina` | not in SB — blank when no OSZ |
 | Dubina/vis. razlika | *(`nacrt`: `nvr`/`pvr`)* → OSZ `dubina` / `visinska_razlika` → SB `Dubina` | `"-<n> m"` for jame; `nacrt` renders `"-9/+1 m"` when the cave also goes up **and** both numbers still fit above 7 pt |
@@ -408,7 +408,7 @@ The eight questions this note opened with, answered, and what each one became:
 
 | # | Question | Decision | Where it lives |
 |---|---|---|---|
-| 1 | Lokacija composition | **Lokalitet + Najbliže mjesto, nothing else** — the cell is narrow | `_resolve_lokacija` |
+| 1 | Lokacija composition | **Najbliže mjesto + Lokalitet, nothing else** — the cell is narrow; order reversed to settlement-first by the user 2026-09-20 | `_resolve_lokacija` |
 | 2 | Katastarski broj | **Never filled; keep the template's `0000`.** The number is assigned at the very end and the archivist edits the PDF by hand. Carrying it across every product at once (SB, Nacrt, OSZ) is a later step of its own | `addresses.CONSTANTS` |
 | 3 | Mjerilo | **Blank, but keep `1:`** as a visible stub. **Superseded 2026-09-20 for the cSurvey route only** (project 0004, T3): `cavedossier nacrt` knows the scale the designs were printed at and writes it — `1:100`, or two lines when the two designs differ. The Illustrator route never reads that file and keeps the stub | `addresses.CONSTANTS`; `compose.DIMENSION_FIELDS` |
 | 4 | Stvarna vs tlocrtna duljina | SB's `Duljina` is the **stvarna** one; tlocrtna stays blank until a zapisnik carries it | `_resolve_fields` |

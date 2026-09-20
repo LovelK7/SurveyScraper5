@@ -338,7 +338,9 @@ def _resolve_lokacija(settings: Settings, cave: CaveRow, result: SastavnicaResul
         najblize = _sb_text(cave, _field_column(settings, "nearest_place"))
         source = "sb"
 
-    text = ", ".join(part for part in (lokalitet, najblize) if part)
+    # "Najbliže mjesto, Lokalitet" — the settlement first, then the place
+    # within it (user, 2026-09-20; reversed the 2026-09-19 order).
+    text = ", ".join(part for part in (najblize, lokalitet) if part)
     if text:
         result.fields["lokacija"] = FieldValue(value=text, source=source)
 
