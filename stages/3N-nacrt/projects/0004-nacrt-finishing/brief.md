@@ -145,7 +145,7 @@ chosen scale fits.
 | 4a | highest station = entrance | **yes** | among non-splay stations (`<t n>` without `(`), the one with **min** `z` (Z is positive downward); set `entrance="2"` on its `<trigpoint>`; **warn** when this differs from `properties@origin` or when several stations tie within 0.5 m — a ponor / horizontal cave can violate the rule | XML (Python) |
 | 4b | Dislivello at the deepest point | **yes** | lowest point of the profile floor = max Y over the profile Borders-layer points (or, equivalently, `nvr`); write a `quotatype="3"` item with two points 0.3 m apart there, `quotarelativetrigpoint` = the entrance, `quotavalue="0"` so cSurvey computes the text at paint time | XML (Python) |
 | 5 | cave dimensions | **yes** | after 4a run **`recalc`** (headless), then read the per-cave `<sm>`: total length `l`, horizontal length `pl`, depth `nvr`, height `pvr`, total drop `pvr+nvr`, altitude span `qmx−qmn`. Emit `SB_<broj>_dimenzije.json` into the cave leaf for 4S/5D to consume | driver + Python |
-| 6 | print layout | **yes** | write `_preview.plan` / `_preview.profile`: `pageformat="A4"`, `pagelandscape` from the bbox aspect, `scalemode` ∈ {1,2,5} chosen per design by the rule in §3.4 (the two designs may differ: typically profile 1:200, plan 1:100), `designstyle="0"` (*Survey* — the user's default, 2026-09-20; not *Combined*), `drawsplay="0"`, `drawscale/drawcompass` per taste, `printername`; plus `sharedsettings` `preview.designquality="2"`, `preview.manualrefresh="0"`. **Plan and profile get their own scale** — see §3.4 | XML (Python) |
+| 6 | print layout | **yes** | write `_preview.plan` / `_preview.profile`: `pageformat="A4"`, `pagelandscape` from the bbox aspect, `scalemode` ∈ {1,2,4,5} (1:100 / 1:200 / 1:300 / 1:500) chosen per design by the rule in §3.4 (the two designs may differ: typically profile 1:200, plan 1:100), `designstyle="0"` (*Survey* — the user's default, 2026-09-20; not *Combined*), `drawsplay="0"`, `drawscale/drawcompass` per taste, `printername`; plus `sharedsettings` `preview.designquality="2"`, `preview.manualrefresh="0"`. **Plan and profile get their own scale** — see §3.4 | XML (Python) |
 | 7 | PDF export | **yes** | `csurvey_headless_probe.ps1 -Command print` — no dialog | driver |
 | 8a | off-centre placement | **partly in-app, fully downstream** | in-app only via asymmetric `pagemargins`; the clean solution is 8b | — |
 | 8b | plan + profile on one A4 | **yes, downstream, together with 4S** | cSurvey cannot. Print each design at its own fixed scale (vector PDF from the Microsoft driver), then compose with PyMuPDF onto the **4S sastavnica page** (A4 portrait, title block upper-left, already PyMuPDF-based): crop each page to its ink bbox, place per §3.4, never rescale so the printed scale stays true. 4S is extended to carry the speleometrics (Stvarna/Tlocrtna duljina, Dubina from `<sms>`) and the scale(s) — `Mjerilo` becomes `1:100` or, when they differ, `profil/tlocrt: 1:200/1:100` (a custom layout of that cell) | Python (3N + 4S) |
@@ -175,7 +175,8 @@ can open and print in two clicks.
 
 - **Scale per design, not per sheet.** Profile and plan often need different scales: a
   1:200 profile with a 1:100 plan is the common case. Rule: for each design take the largest
-  of 1:100 / 1:200 / 1:500 at which its bbox fits its allotted area; when the two bboxes are
+  of **1:100 / 1:200 / 1:300 / 1:500** (1:300 added by the user 2026-09-20; `scalemode` 1/2/4/5)
+  at which its bbox fits its allotted area; when the two bboxes are
   drastically different (say one dimension ratio > 1.6), propose the plan at the larger scale so
   it stays legible rather than forcing both to the profile's.
 - **One A4 portrait page = the 4S sastavnica page.** The title block occupies the upper-left;
@@ -192,7 +193,7 @@ can open and print in two clicks.
 ### 3.3 Delegable tasks (each is a self-contained prompt for a separate, cheap session)
 
 Every task below names its inputs, its output, and its acceptance check; none needs the research
-above re-derived. Fixture pair: `stages/3N-nacrt/example/finishing/SB_1103_golobreska_lt_{raw,finished}.csx`
+above re-derived. Paste-ready prompts live in [`tasks/`](tasks/) (T4 first). Fixture pair: `stages/3N-nacrt/example/finishing/SB_1103_golobreska_lt_{raw,finished}.csx`
 (the finished one is the oracle for T1). Log results in [log.md](log.md).
 
 **T1 — `nacrt_finish.py` (XML finisher).** *Input:* a `_lt.csx`/`.csz` after KORAK 2. *Output:*
@@ -230,7 +231,7 @@ block is untouched and unclipped; file < 500 KB.
 **T4 — scale + layout chooser (`choose_layout()` + tests).** *Input:* plan bbox (m), profile bbox
 (m), the A4-portrait free area left by the sastavnica title block (from 4S: page 595.28 × 841.89 pt,
 block in the upper-left — read its extent from the design doc), margins/gaps (mm). *Output:* a
-proposal `{plan_scale, profile_scale ∈ {100,200,500}, arrangement: vertical|side_by_side,
+proposal `{plan_scale, profile_scale ∈ {100,200,300,500}, arrangement: vertical|side_by_side,
 placements (mm)}` plus up to three ranked alternatives for the operator menu, or a reason when
 nothing fits (fall back to `scalemode=0` fit and warn). Rules in §3.4: per-design scale, profile
 primary, plan promoted to a larger scale when the bboxes differ drastically. Pure function,
