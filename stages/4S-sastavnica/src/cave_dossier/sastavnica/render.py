@@ -227,7 +227,38 @@ def render(blank_path: Path, values: dict[str, str], font_path: Path,
         doc.set_metadata({**(doc.metadata or {}), **metadata})
     doc.subset_fonts()          # embed only the glyphs actually used
     use_postscript_font_name(doc, font_path)
+    plain_hyphens_and_spaces(doc)
     return doc.tobytes(garbage=4, deflate=True), placed
+
+
+# In micross.ttf and arial.ttf the hyphen glyph serves both U+002D and U+00AD,
+# the space glyph both U+0020 and U+00A0, and MuPDF's ToUnicode picks the
+# higher code point. A soft hyphen is a *discretionary* hyphen: Illustrator
+# hides it, so "051-716" opened as "051716" and "-14 m" as "14 m" (user,
+# 2026-09-20, on the first SB 1256 nacrt). Rewrite the CMaps back to the plain
+# characters; the glyphs drawn are unchanged, only what the text *means* is.
+_TOUNICODE_FIXES = (
+    (re.compile(rb"(?i)<00AD>"), b"<002D>"),
+    (re.compile(rb"(?i)<00A0>"), b"<0020>"),
+)
+
+
+def plain_hyphens_and_spaces(doc) -> int:
+    """Patch every ToUnicode CMap in ``doc`` in place; returns streams changed."""
+    changed = 0
+    for xref in range(1, doc.xref_length()):
+        if not doc.xref_is_stream(xref):
+            continue
+        stream = doc.xref_stream(xref)
+        if b"beginbfchar" not in stream and b"beginbfrange" not in stream:
+            continue
+        patched = stream
+        for pattern, replacement in _TOUNICODE_FIXES:
+            patched = pattern.sub(replacement, patched)
+        if patched != stream:
+            doc.update_stream(xref, patched)
+            changed += 1
+    return changed
 
 
 def use_postscript_font_name(doc, font_path: Path) -> list[str]:

@@ -454,3 +454,15 @@ with six things. All six are done; two of them changed a rule rather than a numb
 - **Evidence:** this commit; `runs/sastavnica/1256/SB_1256_nacrt.pdf`; Drive folder listing
   (`csurvey_1/2/3/9_*.bat`, `cavedossier_*_v1.5.bat`, `csurvey_alati/KIT_VERSION.txt` = v1.3).
 - **Next:** the second-machine check (backlog, deferred by the user); then close.
+
+### 2026-09-20 — Illustrator hid the hyphens: soft-hyphen ToUnicode fixed (user + agent) ✅
+
+- **Did:** user opened `SB_1256_nacrt.pdf` in Illustrator: `051716` and `14 m`. The PDF's text
+  layer carried U+00AD / U+00A0 — MuPDF's ToUnicode picks the higher code point when one glyph
+  serves two (micross.ttf and arial.ttf both do), and a soft hyphen is discretionary. Added
+  `render.plain_hyphens_and_spaces` (rewrites every ToUnicode CMap), applied in `render()` and
+  again in `compose_nacrt`; regression test; gotcha recorded in `sastavnica-design.md`.
+- **Result:** both delivered nacrts regenerated with plain U+002D/U+0020 (verified by text
+  extraction); prod v1.6 published. 105 4S tests green.
+- **Evidence:** this commit.
+- **Next:** user re-opens `SB_1256_nacrt.pdf` in Illustrator to confirm; second-machine check.

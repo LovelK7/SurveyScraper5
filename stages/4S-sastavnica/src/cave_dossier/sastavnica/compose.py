@@ -351,6 +351,10 @@ def compose_nacrt(sastavnica_pdf_bytes: bytes, plan_pdf: Path, profile_pdf: Path
                     clip=pymupdf.Rect(item.ink.x0, item.ink.y0,
                                       item.ink.x1, item.ink.y1),
                 )
+        # The sastavnica's fonts travel into this document; keep their hyphens
+        # plain (render.plain_hyphens_and_spaces) — Illustrator hides U+00AD.
+        from cave_dossier.sastavnica.render import plain_hyphens_and_spaces
+        plain_hyphens_and_spaces(page_doc)
         return page_doc.tobytes(garbage=4, deflate=True)
 
 

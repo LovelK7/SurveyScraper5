@@ -252,6 +252,17 @@ maps this face's space glyph to U+00A0, because space and no-break space share
 it: the drawn page is identical, only extracted text differs, so comparisons
 normalise it.
 
+### Soft hyphens (found 2026-09-20, on the first SB 1256 nacrt)
+
+Opened in Illustrator, `051-716` read `051716` and `-14 m` read `14 m`. The glyphs were there;
+the *meaning* was wrong: in `micross.ttf` (and `arial.ttf`) one glyph serves both U+002D and
+U+00AD, one both U+0020 and U+00A0, and MuPDF's generated ToUnicode CMap picks the higher code
+point — so the PDF said *soft hyphen*, which Illustrator treats as a discretionary hyphen and
+hides. Subsetting is not the cause (reproduced without it). `render.plain_hyphens_and_spaces`
+rewrites every ToUnicode CMap back to U+002D / U+0020 after rendering, and `compose_nacrt` runs
+it again on the composed page because the sastavnica's fonts travel into it. Regression test:
+`test_hyphens_and_spaces_are_plain_characters_not_soft_ones`.
+
 ## The blank-template builder
 
 A one-time step per template version, not a runtime one:

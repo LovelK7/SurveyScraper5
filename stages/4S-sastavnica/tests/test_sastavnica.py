@@ -388,3 +388,13 @@ def test_local_only_skips_delivery(drive, run):
     outcome = prefill.run_prefill(settings, 1, local_only=True)
     assert outcome.delivered_path is None
     assert not (leaf / "SB_0001_sastavnica.pdf").exists()
+
+
+def test_hyphens_and_spaces_are_plain_characters_not_soft_ones(font):
+    # micross/arial map U+002D and U+00AD to one glyph; MuPDF's ToUnicode picked
+    # U+00AD, and Illustrator hides a soft hyphen: "051-716" read "051716".
+    values = {"broj_plocice": "051-716", "dubina": "-14 m"}
+    data, _ = render_mod.render(addresses.BLANK_TEMPLATE, values, font.path)
+    text = pymupdf.open("pdf", data)[0].get_text()
+    assert "051-716" in text and "-14 m" in text
+    assert "­" not in text and " " not in text
