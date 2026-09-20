@@ -2,9 +2,9 @@
 
 The rules under test are the user's (brief 3.4 of projects/0004-nacrt-finishing,
 as amended on reviewing the drawn proposals): a scale per design out of
-1:100 / 1:200 / 1:250 / 1:300 / 1:500, profile primary, the plan promoted to a
-larger scale when the bboxes differ drastically but never more than a factor of
-2 from the profile's, nothing ever rescaled to fit, and every drawing below the
+1:100 / 1:200 / 1:250 / 1:300 / 1:400 / 1:500, profile primary, the plan promoted
+to a larger scale when the bboxes differ drastically but never more than one
+rung of the ladder from the profile's, nothing ever rescaled to fit, and every drawing below the
 4S sastavnica title block — never in the strip beside it.
 """
 
@@ -52,9 +52,10 @@ def check_layout(layout):
         assert inside_margins(placement), placement
         assert clear_of_title_block(placement), placement
     assert not layout.profile.overlaps(layout.plan, tol=TOL)
-    # At most one step apart, so the reader switches scale once per sheet.
-    denominators = (layout.profile_scale, layout.plan_scale)
-    assert max(denominators) <= nacrt_layout.MAX_SCALE_RATIO * min(denominators)
+    # At most one rung apart, so the reader switches scale once per sheet.
+    rungs = (nacrt_layout.SCALES.index(layout.profile_scale),
+             nacrt_layout.SCALES.index(layout.plan_scale))
+    assert abs(rungs[0] - rungs[1]) <= nacrt_layout.MAX_STEP
     match = MJERILO.match(layout.mjerilo)
     assert match, layout.mjerilo
     if layout.profile_scale == layout.plan_scale:
@@ -82,7 +83,8 @@ def test_title_block_derived_from_the_sastavnica_cell_table():
 
 
 def test_scalemode_is_the_print_dialog_combo_index():
-    assert nacrt_layout.SCALEMODE == {100: 1, 200: 2, 250: 3, 300: 4, 500: 5}
+    # 1:400 is not on the dialog's list -> custom (99) + scale="400".
+    assert nacrt_layout.SCALEMODE == {100: 1, 200: 2, 250: 3, 300: 4, 400: 99, 500: 5}
     assert tuple(nacrt_layout.SCALEMODE) == nacrt_layout.SCALES
 
 
@@ -157,19 +159,41 @@ def test_1_300_is_used_when_1_250_misses():
     check_layout(best)
 
 
-# --- one sheet, one step -------------------------------------------------
+def test_1_400_is_used_when_1_300_misses_and_goes_out_as_custom_scale():
+    # Profile 58 x 20 m: 193.3 mm wide at 1:300 (misses 190 by a hair), 145 at 1:400.
+    plan, profile = BBox(6, 8), BBox(58, 20)
+    assert scale_of(profile, 300)[0] > 190.0
+    assert scale_of(profile, 400)[0] <= 190.0
+
+    best, _, _ = choose_layout(plan, profile)
+
+    assert best.profile_scale == 400
+    assert best.scalemodes[0] == 99                    # custom entry + scale="400"
+    assert best.plan_scale == 300                      # one rung, not 1:200
+    check_layout(best)
 
 
-def test_the_two_scales_never_differ_by_more_than_one_step():
+# --- one sheet, one rung -------------------------------------------------
+
+
+def test_the_two_scales_never_differ_by_more_than_one_rung():
     # A tiny plan beside a long profile: the plan would be legible at 1:100, but
-    # a 1:300 profile above a 1:100 plan makes the reader switch scale twice.
+    # a 1:300 profile above a 1:100 (or 1:200) plan makes the reader jump rungs.
     best, alternatives, _ = choose_layout(BBox(3, 4), BBox(50, 30))
 
     assert best.profile_scale == 300
-    assert best.plan_scale == 200                      # not 100
+    assert best.plan_scale == 250                      # the adjacent rung, not 200
     for layout in [best] + alternatives:
-        assert max(layout.profile_scale, layout.plan_scale) <= \
-            2.0 * min(layout.profile_scale, layout.plan_scale)
+        assert abs(nacrt_layout.SCALES.index(layout.profile_scale)
+                   - nacrt_layout.SCALES.index(layout.plan_scale)) <= 1
+
+
+def test_alternatives_carry_no_pointless_downscale():
+    # SB 1103 fits at 1:100 both ways; a "plan at 1:200" alternative is noise.
+    best, alternatives, _ = choose_layout(BBox(4, 9), BBox(5, 10))
+    assert [alt.key for alt in alternatives] == [(100, 100, "side_by_side")]
+    for alt in alternatives:
+        assert alt.plan_scale <= best.plan_scale or alt.arrangement != best.arrangement
 
 
 # --- tall and narrow ------------------------------------------------------

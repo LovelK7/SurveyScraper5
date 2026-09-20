@@ -8,6 +8,15 @@ Log entries: the two `2026-09-20` blocks at the end of [../log.md](../log.md).
 This file exists so the next session does not have to re-read the module to write the T1, T3 and
 T5 prompts. Everything T1/T3 need to cite about the chooser is below, verbatim.
 
+> **Amended by the research session, 2026-09-20 (later), after the user's review of this handoff:**
+> (a) "one step" means **one rung of `SCALES`**, not a factor of 2 — `MAX_SCALE_RATIO` is gone,
+> `MAX_STEP = 1` replaces it; (b) **1:400 is on the ladder**, `SCALES = (100, 200, 250, 300, 400, 500)`,
+> written as cSurvey's custom entry `scalemode="99"` + `scale="400"` (`SCALEMODE[400] == 99`);
+> (c) **alternatives are Pareto-pruned per arrangement** (`_dominated`) so the menu carries no
+> pointless downscales. §2/§3/§6 below are otherwise still accurate; where they say "factor of 2"
+> read "one rung". Worked examples that changed: 6 × 8 / 50 × 30 ⇒ `1:300/1:250`; SB 1103's menu
+> is now the proposal plus one side-by-side alternative.
+
 ## Contents
 
 - [1. What landed](#1-what-landed)

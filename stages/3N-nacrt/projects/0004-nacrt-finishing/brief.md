@@ -145,7 +145,7 @@ chosen scale fits.
 | 4a | highest station = entrance | **yes** | among non-splay stations (`<t n>` without `(`), the one with **min** `z` (Z is positive downward); set `entrance="2"` on its `<trigpoint>`; **warn** when this differs from `properties@origin` or when several stations tie within 0.5 m — a ponor / horizontal cave can violate the rule | XML (Python) |
 | 4b | Dislivello at the deepest point | **yes** | lowest point of the profile floor = max Y over the profile Borders-layer points (or, equivalently, `nvr`); write a `quotatype="3"` item with two points 0.3 m apart there, `quotarelativetrigpoint` = the entrance, `quotavalue="0"` so cSurvey computes the text at paint time | XML (Python) |
 | 5 | cave dimensions | **yes** | after 4a run **`recalc`** (headless), then read the per-cave `<sm>`: total length `l`, horizontal length `pl`, depth `nvr`, height `pvr`, total drop `pvr+nvr`, altitude span `qmx−qmn`. Emit `SB_<broj>_dimenzije.json` into the cave leaf for 4S/5D to consume | driver + Python |
-| 6 | print layout | **yes** | write `_preview.plan` / `_preview.profile`: `pageformat="A4"`, `pagelandscape` from the bbox aspect, `scalemode` ∈ {1,2,3,4,5} (1:100 / 1:200 / 1:250 / 1:300 / 1:500) chosen per design by the rule in §3.4 (the two designs may differ: typically profile 1:200, plan 1:100), `designstyle="0"` (*Survey* — the user's default, 2026-09-20; not *Combined*), `drawsplay="0"`, `drawscale/drawcompass` per taste, `printername`; plus `sharedsettings` `preview.designquality="2"`, `preview.manualrefresh="0"`. **Plan and profile get their own scale** — see §3.4 | XML (Python) |
+| 6 | print layout | **yes** | write `_preview.plan` / `_preview.profile`: `pageformat="A4"`, `pagelandscape` from the bbox aspect, `scalemode` ∈ {1,2,3,4,99+`scale=400`,5} (1:100 / 1:200 / 1:250 / 1:300 / 1:400 / 1:500) chosen per design by the rule in §3.4 (the two designs may differ: typically profile 1:200, plan 1:100), `designstyle="0"` (*Survey* — the user's default, 2026-09-20; not *Combined*), `drawsplay="0"`, `drawscale/drawcompass` per taste, `printername`; plus `sharedsettings` `preview.designquality="2"`, `preview.manualrefresh="0"`. **Plan and profile get their own scale** — see §3.4 | XML (Python) |
 | 7 | PDF export | **yes** | `csurvey_headless_probe.ps1 -Command print` — no dialog | driver |
 | 8a | off-centre placement | **partly in-app, fully downstream** | in-app only via asymmetric `pagemargins`; the clean solution is 8b | — |
 | 8b | plan + profile on one A4 | **yes, downstream, together with 4S** | cSurvey cannot. Print each design at its own fixed scale (vector PDF from the Microsoft driver), then compose with PyMuPDF onto the **4S sastavnica page** (A4 portrait, title block upper-left, already PyMuPDF-based): crop each page to its ink bbox, place per §3.4, never rescale so the printed scale stays true. 4S is extended to carry the speleometrics (Stvarna/Tlocrtna duljina, Dubina from `<sms>`) and the scale(s) — `Mjerilo` becomes `1:100` or, when they differ, `profil/tlocrt: 1:200/1:100` (a custom layout of that cell) | Python (3N + 4S) |
@@ -175,15 +175,18 @@ can open and print in two clicks.
 
 - **Scale per design, not per sheet.** Profile and plan often need different scales: a
   1:200 profile with a 1:100 plan is the common case. Rule: for each design take the largest
-  of **1:100 / 1:200 / 1:250 / 1:300 / 1:500** (`scalemode` 1/2/3/4/5) at which its bbox fits its
-  allotted area; when the two bboxes are
+  of **1:100 / 1:200 / 1:250 / 1:300 / 1:400 / 1:500** (`scalemode` 1/2/3/4/99+`scale`/5 — 1:400 is
+  not on cSurvey's list and goes out as the custom entry) at which its bbox fits its allotted area; when the two bboxes are
   drastically different (say one dimension ratio > 1.6), propose the plan at the larger scale so
   it stays legible rather than forcing both to the profile's.
-  **The two scales may differ by at most a factor of 2** — 1:200 over 1:100 is the extreme case;
-  a 1:300 profile over a 1:100 plan makes the reader switch scale twice on one sheet and is
-  refused (user, 2026-09-20, on reviewing the drawn proposals). 1:250 joined the ladder in the
-  same review: a 40 m profile misses 1:200 by 10 mm, and dropping it to 1:300 gives away more
-  than it must.
+  **The two scales may differ by at most one rung of that ladder** (user, 2026-09-20, stated
+  twice: the T4 session first read "one step" as a factor of 2, which let 1:500 sit beside 1:250 —
+  two rungs, since 1:300 and 1:400 lie between; corrected the same day). 1:200 over 1:100 and
+  1:300 over 1:250 are fine; 1:300 over 1:200 is not. 1:250 joined the ladder in the review of the
+  drawn proposals (a 40 m profile misses 1:200 by 10 mm) and 1:400 right after it.
+  **Alternatives must be real trade-offs**: never a pointless downscale of a design that fits at
+  the larger scale — one entry per arrangement per genuine choice (equal scales vs. promoted
+  plan, stacked vs. side by side). The user could not judge the first menus because of the noise.
 - **One A4 portrait page = the 4S sastavnica page.** The title block occupies the upper-left;
   the drawings share the rest. Two arrangements: **vertical** (default — profile has the primary
   role and sits on top, plan beneath) or **side by side** (when both are tall and narrow).

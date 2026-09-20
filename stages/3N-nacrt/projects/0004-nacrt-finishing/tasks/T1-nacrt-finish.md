@@ -31,12 +31,28 @@ CLI: files or an intake folder with `--sb <broj>` (exactly like the sibling tool
 
 ### The six edits, in this order
 
-1. **Entrance.** Among stations in `<calculate><ts><t n="…">` whose name has no `(` (splays are
-   `0(12)`), pick the one with **minimum** `z` in `<p x y z>` (Z is positive downward, so min z =
-   highest). Set `entrance="2"` on its `<trigpoints><trigpoint name="…">` (remove `entrance` from
-   any other trigpoint). **Warn** (do not stop) when that station differs from
-   `<properties origin="…">` or when another non-splay station is within 0.5 m of it in z.
-   Fixture oracle: SB 1103 ⇒ station `2`.
+1. **Entrance — two independent witnesses, combined.**
+   *(a) Highest station:* among stations in `<calculate><ts><t n="…">` whose name has no `(`
+   (splays are `0(12)`), the one with **minimum** `z` in `<p x y z>` (Z is positive downward).
+   *(b) The entrance sign the surveyor drew:* TopoDroid's entrance symbol imports as a Sign item,
+   `<item type="6" category="80" sign="263" …>` (`cIItemSign.vb:44  Entrance = 263`; clipart
+   `ingresso.svg`), usually in the plan and often again in the profile. Its `<points data="X Y
+   S<segment-guid>">` gives two hints: the bound segment (`<segment id=… from=… to=…>` — take the
+   endpoint nearer to the sign) and, more generally, the nearest non-splay station by distance in
+   that design's coordinates — plan design coords equal the station's `<p x y>` directly (verified
+   on SB 1103: sign at (-1.62, 1.02), station `2` at (-0.25, -0.06), station `1` at (0, 0) — `2` is
+   nearer at 1.75 m vs 1.92 m, and the sign's bound segment is `1→2`), profile design coords are
+   (`d`, `z`) from the same `<p>`. Take the nearest station per design that has a sign; if plan and
+   profile disagree, prefer the plan.
+   *Decision:* if (a) and (b) agree → that station, confidently. If they disagree → **prefer the
+   sign** (a ponor or a horizontal cave rarely has its entrance at the top; the surveyor placed
+   the sign on purpose) and print a warning naming both. If there is no sign → (a), and warn when
+   it differs from `<properties origin="…">` or when another non-splay station is within 0.5 m
+   of it in z. Set `entrance="2"` on the chosen `<trigpoints><trigpoint name="…">` (remove
+   `entrance` from every other trigpoint). Put both witnesses and the decision in the sidecar JSON
+   and the `--dry-run` report. Fixture oracle: SB 1103 ⇒ station `2` by both witnesses.
+   Keep the two witnesses as separate small functions with their own tests (synthetic XML), so
+   the rule can be re-weighed once real caves have been through it.
 2. **Dislivello quota** in `<profile>`: find the lowest floor point = the maximum `y` over all
    `<points data>` of items in the profile's layer `type="5"` (Borders) — fall back to all
    profile layers if Borders is empty. Append to the profile's layer `type="6"` (Signs)
@@ -69,12 +85,12 @@ CLI: files or an intake folder with `--sb <broj>` (exactly like the sibling tool
    order `(plan, profile)`. Show the numbered menu (`layout.note` per line, Enter = proposal)
    unless `--yes`/`--layout`. Then write on `<options><_preview.plan>` and `<_preview.profile>`:
    `pageformat="A4"`, remove/omit `pagelandscape`, `pagemargins="10;10;10;10"`,
-   `scalemode` = `best.scalemodes[1]` / `[0]`, `scale` = the denominator, `designstyle="0"`,
+   `scalemode` = `best.scalemodes[1]` / `[0]`, `scale` = the denominator (always written: 1:400 has no combo entry and rides on `scalemode="99"` + `scale="400"`), `designstyle="0"`,
    `drawsplay="0"`, `drawscale="0"`, `drawcompass="0"`, `drawbox="0"`,
    `printername="Microsoft Print to PDF"`. If `best is None`: `scalemode="0" scale="0"` on both
    and print `reason` as a warning. On `<sharedsettings><values …>` set
    `preview.designquality="2"` and `preview.manualrefresh="0"` (add the attributes if missing).
-6. **Sidecar JSON** `<name>_lt_fin.layout.json`: `{ "entrance": "2", "warnings": [...],
+6. **Sidecar JSON** `<name>_lt_fin.layout.json`: `{ "entrance": "2", "entrance_witnesses": {"highest": "2", "sign": "2"}, "warnings": [...],
    "plan_bbox_m": [...], "profile_bbox_m": [...], "profile_scale": 100, "plan_scale": 100,
    "mjerilo": "1:100", "arrangement": "vertical", "profile_mm": {x,y,width,height},
    "plan_mm": {...}, "chosen": "proposal" | "alternative N" | "fit-to-page" }` — T3 composes

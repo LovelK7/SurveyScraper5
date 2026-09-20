@@ -91,3 +91,19 @@ Brief: [brief.md](brief.md)
   proposals). Working tree still uncommitted.
 - **Next:** unchanged — T1 imports `choose_layout` for the `_preview.*` scale, T3 consumes the
   placements. The chooser's remaining unknown is real bboxes: every case here but SB 1103 is synthetic.
+
+### 2026-09-20 — T4 reviewed and polished after the user's read of the handoff (agent) ✅
+
+- **Did:** "one step" is one rung of the ladder, not a factor of 2 (`MAX_STEP = 1` replaces
+  `MAX_SCALE_RATIO`); 1:400 added (`SCALES` six rungs; it has no combo entry in cSurvey's print
+  dialog, so it is written as `scalemode="99"` + `scale="400"` — `frmPreview.vb:694-700/1160`
+  honour that pair); alternatives are Pareto-pruned per arrangement (`_dominated`) so the menu
+  no longer lists pointless downscales. Tests, brief §3.1/§3.4, tool README and the T4 handoff
+  amended. T1 prompt gained the **entrance-sign witness**: TopoDroid's entrance symbol survives
+  import as `<item type="6" sign="263">` (`cIItemSign.vb:44`), bound to a segment and 1.75 m from
+  station `2` on SB 1103 — nearest-station search in design coordinates (plan = `<p x y>`,
+  profile = `(d, z)`) is a few lines, and the sign wins over "highest station" when they disagree.
+- **Result:** `python -m pytest stages/3N-nacrt/tests -q` green (see the commit for the count);
+  SB 1103 menu is now the proposal + one side-by-side alternative; 6 × 8 / 50 × 30 ⇒ `1:300/1:250`.
+- **Evidence:** this commit; `python nacrt_layout.py 6 8 58 20` shows the 1:400 custom case.
+- **Next:** T1 (prompt in `tasks/T1-nacrt-finish.md`, updated).

@@ -10,13 +10,16 @@ only by picking among SCALES.
 
 The scale of a design is written into `_preview.plan` / `_preview.profile` as
 `scalemode`, which is the print dialog's **combo index**, not a denominator:
-1 = 1:100, 2 = 1:200, 3 = 1:250, 4 = 1:300, 5 = 1:500 (brief 2.1).
+1 = 1:100, 2 = 1:200, 3 = 1:250, 4 = 1:300, 5 = 1:500 (brief 2.1); 1:400 is not
+on the dialog's list, so it is written as the custom entry: scalemode 99 plus
+`scale="400"` (frmPreview.vb:694-700 restores it, :1160 prints with it).
 
 The rules are the user's, 2026-09-20 (brief 3.4, amended the same day after
 reviewing the drawn proposals): scale per design (profile 1:200 with plan 1:100
 is the common case), profile primary, plan promoted to a larger scale when the
-two bboxes differ drastically — but **never more than a factor of 2 apart**, so
-the reader switches scale at most once per sheet; gaps and margins respected;
+two bboxes differ drastically — but **never more than one rung of the ladder
+apart** (user, 2026-09-20: 1:500 beside 1:250 is two rungs, since 1:300 and
+1:400 sit between), so the reader switches scale at most once per sheet; gaps and margins respected;
 semi-automatic — the tool proposes, the operator may pick an alternative from
 the numbered menu.
 
@@ -48,22 +51,22 @@ A4_PORTRAIT_MM = (210.0, 297.0)
 _BLOCK_PT = (39.85, 49.58, 291.43, 149.94)  # x0, y0, x1, y1
 
 # cSurvey scalemode = the print dialog's combo index (0 fit, 1 1:100, 2 1:200,
-# 3 1:250, 4 1:300, 5 1:500, 6 1:1000, 99 custom). 1:250 joined the ladder on
-# the user's review of the drawn proposals, 2026-09-20: a 40 m profile misses
-# 1:200 by 10 mm and dropping it straight to 1:300 gives away more than it must.
-SCALES = (100, 200, 250, 300, 500)
-SCALEMODE = {100: 1, 200: 2, 250: 3, 300: 4, 500: 5}
+# 3 1:250, 4 1:300, 5 1:500, 6 1:1000, 99 custom + `scale`). 1:250 joined the
+# ladder on the user's review of the drawn proposals, 2026-09-20: a 40 m
+# profile misses 1:200 by 10 mm and dropping it straight to 1:300 gives away
+# more than it must. 1:400 followed the same day; it has no combo entry, so it
+# goes out as the custom scale (99) with `scale="400"`.
+SCALES = (100, 200, 250, 300, 400, 500)
+SCALEMODE = {100: 1, 200: 2, 250: 3, 300: 4, 400: 99, 500: 5}
 
 # A drawing counts as "tall and narrow" above this aspect (height / width).
 TALL_ASPECT = 1.3
 # "Drastically different" bboxes: profile's larger dimension over the plan's.
 DRASTIC_RATIO = 1.6
-# How far apart the two designs' scales may be on one sheet (user, 2026-09-20:
-# "two steps apart is too much, accept a single step diff"). A factor of 2 is
-# exactly one step of the ladder as it stood when that was decided — 1:200 with
-# 1:100, the blessed common case — and it stays meaningful now that 1:250 sits
-# between the rungs, where counting index positions no longer would.
-MAX_SCALE_RATIO = 2.0
+# How far apart the two designs' scales may be on one sheet: at most this many
+# rungs of SCALES (user, 2026-09-20, twice: "one step apart in the ladder" —
+# 1:200 with 1:100 yes, 1:500 with 1:250 no, because 1:300 and 1:400 lie between).
+MAX_STEP = 1
 
 _EPS = 1e-9
 _ARRANGEMENTS = ("vertical", "side_by_side")
@@ -280,9 +283,8 @@ def choose_layout(plan, profile, *, page=A4_PORTRAIT_MM, title_block=TITLE_BLOCK
     for profile_scale in SCALES:
         prof_mm = _size_mm(profile, profile_scale)
         for plan_scale in SCALES:
-            # One sheet, at most one step between the two scales.
-            if max(profile_scale, plan_scale) > MAX_SCALE_RATIO * min(profile_scale,
-                                                                     plan_scale):
+            # One sheet, at most MAX_STEP rungs between the two scales.
+            if abs(SCALES.index(profile_scale) - SCALES.index(plan_scale)) > MAX_STEP:
                 continue
             plan_mm = _size_mm(plan, plan_scale)
             for arrangement in _ARRANGEMENTS:
@@ -319,13 +321,29 @@ def choose_layout(plan, profile, *, page=A4_PORTRAIT_MM, title_block=TITLE_BLOCK
     seen = {best.key}
     alternatives = []
     for _, layout in ranked[1:]:
-        if layout.key in seen:
+        if layout.key in seen or _dominated(layout, ranked):
             continue
         seen.add(layout.key)
         alternatives.append(layout)
         if len(alternatives) >= max_alternatives:
             break
     return best, alternatives, ""
+
+
+def _dominated(layout, ranked):
+    """True when another candidate in the same arrangement has both scales at
+    least as large and one strictly larger — a pointless downscale that only
+    clutters the operator's menu (user, 2026-09-20: "way too many options which
+    do not make sense"). What survives is one entry per arrangement per real
+    trade-off: equal scales vs. a promoted plan, stacked vs. side by side."""
+    pi, li = SCALES.index(layout.profile_scale), SCALES.index(layout.plan_scale)
+    for _, other in ranked:
+        if other.arrangement != layout.arrangement:
+            continue
+        oi, ol = SCALES.index(other.profile_scale), SCALES.index(other.plan_scale)
+        if oi <= pi and ol <= li and (oi, ol) != (pi, li):
+            return True
+    return False
 
 
 # --- tiny CLI ------------------------------------------------------------
