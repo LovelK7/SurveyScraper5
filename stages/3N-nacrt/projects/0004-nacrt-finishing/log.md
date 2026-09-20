@@ -21,3 +21,14 @@ Brief: [brief.md](brief.md)
   `info`, `recalc`, `print` on the finished fixture); fixture pair in
   `example/finishing/SB_1103_golobreska_lt_{raw,finished}.csx` (gitignored); PDFs in the session scratchpad only.
 - **Next:** user picks from the delegable tasks T1–T5 (brief §3.3); suggested order T4 → T1 → T2 → T3 → T5.
+
+### 2026-09-20 — user feedback folded into the brief (user + agent) ✅
+
+- **Did:** print Style is *Survey* (`designstyle="0"`), not Combined; plan and profile get
+  **independent scales** (profile 1:200 with plan 1:100 is the common case); the composed page
+  is the **4S sastavnica** A4 portrait (title block upper-left), profile primary on top, plan
+  beneath or side by side; 4S to be extended with the speleometrics and a two-value `Mjerilo`
+  (`profil/tlocrt: 1:200/1:100`); semi-automatic operator confirmation is acceptable. New §3.4;
+  T3/T4 rewritten accordingly; task split T1–T5 confirmed.
+- **Result:** brief is the agreed spec; no code yet.
+- **Next:** T4 (`choose_layout()` + tests) in a separate session.

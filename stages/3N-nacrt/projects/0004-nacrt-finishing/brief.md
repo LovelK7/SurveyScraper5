@@ -1,7 +1,7 @@
 # Task brief: Nacrt finishing — automate the post-import manual steps and the PDF export
 
 - **ID:** 0004-nacrt-finishing
-- **Status:** `proposal` — research done 2026-09-20, automation matrix + delegable tasks below await the user's pick
+- **Status:** `proposal` — research done 2026-09-20; the user confirmed the task split (§3.3) and set the scale/layout rules (§3.4) the same day. Next: run T4
 - **Owner:** both
 - **Opened:** 2026-09-20 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [cSurvey/CLAUDE.md](../../../../../cSurvey/CLAUDE.md), [README.md](../../README.md), [production/tdx-processing-protocol.md](../../production/tdx-processing-protocol.md) (the four steps that precede this), [reference/exports-and-printing.md](../../reference/exports-and-printing.md), [reference/automation-surface.md](../../reference/automation-surface.md)
@@ -145,10 +145,10 @@ chosen scale fits.
 | 4a | highest station = entrance | **yes** | among non-splay stations (`<t n>` without `(`), the one with **min** `z` (Z is positive downward); set `entrance="2"` on its `<trigpoint>`; **warn** when this differs from `properties@origin` or when several stations tie within 0.5 m — a ponor / horizontal cave can violate the rule | XML (Python) |
 | 4b | Dislivello at the deepest point | **yes** | lowest point of the profile floor = max Y over the profile Borders-layer points (or, equivalently, `nvr`); write a `quotatype="3"` item with two points 0.3 m apart there, `quotarelativetrigpoint` = the entrance, `quotavalue="0"` so cSurvey computes the text at paint time | XML (Python) |
 | 5 | cave dimensions | **yes** | after 4a run **`recalc`** (headless), then read the per-cave `<sm>`: total length `l`, horizontal length `pl`, depth `nvr`, height `pvr`, total drop `pvr+nvr`, altitude span `qmx−qmn`. Emit `SB_<broj>_dimenzije.json` into the cave leaf for 4S/5D to consume | driver + Python |
-| 6 | print layout | **yes** | write `_preview.plan` / `_preview.profile`: `pageformat="A4"`, `pagelandscape` from the bbox aspect, `scalemode` ∈ {1,2,5} = largest scale where `bbox_mm = bbox_m × 1000 / scale` fits the printable area (A4 minus `pagemargins`; when both designs are to share one sheet, the *same* scale must fit both and their heights + a gap must fit the page height), `designstyle="2"`, `drawsplay="0"`, `drawscale/drawcompass` per taste, `printername`; plus `sharedsettings` `preview.designquality="2"`, `preview.manualrefresh="0"` | XML (Python) |
+| 6 | print layout | **yes** | write `_preview.plan` / `_preview.profile`: `pageformat="A4"`, `pagelandscape` from the bbox aspect, `scalemode` ∈ {1,2,5} chosen per design by the rule in §3.4 (the two designs may differ: typically profile 1:200, plan 1:100), `designstyle="0"` (*Survey* — the user's default, 2026-09-20; not *Combined*), `drawsplay="0"`, `drawscale/drawcompass` per taste, `printername`; plus `sharedsettings` `preview.designquality="2"`, `preview.manualrefresh="0"`. **Plan and profile get their own scale** — see §3.4 | XML (Python) |
 | 7 | PDF export | **yes** | `csurvey_headless_probe.ps1 -Command print` — no dialog | driver |
 | 8a | off-centre placement | **partly in-app, fully downstream** | in-app only via asymmetric `pagemargins`; the clean solution is 8b | — |
-| 8b | plan + profile on one A4 | **yes, downstream** | cSurvey cannot. Print each design at the **same fixed scale** (vector PDF from the Microsoft driver), then compose with PyMuPDF: crop each page to its ink bbox, place plan top / profile bottom (or side by side for landscape), keep 1:1 page units so the scale stays true; optionally stamp the 4S sastavnica block. 4S already depends on PyMuPDF | Python |
+| 8b | plan + profile on one A4 | **yes, downstream, together with 4S** | cSurvey cannot. Print each design at its own fixed scale (vector PDF from the Microsoft driver), then compose with PyMuPDF onto the **4S sastavnica page** (A4 portrait, title block upper-left, already PyMuPDF-based): crop each page to its ink bbox, place per §3.4, never rescale so the printed scale stays true. 4S is extended to carry the speleometrics (Stvarna/Tlocrtna duljina, Dubina from `<sms>`) and the scale(s) — `Mjerilo` becomes `1:100` or, when they differ, `profil/tlocrt: 1:200/1:100` (a custom layout of that cell) | Python (3N + 4S) |
 
 ### 3.2 Pipeline shape (KORAK 3 of the protocol)
 
@@ -170,6 +170,24 @@ tool never touches cSurvey. Both are testable on the SB 1103 fixture pair withou
 The install dir is a per-machine fact → `.env` `CSURVEY_DIR` (default `C:\csurvey64`), the printer
 name likewise. Fail-soft: if the driver is unavailable the XML step still leaves a file the human
 can open and print in two clicks.
+
+### 3.4 Scale and layout rules (user, 2026-09-20)
+
+- **Scale per design, not per sheet.** Profile and plan often need different scales: a
+  1:200 profile with a 1:100 plan is the common case. Rule: for each design take the largest
+  of 1:100 / 1:200 / 1:500 at which its bbox fits its allotted area; when the two bboxes are
+  drastically different (say one dimension ratio > 1.6), propose the plan at the larger scale so
+  it stays legible rather than forcing both to the profile's.
+- **One A4 portrait page = the 4S sastavnica page.** The title block occupies the upper-left;
+  the drawings share the rest. Two arrangements: **vertical** (default — profile has the primary
+  role and sits on top, plan beneath) or **side by side** (when both are tall and narrow).
+  Gaps ≥ 10 mm, margins ≥ 10 mm, no overlap with the title block.
+- **Mjerilo cell**: `1:100` when equal; `profil/tlocrt: 1:200/1:100` when not — the cell needs a
+  custom two-value layout in 4S (supersedes 4S decision 3 "stub `1:` stays" for the cSurvey route;
+  the Illustrator route keeps the stub).
+- **Semi-automatic is acceptable.** The tool proposes (scale per design, arrangement) and asks
+  the operator to confirm or pick from the listed options whenever the automatic choice fails or
+  the fit is marginal — the same Enter-to-accept console style the KORAK launchers use.
 
 ### 3.3 Delegable tasks (each is a self-contained prompt for a separate, cheap session)
 
@@ -195,18 +213,29 @@ and a 30-s guard around `Calculate`. Keep every reflection poke wrapped in `Asse
 *Accept:* `info`/`recalc`/`print`/`dimensions` on the finished fixture; PDFs open; JSON matches the
 `<sm>` row. Then a `python` wrapper `csurvey_driver.py` (subprocess, `-STA`, timeout, parsed output).
 
-**T3 — `compose_a4.py` (compositor).** *Input:* `_plan.pdf`, `_profile.pdf` printed at the same scale,
-optional sastavnica PDF from 4S. *Output:* one A4 (portrait or landscape by fit) with plan and
-profile arranged (plan top-left, profile below or beside, ≥ 10 mm gap, ≥ 10 mm margins), content
-cropped to ink bbox via PyMuPDF `page.get_drawings()`/text bboxes, **no rescaling** (scale truth).
-*Accept:* measure a known 5 m scale bar on the composed page = 50 mm at 1:100; both designs present;
-file < 500 KB.
+**T3 — `compose_a4.py` (compositor, 3N + 4S).** *Input:* `_plan.pdf` and `_profile.pdf`, each
+printed at its own fixed scale (known from T4's output), the cave's sastavnica PDF from 4S
+(`cavedossier sastavnica <broj>`), and the dimensions JSON from T2. *Output:* one A4 **portrait**
+page: the sastavnica page as the base (title block upper-left), profile placed as the primary
+drawing, plan beneath (or side by side when T4/the operator says so), content cropped to ink bbox
+via PyMuPDF `page.get_drawings()`/text bboxes, ≥ 10 mm gaps, **no rescaling**. Ask the operator
+(console menu, Enter = default) when the fit is marginal or the arrangement is a judgement call.
+*4S side:* extend the sastavnica renderer so `Stvarna duljina`/`Tlocrtna duljina`/`Dubina` can be
+fed from the JSON and `Mjerilo` renders `1:100` or a two-line `profil/tlocrt: 1:200/1:100`
+(needs a custom cell layout — see `stages/4S-sastavnica/docs/sastavnica-design.md`, cells
+`stvarna_duljina`, `tlocrtna_duljina`, `dubina`, `mjerilo`). *Accept:* a known 5 m scale bar on the
+composed page measures 50 mm at 1:100 (25 mm at 1:200) for each design independently; the title
+block is untouched and unclipped; file < 500 KB.
 
-**T4 — scale chooser (`choose_scale()` + tests).** *Input:* plan bbox (m), profile bbox (m), page
-(A4 portrait/landscape), margins (mm), mode `separate|combined`. *Output:* `(scale ∈ {100,200,500},
-landscape: bool)` or `None` with a reason (drawing too large even at 1:500 → fall back to
-`scalemode=0` fit and warn). Pure function, unit-tested with the SB 1103 numbers
-(plan ≈ 4 × 9 m, profile ≈ 5 × 10 m ⇒ 1:100 portrait, combined 1:100 fits: 90 + 100 mm < 277 mm).
+**T4 — scale + layout chooser (`choose_layout()` + tests).** *Input:* plan bbox (m), profile bbox
+(m), the A4-portrait free area left by the sastavnica title block (from 4S: page 595.28 × 841.89 pt,
+block in the upper-left — read its extent from the design doc), margins/gaps (mm). *Output:* a
+proposal `{plan_scale, profile_scale ∈ {100,200,500}, arrangement: vertical|side_by_side,
+placements (mm)}` plus up to three ranked alternatives for the operator menu, or a reason when
+nothing fits (fall back to `scalemode=0` fit and warn). Rules in §3.4: per-design scale, profile
+primary, plan promoted to a larger scale when the bboxes differ drastically. Pure function,
+unit-tested with SB 1103 (plan ≈ 4 × 9 m, profile ≈ 5 × 10 m ⇒ both 1:100, vertical) and a
+synthetic long-profile case (profile 40 × 12 m, plan 6 × 8 m ⇒ profile 1:200, plan 1:100).
 
 **T5 — operator surface.** `csurvey_3_dovrsi_nacrt.bat` in `prod/build_csx_kit.py` (SB prompt →
 pick the `_lt` file → T1 → T2 → T3 → deliver `SB_<broj>_nacrt.pdf` + `SB_<broj>_dimenzije.json` into
@@ -216,7 +245,8 @@ the leaf), a KORAK 3 paragraph in `csurvey_0_PROCITAJ_ME.txt` (Croatian, no diac
 
 **T6 — reference corrections (done in this session, see §5).**
 
-Order: T4 → T1 → T2 → T3 → T5. T1/T2/T3/T4 are independent of each other apart from T1 importing T4.
+Order: T4 → T1 → T2 → T3 → T5. T1/T2/T3/T4 are independent of each other apart from T1 importing T4
+and T3 touching 4S. (Order and task split confirmed by the user 2026-09-20.)
 
 ## 4. Definition of done
 
