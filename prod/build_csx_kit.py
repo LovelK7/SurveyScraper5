@@ -11,14 +11,18 @@ there:
     csurvey_0_PROCITAJ_ME.txt             <- the operator guide (Croatian)
     csurvey_1_pripremi_csx.bat            <- prepare a raw phone csx for import
     csurvey_2_dovrsi_uvoz.bat             <- finish the import, after "Save As"
-    csurvey_3_oporavi_iz_zipa.bat         <- rescue: rebuild a broken csx from the zip
+    csurvey_3_dovrsi_nacrt.bat            <- finish the nacrt: PDFs + SB_<broj>_nacrt.pdf
+    csurvey_9_oporavi_iz_zipa.bat         <- rescue: rebuild a broken csx from the zip
     csurvey_alati/                        <- the Python tools the .bat files drive
 
 The `csurvey_` prefix keeps the launchers legible in a shared folder they do not
 own, the same way `cavedossier_*` does; the machinery goes one level down so the
 folder listing stays a listing of things a person opens. The **digit** is what
 orders that listing by the workflow (user, 2026-09-20: alphabetically `fix_` sorted
-above `preprocess_`, which reads as the wrong order). Operator-facing text is
+above `preprocess_`, which reads as the wrong order). The running order is 1-2-3;
+the zip rescue carries **9** because it is a repair, not a step (user, 2026-09-20,
+settling the clash with the finisher's KORAK 3), so it sits at the bottom of the
+listing and at the bottom of the guide. Operator-facing text is
 Croatian — the .txt with diacritics, the .bat consoles without, since a cp852
 console cannot print them.
 
@@ -33,8 +37,11 @@ has therefore been inert since the day it was handed over. Generating them
 makes that path a build-time value with a fallback chain behind it, the same
 shape build_prod.py already uses for the cavedossier launchers.
 
-The four tools are pure-stdlib and already resolve their own data files
-relative to __file__, so nothing else has to travel.
+The tools are pure-stdlib and already resolve their own data files relative to
+__file__, so nothing else has to travel. KORAK 3's last step is the exception
+that proves the rule: `cavedossier nacrt` is a prod-bundle command, not a kit
+tool, so the launcher calls the `cavedossier_nacrt_v<X>.bat` build_prod.py
+publishes into the same Drive folder, and says so plainly when it is not there.
 """
 
 from __future__ import annotations
@@ -58,15 +65,18 @@ DIST = REPO_ROOT / "prod" / "dist" / "csx-kit"
 # filenames never collide (`csurvey_*` vs `cavedossier_*`), and build_prod's
 # _archive_old() only sweeps its own `cavedossier_*_v<X>.bat` / `v<X>/`.
 TARGET_REL = Path("!!!Digitalizacija") / "SurveyScraper5"
-# First prod version of the TopoDroid -> cSurvey kit (2026-09-20).
-KIT_VERSION = "1.0"
+# v1.0 (2026-09-20): first prod version of the TopoDroid -> cSurvey kit.
+# v1.1 (2026-09-20): KORAK 3 (csurvey_3_dovrsi_nacrt.bat, project 0004) joins the
+# running order and the zip rescue moves out of it to KORAK 9.
+KIT_VERSION = "1.1"
 # Subfolder holding the machinery, beside the launchers.
 PAYLOAD_DIR = "csurvey_alati"
 
 LAUNCHERS = [
     "csurvey_1_pripremi_csx.bat",
     "csurvey_2_dovrsi_uvoz.bat",
-    "csurvey_3_oporavi_iz_zipa.bat",
+    "csurvey_3_dovrsi_nacrt.bat",
+    "csurvey_9_oporavi_iz_zipa.bat",
 ]
 # Pure-stdlib, self-locating. tdx-mapping.json is the user-owned mapping the
 # pre/post-processors read from beside themselves.

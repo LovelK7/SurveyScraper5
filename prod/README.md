@@ -11,8 +11,10 @@ two kits below and the Drive dirs in [`drive-layout.md`](drive-layout.md).
 ### 1. `cavedossier` launchers — for recorders and drafters
 
 Double-clickable `.bat` files that live **on the Google Drive**, not in this
-repo, at `!!!Digitalizacija/SurveyScraper5/`. Three commands ship today:
-`osz prefill`, `photos process` and `sastavnica`.
+repo, at `!!!Digitalizacija/SurveyScraper5/`. Four commands ship today:
+`osz prefill`, `photos process`, `sastavnica` and `nacrt`. The last one is also
+called by the csurvey kit's KORAK 3 launcher (below), which is why it has to be
+published into that folder and not only run from a repo clone.
 
 | File | Role |
 |---|---|
@@ -57,14 +59,18 @@ and `_archive_old()` in `build_prod.py` only ever sweeps `cavedossier_*`.
 
 The **digit in each filename is the running order** — named after their tools
 they sorted alphabetically into the wrong sequence (user, 2026-09-20). The
-launchers, the guide and the protocol all speak the same KORAK numbers.
+launchers, the guide and the protocol all speak the same KORAK numbers. The
+order is **1 → 2 → 3**; the zip rescue carries **9** because it is a repair and
+not a step (user, 2026-09-20, settling the clash with the finisher's KORAK 3),
+so it sorts to the bottom of the listing and of the guide.
 
 | File | KORAK |
 |---|---|
 | [`csx_templates/csurvey_0_PROCITAJ_ME.txt.template`](csx_templates/csurvey_0_PROCITAJ_ME.txt.template) | 0 — the Croatian operator guide (diacritics, UTF-8 BOM) |
 | [`csx_templates/csurvey_1_pripremi_csx.bat.template`](csx_templates/csurvey_1_pripremi_csx.bat.template) | 1 — raw `.csx` → import-ready `_pp.csx` |
 | [`csx_templates/csurvey_2_dovrsi_uvoz.bat.template`](csx_templates/csurvey_2_dovrsi_uvoz.bat.template) | 2 — after cSurvey "Save As", before drawing |
-| [`csx_templates/csurvey_3_oporavi_iz_zipa.bat.template`](csx_templates/csurvey_3_oporavi_iz_zipa.bat.template) | 3 — rescue: rebuild a broken `.csx` from the TopoDroid project `.zip` |
+| [`csx_templates/csurvey_3_dovrsi_nacrt.bat.template`](csx_templates/csurvey_3_dovrsi_nacrt.bat.template) | 3 — corrected `_lt` → the finished `SB_<broj>_nacrt.pdf` |
+| [`csx_templates/csurvey_9_oporavi_iz_zipa.bat.template`](csx_templates/csurvey_9_oporavi_iz_zipa.bat.template) | 9 — rescue: rebuild a broken `.csx` from the TopoDroid project `.zip` |
 | [`build_csx_kit.py`](build_csx_kit.py) | Generates and publishes the kit (`--publish`); `csurvey_alati/` carries the Python tools |
 
 **Operator-facing text is Croatian.** The `.txt` guide keeps real diacritics and
@@ -81,9 +87,20 @@ time, `SVE` for everything, Enter to cancel — and resolves each number to that
 cave's `SB_<broj>_…` leaf under `..\!Za digitalizirat` (the intake tree one level
 up, derived at build time from `config.yaml`'s `intake_dir` and kept relative).
 Sweeping the whole tree is now opt-in, not the default (user, 2026-09-20).
-KORAK 2 goes one step further and asks *which file* in that cave's folder to
-finish, annotating each with whether cSurvey has already saved it. Dragging
-files onto a launcher skips both prompts and works from anywhere. Step 3 is manual: open the `_pp.csx` in cSurvey and Save As. The
+KORAK 2 and KORAK 3 go one step further and ask *which file* in that cave's
+folder to work on, annotating each with how far through the chain it is.
+Dragging files onto a launcher skips both prompts and works from anywhere. The
+two manual steps between the launchers are cSurvey's own: open the `_pp.csx` and
+Save As (between 1 and 2), then correct the sketch in the `_lt` file (between 2
+and 3).
+
+**KORAK 3 spans both kits.** Its first two steps are kit tools (`nacrt_finish.py`
+then `csurvey_driver.py finish`, both in `csurvey_alati/`); its third is
+`cavedossier nacrt`, a prod-bundle command. The launcher finds
+`cavedossier_nacrt_v*.bat` beside itself in this same folder and, when it is
+missing or fails, says so and stops with the PDFs already delivered. The one
+step that needs cSurvey installed is the headless print; without it the launcher
+stops cleanly and prints the two-click manual recipe instead of a traceback. The
 protocol is
 [`stages/3N-nacrt/production/tdx-processing-protocol.md`](../stages/3N-nacrt/production/tdx-processing-protocol.md);
 the Python tools live in

@@ -178,6 +178,10 @@ try {
             $cliVerb = @('sastavnica')
             $label = 'Sastavnica nacrta - predispunjeni naslovni blok za crtanje u Illustratoru'
         }
+        'nacrt' {
+            $cliVerb = @('nacrt')
+            $label = 'Nacrt - slozi tlocrt i profil na sastavnicu (cSurvey ruta)'
+        }
         default {
             W "GRESKA: nepoznata naredba '$Command'."
             Pause-Exit 1

@@ -1,6 +1,6 @@
 @echo off
 rem ------------------------------------------------------------------
-rem  KORAK 2 od 2 - DOVRSI UVOZ
+rem  KORAK 2 od 3 - DOVRSI UVOZ
 rem  Pretvara datoteku koju si spremio u cSurveyu u gotovu datoteku za
 rem  crtanje (kosine i sl. dobiju svoje strelice i crtice; velicine;
 rem  voda).
@@ -82,6 +82,9 @@ echo  Gotovo. Procitaj retke iznad:
 echo    "OK ... _lt ..."   uspjeh: otvori _lt datoteku i u njoj crtaj.
 echo    "BLOCKED"          kriva datoteka/korak: napravi sto pise.
 echo    "ERROR"            nesto drugo: procitaj poruku.
+echo.
+echo  DALJE: kad si u _lt datoteci ispravio skicu i spremio je, pokreni
+echo         KORAK 3 ^(csurvey_3_dovrsi_nacrt.bat^) - on radi gotov Nacrt.
 echo ------------------------------------------------------------------
 pause
 exit /b 0

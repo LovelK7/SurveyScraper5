@@ -1,6 +1,6 @@
 @echo off
 rem ------------------------------------------------------------------
-rem  KORAK 1 od 2 - PRIPREMI TERENSKI CSX ZA cSURVEY
+rem  KORAK 1 od 3 - PRIPREMI TERENSKI CSX ZA cSURVEY
 rem  Sirovi TopoDroid .csx  ->  _pp.csx spreman za uvoz (preimenuje
 rem  simbole tako da prezive uvoz).
 rem

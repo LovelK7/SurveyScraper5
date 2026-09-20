@@ -37,6 +37,13 @@ launcher itself sits, so nobody has to type it.
 | `!!!Digitalizacija/SurveyScraper5` | `build_prod.TARGET_REL` | `build_prod.py --publish` | [prod](README.md) |
 | `!!!Digitalizacija/SurveyScraper5` (the `csurvey_*` kit + `csurvey_alati/`) | `build_csx_kit.TARGET_REL` | `build_csx_kit.py --publish` | [3N](../stages/3N-nacrt/README.md) |
 
+The last two rows are the same folder on purpose: the csurvey kit's KORAK 3
+launcher (`csurvey_3_dovrsi_nacrt.bat`) finishes by calling the
+`cavedossier_nacrt_v<X>.bat` that `build_prod.py` publishes there. Publishing one
+kit without the other leaves that step with nothing to call — it says so and
+stops with the printed PDFs in the leaf.
+
+
 The `!` prefixes are the society's own convention for sorting these to the top
 of a Drive listing. They are part of the names — do not "clean them up".
 
@@ -58,6 +65,7 @@ This superseded an earlier flat "Osnovni speleološki zapisnik" folder
 | Map excerpt | `SB_<padded broj>.png` in `!!Isječci karte`, plus a row in `!georef_zapisi.csv` |
 | Prefilled OSZ | `SB_<broj>_OSZ.docx` in the cave's intake leaf |
 | Sastavnica | `SB_<padded broj>_sastavnica.pdf` in the cave's intake leaf |
+| Nacrt (cSurvey route) | `SB_<padded broj>_nacrt.pdf` in the cave's intake leaf, beside the `_lt_fin` survey, the two printed `_plan.pdf` / `_profile.pdf` and `<name>_dimenzije.json` (3N KORAK 3) |
 | Processed entrance photo | `SB_<broj>_<Ime>_<Autor>_<n>.jpg` in the leaf |
 | Archived entrance photo | `<padded SUE>_<ime>_…_<autor>.jpg` in `!!Fotografije ulaza` (M6) |
 | Izjava | `Izjava_<Ime>.<ext>`, optionally scope-suffixed |

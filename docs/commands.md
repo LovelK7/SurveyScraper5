@@ -321,6 +321,8 @@ cavedossier nacrt 1103 --force             # overwrite a delivered file this too
 # cSurvey at a true fixed scale, alone on an A4 page) and <name>_dimenzije.json
 # (the speleometrics plus the layout the finisher chose). Make them with
 #   production/tools/nacrt_finish.py  then  production/tools/csurvey_driver.py finish
+# An operator never types any of this: csurvey_3_dovrsi_nacrt.bat on the Drive
+# runs the finisher, the driver and this command in one go, from a Redni broj.
 # Each printed page is cropped to its ink and dropped, AT ITS OWN SIZE, centred
 # on the rectangle the layout reserved. Nothing is ever rescaled — the point of
 # a fixed scale is that a 5 m bar measures 50 mm at 1:100. If a drawing does not
@@ -429,21 +431,34 @@ hand-managed Drive dirs.
 
 ### Prod launchers on the Drive
 
-The three operator commands (`osz prefill`, `photos process`, `sastavnica`)
-are published as **versioned, double-clickable launchers** in the dedicated
-Drive folder `!!!Digitalizacija/SurveyScraper5/`:
+The four operator commands (`osz prefill`, `photos process`, `sastavnica`,
+`nacrt`) are published as **versioned, double-clickable launchers** in the
+dedicated Drive folder `!!!Digitalizacija/SurveyScraper5/`, beside the
+`csurvey_*` TDX kit:
 
 ```text
 SurveyScraper5/
 ├─ cavedossier_osz_prefill_v1.4.bat      ← operators double-click these
 ├─ cavedossier_photos_process_v1.4.bat
 ├─ cavedossier_sastavnica_v1.4.bat
+├─ cavedossier_nacrt_v1.4.bat            ← also called by csurvey_3_dovrsi_nacrt.bat
 ├─ PROCITAJ_ME.txt                        ← operator setup/troubleshooting guide
 ├─ VERZIJE.txt                            ← publish log, one line per release
 ├─ v1.4/                                  ← bootstrap.ps1 + bundle.zip
 ├─ podaci/geo/                            ← cloud copy of data/geo (~280 MB)
+├─ csurvey_0_PROCITAJ_ME.txt              ← the TDX kit (build_csx_kit.py):
+├─ csurvey_1_pripremi_csx.bat             ←   KORAK 1 raw csx → _pp
+├─ csurvey_2_dovrsi_uvoz.bat              ←   KORAK 2 after Save As → _lt
+├─ csurvey_3_dovrsi_nacrt.bat             ←   KORAK 3 corrected _lt → the Nacrt
+├─ csurvey_9_oporavi_iz_zipa.bat          ←   KORAK 9 rescue (not a step)
+├─ csurvey_alati/                         ←   the Python tools those drive
 └─ _arhiva/                               ← superseded versions
 ```
+
+`cavedossier nacrt` has to be published here, not just runnable from a clone:
+the kit's KORAK 3 launcher finishes by calling `cavedossier_nacrt_v*.bat` from
+this folder. Without it that step says so and stops with the printed PDFs in
+the cave's leaf.
 
 Every run mirrors all its output (setup, pip, the command, stderr) into a
 per-run log under `%LOCALAPPDATA%\CaveDossier\logs\` and prints the path at

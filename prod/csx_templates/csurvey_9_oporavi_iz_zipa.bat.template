@@ -1,6 +1,6 @@
 @echo off
 rem ------------------------------------------------------------------
-rem  KORAK 3 (SAMO AKO ZATREBA) - OPORAVAK csx IZ PROJEKTNOG ZIP-a
+rem  KORAK 9 (SAMO AKO ZATREBA) - OPORAVAK csx IZ PROJEKTNOG ZIP-a
 rem  Koristi se kad je .csx s mobitela pokvaren: nema ga, ima 0 bajtova
 rem  ili se otvori bez skice (bug TopoDroida 6.4.98+). Radi novi csx iz
 rem  projektnog .zip-a.
@@ -15,6 +15,9 @@ rem    <objekt>_recovered_pp.csx  vec pripremljena -> NJU uvozis u cSurvey
 rem
 rem  Ovo za tebe odradi i KORAK 1, pa odmah idi na uvoz u cSurvey.
 rem  Kad je csx ispravan, ovo NE trebas - koristi csurvey_1_pripremi_csx.bat.
+rem
+rem  NIJE korak u redoslijedu, nego popravak: broj 9 ga drzi na dnu
+rem  popisa, izvan KORAKA 1-3.
 rem
 rem  csurvey TDX komplet v@VERSION@ (@DATE@, commit @COMMIT@)
 rem ------------------------------------------------------------------
@@ -52,7 +55,7 @@ set "SCAN=%~dp0."
 if exist "%~dp0@INTAKE@" for %%I in ("%~dp0@INTAKE@") do set "SCAN=%%~fI"
 rem ------------------------------------------------------------------
 echo ==================================================================
-echo  KORAK 3 - oporavak csx-a iz projektnog zipa
+echo  KORAK 9 - oporavak csx-a iz projektnog zipa
 echo ==================================================================
 echo.
 if not "%~1"=="" (

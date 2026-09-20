@@ -393,3 +393,47 @@ with six things. All six are done; two of them changed a rule rather than a numb
   T5 prompt written (`tasks/T5-launcher.md`) incl. the `nacrt` prod launcher wiring.
 - **Evidence:** this commit.
 - **Next:** T5 in a separate session; then the second-machine and second-cave checks before close.
+
+### 2026-09-20 — T5: the KORAK 3 launcher, and the rescue moves to KORAK 9 (agent) ✅
+
+- **Did:** built `prod/csx_templates/csurvey_3_dovrsi_nacrt.bat.template` (the shape of KORAK 2:
+  same five tokens, the five-rung `TOOLS` search, Croatian without diacritics) and renamed
+  `csurvey_3_oporavi_iz_zipa.bat.template` → `csurvey_9_…` per the user's ruling. Kit **v1.1**.
+  Flow: Redni broj → `nacrt_finish.py --sb <broj> --force` (**menu shown** — a double-clicked
+  window has someone in front of it) → `csurvey_driver.py finish --sb <broj>` →
+  `cavedossier_nacrt_v*.bat <broj>`, found beside the launcher in the shared prod folder. Dragged
+  files take the unattended path (`--yes`, the Redni broj read out of the `SB_<broj>_…` folder
+  name). `cavedossier nacrt` gained its `PROD_COMMANDS` entry and its `switch ($Command)` branch,
+  so `build_prod.py` now publishes a `cavedossier_nacrt_v<X>.bat` beside the other three.
+- **`--force` on the finisher, not "skip what exists"** (the T5 prompt guessed the latter):
+  `nacrt_finish.py` refuses an existing `_fin` without it and returns 1, which would stop the chain
+  on every re-run. KORAK 2 passes `--force` for the same reason and a `_fin` is regenerable.
+- **Fail-soft, twice.** No cSurvey ⇒ the driver's one-line `DriverError` is caught and the launcher
+  prints the manual recipe (open `_lt_fin`, File › Print, plan and profile, Microsoft Print to PDF,
+  don't touch the settings) and exits 0. No published `cavedossier_nacrt_v*.bat` ⇒ it says so and
+  stops with the PDFs in the leaf. The closing summary **only promises `SB_<broj>_nacrt.pdf` when
+  step 3 actually ran** — caught on the first dry run, where it promised a file that was not there.
+- **Docs:** protocol step 5 promoted out of *in validation* into the standing protocol (and its
+  mangled `stagesN-nacrt\production\tools\…` paths rewritten), the numbering-clash note dropped,
+  the rescue renumbered everywhere (`prod/README.md`, `prod/drive-layout.md`, the protocol, the
+  `PROCITAJ_ME` guide, `production/README.md`, `production/tools/README.md`,
+  `tdx_zip_to_csx.py`'s docstring, `docs/commands.md`). The guide gained a KORAK 3 section in plain
+  Croatian and the rescue moved to the bottom as KORAK 9, "a repair, not a step".
+- **Evidence:** new `prod/tests/test_build_csx_kit.py` (9 tests: render/ASCII/tokens, the rescue
+  gone under its old name and present under the new, the KORAK 3 chain and both fail-soft strings,
+  the five KORAK 3 tools in `TOOLS`, the guide's BOM + diacritics + section order, `PROD_COMMANDS`
+  and the bootstrap branch). `python -m pytest -q` → **586 passed**; `python tools/pipeline_doctor.py`
+  → **0 fail · 3 warn** (the pre-existing historical links).
+  Dry run on SB 1103 from a `cmd` window, staged kit, with the intake junctioned beside it so the
+  relative `..\!Za digitalizirat` resolved as it does on the Drive (junction removed afterwards):
+  both the typed-`1103` path and the dragged-`_lt` path ran steps 1 and 2 for real — finisher
+  re-wrote `_lt_fin` (entrance station 2, both witnesses agreeing, 1:100 vertical), driver
+  reprinted both PDFs and `_dimenzije.json` — and step 3 hit the honest
+  "no `cavedossier_nacrt_v*.bat` in this folder" branch, because `nacrt` has only just been added
+  to `PROD_COMMANDS` and no prod version has been published yet. Run directly,
+  `cavedossier nacrt 1103` delivered `SB_1103_nacrt.pdf` (vertical, 1:100/1:100, profile
+  58.0 × 116.0 mm, plan 100.8 × 56.9 mm), so the chain itself is whole.
+- **Next (not done here, deliberately):** publish — `python prod\build_prod.py --version 1.5
+  --publish` (this is what puts `cavedossier_nacrt_v1.5.bat` in the folder and lets KORAK 3 finish
+  on an operator machine) then `python prod\build_csx_kit.py --publish`. Then the second-machine
+  and second-cave checks, then close the project.

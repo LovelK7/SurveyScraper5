@@ -27,7 +27,7 @@ Usage:
 
 Outputs land next to each zip: <survey>_recovered.csx (raw) and <survey>_recovered_pp.csx
 (import this one into cSurvey). Paths with spaces are fine — quote them, or use the
-csurvey_3_oporavi_iz_zipa.bat drag-and-drop wrapper published in
+csurvey_9_oporavi_iz_zipa.bat drag-and-drop wrapper published in
 !!!Digitalizacija\SurveyScraper5 (double-click asks which SB numbers to recover).
 """
 import io

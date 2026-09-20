@@ -1,6 +1,6 @@
 # production/tools — Stage 0 survey inspector (+ TDX recovery tools)
 
-## TopoDroid zip → csx recovery (`tdx_zip_to_csx.py`, `parse_tdr.py`, `csurvey_3_oporavi_iz_zipa.bat`)
+## TopoDroid zip → csx recovery (`tdx_zip_to_csx.py`, `parse_tdr.py`, `csurvey_9_oporavi_iz_zipa.bat`)
 
 Regenerates a raw-TopoDroid `.csx` (centerline **and** sketch) from a TopoDroid **project zip**
 (`manifest` + `survey.sql` + `.tdr`), replaying TopoDroid's own csx exporter offline. Built in
@@ -16,7 +16,7 @@ python production/tools/tdx_zip_to_csx.py <project.zip | folder> [more.zip ...] 
   manifest+survey.sql sniff); `--sb` narrows that scan to the named caves' `SB_<broj>_…` leaves
   ([`sb_select.py`](sb_select.py), shared with the pre-processor). Outputs land next to each zip: `<survey>_recovered.csx` and — via an
   automatic `preprocess_tdx_csx.py` pass — `<survey>_recovered_pp.csx`, the one to import.
-- **No-typing path:** `csurvey_3_oporavi_iz_zipa.bat` (published to
+- **No-typing path:** `csurvey_9_oporavi_iz_zipa.bat` (published to
   `!!!Digitalizacija/SurveyScraper5/` by [`prod/build_csx_kit.py`](../../../../prod/build_csx_kit.py))
   — double-click, type the Redni broj of the caves to recover (or `SVE`), or drag zips onto it. Its
   sibling **`csurvey_1_pripremi_csx.bat`** does the same for the normal (non-recovery) flow:

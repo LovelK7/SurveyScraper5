@@ -70,6 +70,10 @@ PROD_COMMANDS = {
     "osz_prefill": ("osz", "prefill"),
     "photos_process": ("photos", "process"),
     "sastavnica": ("sastavnica",),
+    # 3N KORAK 3's last step. The csurvey kit's csurvey_3_dovrsi_nacrt.bat
+    # calls this launcher by name from the same Drive folder, so it must be
+    # published there for the kit's third step to finish.
+    "nacrt": ("nacrt",),
 }
 
 # What the code bundle carries: everything the prod commands stand on at
