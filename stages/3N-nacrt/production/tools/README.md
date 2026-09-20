@@ -134,3 +134,19 @@ not just against synthetic fixtures. See
 instrumented import run built on this tool, and
 [production/methods/instrumented-run.md](../methods/instrumented-run.md) for the
 protocol. When any file contradicts the docs, trust the file.
+
+---
+
+## Nacrt finishing (KORAK 3)
+
+The tools of [projects/0004-nacrt-finishing](../../projects/0004-nacrt-finishing/brief.md) —
+what the operator still does by hand inside cSurvey after the import is finished.
+
+| Tool | Role | Run when |
+|---|---|---|
+| [`nacrt_layout.py`](nacrt_layout.py) | Scale + page-arrangement chooser: picks the largest of 1:100 / 1:200 / 1:300 / 1:500 at which each design fits (plan and profile independently — `scalemode` 1/2/4/5), arranges them on the 4S sastavnica A4 around its title block, and returns the `Mjerilo` string plus up to three alternatives | Called by the finisher (it supplies the `_preview.*` scale) and by the compositor; or by hand, `python nacrt_layout.py <plan_w> <plan_h> <profile_w> <profile_h>` (metres), to preview the proposal and its alternatives as a numbered menu |
+
+Stdlib only and free of repo imports, like every tool here, so it travels into the
+operator kit. The page geometry is derived from the cell table in
+[4S sastavnica-design.md](../../../4S-sastavnica/docs/sastavnica-design.md); the
+scale and arrangement rules are the user's, recorded in brief §3.4.
