@@ -80,7 +80,7 @@ PAD_M = 0.5            # room for station labels around each design
 SCALE_GAP_M = 1.0      # scale bar this far right of the plan bbox
 # North arrow this far above the bar (smaller y = up). 1.0 m = 10 mm at 1:100;
 # 2.0 m left a hole between the two (user, 2026-09-20, on the first composed sheet).
-COMPASS_ABOVE_M = 1.0
+COMPASS_ABOVE_M = 1.0    # gap between the bar and the arrow's BOTTOM edge (anchored Bottom, see add_compass)
 QUOTA_SHIFT_M = 1.5    # quota this far right of whatever is drawn beside it - room for a
                        # station label too (0.3, then 1.0 with the Big text, collided with one on SB 1256)
 # The quota clears everything drawn within this much of the floor's depth, and
@@ -929,7 +929,11 @@ def add_compass(root, bbox, scale_bar, is_csz, warn):
     for key, value in (("layer", LAYER_SIGNS), ("cave", cave),
                        ("branch", branch), ("type", "15"), ("category", "83"),
                        ("da", "1"), ("data", cid), ("dataformat", "2"),
-                       ("cs", COMPASS_SCALE), ("m", "1"), ("textalignment", "0")):
+                       ("cs", COMPASS_SCALE), ("m", "1"), ("textalignment", "0"),
+                       # Bottom (2): the point is the block's lower edge, so the gap
+                       # above the bar holds whatever size the arrow has (the doubled
+                       # arrow crossed the bar when anchored at its middle, 2026-09-20).
+                       ("textverticalalignment", "2")):
         item.set(key, value)
     ET.SubElement(item, "pen", {"type": "10"})
     ET.SubElement(item, "brush", {"type": "7"})

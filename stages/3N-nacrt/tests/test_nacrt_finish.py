@@ -920,3 +920,4 @@ def test_dislivello_is_big_scale_bar_uses_cave_name_font_and_arrow_is_doubled(tm
     assert bar.find("font").get("type") == "2"              # Cave name
     compass = [i for i in items_of(root, "plan") if i.get("type") == "15"][0]
     assert compass.get("cs") == "2.00"
+    assert compass.get("textverticalalignment") == "2"      # anchored by its bottom edge

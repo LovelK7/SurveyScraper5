@@ -70,7 +70,7 @@ TARGET_REL = Path("!!!Digitalizacija") / "SurveyScraper5"
 # running order and the zip rescue moves out of it to KORAK 9.
 # v1.2 (2026-09-20): KORAK 2 also shrinks the entrance sign to size 1 -
 # cSurvey imports it at size 2 on the plan, where it draws too big.
-KIT_VERSION = "1.4"
+KIT_VERSION = "1.5"
 # Subfolder holding the machinery, beside the launchers.
 PAYLOAD_DIR = "csurvey_alati"
 

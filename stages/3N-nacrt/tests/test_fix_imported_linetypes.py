@@ -60,3 +60,19 @@ def test_a_designproperties_element_is_created_when_absent():
     assert root.find("properties").find("designproperties") is None
     assert fixer.apply_centerline(root, {"PlotPenColor": -65536}) == 1
     assert _items(root)["PlotPenColor"] == ("color", "-65536")
+
+
+def test_a_sign_size_the_operator_set_is_left_alone(tmp_path):
+    src = tmp_path / "cave.csx"
+    src.write_text(CSX.replace(
+        '<plan><layers><layer name="Base" type="0"><items /></layer></layers></plan>',
+        '<plan><layers><layer name="Signs" type="6"><items>'
+        '<item layer="6" type="6" category="80" sign="263" signsize="4"><datarow>TopoDroid|x</datarow></item>'
+        '<item layer="6" type="6" category="80" sign="263"><datarow>TopoDroid|x</datarow></item>'
+        '</items></layer></layers></plan>'), encoding="utf-8")
+    rules = tmp_path / "map.json"
+    rules.write_text('{"postimport": {"sign_sizes": {"entrance": "small"}}}', encoding="utf-8")
+    assert fixer.main([str(src), "--map", str(rules)]) == 0
+    root = ET.parse(str(tmp_path / "cave_lt.csx")).getroot()
+    sizes = [i.get("signsize") for i in root.iter("item") if i.get("sign") == "263"]
+    assert sizes == ["4", "2"]           # the hand-set one kept, the bare one sized

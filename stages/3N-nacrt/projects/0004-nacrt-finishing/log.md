@@ -480,3 +480,19 @@ with six things. All six are done; two of them changed a rule rather than a numb
   SB 1256 through KORAK 2 → 3 → print: red hatch shots, doubled arrow, big `-14 m`.
 - **Evidence:** this commit; csx kit v1.4 + prod v1.7 published.
 - **Next:** user checks the look on the next cave.
+
+### 2026-09-20 — SB 1256 regenerated; two follow-ups (agent) ✅
+
+- **Did:** (1) the plan's entrance arrow came out tiny because I re-ran KORAK 2 on the user's
+  *corrected* `_lt`, and its `sign_sizes` rule overwrote the hand-set `signsize="4"` with
+  `entrance: verysmall`. KORAK 2 now leaves any existing `signsize` alone (operator's choice wins)
+  and the shipped default for `entrance` is `default` — the same size in plan and profile, as the
+  user wants. The user's `_lt` was restored from the pre-centerline copy and the centerline
+  re-applied. (2) The doubled north arrow crossed the scale bar: the compass anchor was its
+  middle. It is now anchored by its **bottom** (`textverticalalignment="2"`), so `COMPASS_ABOVE_M`
+  is a real gap whatever the arrow's size.
+- **Result:** `SB_1256_nacrt.pdf` regenerated: arrow clear of the bar, entrance arrow at the
+  operator's size. 152 stage tests green.
+- **Evidence:** this commit; csx kit v1.5 published.
+- **Next:** never run KORAK 2 on a corrected `_lt` (now harmless for sizes, but the launcher
+  order stays 1 → 2 → correct → 3).

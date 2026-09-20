@@ -358,8 +358,12 @@ def main(argv=None):
                     if brush is not None and brush.get("type") == "2":
                         brush.set("type", "6")  # Water -> NotStandardWater
                         fixed_water += 1
+                # Only where no size is set yet: a `signsize` already on the item
+                # is the operator's choice (re-running KORAK 2 on a corrected _lt
+                # shrank a hand-sized entrance arrow, 2026-09-20).
                 if (item.get("type") == "6"
-                        and item.get("sign") in sign_sizes):
+                        and item.get("sign") in sign_sizes
+                        and item.get("signsize") is None):
                     item.set("signsize", str(sign_sizes[item.get("sign")]))
                     fixed_sizes += 1
                 if (item.get("type") == "8"
