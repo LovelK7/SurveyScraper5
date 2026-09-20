@@ -81,13 +81,16 @@ SCALE_GAP_M = 1.0      # scale bar this far right of the plan bbox
 # North arrow this far above the bar (smaller y = up). 1.0 m = 10 mm at 1:100;
 # 2.0 m left a hole between the two (user, 2026-09-20, on the first composed sheet).
 COMPASS_ABOVE_M = 1.0
-QUOTA_SHIFT_M = 1.0    # quota this far right of whatever is drawn beside it - room for a
-                       # station label too (0.3 collided with one on SB 1256, 2026-09-20)
+QUOTA_SHIFT_M = 1.5    # quota this far right of whatever is drawn beside it - room for a
+                       # station label too (0.3, then 1.0 with the Big text, collided with one on SB 1256)
 # The quota clears everything drawn within this much of the floor's depth, and
 # nothing higher up. Measuring against the whole design pushed the label a metre
 # out past a ceiling that is nowhere near it (user, 2026-09-20).
 QUOTA_BAND_M = 0.5
 QUOTA_SPAN_M = 0.35    # the quota's two mandatory points, diagonally apart
+QUOTA_TEXTSIZE = "4"  # Dislivello text: SizeEnum Large = the "2.00 - Big" combo entry (user, 2026-09-20)
+COMPASS_SCALE = "2.00"  # north arrow clipart scale `cs` (user, 2026-09-20: twice the default)
+SCALE_BAR_FONT = "2"    # scale-bar text in the "Cave name" font (cItemFont FontTypeEnum.CaveName)
 TIE_Z_M = 0.5          # two stations this close in z make the entrance a guess
 
 _NUM_START = set("-0123456789.")
@@ -732,7 +735,8 @@ def add_dislivello(root, entrance, warn):
     right = right_of_depth(design, y)
     x0, y0 = (x if right is None else right) + QUOTA_SHIFT_M, y
     x1, y1 = x0 + QUOTA_SPAN_M, y0 + QUOTA_SPAN_M
-    item = quota_item(cave, branch, "3", entrance or "")
+    item = quota_item(cave, branch, "3", entrance or "",
+                      extra=(("textsize", QUOTA_TEXTSIZE),))
     ET.SubElement(item, "points", {"data": "%s %s %s %s " % (num(x0), num(y0),
                                                              num(x1), num(y1))})
     ET.SubElement(item, "font", {"type": "0"})
@@ -814,7 +818,7 @@ def add_scale_bar(root, bbox, plan_scale, warn):
     ))
     ET.SubElement(item, "points", {"data": "%s %s %s %s " % (
         num(x0), num(y0), num(x0 + length), num(y0))})
-    ET.SubElement(item, "font", {"type": "0"})
+    ET.SubElement(item, "font", {"type": SCALE_BAR_FONT})
     pretty_append(items, item)
     return {"length_m": length, "tick": tick, "label_every": label,
             "points": [round(x0, 2), round(y0, 2),
@@ -925,7 +929,7 @@ def add_compass(root, bbox, scale_bar, is_csz, warn):
     for key, value in (("layer", LAYER_SIGNS), ("cave", cave),
                        ("branch", branch), ("type", "15"), ("category", "83"),
                        ("da", "1"), ("data", cid), ("dataformat", "2"),
-                       ("m", "1"), ("textalignment", "0")):
+                       ("cs", COMPASS_SCALE), ("m", "1"), ("textalignment", "0")):
         item.set(key, value)
     ET.SubElement(item, "pen", {"type": "10"})
     ET.SubElement(item, "brush", {"type": "7"})

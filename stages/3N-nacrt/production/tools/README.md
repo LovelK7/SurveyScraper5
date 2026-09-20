@@ -43,6 +43,10 @@ python production/tools/tdx_zip_to_csx.py <project.zip | folder> [more.zip ...] 
 - Only project zips work as input — TopoDroid's "export bundle" zips (csx/dxf/csv collections)
   contain no tdr/sql and are rejected. Multi-plot surveys: only the first plan + first profile plot
   are converted (matches TopoDroid's own csx export).
+  Since 2026-09-20 it also writes the **Properties › Centerline** values from the json's
+  `postimport.centerline` (red stations and shots, Hatch, Triangle, force shot colour — the
+  user's own dialog) into `<properties><designproperties>`, so the centerline is visible while
+  the sketch is being fixed.
 
 ---
 

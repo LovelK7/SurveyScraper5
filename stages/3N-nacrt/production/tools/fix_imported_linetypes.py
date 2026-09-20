@@ -53,6 +53,66 @@ DEFAULT_MAP = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "tdx-mapping.json")
 
 # shared cIItemSizable.SizeEnum (cIItemText.vb:20-33): signsize / textsize attr
+# Properties > Centerline, persisted per survey as
+# <properties><designproperties><item name=K type=T>value</item> (cPropertiesCollection.vb:167-204,
+# keys from frmProperties.vb:779-816). Colours are signed ARGB ints (red -65536), pen styles are
+# cPen.PenStylesEnum (Solid 0, Dash/"Hatch" 1, Dot/"Points" 2), the station sign is the combo index
+# + 1 (Triangle 7). The json's `postimport.centerline` gives the values; this table gives the types.
+CENTERLINE_TYPES = {
+    "PlotPointSize": "single", "PlotSelectedPointSize": "single",
+    "PlotPointSymbol": "integer", "PlotPointColor": "color",
+    "PlotPenWidth": "single", "PlotSelectedPenWidth": "single",
+    "PlotPenStyle": "integer", "PlotPenColor": "color",
+    "PlotCenterlineForceColor": "integer", "PlotCenterlineVector": "integer",
+    "PlotSplayPenWidth": "single", "PlotSplaySelectedPenWidth": "single",
+    "PlotSplayPenStyle": "integer", "PlotSplayCrossScale": "single",
+    "PlotLRUDPenWidth": "single", "PlotLRUDSelectedPenWidth": "single",
+    "PlotLRUDPenStyle": "integer",
+    "PlotTranslationLinePenWidth": "single", "PlotTranslationLinePenStyle": "integer",
+    "PlotTranslationLinePenColor": "color",
+    "SurfaceProfilePenWidth": "single", "SurfaceProfileSelectedPenWidth": "single",
+    "SurfaceProfilePenStyle": "integer", "SurfaceProfilePenColor": "color",
+    "PlotTextScaleFactor": "single", "PlotTextColor": "color",
+    "PlotNoteTextScaleFactor": "single", "PlotNoteTextColor": "color",
+}
+
+
+def apply_centerline(root, spec):
+    """Write the Centerline design properties from `spec` (name -> value).
+
+    Makes the centerline visible while the operator fixes the sketch (user,
+    2026-09-20: red stations and shots, as in their own Properties dialog).
+    Returns the number of items written; unknown keys are skipped with a warning.
+    """
+    if not spec:
+        return 0
+    props = root.find("properties")
+    if props is None:
+        print("WARNING: no <properties> element - centerline not set", file=sys.stderr)
+        return 0
+    dp = props.find("designproperties")
+    if dp is None:
+        dp = ET.SubElement(props, "designproperties")
+    n = 0
+    for name, value in spec.items():
+        vtype = CENTERLINE_TYPES.get(name)
+        if vtype is None:
+            print("WARNING: centerline key %r unknown - skipped" % name, file=sys.stderr)
+            continue
+        item = None
+        for cand in dp.findall("item"):
+            if cand.get("name") == name:
+                item = cand
+                break
+        if item is None:
+            item = ET.SubElement(dp, "item")
+            item.set("name", name)
+        item.set("type", vtype)
+        item.text = str(value)
+        n += 1
+    return n
+
+
 SIZES = {"default": 0, "verysmall": 1, "small": 2, "medium": 3,
          "large": 4, "big": 4, "verylarge": 5}
 
@@ -307,10 +367,13 @@ def main(argv=None):
                     item.set("textsize", str(label_sizes[item.get("text")]))
                     fixed_sizes += 1
 
+        centerline_set = apply_centerline(root, rules.get("centerline"))
+
         write_root(root, inp, out, is_csz)
         print("OK  %s\n    %d line(s) -> splines, %d water area(s) -> "
-              "non-standard brush, %d size(s) applied"
-              % (out, fixed_lines, fixed_water, fixed_sizes))
+              "non-standard brush, %d size(s) applied, %d centerline propert%s set"
+              % (out, fixed_lines, fixed_water, fixed_sizes, centerline_set,
+                 "y" if centerline_set == 1 else "ies"))
         if imported_seen == 0 and not args.all_lines:
             print("    NOTE: no TopoDroid-imported items found in this file. "
                   "If it wasn't a TopoDroid import, nothing here needed fixing.")

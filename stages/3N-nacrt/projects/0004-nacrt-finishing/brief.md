@@ -196,6 +196,20 @@ The install dir is a per-machine fact → `.env` `CSURVEY_DIR` (default `C:\csur
 name likewise. Fail-soft: if the driver is unavailable the XML step still leaves a file the human
 can open and print in two clicks.
 
+### 3.3b Sizes and styles (user, 2026-09-20, after the first two nacrts)
+
+- Dislivello text size **"2.00 - Big"** → `textsize="4"` (`cIItemSizable.SizeEnum.Large`, multiplier 2 in
+  cItemQuota.vb:330-361; omitted when Default). With the bigger text the label needs 1.5 m of clearance
+  from whatever is drawn beside it (`QUOTA_SHIFT_M`).
+- North arrow **twice the default** → compass item `cs="2.00"` (clipart scale, cItemCompass.vb:506;
+  `textsize` left alone so the `N` keeps its size).
+- Scale-bar text in the **"Cave name"** font → `<font type="2"/>` (cItemFont.vb:13-21 `FontTypeEnum.CaveName`).
+- **Red centerline while fixing**, i.e. in KORAK 2, not KORAK 3: Properties › Centerline lives per survey in
+  `<properties><designproperties><item name=K type=T>value</item>` (cPropertiesCollection.vb:167-204,
+  keys frmProperties.vb:779-816); colours are signed ARGB ints (red `-65536`), pen style `PlotPenStyle`
+  1 = Hatch, station sign `PlotPointSymbol` 7 = Triangle, `PlotCenterlineForceColor` 1. Values are the
+  user's own dialog (snip of 2026-09-20), editable in `tdx-mapping.json` → `postimport.centerline`.
+
 ### 3.4 Scale and layout rules (user, 2026-09-20)
 
 - **Scale per design, not per sheet.** Profile and plan often need different scales: a

@@ -100,6 +100,33 @@
     },
     "label_sizes": {
       "!": "large"
+    },
+    "centerline": {
+      "PlotPointSize": 2,
+      "PlotSelectedPointSize": 2,
+      "PlotPointSymbol": 7,
+      "PlotPointColor": -65536,
+      "PlotPenWidth": 2,
+      "PlotSelectedPenWidth": 2,
+      "PlotPenStyle": 1,
+      "PlotPenColor": -65536,
+      "PlotCenterlineForceColor": 1,
+      "PlotCenterlineVector": 0,
+      "PlotTranslationLinePenWidth": 2,
+      "PlotTranslationLinePenStyle": 2,
+      "PlotTranslationLinePenColor": -16777216,
+      "SurfaceProfilePenWidth": 1,
+      "SurfaceProfileSelectedPenWidth": 2,
+      "SurfaceProfilePenStyle": 2,
+      "PlotLRUDPenWidth": 0.8,
+      "PlotLRUDSelectedPenWidth": 1.2,
+      "PlotLRUDPenStyle": 2,
+      "PlotSplayPenWidth": 0.8,
+      "PlotSplaySelectedPenWidth": 1.2,
+      "PlotSplayPenStyle": 2,
+      "PlotSplayCrossScale": 1.0,
+      "PlotTextScaleFactor": 1.0,
+      "PlotNoteTextScaleFactor": 0.5
     }
   }
 }

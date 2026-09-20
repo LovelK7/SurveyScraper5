@@ -360,7 +360,7 @@ def test_dislivello_sits_at_the_lowest_borders_point_and_names_the_entrance(tmp_
     # profile Borders span (-1, -2) to (7, 3); depth grows with y, so (7, 3).
     assert sidecar["dislivello"]["lowest"] == [7.0, 3.0]
     assert sidecar["dislivello"]["source"] == "Borders"
-    assert sidecar["dislivello"]["points"] == [8.0, 3.0, 8.35, 3.35]
+    assert sidecar["dislivello"]["points"] == [8.5, 3.0, 8.85, 3.35]
     root = ET.parse(str(out)).getroot()
     quotas = [i for i in items_of(root, "profile") if i.get("quotatype") == "3"]
     assert len(quotas) == 1
@@ -371,7 +371,7 @@ def test_dislivello_sits_at_the_lowest_borders_point_and_names_the_entrance(tmp_
     assert item.get("cave") == "Jama" and item.get("branch") == "1"
     # cSurvey computes the printed depth at paint time from quotavalue=0.
     assert item.get("text") == "" and item.get("quotavalue") == "0"
-    assert item.find("points").get("data") == "8.00 3.00 8.35 3.35 "
+    assert item.find("points").get("data") == "8.50 3.00 8.85 3.35 "
     # cItemQuota has HavePen/HaveBrush False, so cSurvey writes neither.
     assert [child.tag for child in item] == ["points", "font"]
 
@@ -471,10 +471,10 @@ def test_the_label_sits_beside_the_floor_not_beside_the_ceiling(tmp_path):
         tmp_path, origin="B",
         profile_borders="0.00 -5.00 20.00 -5.00 0.00 3.00 4.00 3.00 ")
     assert sidecar["dislivello"]["right_at_depth"] == 4.0
-    assert sidecar["dislivello"]["points"][0] == 5.0            # 4.0 + the gap
+    assert sidecar["dislivello"]["points"][0] == 5.5            # 4.0 + the gap
     root = ET.parse(str(out)).getroot()
     quota = [i for i in items_of(root, "profile") if i.get("quotatype") == "3"][0]
-    assert quota.find("points").get("data").startswith("5.00 3.00 ")
+    assert quota.find("points").get("data").startswith("5.50 3.00 ")
 
 
 # ---------------------------------------------------------------------------
@@ -905,3 +905,18 @@ def test_settle_plan_scale_is_a_fixed_point():
                                                    (-6.25, -0.76, 8.34, 14.24))
     assert scale == 200 and rounds == 2
     assert nacrt_finish.settle_plan_scale(None, (0, 0, 4, 5)) == (100, 0)
+
+
+# sizes and fonts the user set on 2026-09-20
+
+
+def test_dislivello_is_big_scale_bar_uses_cave_name_font_and_arrow_is_doubled(tmp_path):
+    out, _ = finish_to(tmp_path)
+    root = ET.parse(str(out)).getroot()
+    drop = [i for i in items_of(root, "profile") if i.get("quotatype") == "3"][0]
+    assert drop.get("textsize") == "4"                      # "2.00 - Big"
+    bar = [i for i in items_of(root, "plan") if i.get("quotatype") == "6"][0]
+    assert bar.get("textsize") is None
+    assert bar.find("font").get("type") == "2"              # Cave name
+    compass = [i for i in items_of(root, "plan") if i.get("type") == "15"][0]
+    assert compass.get("cs") == "2.00"

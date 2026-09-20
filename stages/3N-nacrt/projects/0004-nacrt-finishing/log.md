@@ -466,3 +466,17 @@ with six things. All six are done; two of them changed a rule rather than a numb
   extraction); prod v1.6 published. 105 4S tests green.
 - **Evidence:** this commit.
 - **Next:** user re-opens `SB_1256_nacrt.pdf` in Illustrator to confirm; second-machine check.
+
+### 2026-09-20 — user's style comments after two nacrts (agent) ✅
+
+- **Did:** Dislivello `textsize="4"` (Big), compass `cs="2.00"`, scale-bar `<font type="2"/>` (Cave
+  name) in the finisher; `QUOTA_SHIFT_M` 1.0 → 1.5 m because the bigger label touched station `0`
+  again; KORAK 2 gained `apply_centerline` — the Properties › Centerline values from
+  `tdx-mapping.json` `postimport.centerline` (red stations and shots, Hatch, Triangle, force shot
+  colour; the user's snip) written into `<properties><designproperties>` so the centerline is
+  visible while the sketch is being fixed; 4S Lokacija is now "Najbliže mjesto, Lokalitet".
+  Source facts (enum values, attribute names, ARGB colours) from a read-only dig, in brief §3.3b.
+- **Result:** tests green (new: sizes/font, four centerline tests); verified on a scratch copy of
+  SB 1256 through KORAK 2 → 3 → print: red hatch shots, doubled arrow, big `-14 m`.
+- **Evidence:** this commit; csx kit v1.4 + prod v1.7 published.
+- **Next:** user checks the look on the next cave.
