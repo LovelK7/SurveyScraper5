@@ -1,6 +1,6 @@
 # production/tools — Stage 0 survey inspector (+ TDX recovery tools)
 
-## TopoDroid zip → csx recovery (`tdx_zip_to_csx.py`, `parse_tdr.py`, `recover_tdx.bat`)
+## TopoDroid zip → csx recovery (`tdx_zip_to_csx.py`, `parse_tdr.py`, `csurvey_recover_tdx.bat`)
 
 Regenerates a raw-TopoDroid `.csx` (centerline **and** sketch) from a TopoDroid **project zip**
 (`manifest` + `survey.sql` + `.tdr`), replaying TopoDroid's own csx exporter offline. Built in
@@ -15,22 +15,26 @@ python production/tools/tdx_zip_to_csx.py <project.zip | folder> [more.zip ...] 
 - A folder argument is scanned recursively for project zips (non-project zips are skipped by a
   manifest+survey.sql sniff). Outputs land next to each zip: `<survey>_recovered.csx` and — via an
   automatic `preprocess_tdx_csx.py` pass — `<survey>_recovered_pp.csx`, the one to import.
-- **No-typing path:** `recover_tdx.bat` (a copy lives in the TDX handoff folder) — double-click to
-  process every zip in that folder, or drag zips onto it. Its sibling **`preprocess_tdx.bat`** does
-  the same for the normal (non-recovery) flow: double-click = preprocess every *raw* TopoDroid csx
-  in the folder tree (sniffed by `creatid="TopoDroid"` without `creat_postprocessed`; `_pp.csx`
-  outputs and post-import saves skipped), or drag csx files onto it. A third, **`fix_tdx.bat`**,
+- **No-typing path:** `csurvey_recover_tdx.bat` (published to `!!!Digitalizacija/` by
+  [`prod/build_csx_kit.py`](../../../../prod/build_csx_kit.py)) — double-click to process every
+  project zip under `!Za digitalizirat`, or drag zips onto it. Its sibling
+  **`csurvey_preprocess_tdx.bat`** does the same for the normal (non-recovery) flow: double-click =
+  preprocess every *raw* TopoDroid csx in that tree (sniffed by `creatid="TopoDroid"` without
+  `creat_postprocessed`; `_pp.csx` outputs and post-import saves skipped), or drag csx files onto
+  it. A third, **`csurvey_fix_tdx.bat`**,
   runs the *post-import* fixer (`fix_imported_linetypes.py`) — drag the file you made with **Save
   As** after importing onto it to get `<name>_lt.<same ext>` (splines so decorations render, sizes,
   water brush); run it right after Save As and map in the `_lt` file. It accepts **both `.csz` and
   `.csx`** (whichever you saved — the rich zip is rewritten in place, all other entries preserved)
   and **blocks with instructions** if handed a not-yet-imported (raw/`_pp`) file, so you can't run
-  the wrong step. All three .bats print a runtime STEP banner, carry a runtime "what to do next"
-  footer, and hold an absolute repo path (update them if the repo moves). `preprocess_tdx_csx.py`
+  the wrong step. All three .bats print a runtime STEP banner and carry a runtime "what to do next"
+  footer; they are **generated** from [`prod/csx_templates/`](../../../../prod/csx_templates/) and
+  find these tools in the `csurvey_alati/` folder published beside them, so they work on any
+  machine (a developer path is only the last fallback rung). `preprocess_tdx_csx.py`
   and `fix_imported_linetypes.py` both also accept multiple files (the latter a folder-worth of
-  dragged files) directly. **A plain-language operator guide — `READ ME FIRST - process a
-  survey.txt` — sits next to these tools and is copied into the TDX folder** (the human entry
-  point; the markdown protocol is its technical counterpart).
+  dragged files) directly. **A plain-language operator guide — `csurvey_READ ME FIRST - process a
+  survey.txt` — is published beside the launchers** (the human entry point; the markdown protocol
+  is its technical counterpart).
 - `parse_tdr.py FILE.tdr [--items] [--json out]` is the underlying all-version `.tdr` binary reader
   (also a standalone diagnostic: proves whether a sketch file is intact).
 - Only project zips work as input — TopoDroid's "export bundle" zips (csx/dxf/csv collections)

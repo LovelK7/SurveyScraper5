@@ -43,7 +43,7 @@ Usage:
 
 A FOLDER argument is scanned recursively for raw TopoDroid .csx files (creatid="TopoDroid",
 no creat_postprocessed); *_pp.csx outputs and post-import saves are skipped automatically.
-No-typing path: preprocess_tdx.bat in the TDX handoff folder (double-click = scan that folder;
+No-typing path: csurvey_preprocess_tdx.bat in !!!Digitalizacija (double-click = scan !Za digitalizirat;
 or drag .csx files onto it).
 """
 

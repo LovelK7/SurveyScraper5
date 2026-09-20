@@ -26,7 +26,7 @@ Usage:
 
 Outputs land next to each zip: <survey>_recovered.csx (raw) and <survey>_recovered_pp.csx
 (import this one into cSurvey). Paths with spaces are fine — quote them, or use the
-recover_tdx.bat drag-and-drop wrapper in the TDX handoff folder.
+csurvey_recover_tdx.bat drag-and-drop wrapper published in !!!Digitalizacija.
 """
 import io
 import os

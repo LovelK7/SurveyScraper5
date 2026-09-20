@@ -19,7 +19,7 @@ identical, decorations start rendering.
 Accepts BOTH the rich .csz (zip) you get from a normal Save and the bare .csx —
 whichever you saved, drag it in. Output keeps the same container (_lt.csz /
 _lt.csx). Never modifies the input. Re-open the _lt output in cSurvey and do
-all mapping there. For drag-and-drop convenience use fix_tdx.bat.
+all mapping there. For drag-and-drop convenience use csurvey_fix_tdx.bat.
 
 It refuses a file that has NOT been imported into cSurvey yet (a raw/phone or
 _pp file), telling you to import + Save As first — so you cannot run it on the

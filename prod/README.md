@@ -46,31 +46,46 @@ machine with no developer present, with whatever setuptools pip downloads that
 day. The repo's multi-root `package-dir` map works, but it has no business
 being on that path.
 
-### 2. The TDX kit — for people processing TopoDroid surveys
+### 2. The `csurvey` TDX kit — for people processing TopoDroid surveys
 
-Drag-and-drop `.bat` files plus the Python tools they drive, copied together
-into the operator's TDX working folder.
+Drag-and-drop `.bat` files plus the Python tools they drive, published together
+into `!!!Digitalizacija/` — the digitalization folder itself, beside the surveys
+(user decision 2026-09-20; before that they sat in a `Share/TDX` handoff folder).
+The `csurvey_` prefix keeps them legible in a folder they share with the
+society's own documents, the way `cavedossier_*` does one level down.
 
 | File | Step |
 |---|---|
-| [`csx_templates/recover_tdx.bat.template`](csx_templates/recover_tdx.bat.template) | 1b — rebuild a broken `.csx` from the TopoDroid project `.zip` |
-| [`csx_templates/preprocess_tdx.bat.template`](csx_templates/preprocess_tdx.bat.template) | 2 — raw `.csx` → import-ready `_pp.csx` |
-| [`csx_templates/fix_tdx.bat.template`](csx_templates/fix_tdx.bat.template) | 4 — after cSurvey "Save As", before drawing |
-| [`csx_templates/READ ME FIRST - process a survey.txt`](csx_templates/READ%20ME%20FIRST%20-%20process%20a%20survey.txt) | The jargon-free operator checklist |
+| [`csx_templates/csurvey_recover_tdx.bat.template`](csx_templates/csurvey_recover_tdx.bat.template) | 1b — rebuild a broken `.csx` from the TopoDroid project `.zip` |
+| [`csx_templates/csurvey_preprocess_tdx.bat.template`](csx_templates/csurvey_preprocess_tdx.bat.template) | 2 — raw `.csx` → import-ready `_pp.csx` |
+| [`csx_templates/csurvey_fix_tdx.bat.template`](csx_templates/csurvey_fix_tdx.bat.template) | 4 — after cSurvey "Save As", before drawing |
+| [`csx_templates/csurvey_READ ME FIRST - process a survey.txt`](csx_templates/csurvey_READ%20ME%20FIRST%20-%20process%20a%20survey.txt) | The jargon-free operator checklist |
+| [`build_csx_kit.py`](build_csx_kit.py) | Generates and publishes the kit (`--publish`); `csurvey_alati/` carries the Python tools |
 
-Step 3 is manual: open the `_pp.csx` in cSurvey and Save As. The protocol is
+```powershell
+python prod\build_csx_kit.py                  # stage into prod/dist/csx-kit
+python prod\build_csx_kit.py --publish        # + copy to !!!Digitalizacija
+```
+
+A double-click scans `!Za digitalizirat` (from `config.yaml`'s `intake_dir`),
+which is where the per-cave folders are; dragging files onto a launcher works
+from anywhere. Step 3 is manual: open the `_pp.csx` in cSurvey and Save As. The
+protocol is
 [`stages/3N-nacrt/production/tdx-processing-protocol.md`](../stages/3N-nacrt/production/tdx-processing-protocol.md);
 the Python tools live in
-[`stages/3N-nacrt/production/tools/`](../stages/3N-nacrt/production/tools/).
+[`stages/3N-nacrt/production/tools/`](../stages/3N-nacrt/production/tools/) and
+are copied into `csurvey_alati/` at publish time — edit them in the repo, never
+on the Drive.
 
 ## Why these are templates and not just files
 
 Both kits are **generated**, never hand-edited in place, because both used to
-carry a hardcoded absolute path to one developer's machine. The three TDX `.bat`
-files still do, in the templates — and since their own headers say they are
-copied out to operators' folders, every copy distributed so far has been inert
-on any machine but that one. Generating them makes the path a build-time value
-instead of a hand-typed constant, the same way `build_prod.py` already works.
+carry a hardcoded absolute path to one developer's machine. The TDX `.bat` files
+were the worse case: their own headers said they were copies handed to
+operators, and every such copy was inert on any machine but that one. Generating
+them makes the developer path a build-time value and the *last* fallback rung —
+the launchers find their tools in `csurvey_alati/` beside themselves first, so a
+published kit works anywhere.
 
 ## The standing portability rules
 

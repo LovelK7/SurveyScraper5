@@ -3,11 +3,15 @@
  A simple, do-this-then-that checklist. Follow it top to bottom.
 ==================================================================
 
-You will use the three ".bat" files that sit in this same folder:
+You will use the three ".bat" files that sit in this same folder
+(!!!Digitalizacija, next to !Za digitalizirat):
 
-   preprocess_tdx.bat   (STEP 2)
-   fix_tdx.bat          (STEP 4)
-   recover_tdx.bat      (STEP 1b - only if something is broken)
+   csurvey_preprocess_tdx.bat   (STEP 2)
+   csurvey_fix_tdx.bat          (STEP 4)
+   csurvey_recover_tdx.bat      (STEP 1b - only if something is broken)
+
+The tools they drive live in the csurvey_alati folder beside them - leave
+that folder where it is.
 
 Each one is safe to double-click or to drag files onto. When it
 finishes it leaves a black window open with a message. READ THAT
@@ -31,21 +35,22 @@ You can select several files first and drag them all together.
 
 STEP 1 - ON THE PHONE (TopoDroid)
   * Draw your sketch.
-  * Export ONE .csx file into this TDX folder (it holds plan AND
-    profile together).
+  * Export ONE .csx file into the cave's own folder under
+    !Za digitalizirat (it holds plan AND profile together).
   * ALSO export the project ZIP every time (Survey menu > Archive).
     You may never need it, but it is your safety net (see STEP 1b).
 
 STEP 1b - ONLY IF THE .csx IS BROKEN
   Do this ONLY if: the .csx is missing, is 0 bytes, or opens with the
   sketch gone. Otherwise SKIP to STEP 2.
-  * Drag the project .zip onto  recover_tdx.bat
+  * Drag the project .zip onto  csurvey_recover_tdx.bat
   * It makes  <survey>_recovered_pp.csx  -> use that in STEP 3, and
     skip STEP 2 (recovery already did it).
 
 STEP 2 - PREPARE THE FILE (on the computer)
-  * Drag your phone .csx onto  preprocess_tdx.bat
-    (or just double-click it to do every phone .csx in the folder).
+  * Drag your phone .csx onto  csurvey_preprocess_tdx.bat
+    (or just double-click it to do every phone .csx anywhere under
+    !Za digitalizirat).
   * It makes a new file next to it whose name ends in  _pp
     Example:  cave.csx  ->  cave_pp.csx
   * Read any WARNING lines - they tell you which drawn symbols will
@@ -59,7 +64,7 @@ STEP 3 - IMPORT INTO cSURVEY
     fine. Either save type (.csz or .csx) is fine.
 
 STEP 4 - FINISH THE IMPORT  (DO THIS BEFORE YOU DRAW ANYTHING)
-  * Drag the file you just saved in STEP 3 onto  fix_tdx.bat
+  * Drag the file you just saved in STEP 3 onto  csurvey_fix_tdx.bat
   * It makes a new file next to it whose name ends in  _lt
     Example:  cave_work.csz  ->  cave_work_lt.csz
   * In cSurvey, OPEN THAT  _lt  FILE and do ALL your drawing in it.
@@ -88,10 +93,10 @@ Simple rule:  IMPORT the _pp file  ->  DRAW IN the _lt file.
 ------------------------------------------------------------------
  "OK ... _lt ..."   Success. Open the _lt file in cSurvey and draw.
 
- "BLOCKED"          You dragged a file onto fix_tdx.bat that has not
-                    been imported into cSurvey yet (e.g. a _pp file).
-                    Do STEP 3 first (import it, Save As), then drag
-                    THAT saved file onto fix_tdx.bat.
+ "BLOCKED"          You dragged a file onto csurvey_fix_tdx.bat that has
+                    not been imported into cSurvey yet (e.g. a _pp
+                    file). Do STEP 3 first (import it, Save As), then
+                    drag THAT saved file onto csurvey_fix_tdx.bat.
 
  "WARNING"          Not fatal. Usually "this drawn symbol won't carry
                     over". The step still finished.

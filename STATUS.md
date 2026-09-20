@@ -237,7 +237,7 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
   nacrt get a suffix; does the archived intake leaf take the katastarski broj or
   keep its field name; is `deliver` dev-only at first (it needs Excel + xlwings);
   does `Godina zadnjeg istraživanja` join the same SB write.
-- **TDX kit redistribution** (new 2026-09-19): the three drag-and-drop `.bat` files were found to hardcode one machine's absolute path *and* to be copied out to operators — so every distributed copy has been inert since handover. `python prod/build_csx_kit.py --publish "<TDX folder>"` now generates a self-contained kit. Needs one pass: inventory the copies on the Drive, overwrite them, and tell the operators once to replace the whole folder (the kit is self-contained from then on, so it is the last time).
+- **TDX kit redistribution** (new 2026-09-19, **done 2026-09-20**): the three drag-and-drop `.bat` files hardcoded one machine's absolute path *and* were copied out to operators — so every distributed copy had been inert since handover. `python prod/build_csx_kit.py --publish` now generates and publishes a self-contained kit as **`csurvey_*` v1.0 in `!!!Digitalizacija/`** (launchers + `csurvey_alati/`), replacing the `Share/TDX` copies, which are deleted (that folder holds only a pointer note now). Remaining: tell the operators once that the tools moved and are double-clicked from `!!!Digitalizacija` — a double-click now works on everything under `!Za digitalizirat`.
 - **Sastavnica Lokacija wording** (new 2026-09-19): the sastavnica inherits the
   OSZ's geo-admin-wins rule for Najbliže mjesto, so SB 811 prints
   *Kobiljak, Grižane-Belgrad* where SB says *Potkobiljak*. Kept for consistency
