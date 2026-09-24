@@ -91,14 +91,21 @@ def resolve(root, tokens, label="!Za digitalizirat"):
     return dirs
 
 
+def is_backup(path):
+    """cSurvey's own safety copy: on every save it writes the previous version
+    to <name>_backup.<ext> (cSurvey/cSurveyPC/frmMain.vb:1359). Never an input."""
+    return os.path.splitext(os.path.basename(path))[0].lower().endswith("_backup")
+
+
 def list_files(dirs, exts, skip_suffixes=()):
     """Every file with one of `exts` under the given folders, sorted.
 
     `skip_suffixes` drops outputs a tool made itself (e.g. `_lt`), so a second
     pass over a cave folder does not offer <name>_lt as an input again.
+    cSurvey's `_backup` copies are always dropped.
     """
     exts = tuple(e.lower() for e in exts)
-    skip = tuple(s.lower() for s in skip_suffixes)
+    skip = tuple(s.lower() for s in skip_suffixes) + ("_backup",)
     found = []
     for d in dirs:
         for dirpath, _dirs, names in os.walk(d):
@@ -110,6 +117,43 @@ def list_files(dirs, exts, skip_suffixes=()):
                     continue
                 found.append(os.path.join(dirpath, fn))
     return sorted(found)
+
+
+def pick(paths, at_step, leaves, labels=None, root=None,
+         prompt="Koju datoteku? ", allow_all=True):
+    """Take the file that is at this step without asking, when that is clear.
+
+    `at_step(path)` says whether a file is the input this step expects (the
+    `_lt` for KORAK 3, the file cSurvey saved for KORAK 2). If every cave
+    folder in `leaves` holds exactly one such file, those are used. Otherwise
+    the menu is shown: just the files at this step if there are several, or
+    every file, with its label saying why, if none of them is.
+    """
+    if labels is None:
+        labels = [None] * len(paths)
+    hits = [i for i, p in enumerate(paths) if at_step(p)]
+
+    def leaf_of(p):
+        for leaf in leaves:
+            if os.path.normcase(os.path.abspath(p)).startswith(
+                    os.path.normcase(os.path.abspath(leaf)) + os.sep):
+                return leaf
+        return os.path.dirname(p)
+
+    per_leaf = {}
+    for i in hits:
+        per_leaf.setdefault(leaf_of(paths[i]), []).append(i)
+    busy = {leaf_of(p) for p in paths}
+    if hits and set(per_leaf) == busy and all(len(v) == 1 for v in per_leaf.values()):
+        picked = [paths[i] for i in hits]
+        for p in picked:
+            print("datoteka: %s" % (os.path.relpath(p, root) if root else p))
+        return picked
+
+    idx = hits if len(hits) > 1 else list(range(len(paths)))
+    shown_labels = [labels[i] for i in idx] if any(labels) else None
+    return choose([paths[i] for i in idx], labels=shown_labels, root=root,
+                  prompt=prompt, allow_all=allow_all)
 
 
 def choose(paths, labels=None, root=None, prompt="Koju datoteku? ",

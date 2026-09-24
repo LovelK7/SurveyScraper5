@@ -225,13 +225,17 @@ def pick_by_sb(inputs, sb):
     leaves = sb_select.resolve(intake, sb)
     if leaves is None:
         return None
-    files = sb_select.list_files(leaves, (".csz", ".csx"), skip_suffixes=("_lt",))
+    files = sb_select.list_files(leaves, (".csz", ".csx"),
+                                 skip_suffixes=("_lt", "_fin"))
     if not files:
         print("nothing to do - u toj mapi nema .csz ni .csx datoteke")
         return None
+    # The file cSurvey saved is the input here; the phone export and an
+    # unsaved _pp beside it are not. Ask only if that is not clear-cut.
     labels = [import_state(f) for f in files]
-    return sb_select.choose(files, labels=labels, root=intake,
-                            prompt="Koju datoteku dovrsiti? ")
+    saved = {f for f, lab in zip(files, labels) if lab.startswith("spremljeno")}
+    return sb_select.pick(files, lambda f: f in saved, leaves, labels=labels,
+                          root=intake, prompt="Koju datoteku dovrsiti? ")
 
 
 def main(argv=None):

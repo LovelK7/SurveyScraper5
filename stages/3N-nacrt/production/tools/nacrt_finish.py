@@ -1338,9 +1338,12 @@ def pick_by_sb(inputs, sb):
     if not files:
         print("nothing to do - u toj mapi nema .csz ni .csx datoteke")
         return None
+    # The _lt is what KORAK 2 made and the drafter corrected — the one input
+    # here. Ask only if a cave has none, or more than one.
     labels = [finish_state(f) for f in files]
-    return sb_select.choose(files, labels=labels, root=intake,
-                            prompt="Koju datoteku dovrsiti? ")
+    return sb_select.pick(
+        files, lambda f: os.path.splitext(f)[0].lower().endswith("_lt"),
+        leaves, labels=labels, root=intake, prompt="Koju datoteku dovrsiti? ")
 
 
 def main(argv=None):

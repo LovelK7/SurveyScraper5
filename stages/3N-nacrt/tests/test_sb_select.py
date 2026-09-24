@@ -115,3 +115,46 @@ def test_choose_cancels_on_eof(monkeypatch):
         raise EOFError
     monkeypatch.setattr("builtins.input", boom)
     assert sb_select.choose(["a.csz", "b.csz"]) is None
+
+
+def test_list_files_never_offers_csurvey_backups(tmp_path):
+    leaf = tmp_path / "SB_1220_Hrdava"
+    leaf.mkdir()
+    for name in ("h.csx", "h_pp.csx", "h_pp_backup.csx", "h_pp_lt.csx",
+                 "h_pp_lt_backup.csx"):
+        (leaf / name).write_bytes(b"x")
+    got = sb_select.list_files([str(leaf)], (".csz", ".csx"))
+    assert [Path(p).name for p in got] == ["h.csx", "h_pp.csx", "h_pp_lt.csx"]
+
+
+def _is_lt(p):
+    return Path(p).stem.lower().endswith("_lt")
+
+
+def test_pick_takes_the_one_file_at_this_step_without_asking(tmp_path, monkeypatch):
+    leaf = tmp_path / "SB_1220_Hrdava"
+    paths = [str(leaf / n) for n in ("h.csx", "h_pp.csx", "h_pp_lt.csx")]
+    monkeypatch.setattr("builtins.input", lambda _p: pytest.fail("asked"))
+    assert sb_select.pick(paths, _is_lt, [str(leaf)]) == [paths[2]]
+
+
+def test_pick_takes_one_per_cave(tmp_path, monkeypatch):
+    a, b = tmp_path / "SB_1_A", tmp_path / "SB_2_B"
+    paths = [str(a / "a.csx"), str(a / "a_lt.csx"), str(b / "b_lt.csz")]
+    monkeypatch.setattr("builtins.input", lambda _p: pytest.fail("asked"))
+    assert sb_select.pick(paths, _is_lt, [str(a), str(b)]) == [paths[1], paths[2]]
+
+
+def test_pick_asks_between_several_files_at_this_step(tmp_path, monkeypatch, capsys):
+    leaf = tmp_path / "SB_1220_Hrdava"
+    paths = [str(leaf / n) for n in ("h.csx", "x_lt.csx", "y_lt.csz")]
+    monkeypatch.setattr("builtins.input", lambda _p: "2")
+    assert sb_select.pick(paths, _is_lt, [str(leaf)]) == [paths[2]]
+    assert "h.csx" not in capsys.readouterr().out
+
+
+def test_pick_shows_everything_when_nothing_is_at_this_step(tmp_path, monkeypatch):
+    leaf = tmp_path / "SB_1220_Hrdava"
+    paths = [str(leaf / n) for n in ("h.csx", "h_pp.csx")]
+    monkeypatch.setattr("builtins.input", lambda _p: "1")
+    assert sb_select.pick(paths, _is_lt, [str(leaf)]) == [paths[0]]

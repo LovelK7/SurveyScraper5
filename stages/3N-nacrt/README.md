@@ -28,7 +28,7 @@ cave's `SB_<broj>_…` leaf and asks which file to use if there is more than one
 
 ```powershell
 $T = "stages\3N-nacrt\production\tools"
-$INTAKE = "<LOCAL_DRIVE_ROOT>\!!!Digitalizacija\!Za digitalizirat"   # LOCAL_DRIVE_ROOT from .env
+$INTAKE = ((Get-Content .env | Select-String '^LOCAL_DRIVE_ROOT=').Line -split '=', 2)[1] + '\!!!Digitalizacija\!Za digitalizirat'   # intake root, read from .env
 
 # KORAK 1 — raw TDX export -> <name>_pp.csx (symbols renamed so they survive import)
 python $T\preprocess_tdx_csx.py $INTAKE --sb 1103 --force

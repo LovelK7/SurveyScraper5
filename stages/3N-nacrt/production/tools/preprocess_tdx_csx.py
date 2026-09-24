@@ -385,6 +385,8 @@ def main(argv=None):
                         continue
                     if fn.lower().endswith("_pp.csx"):
                         continue
+                    if sb_select.is_backup(fn):
+                        continue
                     p = os.path.join(dirpath, fn)
                     if is_raw_topodroid_csx(p):
                         files.append(p)

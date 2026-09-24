@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speleo nadzorna ploča</title>
+<link rel="stylesheet" href="/static/app.css">
+<script>window.CD_TOKEN = "__TOKEN__";</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">◐</span>
+    <div>
+      <div class="brand-title">Speleo nadzorna ploča</div>
+      <div class="brand-sub">SurveyScraper5 · cave-dossier</div>
+    </div>
+  </div>
+
+  <div class="sb-box">
+    <span id="sb-mode" class="badge">SB …</span>
+    <button id="btn-open-sb" class="btn primary" title="Otvori živu Speleo bazu u Excelu">Otvori SB</button>
+  </div>
+
+  <div class="cave-box">
+    <label for="cave-input" class="cave-label">Objekt</label>
+    <input id="cave-input" list="cave-list" placeholder="Redni broj ili ime…" autocomplete="off">
+    <datalist id="cave-list"></datalist>
+    <button id="btn-cave-folder" class="btn" title="Otvori mapu objekta">Mapa</button>
+    <button id="btn-cave-clear" class="btn ghost" title="Makni odabir">✕</button>
+  </div>
+
+  <button id="btn-refresh" class="btn ghost" title="Ponovno učitaj postavke, SB i mape">↻ Osvježi</button>
+</header>
+
+<div class="layout">
+  <nav id="nav" class="nav" aria-label="Faze"></nav>
+  <main id="main" class="main"></main>
+</div>
+
+<section id="console" class="console collapsed" aria-label="Ispis">
+  <div class="console-bar">
+    <button id="console-toggle" class="console-title">▸ Ispis <span id="console-count" class="muted"></span></button>
+    <div id="job-tabs" class="job-tabs"></div>
+    <div class="console-actions">
+      <button id="job-copy" class="btn small ghost" title="Kopiraj naredbu">Kopiraj naredbu</button>
+      <button id="job-log" class="btn small ghost" title="Otvori zapis u runs/gui">Zapis</button>
+      <button id="job-kill" class="btn small danger">Zaustavi</button>
+    </div>
+  </div>
+  <div class="console-body">
+    <pre id="job-output" class="job-output"></pre>
+    <form id="job-input-form" class="job-input">
+      <span class="prompt">›</span>
+      <input id="job-input" placeholder="Odgovor programu (broj, SVE, Enter = prijedlog)…" autocomplete="off">
+      <button class="btn small">Pošalji</button>
+    </form>
+  </div>
+</section>
+
+<dialog id="confirm" class="confirm">
+  <form method="dialog">
+    <h2 id="confirm-title">Potvrdi</h2>
+    <p id="confirm-text"></p>
+    <code id="confirm-cmd" class="cmd"></code>
+    <label class="check"><input type="checkbox" id="confirm-remember"> Ne pitaj ponovno za ovu radnju dok je stranica otvorena</label>
+    <div class="dialog-actions">
+      <button value="cancel" class="btn ghost">Odustani</button>
+      <button value="ok" class="btn warn" id="confirm-ok">Pokreni</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
