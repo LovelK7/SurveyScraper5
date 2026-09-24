@@ -398,3 +398,13 @@ def test_hyphens_and_spaces_are_plain_characters_not_soft_ones(font):
     text = pymupdf.open("pdf", data)[0].get_text()
     assert "051-716" in text and "-14 m" in text
     assert "­" not in text and " " not in text
+
+
+def test_hyphen_fix_leaves_every_other_letter_alone(font):
+    # The first fix matched <00AD> as a glyph ID too, remapping glyph 0x2D (J in
+    # micross) to Ã and glyph 0x20 (=) to æ: "Jama" came out "Ãama".
+    values = {"ime_objekta": "Jama = JAMA; X", "crtali": "Ivo Jurić"}
+    data, _ = render_mod.render(addresses.BLANK_TEMPLATE, values, font.path)
+    text = pymupdf.open("pdf", data)[0].get_text()
+    assert "Jama = JAMA; X" in text and "Ivo Jurić" in text
+    assert "Ã" not in text and "æ" not in text

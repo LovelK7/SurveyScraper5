@@ -235,11 +235,18 @@ def render(blank_path: Path, values: dict[str, str], font_path: Path,
 # the space glyph both U+0020 and U+00A0, and MuPDF's ToUnicode picks the
 # higher code point. A soft hyphen is a *discretionary* hyphen: Illustrator
 # hides it, so "051-716" opened as "051716" and "-14 m" as "14 m" (user,
-# 2026-09-20, on the first SB 1256 nacrt). Rewrite the CMaps back to the plain
+# 2026-09-20, on the first SB 1256 nacrt); the semicolon likewise came out as
+# U+037E, the Greek question mark. Rewrite the CMaps back to the plain
 # characters; the glyphs drawn are unchanged, only what the text *means* is.
+#
+# Only the Unicode *destination* of a two-token ``bfchar`` line may change —
+# never a source glyph ID. Matching ``<00AD>`` anywhere also rewrote the line
+# ``<00ad> <00c3>`` (glyph 0xAD is Ã in micross) to ``<002D> <00c3>``, and glyph
+# 0x2D is the J: every J read as Ã, and every = as æ (user, 2026-09-24).
 _TOUNICODE_FIXES = (
-    (re.compile(rb"(?i)<00AD>"), b"<002D>"),
-    (re.compile(rb"(?i)<00A0>"), b"<0020>"),
+    (re.compile(rb"(?im)^(\s*<[0-9a-f]+>\s+)<00AD>(\s*)$"), rb"\g<1><002D>\g<2>"),
+    (re.compile(rb"(?im)^(\s*<[0-9a-f]+>\s+)<00A0>(\s*)$"), rb"\g<1><0020>\g<2>"),
+    (re.compile(rb"(?im)^(\s*<[0-9a-f]+>\s+)<037E>(\s*)$"), rb"\g<1><003B>\g<2>"),
 )
 
 
