@@ -191,7 +191,8 @@ def choose(paths, labels=None, root=None, prompt="Koju datoteku? ",
         print("  Upisi broj datoteke, Enter = odustani.")
     try:
         raw = input(prompt).strip()
-    except EOFError:
+    except (EOFError, KeyboardInterrupt):
+        print()
         raw = ""
     if not raw:
         print("odustao si - nista nije promijenjeno")

@@ -105,6 +105,13 @@ chooses which gate the exit code reports on — both are always printed.
 First time on a machine? [Setup](#setup-once) below.
 
 ```powershell
+# ── The dashboard (0P) — every command below behind a button ─────────
+cavedossier gui                            # http://127.0.0.1:8765/ in the browser; Ctrl+C stops it
+cavedossier gui --port 8800 --no-browser   # another port; do not open the browser
+# Pick the cave once (top bar) and every tab's commands use it. Runs that
+# write ask first; tool questions are answered under the output. Logs: runs/gui/.
+# Details: stages/0P-platform/README.md#the-dashboard--cavedossier-gui
+
 # ── Read-only SB inspection (part 2.2a) ────────────────────────────────
 cavedossier sb columns                     # detected header row + all column names
 cavedossier sb inspect --cave "Ponor X"    # dump a cave's row (name / SUE / plaque; substring OK)

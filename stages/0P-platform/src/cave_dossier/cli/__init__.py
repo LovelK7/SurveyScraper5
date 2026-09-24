@@ -1530,6 +1530,16 @@ def build_parser() -> argparse.ArgumentParser:
              "(by default such a file is refused, so an edited one survives)",
     )
 
+    gui = subparsers.add_parser(
+        "gui",
+        help="0P — the local dashboard: every stage's commands behind buttons, "
+             "the current cave, open SB/folders/files (http://127.0.0.1:8765/)",
+    )
+    gui.add_argument("--port", type=int, default=8765,
+                     help="First port to try (the next free one up to +19 is used)")
+    gui.add_argument("--no-browser", action="store_true", dest="no_browser",
+                     help="Do not open the page in the default browser")
+
     nacrt = subparsers.add_parser(
         "nacrt",
         help="Part 3N KORAK 3 — compose the printed plan + profile onto the "
@@ -1766,6 +1776,13 @@ def main(argv: list[str] | None = None) -> int:
             stream.reconfigure(encoding="utf-8", errors="replace")
 
     args = build_parser().parse_args(argv)
+
+    if args.command == "gui":
+        # Before load_settings: the page reports a broken config instead of
+        # refusing to start, and loads settings itself (and again on refresh).
+        from cave_dossier.gui.server import serve
+
+        return serve(port=args.port, open_browser=not args.no_browser)
 
     try:
         settings = load_settings()

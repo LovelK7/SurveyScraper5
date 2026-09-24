@@ -82,6 +82,7 @@ cavedossier = "cave_dossier.cli:main"
 packages = [
     "cave_dossier.core",
     "cave_dossier.cli",
+    "cave_dossier.gui",
     "cave_dossier.intake",
     "cave_dossier.sb",
     "cave_dossier.satellites",
@@ -98,6 +99,7 @@ packages = [
 [tool.setuptools.package-dir]
 "cave_dossier.core"       = "stages/0P-platform/src/cave_dossier/core"
 "cave_dossier.cli"        = "stages/0P-platform/src/cave_dossier/cli"
+"cave_dossier.gui"        = "stages/0P-platform/src/cave_dossier/gui"
 "cave_dossier.intake"     = "stages/1T-teren/src/cave_dossier/intake"
 "cave_dossier.sb"         = "stages/2B-baza/src/cave_dossier/sb"
 "cave_dossier.satellites" = "stages/2B-baza/src/cave_dossier/satellites"
@@ -115,6 +117,7 @@ packages = [
 # missing the OSZ template or the georef selectors.
 [tool.setuptools.package-data]
 "cave_dossier.georef"     = ["selectors.yaml"]
+"cave_dossier.gui"        = ["static/*"]
 "cave_dossier.osz"        = ["pristupi.yaml", "templates/*.docx"]
 "cave_dossier.sastavnica" = ["templates/*.pdf"]
 

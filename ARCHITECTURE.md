@@ -96,7 +96,7 @@ historical logs, which were migrated verbatim.
 
 | New | Old | Stage |
 |---|---|---|
-| <a name="stage-0p"></a>**0P** | — | [platform](stages/0P-platform/README.md) — config, the workspace anchor, the CLI |
+| <a name="stage-0p"></a>**0P** | — | [platform](stages/0P-platform/README.md) — config, the workspace anchor, the CLI, the `gui` dashboard over every stage |
 | <a name="stage-1t"></a>**1T** | 1 | [teren](stages/1T-teren/README.md) — field capture (parked) + the intake-dir contract |
 | <a name="stage-2b"></a>**2B** | 2.2a + 2.2b | [baza](stages/2B-baza/README.md) — SB master + satellite tables |
 | <a name="stage-3n"></a>**3N** | 2.1a | [nacrt](stages/3N-nacrt/README.md) — csx-to-survey |

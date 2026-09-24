@@ -45,6 +45,7 @@ bridge_exempt:
   - unclassified
   - check-flag
   - za-istrazit
+  - gui
 
 stages:
   - id: platform
@@ -53,8 +54,8 @@ stages:
     name: "Platform — the shared spine"
     was: "(unlabelled)"
     status: operational
-    modules: [core, cli]
-    commands: []
+    modules: [core, cli, gui]
+    commands: [gui]
 
   - id: teren
     label: "1T"

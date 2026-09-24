@@ -77,7 +77,24 @@ PRINTER = "Microsoft Print to PDF"
 
 # Placement constants, brief §3.1 rows 2-4b.
 PAD_M = 0.5            # room for station labels around each design
-SCALE_GAP_M = 1.0      # scale bar this far right of the plan bbox
+# Where the bar + arrow go: BESIDE the plan (right of it, the original place) or
+# UNDER it, inside its left..right extent — whichever gives the larger scale
+# among the placements that stay on the printed page (user, 2026-09-24, SB 1220).
+# cSurvey centres the page on the cave alone: the compass is forced to
+# DesignAffinity Extra (cItemCompass.vb:313), GetDesignVisibleBounds only
+# counts Design items (cLayer.vb:398), and the bar did not count either in
+# practice. So a bar beside a wide plan ran off the A4's right edge and its
+# "10" was cut; `gadgets_on_page` simulates that centring and rejects it.
+SCALE_GAP_M = 1.0      # BESIDE: scale bar this far right of the plan bbox
+GADGET_GAP_M = 1.0     # UNDER: between the plan's lowest point and the top of the arrow
+COMPASS_HEIGHT_M = 2.5 # arrow + its "N" at cs=2.00, in design metres (measured on the
+                       # SB 1220 print: 12.4 mm at 1:200; cSurvey sizes it in design units)
+BAR_LABEL_M = 1.0      # the bar's "0 ... 10" labels hang this far below the bar line,
+                       # and the end label sticks out about half that past the bar's end
+PAGE_MM = (210.0, 297.0)
+PAGE_MARGIN_MM = 10.0  # = PREVIEW_COMMON pagemargins
+PAGE_SAFETY_MM = 3.0   # slack for cSurvey's bounds (plot, labels) differing from ours
+GADGET_PLACES = ("beside", "under")
 # North arrow this far above the bar (smaller y = up). 1.0 m = 10 mm at 1:100;
 # 2.0 m left a hole between the two (user, 2026-09-20, on the first composed sheet).
 COMPASS_ABOVE_M = 1.0    # gap between the bar and the arrow's BOTTOM edge (anchored Bottom, see add_compass)
@@ -433,6 +450,64 @@ class Station(object):
         return self.x, self.y
 
 
+# Shot flags that take a shot out of the cave (cSurvey forces `exclude` for
+# each, cSegment.vb:581-624): a station reached only through such shots is not
+# a point of the cave, so it may neither be the entrance nor set the height.
+# SB 1220: the surface leg 4 -> 5 made station 5 "the highest station", and
+# the entrance (and with it the depth) landed on the surface (user, 2026-09-24).
+NOT_IN_CAVE_FLAGS = ("exclude", "surface", "splay", "cut", "duplicate", "calibration")
+
+
+def cave_station_names(root):
+    """Names of the stations at least one counted shot touches, or None when
+    the file has no `<segments>` to judge by (then nothing is filtered)."""
+    segs = root.find("segments")
+    if segs is None:
+        return None
+    names = set()
+    for seg in segs.findall("segment"):
+        if any(seg.get(flag) == "1" for flag in NOT_IN_CAVE_FLAGS):
+            continue
+        for end in ("from", "to"):
+            if seg.get(end):
+                names.add(seg.get(end))
+    return names
+
+
+def surface_links(root, cave_names):
+    """{surface station: the cave station its surface shot leaves from}.
+
+    A shot flagged `surface="1"` with one end in the cave and the other not is
+    the leg out of the entrance, so its cave end IS the entrance (user,
+    2026-09-24, SB 1220: surface leg 4 -> 5, entrance 4).
+    """
+    links = {}
+    segs = root.find("segments")
+    if segs is None or not cave_names:
+        return links
+    for seg in segs.findall("segment"):
+        if seg.get("surface") != "1":
+            continue
+        a, b = seg.get("from"), seg.get("to")
+        if a in cave_names and b and b not in cave_names:
+            links[b] = a
+        elif b in cave_names and a and a not in cave_names:
+            links[a] = b
+    return links
+
+
+def split_cave_stations(root, stations):
+    """(cave stations, names left out). Leaves the list alone if the filter
+    would empty it — a file where every shot is flagged is not ours to judge."""
+    names = cave_station_names(root)
+    if not names:
+        return stations, []
+    kept = [s for s in stations if s.name in names]
+    if not kept:
+        return stations, []
+    return kept, [s.name for s in stations if s.name not in names]
+
+
 def read_stations(root):
     """Non-splay stations from `<calculate><ts>`. A splay's name carries the
     parenthesised index its shot got, `0(12)`."""
@@ -519,47 +594,62 @@ def _segment_endpoint_hint(root, guid, sign_xy, stations, design_name):
     return None, None
 
 
-def witness_sign(root, stations, design_name):
+def witness_sign(root, stations, design_name, surface=None):
     """The station the drawn entrance sign points at, in one design.
 
     Returns None when that design carries no entrance sign, else a dict with
     the nearest non-splay station (the answer), its distance, and the hint the
     sign's bound segment gives — kept apart so a disagreement can be reported
     rather than silently resolved.
+
+    `surface` is (surface stations, surface_links): a sign drawn at the outer
+    end of a surface leg points at that leg's cave end, the entrance — a
+    surveyor draws the sign where they stood outside (SB 1220, sign at 5).
     """
     design = root.find(design_name)
     signs = entrance_sign_items(design)
     if not signs or not stations:
         return None
+    outer, links = surface or ([], {})
+    candidates = list(stations) + [s for s in outer if s.name in links]
     best = None
     for item in signs:
         pts = item_points(item)
         if not pts:
             continue
         x, y, flags = pts[0]
-        for st in stations:
+        for st in candidates:
             sx, sy = st.design_xy(design_name)
             d = ((sx - x) ** 2 + (sy - y) ** 2) ** 0.5
             if best is None or d < best["distance"]:
                 near, seg = _segment_endpoint_hint(
                     root, segment_guid(flags), (x, y), stations, design_name)
-                best = {"design": design_name, "station": st.name,
+                best = {"design": design_name,
+                        "station": links.get(st.name, st.name),
+                        "via": st.name if st.name in links else None,
                         "distance": round(d, 2), "sign_at": [round(x, 2), round(y, 2)],
                         "segment_station": near, "segment": seg}
     return best
 
 
-def decide_entrance(root, stations, warn):
-    """Combine the two witnesses into one entrance station.
+def decide_entrance(root, stations, warn, outside=()):
+    """Combine the witnesses into one entrance station.
 
-    They are independent: the highest station is geometry, the drawn sign is
-    the surveyor's intent. When they disagree the sign wins — a ponor or a
-    horizontal cave rarely has its entrance at the top, and the sign was placed
-    on purpose (user rule, brief §3.1 row 4a as amended by the T1 prompt).
+    The highest station is geometry, the drawn sign is the surveyor's intent.
+    When they disagree the sign wins — a ponor or a horizontal cave rarely has
+    its entrance at the top, and the sign was placed on purpose (user rule,
+    brief §3.1 row 4a as amended by the T1 prompt).
+
+    A surface leg outranks both: its cave end is where the cave is left, which
+    is the entrance by definition (user, 2026-09-24). `outside` are the
+    stations split_cave_stations() left out.
     """
+    links = surface_links(root, {s.name for s in stations})
+    surface = (list(outside), links)
     top, top_z, ties = witness_highest(stations)
-    plan = witness_sign(root, stations, "plan")
-    profile = witness_sign(root, stations, "profile")
+    plan = witness_sign(root, stations, "plan", surface)
+    profile = witness_sign(root, stations, "profile", surface)
+    legs = sorted(set(links.values()))
 
     props = root.find("properties")
     origin = (props.get("origin") if props is not None else None) or ""
@@ -580,10 +670,29 @@ def decide_entrance(root, stations, warn):
         "highest_ties": ties,
         "sign": None if sign is None else sign["station"],
         "sign_detail": sign,
+        "surface_leg": legs,
         "origin": origin,
     }
 
-    if sign is None:
+    if legs:
+        # Several surface legs = several entrances; the sign, then the height,
+        # says which one is the main one.
+        if len(legs) == 1:
+            chosen = legs[0]
+        elif sign is not None and sign["station"] in legs:
+            chosen = sign["station"]
+        elif top in legs:
+            chosen = top
+        else:
+            chosen = legs[0]
+        witnesses["decision"] = "povrsinski vlak (ulaz je stanica u spilji na koju se veze)"
+        if len(legs) > 1:
+            warn("vise povrsinskih vlakova (stanice %s) - uzimam %s kao glavni "
+                 "ulaz, provjeri" % (", ".join(legs), chosen))
+        if sign is not None and sign["station"] != chosen:
+            warn("znak ulaza je na stanici %s, a povrsinski vlak veze se na %s "
+                 "- uzimam povrsinski vlak" % (sign["station"], chosen))
+    elif sign is None:
         chosen = top
         witnesses["decision"] = "najvisa stanica (nema nacrtanog znaka ulaza)"
         if chosen is not None and origin and origin != chosen:
@@ -755,13 +864,81 @@ def bar_length_m(plan_scale):
     return 5.0 if plan_scale == 100 else 10.0
 
 
-def settle_plan_scale(plan_before, profile_before, max_rounds=4):
+def gadget_anchor(bbox, length, place="beside"):
+    """(x0, y) of the scale bar's left end for the plan `bbox`.
+
+    beside: SCALE_GAP_M right of the plan, level with its lowest point.
+    under: right-aligned with the plan's right edge when the plan is at least
+    as wide as the bar, centred under it otherwise — within the width cSurvey
+    centres on. The arrow stands above the bar's middle, so the bar drops by
+    the arrow's height plus both gaps.
+    """
+    if place == "beside":
+        return bbox[2] + SCALE_GAP_M, bbox[3]
+    if bbox[2] - bbox[0] >= length:
+        x0 = bbox[2] - length
+    else:
+        x0 = (bbox[0] + bbox[2] - length) / 2.0
+    y = bbox[3] + GADGET_GAP_M + COMPASS_HEIGHT_M + COMPASS_ABOVE_M
+    return x0, y
+
+
+def with_gadgets(bbox, length, place="beside"):
+    """The plan bbox grown by the bar, the arrow and the bar's labels."""
+    x0, y = gadget_anchor(bbox, length, place)
+    arrow_top = y - COMPASS_ABOVE_M - COMPASS_HEIGHT_M
+    return (min(bbox[0], x0), min(bbox[1], arrow_top),
+            max(bbox[2], x0 + length + BAR_LABEL_M / 2.0), max(bbox[3], y + BAR_LABEL_M))
+
+
+def gadgets_on_page(bbox, grown, scale):
+    """True when `grown` stays inside the printable A4 once cSurvey centres
+    the page on the bare plan `bbox` at 1:`scale`."""
+    cx, cy = (bbox[0] + bbox[2]) / 2.0, (bbox[1] + bbox[3]) / 2.0
+    half_w = max(cx - grown[0], grown[2] - cx) * 1000.0 / scale
+    half_h = max(cy - grown[1], grown[3] - cy) * 1000.0 / scale
+    room_w = PAGE_MM[0] / 2.0 - PAGE_MARGIN_MM - PAGE_SAFETY_MM
+    room_h = PAGE_MM[1] / 2.0 - PAGE_MARGIN_MM - PAGE_SAFETY_MM
+    return half_w <= room_w and half_h <= room_h
+
+
+def place_gadgets(plan_before, profile_before):
+    """Pick where the bar + arrow go. Returns (place, scale, notes).
+
+    Each place is settled to its own plan scale; a place whose furniture would
+    leave the printed page at that scale is dropped; of the rest, the larger
+    scales win and a tie keeps the bar beside the plan (its original place).
+    `notes` is one report line per place.
+    """
+    if plan_before is None:
+        return "beside", 100, []
+    ranked, notes = [], []
+    for order, place in enumerate(GADGET_PLACES):
+        scale, _rounds = settle_plan_scale(plan_before, profile_before, place)
+        grown = with_gadgets(plan_before, bar_length_m(scale), place)
+        best, _alts, _reason = choose(grown, profile_before)
+        if best is None:
+            notes.append("%s: ne stane na A4" % place)
+            continue
+        if not gadgets_on_page(plan_before, grown, best.plan_scale):
+            notes.append("%s: 1:%d - izlazi preko ruba ispisa" % (place, best.plan_scale))
+            continue
+        notes.append("%s: %s" % (place, best.mjerilo))
+        ranked.append(((max(best.plan_scale, best.profile_scale),
+                        best.plan_scale + best.profile_scale, order), place, scale))
+    if not ranked:
+        scale, _rounds = settle_plan_scale(plan_before, profile_before, "under")
+        return "under", scale, notes
+    ranked.sort()
+    return ranked[0][1], ranked[0][2], notes
+
+
+def settle_plan_scale(plan_before, profile_before, place="beside", max_rounds=4):
     """The plan scale the bar must be sized for — found by fixed point.
 
     The bar's length depends on the plan's scale, which depends on the plan's
-    bbox *after* the bar widens it. Simulate the widening (gap + bar; the
-    compass sits above the bar, never right of it) and re-choose until the
-    scale stops moving. It converges in one or two rounds: a longer bar can
+    bbox *after* the bar and the arrow grow it. Simulate that growth and
+    re-choose until the scale stops moving. It converges in one or two rounds: a longer bar can
     only push the scale down, and a smaller scale only asks for the same or a
     longer bar. Returns (scale, rounds) — SB 1256 (2026-09-20) was the case
     where the untouched bbox said 1:100 and the widened one 1:200.
@@ -771,8 +948,7 @@ def settle_plan_scale(plan_before, profile_before, max_rounds=4):
         return scale, 0
     seen = []
     for rounds in range(1, max_rounds + 1):
-        widened = (plan_before[0], plan_before[1],
-                   plan_before[2] + SCALE_GAP_M + bar_length_m(scale), plan_before[3])
+        widened = with_gadgets(plan_before, bar_length_m(scale), place)
         best, _alts, _reason = choose(widened, profile_before)
         new_scale = best.plan_scale if best else scale
         if new_scale == scale:
@@ -784,8 +960,9 @@ def settle_plan_scale(plan_before, profile_before, max_rounds=4):
     return scale, max_rounds
 
 
-def add_scale_bar(root, bbox, plan_scale, warn):
-    """The horizontal scale bar right of the plan (brief §3.1 row 2).
+def add_scale_bar(root, bbox, plan_scale, warn, place="beside"):
+    """The horizontal scale bar under the plan (brief §3.1 row 2; moved from
+    beside the plan to under it 2026-09-24, see GADGET_GAP_M).
 
     A Quota of type HorizontalScale: its length is the distance between its two
     points *in metres*, so it scales with the map. 5 m at 1:100, 10 m otherwise
@@ -806,8 +983,7 @@ def add_scale_bar(root, bbox, plan_scale, warn):
         return None
     length = bar_length_m(plan_scale)
     tick, label = (1.0, 5.0) if length == 5.0 else (2.0, 10.0)
-    x0 = bbox[2] + SCALE_GAP_M
-    y0 = bbox[3]
+    x0, y0 = gadget_anchor(bbox, length, place)
     cave, branch = cave_branch(reference_item(design))
     # A HorizontalScale measures nothing against a station, so
     # quotarelativetrigpoint stays empty — as on the bar cSurvey writes itself.
@@ -820,7 +996,7 @@ def add_scale_bar(root, bbox, plan_scale, warn):
         num(x0), num(y0), num(x0 + length), num(y0))})
     ET.SubElement(item, "font", {"type": SCALE_BAR_FONT})
     pretty_append(items, item)
-    return {"length_m": length, "tick": tick, "label_every": label,
+    return {"length_m": length, "tick": tick, "label_every": label, "place": place,
             "points": [round(x0, 2), round(y0, 2),
                        round(x0 + length, 2), round(y0, 2)],
             "for_scale": plan_scale}
@@ -922,8 +1098,10 @@ def add_compass(root, bbox, scale_bar, is_csz, warn):
     if items is None:
         return None
     length = scale_bar["length_m"] if scale_bar else 5.0
-    x = bbox[2] + SCALE_GAP_M + length / 2.0
-    y = bbox[3] - COMPASS_ABOVE_M      # smaller y is up in a design
+    x0, bar_y = gadget_anchor(bbox, length,
+                              scale_bar["place"] if scale_bar else "beside")
+    x = x0 + length / 2.0
+    y = bar_y - COMPASS_ABOVE_M        # smaller y is up in a design
     cave, branch = cave_branch(reference_item(design))
     item = ET.Element("item")
     for key, value in (("layer", LAYER_SIGNS), ("cave", cave),
@@ -1045,6 +1223,16 @@ def print_menu(best, alternatives, out):
     out("   1) %s  |  %s   <- prijedlog" % (best.mjerilo, best.note))
     for i, layout in enumerate(alternatives, 2):
         out("   %d) %s  |  %s" % (i, layout.mjerilo, layout.note))
+    # The sheets themselves, two per row so an 80-column console holds them.
+    everything = [best] + list(alternatives)
+    for first in range(0, len(everything), 2):
+        pair = everything[first:first + 2]
+        headings = ["%d)%s" % (first + i + 1,
+                               "  prijedlog" if first + i == 0 else "")
+                    for i in range(len(pair))]
+        out("")
+        for line in nacrt_layout.sketch_row(pair, headings):
+            out("   " + line)
 
 
 def ask_layout(best, alternatives, chooser):
@@ -1057,6 +1245,9 @@ def ask_layout(best, alternatives, chooser):
         raw = input(chooser).strip()
     except EOFError:
         raw = ""
+    except KeyboardInterrupt:
+        print("\nodustao si - nista nije zapisano")
+        raise SystemExit(1)
     if not raw:
         return best, "proposal"
     if raw.isdigit() and 1 <= int(raw) <= len(alternatives) + 1:
@@ -1118,18 +1309,29 @@ def finish(inp, out_path, args, report):
     stations = read_stations(root)
     if not stations:
         warn("nema stanica u <calculate><ts> - je li survey izracunat?")
-    entrance, witnesses = decide_entrance(root, stations, warn)
+    all_stations = stations
+    stations, outside = split_cave_stations(root, stations)
+    entrance, witnesses = decide_entrance(
+        root, stations, warn,
+        outside=[s for s in all_stations if s.name in outside])
     report("")
     report("  ULAZ")
+    if outside:
+        report("   izvan spilje:           %s  (samo iskljuceni/povrsinski vlakovi -"
+               " ne racunaju se)" % ", ".join(outside))
+    report("   povrsinski vlak:        %s" % (
+        ", ".join(witnesses["surface_leg"]) or "nema"))
     report("   najvisa stanica (min z): %s" % (
         "nema" if witnesses["highest"] is None
         else "%s  (z = %s)" % (witnesses["highest"], witnesses["highest_z"])))
     sign = witnesses["sign_detail"]
     report("   znak ulaza:             %s" % (
         "nije nacrtan" if sign is None
-        else "%s  (%s, %.2f m od znaka; vezani segment %s)"
+        else "%s  (%s, %.2f m od znaka%s; vezani segment %s)"
              % (sign["station"], "tlocrt" if sign["design"] == "plan" else "profil",
-                sign["distance"], sign["segment"] or "-")))
+                sign["distance"],
+                " stanice %s na povrsini" % sign["via"] if sign.get("via") else "",
+                sign["segment"] or "-")))
     report("   properties@origin:      %s" % (witnesses["origin"] or "-"))
     report("   odluka:                 %s  (%s)" % (entrance or "-",
                                                     witnesses["decision"]))
@@ -1156,11 +1358,17 @@ def finish(inp, out_path, args, report):
     # The scale bar's length depends on the plan's scale, which depends on the
     # bbox *after* the bar widens it: settle the fixed point first, then add the
     # bar for that scale; the real choice below should agree (warn if not).
-    provisional_plan_scale, _rounds = settle_plan_scale(plan_before, profile_before)
+    # Beside the plan or under it: whichever keeps both on the printed page
+    # at the larger scale (see GADGET_PLACES).
+    place, provisional_plan_scale, place_notes = place_gadgets(plan_before,
+                                                               profile_before)
+    report("   mjerilo i busola:        %s  (%s)" % (
+        {"beside": "desno od tlocrta", "under": "ispod tlocrta"}[place],
+        "; ".join(place_notes) or "-"))
 
     # --- 2-4. the three items -------------------------------------------
     dislivello = add_dislivello(root, entrance, warn)
-    scale_bar = add_scale_bar(root, plan_before, provisional_plan_scale, warn)
+    scale_bar = add_scale_bar(root, plan_before, provisional_plan_scale, warn, place)
     compass = add_compass(root, plan_before, scale_bar, is_csz, warn)
 
     report("")
@@ -1187,6 +1395,10 @@ def finish(inp, out_path, args, report):
 
     # --- 5. layout + print options ---------------------------------------
     plan_after = design_bbox(root.find("plan"))
+    if plan_after is not None and scale_bar and place == "under":
+        # The bar's labels hang below its points; items_bbox sees only points.
+        plan_after = (plan_after[0], plan_after[1], plan_after[2],
+                      max(plan_after[3], scale_bar["points"][1] + BAR_LABEL_M))
     profile_after = design_bbox(root.find("profile"))
     best, alternatives, reason = choose(plan_after, profile_after)
     if best is not None and best.plan_scale != provisional_plan_scale:

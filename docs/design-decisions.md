@@ -39,6 +39,10 @@ keeps the chronology.
 - [2.1b prefill rules (2026-08-30)](#21b-prefill-rules-2026-08-30)
 - [OSZ backfill → SB rules (2026-08-30)](#osz-backfill--sb-rules-2026-08-30)
 - [Prod launchers on the Drive (2026-09-02)](#prod-launchers-on-the-drive-2026-09-02)
+- [2.1e sastavnica — the Illustrator branch (2026-09-19)](#21e-sastavnica--the-illustrator-branch-2026-09-19)
+- [The dashboard — `cavedossier gui` (2026-09-24)](#the-dashboard--cavedossier-gui-2026-09-24)
+- [3N entrance: surface legs (2026-09-24)](#3n-entrance-surface-legs-2026-09-24)
+- [3N scale bar: beside or under the plan (2026-09-24)](#3n-scale-bar-beside-or-under-the-plan-2026-09-24)
 
 ---
 
@@ -876,3 +880,113 @@ of every author whose first name starts with I — `I. Dujmović` split into
 author cell silently lost their initial on the way into name resolution. A
 conjunction now has to stand between spaces. Regression test:
 `tests/test_people.py::test_conjunctions_split_only_when_they_stand_alone`.
+
+## The dashboard — `cavedossier gui` (2026-09-24)
+
+The user asked for one place to open the latest SB, a tab per stage with the
+3N commands ready to run, and a "current SB" selection that every command
+follows. It should work for real, and double as a rough blueprint of the
+future GUI. Settled in the same session:
+
+- **A local server, not a static page** (user). A static HTML file can only
+  copy commands and link to files. Browsers will not run programs, and they
+  handle `file://` links to `.xlsm`/`.csx` badly. A stdlib `http.server` on
+  127.0.0.1 can open files in their own apps and run tools with live output.
+  Its JSON API is also shaped like the surface a real GUI needs (state, caves,
+  catalog, jobs, open), so the next step is to swap the front end and keep the
+  API.
+- **"The SB I am working on" is the cave, its Redni broj** (user), picked from
+  the `SB_<broj>_…` intake leaves: those are the caves actually in work. Free
+  entry of any number still works for commands that need only the number.
+  Choosing between workbook versions is not a selector: the live workbook
+  comes from `config.yaml`, and the page only *warns* when Drive holds a newer
+  `!Speleo_baza_SUE_v*.xlsm` than the config names. Reading a different
+  workbook stays an `.env` decision (`SB_WORKBOOK_PATH`), as before.
+- **Writes ask first** (user). One click for read-only and dry-run runs. A run
+  that writes to Drive, to the cave's folder or to georef.hr gets a confirm
+  dialog, and the server refuses it (409) without `confirmed`. The API is the
+  contract, and the page's dialog is only its front. Output that lands only in
+  `runs/`/`sb-sync/` does not count as a write: every command leaves a run dir.
+  An option can flip a run either way: `safe` (`--dry-run`, `--local`) or
+  `unsafe` (`--apply`). A "don't ask again for this action" tick lasts only
+  while the page is open.
+- **Croatian UI, English code** (user), matching the `.bat` kit and `prod/`.
+- **One catalog drives everything.** `gui/catalog.py` lists each action with
+  its argv template. The page renders from it and the server builds argv only
+  from it, with no shell, so a button can never run anything not written
+  there. A `{file}` must be one of the cave's own files of the step's kind
+  (`_pp` for KORAK 2, `_lt` for 3a…). A test parses every CLI action through
+  the real `build_parser()`, so a renamed flag fails the suite instead of
+  leaving a dead button.
+- **The 3N tools stay unchanged.** They ask questions on stdin (the `--sb` file
+  menu, the layout menu). The job runner keeps stdin open and the page has an
+  answer box, so the page drives exactly what the `.bat` kit drives. Passing
+  an explicit file avoids the file menu altogether.
+- **Token + localhost.** Any web page open in the same browser could POST to
+  `127.0.0.1`, so every API call must carry the random token baked into the
+  served page. `open` is limited to paths under Drive, the workspace and the
+  repo.
+- **Stdlib only.** It runs in the base install on any machine the CLI runs on.
+  The front end is plain JS with no build step.
+
+Validated 2026-09-24 against the live Drive: 70 cave leaves listed, SB v3.0
+LIVE with v2.4 seen as older, SB 1220's leaf classified correctly, a 3a
+`--dry-run` on its `_lt` run from the page, `geo locate 1220 --offline` streamed
+and logged, and the unconfirmed-write / foreign-file / missing-token refusals
+checked over HTTP.
+
+## 3N entrance: surface legs (2026-09-24)
+
+Settled by the user on SB 1220 (Hrđava špilja), where the shot 4 → 5 is flagged
+*Surface* and *Exclude from calculation* in cSurvey.
+
+- **A station that only flagged shots reach is not part of the cave.** Flagged
+  means surface, exclude, splay, cut, duplicate or calibration. Such a station
+  can't be the highest station, can't be matched to the entrance sign, and
+  doesn't count towards height or depth. Before this, station 5 (0.97 m above
+  everything else, out on the surface) became the entrance.
+- **The cave end of a surface leg is the entrance.** This outranks both the
+  highest station and the drawn sign. If there are several surface legs, the
+  sign picks the main entrance, then the highest station does; either way the
+  finisher warns.
+- **An entrance sign drawn at a surface station points at its leg's cave
+  end.** Surveyors draw the sign where they stood outside: on SB 1220 it sits
+  1.22 m from station 5, and it counts for 4.
+- **Length needs no rule of ours.** cSurvey already leaves excluded shots out of
+  the total length (cSurvey/cSurveyPC/Calculate/cCalculate.Plot.cSpeleometrics.vb:77),
+  and `csurvey_driver.py finish` recalculates before it reads the numbers.
+  Depth follows from the entrance the finisher sets.
+
+Code: `cave_station_names`, `surface_links` and `decide_entrance` in
+`stages/3N-nacrt/production/tools/nacrt_finish.py`.
+
+## 3N scale bar: beside or under the plan (2026-09-24)
+
+On SB 1220 the 10 m scale bar was cut at the A4's right edge. The printed plan
+shows why. cSurvey centres the page on the cave alone. The compass is forced to
+design affinity *Extra* (cSurvey/cSurveyPC/cItemCompass.vb:313), and
+`GetDesignVisibleBounds` counts only *Design* items (cSurvey/cSurveyPC/cLayer.vb:398).
+The bar didn't count in practice either. So anything placed beside a wide plan
+simply runs past the edge of the paper.
+
+- **Two places, chosen per cave.** *Beside* is the original place: the bar
+  1 m right of the plan, level with its lowest point. *Under* puts the bar
+  below the plan, right-aligned with its right edge, or centred under it when
+  the plan is narrower than the bar. The north arrow stays above the bar's
+  middle in both.
+- **A place must keep everything on the printed page.** `gadgets_on_page`
+  simulates cSurvey centring the bare plan at the chosen scale, inside the
+  10 mm margins with 3 mm of slack. Any place that crosses them is dropped.
+- **Of the places that fit, the larger scale wins; a tie keeps *beside*.**
+  SB 1103 is a tie and stays beside, at 1:100 stacked. SB 1220 goes under,
+  because beside at 1:200 crosses the edge. SB 1256's geometry goes under,
+  because there it keeps 1:100 where beside forced 1:200.
+- **Measured sizes.** The arrow plus its `N` at `cs=2.00` is 2.5 m in design
+  units (12.4 mm at 1:200 on the SB 1220 print), since cSurvey sizes it in the
+  map's own units. The bar's labels hang about 1 m below the bar.
+
+Not covered: the profile's Dislivello label, which sits right of the floor, is
+also outside cSurvey's centring. It has not been cut so far.
+
+Code: `gadget_anchor`, `with_gadgets`, `gadgets_on_page` and `place_gadgets`
+in `stages/3N-nacrt/production/tools/nacrt_finish.py`.

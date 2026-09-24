@@ -346,6 +346,72 @@ def _dominated(layout, ranked):
     return False
 
 
+# --- the console sketch --------------------------------------------------
+#
+# The menu's words ("okomito: profil 1:200 (102x59 mm) gore ...") do not show
+# how full the sheet is; a picture does (user, 2026-09-24). Plain ASCII only:
+# the operator console is cp852 and would mangle box-drawing characters.
+
+SKETCH_COLS = 36          # page width in characters (1 char ~ 5.8 mm)
+_CELL_ASPECT = 2.0        # a console cell is about twice as tall as it is wide
+
+
+def _rect(grid, box, page, label):
+    """Draw `box` (a Placement, mm) into `grid` as a +--+ outline with `label`."""
+    rows, cols = len(grid), len(grid[0])
+    sx, sy = cols / page[0], rows / page[1]
+    c0 = max(0, min(cols - 1, int(box.x * sx)))
+    r0 = max(0, min(rows - 1, int(box.y * sy)))
+    c1 = max(c0 + 1, min(cols - 1, int(round(box.right * sx)) - 1))
+    r1 = max(r0 + 1, min(rows - 1, int(round(box.bottom * sy)) - 1))
+    for c in range(c0, c1 + 1):
+        grid[r0][c] = grid[r1][c] = "-"
+    for r in range(r0, r1 + 1):
+        grid[r][c0] = grid[r][c1] = "|"
+    for r, c in ((r0, c0), (r0, c1), (r1, c0), (r1, c1)):
+        grid[r][c] = "+"
+    inner = c1 - c0 - 1
+    for text in label:
+        if len(text) <= inner:
+            break
+    else:
+        return
+    if r1 - r0 < 2:
+        return
+    row = (r0 + r1) // 2
+    start = c0 + 1 + (inner - len(text)) // 2
+    for i, ch in enumerate(text):
+        grid[row][start + i] = ch
+
+
+def sketch(layout, page=A4_PORTRAIT_MM, title_block=TITLE_BLOCK_MM,
+           cols=SKETCH_COLS):
+    """The A4 sheet of one layout as lines of ASCII: sastavnica, profile, plan.
+
+    Each label is the longest of its variants that fits its box, so a small
+    drawing still says which one it is.
+    """
+    rows = max(8, int(round(cols * page[1] / page[0] / _CELL_ASPECT)))
+    grid = [[" "] * cols for _ in range(rows)]
+    _rect(grid, title_block, page, ("sastavnica", "sast.", "S"))
+    _rect(grid, layout.profile, page,
+          ("profil 1:%d" % layout.profile_scale, "profil", "prof", "P"))
+    _rect(grid, layout.plan, page,
+          ("tlocrt 1:%d" % layout.plan_scale, "tlocrt", "tlo", "T"))
+    edge = "+" + "-" * cols + "+"
+    return [edge] + ["|" + "".join(r) + "|" for r in grid] + [edge]
+
+
+def sketch_row(layouts, headings, gap=3, cols=SKETCH_COLS):
+    """Several sheets side by side, each under its heading, as lines."""
+    sheets = [sketch(l, cols=cols) for l in layouts]
+    width = cols + 2
+    lines = [(" " * gap).join(h[:width].ljust(width) for h in headings)]
+    for parts in zip(*sheets):
+        lines.append((" " * gap).join(parts))
+    return [l.rstrip() for l in lines]
+
+
 # --- tiny CLI ------------------------------------------------------------
 
 
@@ -377,6 +443,10 @@ def main(argv):
     print("  1) %s   <- prijedlog" % _describe(best))
     for i, layout in enumerate(alternatives, 2):
         print("  %d) %s" % (i, _describe(layout)))
+    print()
+    everything = [best] + list(alternatives)
+    for line in sketch_row(everything, ["%d)" % i for i in range(1, len(everything) + 1)]):
+        print("  " + line)
     print()
     print("  mjerilo: %s   scalemode: profil=%d tlocrt=%d"
           % ((best.mjerilo,) + best.scalemodes))

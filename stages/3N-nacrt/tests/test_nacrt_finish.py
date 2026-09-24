@@ -486,9 +486,12 @@ def test_scale_bar_is_five_metres_at_one_to_a_hundred(tmp_path):
     assert sidecar["plan_scale"] == 100
     bar = sidecar["scale_bar"]
     assert (bar["length_m"], bar["tick"], bar["label_every"]) == (5.0, 1.0, 5.0)
-    # plan Borders span (-1, -1) to (7, 5): the bar starts 1 m right of maxx,
-    # at maxy, and runs 5 m.
-    assert bar["points"] == [8.0, 5.0, 13.0, 5.0]
+    # plan Borders span (-1, -1) to (7, 5). Beside the plan the bar would end
+    # 10.5 m right of the plan's centre - 105 mm at 1:100, past the printable
+    # 92 mm - so it goes under: right-aligned (ends at maxx 7), 5 m long, and
+    # dropped by gap 1 + arrow 2.5 + gap 1 below maxy 5.
+    assert bar["place"] == "under"
+    assert bar["points"] == [2.0, 9.5, 7.0, 9.5]
     root = ET.parse(str(out)).getroot()
     bars = [i for i in items_of(root, "plan") if i.get("quotatype") == "6"]
     assert len(bars) == 1
@@ -549,9 +552,9 @@ def test_compass_clipart_is_spliced_in_when_missing(tmp_path):
     assert compass.get("m") == "1"
     assert compass.get("n") is None
     assert [child.tag for child in compass] == ["pen", "brush", "points", "font"]
-    # above the middle of the bar: bar starts at 8.0, is 5 m long, maxy is 5.0,
-    # and the arrow sits COMPASS_ABOVE_M up from it
-    assert compass.find("points").get("data") == "10.50 4.00 "
+    # above the middle of the bar: bar runs 2.0..7.0 at y 9.5, and the arrow's
+    # bottom sits COMPASS_ABOVE_M up from it
+    assert compass.find("points").get("data") == "4.50 8.50 "
 
 
 def test_an_existing_compass_clipart_is_reused(tmp_path):
@@ -884,15 +887,16 @@ def test_sb1103_dry_run_reports_the_drawing_and_the_centerline(tmp_path, capsys)
 # the bar-length / plan-scale fixed point (SB 1256, 2026-09-20)
 
 
-def test_bar_is_sized_for_the_scale_the_widened_plan_ends_up_with(tmp_path):
-    # SB 1256's geometry: plan 6 x 13 m, profile 14.6 x 15 m. Untouched, the
-    # plan fits 1:100; with a 5 m bar + gap it no longer stacks under the
-    # profile and drops to 1:200 - where the bar should have been 10 m.
+def test_bar_is_sized_for_the_scale_the_plan_ends_up_with(tmp_path):
+    # SB 1256's geometry: plan 6 x 13 m, profile 14.6 x 15 m. Beside the plan
+    # a 5 m bar + gap drops it to 1:200 (see the fixed-point test); under the
+    # plan it keeps 1:100, so the bar goes under - and is sized for 1:100.
     out, sidecar = finish_to(tmp_path, plan_borders="-1.72 -6.42 4.29 6.63 ",
                              profile_borders="-6.25 -0.76 8.34 14.24 ")
-    assert sidecar["plan_scale"] == 200
-    assert sidecar["scale_bar"]["length_m"] == 10.0
-    assert sidecar["scale_bar"]["for_scale"] == 200
+    assert sidecar["plan_scale"] == 100
+    assert sidecar["scale_bar"]["place"] == "under"
+    assert sidecar["scale_bar"]["length_m"] == 5.0
+    assert sidecar["scale_bar"]["for_scale"] == 100
     assert not warned(sidecar, "duzina mjerila")
 
 
@@ -921,3 +925,110 @@ def test_dislivello_is_big_scale_bar_uses_cave_name_font_and_arrow_is_doubled(tm
     compass = [i for i in items_of(root, "plan") if i.get("type") == "15"][0]
     assert compass.get("cs") == "2.00"
     assert compass.get("textverticalalignment") == "2"      # anchored by its bottom edge
+
+
+# ---------------------------------------------------------------------------
+# surface / excluded shots (SB 1220: the surface leg 4 -> 5 put the entrance
+# on the surface)
+
+
+def _with_surface_leg(tmp_path, flags='exclude="1" surface="1"', start="B",
+                      **kwargs):
+    """<start> -> S is a surface leg; S sits far above every cave station."""
+    src = make_csx(tmp_path / "cave_lt.csx",
+                   stations=DEFAULT_STATIONS + [("S", 3.0, 4.0, -9.0, 3.0)],
+                   **kwargs)
+    text = src.read_text(encoding="utf-8").replace(
+        "  </segments>",
+        '    <segment id="44444444-4444-4444-4444-444444444444" from="%s" to="S"'
+        ' distance="5.00" %s />\n  </segments>' % (start, flags))
+    src.write_text(text, encoding="utf-8")
+    return src
+
+
+@pytest.mark.parametrize("flags", ['exclude="1" surface="1"', 'exclude="1"',
+                                   'duplicate="1"', 'calibration="1"'])
+def test_a_station_reached_only_by_a_flagged_shot_is_not_in_the_cave(tmp_path, flags):
+    root, _csz, _style = nacrt_finish.load_root(str(_with_surface_leg(tmp_path, flags)))
+    kept, outside = nacrt_finish.split_cave_stations(
+        root, nacrt_finish.read_stations(root))
+    assert [s.name for s in kept] == ["A", "B", "C"]
+    assert outside == ["S"]
+
+
+def test_surface_station_is_neither_the_entrance_nor_the_height(tmp_path):
+    src = _with_surface_leg(tmp_path)
+    assert run([src, "--yes"]) == 0
+    sidecar = sidecar_of(tmp_path / "cave_lt_fin.csx")
+    assert sidecar["entrance"] == "B"
+    assert sidecar["entrance_witnesses"]["highest"] == "B"
+
+
+def test_the_filter_stands_down_when_every_shot_is_flagged(tmp_path):
+    root, _csz, _style = nacrt_finish.load_root(str(make_csx(tmp_path / "s.csx")))
+    for seg in root.find("segments").findall("segment"):
+        seg.set("exclude", "1")
+    kept, outside = nacrt_finish.split_cave_stations(
+        root, nacrt_finish.read_stations(root))
+    assert [s.name for s in kept] == ["A", "B", "C"] and outside == []
+
+
+def test_the_cave_end_of_a_surface_leg_is_the_entrance(tmp_path):
+    # C is the lowest cave station; only the surface leg says it is the entrance
+    src = _with_surface_leg(tmp_path, start="C")
+    assert run([src, "--yes"]) == 0
+    sidecar = sidecar_of(tmp_path / "cave_lt_fin.csx")
+    assert sidecar["entrance"] == "C"
+    assert sidecar["entrance_witnesses"]["surface_leg"] == ["C"]
+    assert "povrsinski" in sidecar["entrance_witnesses"]["decision"]
+
+
+def test_a_sign_drawn_at_the_surface_station_points_at_the_leg_s_cave_end(tmp_path):
+    # SB 1220: the surveyor drew the entrance sign at the surface station
+    src = _with_surface_leg(tmp_path, start="C", plan_sign=(3.1, 4.1))
+    assert run([src, "--yes"]) == 0
+    sidecar = sidecar_of(tmp_path / "cave_lt_fin.csx")
+    sign = sidecar["entrance_sign"]
+    assert sign["station"] == "C" and sign["via"] == "S"
+    assert not warned(sidecar, "povrsinski vlak veze")
+
+
+def test_an_excluded_shot_that_is_not_surface_names_no_entrance(tmp_path):
+    src = _with_surface_leg(tmp_path, flags='exclude="1"', start="C")
+    assert run([src, "--yes"]) == 0
+    sidecar = sidecar_of(tmp_path / "cave_lt_fin.csx")
+    assert sidecar["entrance_witnesses"]["surface_leg"] == []
+    assert sidecar["entrance"] == "B"          # the highest cave station
+
+
+# ---------------------------------------------------------------------------
+# where the bar + arrow go (SB 1220: beside a 20 m plan at 1:200 the bar ran
+# off the A4 and its "10" was cut)
+
+
+def test_gadgets_beside_a_wide_plan_would_leave_the_page():
+    plan = (-0.48, -6.33, 19.46, 3.90)                       # SB 1220's plan
+    beside = nacrt_finish.with_gadgets(plan, 10.0, "beside")
+    under = nacrt_finish.with_gadgets(plan, 10.0, "under")
+    assert not nacrt_finish.gadgets_on_page(plan, beside, 200)
+    assert nacrt_finish.gadgets_on_page(plan, under, 200)
+
+
+def test_sb1220_puts_the_bar_under_the_plan_inside_its_width():
+    place, scale, _notes = nacrt_finish.place_gadgets(
+        (-0.48, -6.33, 19.46, 3.90), (-0.36, -5.36, 19.05, 5.16))
+    assert (place, scale) == ("under", 200)
+    x0, _y = nacrt_finish.gadget_anchor((-0.48, -6.33, 19.46, 3.90), 10.0, "under")
+    assert -0.48 <= x0 and x0 + 10.0 <= 19.46                 # right-aligned inside
+
+
+def test_a_small_plan_keeps_the_bar_beside_it():
+    # SB 1103: both places allow 1:100, and the tie keeps the original place
+    place, scale, _notes = nacrt_finish.place_gadgets(
+        (-1.22, -4.12, 1.90, 0.98), (-1.10, -8.18, 4.34, 3.04))
+    assert (place, scale) == ("beside", 100)
+
+
+def test_a_plan_narrower_than_the_bar_gets_it_centred_underneath():
+    x0, _y = nacrt_finish.gadget_anchor((0.0, 0.0, 4.0, 3.0), 10.0, "under")
+    assert x0 == -3.0                                         # 2 m centre - 5 m

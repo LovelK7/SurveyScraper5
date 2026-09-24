@@ -140,6 +140,10 @@ offline, dev/prod portability), the test protocol, and the documentation
 close-out checklist. It ends by running `python tools/pipeline_doctor.py`.
 Doc updates are part of the work, not a follow-up request.
 
+**Publishing to prod goes only through `/publish`** (`.claude/skills/publish/SKILL.md`):
+doctor and tests as gates, version bump, commit, build + deploy, verify on the
+Drive. Never run `build_prod.py --publish` / `build_csx_kit.py --publish` outside it.
+
 **End every working session with `/wrap-up`** (`.claude/skills/wrap-up/SKILL.md`):
 it updates [STATUS.md](STATUS.md), appends a block to
 [journal/SESSIONS.md](journal/SESSIONS.md), captures ideas into

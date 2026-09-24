@@ -342,3 +342,13 @@ when an idea's time comes. Nothing here is a commitment.
   cSurvey installed double-clicks the published `csurvey_3_dovrsi_nacrt.bat` on SB 1103 and sends the
   console output — proves `CSURVEY_DIR`/printer portability and that `powershell -STA` is there.
   Deferred by the user 2026-09-20 ("we will test the device later").
+- 2026-09-24 — dashboard: a **Dosje** view that runs `report --json` for the current
+  cave and draws both gates as a checklist, instead of printing text into Ispis.
+- 2026-09-24 — dashboard: `report` and `sb inspect` take a name/SUE/plaque, not the
+  Redni broj, so the page prefills the leaf's name. A `--broj` lookup on both would
+  make them follow the cave picker exactly.
+- 2026-09-24 — dashboard: a prod launcher (`CaveDossier nadzorna ploca.bat` on the
+  Drive) once operators should use it; the page already works from the prod bundle
+  except 3N, which then needs `CSX_TOOLS` pointed at the Drive kit's payload.
+- 2026-09-24 — dashboard: optional SSE instead of 400 ms polling, and a "follow the
+  3N chain" mode that pre-selects the next KORAK from the cave's files.

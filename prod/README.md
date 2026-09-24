@@ -6,6 +6,12 @@ this folder is internal. That is the whole rule.
 If you are looking for "what do the society's people actually touch", it is the
 two kits below and the Drive dirs in [`drive-layout.md`](drive-layout.md).
 
+**Publishing either kit goes through `/publish`**
+([`.claude/skills/publish/SKILL.md`](../.claude/skills/publish/SKILL.md)):
+doctor and tests first, then the version bump and a commit, so the stamped
+commit matches what ships. The kit is built and deployed after that, and the
+Drive copy is checked. The builder commands below are what that skill runs.
+
 ## The two kits
 
 ### 1. `cavedossier` launchers — for recorders and drafters

@@ -303,3 +303,29 @@ def test_cli_reports_a_cave_that_does_not_fit(capsys):
 def test_cli_rejects_junk(capsys):
     assert nacrt_layout.main(["4", "9", "spilja", "10"]) == 2
     assert "ERROR" in capsys.readouterr().out
+
+
+def test_sketch_draws_the_sheet_in_plain_ascii():
+    best, alternatives, _ = choose_layout(BBox(31.94, 11.23), BBox(20.41, 11.87))
+    lines = nacrt_layout.sketch(best)
+    assert len({len(l) for l in lines}) == 1            # a rectangle
+    text = "\n".join(lines)
+    assert text.isascii()                                # cp852 console
+    for label in ("sastavnica", "profil 1:200", "tlocrt 1:200"):
+        assert label in text
+    # profile above plan in the stacked arrangement
+    assert text.index("profil") < text.index("tlocrt")
+
+
+def test_sketch_falls_back_to_a_shorter_label_in_a_small_box():
+    _, alternatives, _ = choose_layout(BBox(6, 8), BBox(36, 12))
+    side = [l for l in alternatives if l.arrangement == "side_by_side"][0]
+    text = "\n".join(nacrt_layout.sketch(side))
+    assert "tlocrt 1:" not in text and "tlo" in text
+
+
+def test_sketch_row_puts_sheets_side_by_side():
+    best, alternatives, _ = choose_layout(BBox(31.94, 11.23), BBox(20.41, 11.87))
+    lines = nacrt_layout.sketch_row([best] + alternatives, ["1)", "2)"])
+    assert lines[0].startswith("1)") and "2)" in lines[0]
+    assert lines[1].count("+--") == 2
