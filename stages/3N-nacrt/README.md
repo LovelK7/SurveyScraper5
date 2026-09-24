@@ -17,6 +17,52 @@ toolkit, and it integrates with the rest of the pipeline through **artifacts**
 | [`decisions/`](decisions/roadmap-decisions.md) | The append-only portfolio strategy log |
 | `sessions/`, `backlog/` | **Frozen history.** The active journal is [`journal/`](../../journal/SESSIONS.md) at the repo root |
 
+## Run it: raw TopoDroid `.csx` → `SB_<broj>_nacrt.pdf`
+
+These are the same commands the Drive `.bat` kit runs (see
+`prod/csx_templates/csurvey_{1,2,3}_*.bat.template`). Run them from the repo root
+in the VS Code PowerShell terminal with the venv active (`.venv\Scripts\Activate.ps1`).
+The steps alternate between the terminal and cSurvey. Each tool takes either a file
+path, or the intake folder plus `--sb <Redni broj>`, which picks the file from that
+cave's `SB_<broj>_…` leaf and asks which file to use if there is more than one.
+
+```powershell
+$T = "stages\3N-nacrt\production\tools"
+$INTAKE = "<LOCAL_DRIVE_ROOT>\!!!Digitalizacija\!Za digitalizirat"   # LOCAL_DRIVE_ROOT from .env
+
+# KORAK 1 — raw TDX export -> <name>_pp.csx (symbols renamed so they survive import)
+python $T\preprocess_tdx_csx.py $INTAKE --sb 1103 --force
+#   or: python $T\preprocess_tdx_csx.py "path\to\raw.csx" --force
+
+# [cSurvey] open <name>_pp.csx, then File > Save As
+
+# KORAK 2 — the saved file -> <name>_lt.csx (spline linetypes, water brush, sign sizes)
+python $T\fix_imported_linetypes.py $INTAKE --sb 1103 --force
+#   or: python $T\fix_imported_linetypes.py "path\to\saved.csx" --force
+
+# [cSurvey] open <name>_lt.csx, correct the sketch, save
+
+# KORAK 3a — _lt -> <name>_lt_fin (entrance, depth label, scale bar, north arrow, A4 print setup)
+python $T\nacrt_finish.py $INTAKE --sb 1103 --force            # shows the layout menu
+#   --yes accepts the proposed layout; --layout N picks menu entry N; --dry-run writes nothing
+
+# KORAK 3b — drive cSurvey headlessly -> <name>_plan.pdf, <name>_profile.pdf, <name>_dimenzije.json
+python $T\csurvey_driver.py finish $INTAKE --sb 1103
+#   needs cSurvey in C:\csurvey64 (or CSURVEY_DIR in .env) and the "Microsoft Print to PDF" printer
+
+# KORAK 3c — compose plan + profile onto the title block -> SB_1103_nacrt.pdf in the intake leaf
+cavedossier nacrt 1103                 # --local keeps the output in runs/ and does not deliver it to Drive; --offline makes no network calls
+```
+
+If a drawing doesn't fit its box on the page, 3c refuses and prints the
+overlap in millimetres. Re-run 3a with `--layout N`, then 3b and 3c again.
+If 3b can't run cSurvey, open `_lt_fin` in cSurvey and print the plan and the
+profile separately to *Microsoft Print to PDF*. Don't change the print settings.
+Diagnostics: `python $T\inspect_survey.py <file>` gives read-only stats for any
+`.csz`/`.csx`; `csurvey_driver.py info|recalc|dimensions <file>` runs single
+cSurvey actions. The step-by-step procedure is in
+[production/tdx-processing-protocol.md](production/tdx-processing-protocol.md).
+
 The operator-facing drag-and-drop `.bat` kit that drives `production/tools/`
 is generated from [`prod/csx_templates/`](../../prod/csx_templates/) — see
 [`prod/README.md`](../../prod/README.md).
