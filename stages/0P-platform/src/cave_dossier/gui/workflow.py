@@ -57,6 +57,9 @@ class Step:
     #: A file the step's work happens in (the OSZ for "fill it in Word") —
     #: the page offers to open it.
     open: str | None = None
+    #: Options the step's button ticks when it runs the action (the queue pull
+    #: is meant to move, so it carries --apply; the confirm still asks).
+    preset: dict = field(default_factory=dict)
 
 
 def _newest(files: list[dict], *kinds: str) -> dict | None:
@@ -234,7 +237,15 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
     # ── završno ─────────────────────────────────────────────────────
     originals = [f for f in files if f["kind"] == "photo"]
     processed = [f for f in files if f["kind"] == "photo_processed"]
-    if processed:
+    queued = detail.get("queued") or []
+    if queued:
+        # Photos of this cave waiting in the shared queue nobody browses:
+        # they come first, whatever else the folder holds (user, 2026-10-02).
+        add(Step("foto", "zavrsno", "Fotografije ulaza obrađene", "4F", "todo",
+                 f"{len(queued)} fotografija čeka u redu čekanja (…za istražit) — "
+                 "povuci ih u mapu objekta, pa obradi.",
+                 action="photos-pull", preset={"--apply": True}))
+    elif processed:
         add(Step("foto", "zavrsno", "Fotografije ulaza obrađene", "4F", "done",
                  f"{len(processed)} obrađenih" + (f", {len(originals)} originala" if originals else ""),
                  action="photos-process"))

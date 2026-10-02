@@ -5,7 +5,8 @@
 
 const TOKEN = window.CD_TOKEN;
 const S = {
-  summary: null, catalog: null, caves: [], unprefixed: [],
+  summary: null, catalog: null, caves: [], unprefixed: [], queue: {},
+  docs: {}, lastStage: null,  // docs: path -> {text} | {error} | {loading}
   broj: null, cave: null, tab: "home",
   dossier: null,              // {broj, data, error, loading}
   jobs: new Map(), activeJob: null, remember: new Set(), polling: false,
@@ -129,7 +130,7 @@ async function loadAll(refresh) {
     api("caves" + (refresh ? "?refresh=1" : "")),
   ]);
   S.summary = summary; S.catalog = catalog;
-  S.caves = caves.caves; S.unprefixed = caves.unprefixed;
+  S.caves = caves.caves; S.unprefixed = caves.unprefixed; S.queue = caves.queue || {};
   if (refresh) S.dossier = null;
   renderTopbar();
   renderNav();
@@ -171,6 +172,7 @@ function setCave(broj) {
 }
 
 function setTab(tab) {
+  if (S.catalog && S.catalog.stages.some(s => s.label === tab)) S.lastStage = tab;
   S.tab = tab;
   store("cd.tab", tab);
   renderNav();
@@ -190,7 +192,8 @@ function renderTopbar() {
     badge.title = sb.reason ? sb.reason + "\n" + sb.reading : sb.reading;
   }
   $("#btn-open-sb").disabled = !(sb && sb.live_exists);
-  $("#cave-list").replaceChildren(...S.caves.map(c => h("option", { value: `${c.broj} · ${c.name}` })));
+  $("#cave-list").replaceChildren(...S.caves.map(c => h("option", {
+    value: `${c.broj} · ${c.name}`, label: S.queue[c.broj] ? `📷 ${S.queue[c.broj]} u redu čekanja` : null })));
 }
 
 function renderNav() {
@@ -205,7 +208,36 @@ function renderNav() {
     if (s.group !== group) { group = s.group; kids.push(h("div", { class: "nav-group" }, group)); }
     kids.push(item(s.label, s.label, s.title, s.status));
   }
+  kids.push(h("div", { class: "nav-group" }, "Dokumentacija"));
+  const docItem = (path, title) => h("button", {
+    class: "nav-item" + (S.tab === "doc:" + path ? " active" : ""), title: path, onclick: () => setTab("doc:" + path),
+  }, icon("book"), title);
+  const stage = currentStage();
+  if (stage) kids.push(docItem(stage.readme, `README — ${stage.label} ${stage.title}`));
+  for (const [path, title] of DOCS) kids.push(docItem(path, title));
   $("#nav").replaceChildren(...kids);
+}
+
+// Project docs the sidebar offers beside the current stage's README.
+const DOCS = [
+  ["prod/README.md", "Upute (prod)"],
+  ["ARCHITECTURE.md", "Arhitektura cjevovoda"],
+  ["STATUS.md", "Stanje razvoja"],
+  ["docs/commands.md", "Sve naredbe"],
+  ["docs/design-decisions.md", "Odluke"],
+];
+
+// The stage the README entry follows: the open stage tab, the stage whose
+// README is open in the viewer, or the last stage visited.
+function currentStage() {
+  if (!S.catalog) return null;
+  const byTab = S.catalog.stages.find(s => s.label === S.tab);
+  if (byTab) return byTab;
+  if (S.tab.startsWith("doc:")) {
+    const byDoc = S.catalog.stages.find(s => s.readme === S.tab.slice(4));
+    if (byDoc) return byDoc;
+  }
+  return S.catalog.stages.find(s => s.label === S.lastStage) || null;
 }
 
 // ── page ─────────────────────────────────────────────────────────────
@@ -213,6 +245,7 @@ function render() {
   const main = $("#main");
   if (!S.summary || !S.catalog) { main.replaceChildren(h("div", { class: "empty" }, "Učitavam…")); return; }
   if (S.tab === "home") return main.replaceChildren(...renderHome());
+  if (S.tab.startsWith("doc:")) return main.replaceChildren(...renderDoc(S.tab.slice(4)));
   const stage = S.catalog.stages.find(s => s.label === S.tab);
   if (!stage) return setTab("home");
   main.replaceChildren(...renderStage(stage));
@@ -262,6 +295,21 @@ function renderHome() {
       h("dt", {}, "3N alati"), h("dd", { class: "mono" }, sum.tools_dir || h("span", { class: "warnline" }, "nisu pronađeni")),
       h("dt", {}, "cSurvey"), h("dd", { class: "mono" }, sum.csurvey || h("span", { class: "warnline" }, "nije pronađen (CSURVEY_DIR, Drive, C:\\csurvey64)"))),
   ));
+
+  const queued = Object.entries(S.queue).map(([b, n]) => [parseInt(b, 10), n]).sort((a, b) => a[0] - b[0]);
+  if (queued.length) {
+    grid.append(h("div", { class: "card hl" },
+      h("h2", {}, icon("foto-red", "lg"), `Fotografije u redu čekanja (${queued.reduce((t, q) => t + q[1], 0)})`),
+      h("p", { class: "help" }, "Fotografije u !!Fotografije ulaza za istražit koje već nose SB_<broj>_. Odaberi objekt i povuci ih u njegovu mapu (4F)."),
+      h("table", { class: "files" }, ...queued.map(([b, n]) => {
+        const info = S.caves.find(c => c.broj === b);
+        return h("tr", {},
+          h("td", { class: "kind" }, String(b)),
+          h("td", { class: "name" }, info ? info.name : h("span", { class: "muted" }, "nema mape — povlačenje je napravi")),
+          h("td", { class: "kind" }, `📷 ${n}`),
+          h("td", { class: "act" }, h("button", { class: "btn small", onclick: () => { setCave(b); setTab("4F"); } }, "Otvori", icon("arrow"))));
+      }))));
+  }
 
   if (S.unprefixed.length) {
     grid.append(h("div", { class: "card" },
@@ -350,7 +398,7 @@ function flowStep(st) {
       onclick: () => openTarget({ what: "path", path: st.open }) }, icon("open"), "Otvori");
   } else if (a && ["todo", "stale", "unknown", "optional"].includes(st.status)) {
     const label = st.status === "stale" ? "Ponovi" : st.status === "unknown" ? "Provjeri" : "Pokreni";
-    btn = h("button", { class: "btn small" + (st.current ? " primary" : ""), title: a.title, onclick: () => quickRun(a) }, icon("play"), label);
+    btn = h("button", { class: "btn small" + (st.current ? " primary" : ""), title: a.title, onclick: () => quickRun(a, st.preset) }, icon("play"), label);
   }
   return h("div", { class: `fstep ${st.status}` + (st.current ? " current" : ""), title: meta.label },
     h("span", { class: "st" }, icon(meta.icon)),
@@ -361,9 +409,10 @@ function flowStep(st) {
 }
 
 // Run an action straight from the workflow with its default options.
-function quickRun(a) {
+function quickRun(a, preset) {
   const vals = {};
   for (const o of a.options) vals[o.flag] = o.default;
+  Object.assign(vals, preset || {});
   const files = a.file_kind ? candidates(a.file_kind) : [];
   if (a.file_kind && !files.length) return toast("Nema odgovarajuće datoteke u mapi objekta.", true);
   const ctx = { file: files[0] ? files[0].path : null, query: shortName((caveInfo() || {}).name), vals };
@@ -379,7 +428,7 @@ function renderStage(stage) {
     h("div", {}, h("h1", {}, stage.title), h("div", { class: "sub" }, stage.subtitle)),
     h("div", { class: "spacer" }),
     h("span", { class: "status-pill" }, stage.status),
-    h("button", { class: "btn ghost", onclick: () => openTarget({ what: "readme", path: stage.readme }) }, icon("book"), "README"))];
+    h("button", { class: "btn ghost", onclick: () => setTab("doc:" + stage.readme) }, icon("book"), "README"))];
   for (const note of stage.notes) out.push(h("div", { class: "card note", style: "margin-bottom:14px" }, note));
 
   if (stage.label === "6P") { out.push(...renderPredajaMockup()); return out; }
@@ -410,16 +459,21 @@ function renderStage(stage) {
     out.push(h("h3", { class: "group-title" }, g));
     out.push(h("div", { class: "grid" }, ...actions.filter(a => !a.step && a.group === g).map(a => actionCard(a))));
   }
-  if (stage.label === "4F" && S.cave && S.cave.leaves.length) out.push(h("h3", { class: "group-title" }, "Fotografije u mapi objekta"), gallery());
+  if (stage.label === "4F" && S.cave) {
+    if (S.cave.queued && S.cave.queued.length) {
+      const pull = S.catalog.actions.find(x => x.id === "photos-pull");
+      out.push(h("h3", { class: "group-title" }, `U redu čekanja (…za istražit) — ${S.cave.queued.length}`),
+        h("div", { class: "card note", style: "margin-bottom:12px" },
+          h("div", { class: "row" }, icon("foto-red", "lg"),
+            h("span", { style: "flex:1" }, "Ove fotografije još nisu u mapi objekta. Povlačenje ih premješta tamo (i stvara mapu ako je nema) i miče SB_ prefiks, da ih obrada vidi."),
+            pull ? h("button", { class: "btn primary", onclick: () => quickRun(pull, { "--apply": true }) }, icon("play"), "Povuci u mapu objekta") : null)),
+        gallery(S.cave.queued));
+    }
+    if (S.cave.leaves.length) out.push(h("h3", { class: "group-title" }, "Fotografije u mapi objekta"), gallery());
+  }
   const kinds = STAGE_FILES[stage.label];
   if (kinds && S.cave && S.cave.leaves.length) out.push(h("h3", { class: "group-title" }, "Datoteke objekta"), filesCard(kinds));
-  if (stage.label === "4I" && S.cave && S.cave.karta) {
-    const k = S.cave.karta;
-    out.push(h("h3", { class: "group-title" }, "Isječak ovog objekta"), h("div", { class: "card" },
-      k.exists ? h("div", { class: "row" }, icon("check"), fileName(k.path),
-        h("button", { class: "btn small", onclick: () => openTarget({ what: "path", path: k.path }) }, icon("open"), "Otvori"))
-        : h("span", { class: "muted" }, "Još nema isječka za ovaj objekt.")));
-  }
+  if (stage.label === "4I" && S.cave && S.cave.karta) out.push(h("h3", { class: "group-title" }, "Isječak ovog objekta"), kartaView(S.cave.karta));
   return out;
 }
 
@@ -431,6 +485,27 @@ function stepState(a) {
   if (!st) return null;
   if (proxy) return { status: ["done", "stale"].includes(st.status) ? "done" : st.status === "blocked" ? "blocked" : "todo", current: false };
   return st;
+}
+
+function kartaView(k) {
+  if (!k.exists) return h("div", { class: "empty" }, "Još nema isječka za ovaj objekt — pokreni Isječak karte (gore).");
+  const src = `/api/thumb?broj=${S.broj}&w=1600&t=${encodeURIComponent(TOKEN)}&path=${encodeURIComponent(k.path)}`;
+  const rec = k.record || {};
+  // Georef zapis = id;ime;X;Y;… as georef.hr stores the point.
+  const parts = (rec["Georef zapis"] || "").split(";");
+  return h("div", { class: "karta" },
+    h("div", { class: "card karta-img", onclick: () => lightboxSrc(src, fileName(k.path)) }, h("img", { src, alt: "Isječak karte" })),
+    h("div", { class: "card" }, h("h2", {}, icon("karta", "lg"), fileName(k.path)),
+      k.record ? h("dl", { class: "kv" },
+        h("dt", {}, "Ime objekta"), h("dd", {}, rec["Ime objekta"] || "—"),
+        h("dt", {}, "Datum"), h("dd", {}, rec["Datum"] || "—"),
+        h("dt", {}, "georef.hr točka"), h("dd", { class: "mono" }, parts[0] || "—"),
+        h("dt", {}, "X / Y (HTRS96)"), h("dd", { class: "mono" }, parts.length > 3 ? `${Math.round(+parts[2])} / ${Math.round(+parts[3])}` : "—"),
+        h("dt", {}, "Georef zapis"), h("dd", { class: "mono" }, rec["Georef zapis"] || "—"))
+        : h("p", { class: "warnline" }, "Nema retka u !georef_zapisi.csv — idući Isječak karte ga popravlja sam."),
+      h("div", { class: "row" },
+        h("button", { class: "btn", onclick: () => openTarget({ what: "path", path: k.path }) }, icon("open"), "Otvori PNG"),
+        h("button", { class: "btn ghost", onclick: () => openTarget({ what: "path", path: k.path, reveal: true }) }, icon("folder"), "Mapa"))));
 }
 
 function renderPredajaMockup() {
@@ -494,13 +569,16 @@ function peopleCard(d) {
   const mark = { ok: "✓", scope: "~", missing: "✗", unknown: "?" };
   const tip = { ok: "izjava pokriva ovaj objekt", scope: "izjava postoji, ali ne pokriva ovaj objekt",
     missing: "nema izjave", unknown: "nije u registru osoba" };
-  return h("div", { class: "card" }, h("h2", {}, icon("osobe", "lg"), "Osobe · izjave"),
+  return h("div", { class: "card" }, h("h2", {}, icon("osobe", "lg"), "Osobe · izjave",
+      h("span", { class: "tip", tabindex: "0", "aria-label": "Objašnjenje oznaka" }, "?",
+        h("span", { class: "tip-body", role: "tooltip" },
+          h("b", {}, "Oznake"),
+          ...Object.keys(mark).map(k => h("div", {}, h("span", { class: "pstat " + k }, mark[k]), " ", tip[k]))))),
     d.people.length ? h("table", { class: "files" }, ...d.people.map(p => h("tr", { title: tip[p.status] },
       h("td", { class: "pstat " + p.status }, mark[p.status] || "?"),
       h("td", { class: "name" }, p.name), h("td", { class: "kind" }, p.roles.join(", ")),
       h("td", { class: "kind" }, p.files.join(", ") || "nema izjave"))))
-      : h("p", { class: "muted" }, "SB red ne navodi autore kojima treba izjava."),
-    h("p", { class: "help", style: "margin-top:8px" }, "✓ pokriva objekt · ~ izjava postoji, ali za drugi objekt · ✗ nema izjave · ? nije u registru"));
+      : h("p", { class: "muted" }, "SB red ne navodi autore kojima treba izjava."));
 }
 
 function renderPeopleOfCave() {
@@ -509,32 +587,163 @@ function renderPeopleOfCave() {
   return [h("div", { class: "grid", style: "margin-bottom:14px" }, peopleCard(st.data))];
 }
 
+// ── documentation viewer ─────────────────────────────────────────────
+function renderDoc(path) {
+  const doc = S.docs[path];
+  if (!doc) {
+    S.docs[path] = { loading: true };
+    api("doc?path=" + encodeURIComponent(path))
+      .then(d => { S.docs[path] = d; }).catch(e => { S.docs[path] = { error: e.message }; })
+      .finally(() => { if (S.tab === "doc:" + path) render(); });
+    return [h("div", { class: "loading" }, "Učitavam " + path + "…")];
+  }
+  if (doc.loading) return [h("div", { class: "loading" }, "Učitavam " + path + "…")];
+  if (doc.error) return [h("div", { class: "card note" }, doc.error)];
+  const head = h("div", { class: "page-head" },
+    h("span", { class: "stage-chip" }, icon("book", "xl")),
+    h("div", {}, h("h1", {}, fileName(path)), h("div", { class: "sub mono" }, path)),
+    h("div", { class: "spacer" }),
+    h("button", { class: "btn ghost", onclick: () => { delete S.docs[path]; render(); } }, icon("refresh"), "Ponovno učitaj"),
+    h("button", { class: "btn", onclick: () => openTarget({ what: "readme", path }) }, icon("open"), "Otvori u editoru"));
+  const body = h("article", { class: "card md" });
+  body.append(...markdown(doc.text, path));
+  return [head, body];
+}
+
+// A small Markdown renderer: headings (with GitHub-style ids), paragraphs,
+// lists, fenced code, tables, quotes, rules and inline code/bold/italic/links.
+// Built with DOM nodes, never innerHTML, so a doc can't inject markup.
+function slug(text) {
+  return text.trim().toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, "").replace(/\s/g, "-");
+}
+function inline(text, base) {
+  const out = [];
+  const re = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*)|(\[([^\]]+)\]\(([^)\s]+)\))|(<a name="[^"]*"><\/a>)|(<\/?(?:sub|br)\s*\/?>)/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    if (m[1]) out.push(h("code", {}, m[1].slice(1, -1)));
+    else if (m[2]) out.push(h("strong", {}, ...inline(m[2].slice(2, -2), base)));
+    else if (m[3]) out.push(h("em", {}, ...inline(m[3].slice(1, -1), base)));
+    else if (m[4]) out.push(docLink(m[5], m[6], base));
+    last = re.lastIndex;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+function resolvePath(base, rel) {
+  const parts = base.split("/").slice(0, -1);
+  for (const seg of rel.split("/")) {
+    if (seg === "..") parts.pop(); else if (seg && seg !== ".") parts.push(seg);
+  }
+  return parts.join("/");
+}
+function docLink(label, href, base) {
+  const a = h("a", { href: href }, ...inline(label, base));
+  if (/^https?:/i.test(href)) { a.target = "_blank"; a.rel = "noopener"; return a; }
+  a.addEventListener("click", e => {
+    e.preventDefault();
+    const [file, hash] = href.split("#");
+    if (!file) return scrollToId(hash);
+    const target = resolvePath(base, decodeURIComponent(file));
+    if (/\.md$/i.test(target)) { setTab("doc:" + target); if (hash) setTimeout(() => scrollToId(hash), 400); }
+    else openTarget({ what: "readme", path: target });
+  });
+  return a;
+}
+function scrollToId(id) {
+  const el = document.getElementById(decodeURIComponent(id || ""));
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function markdown(text, base) {
+  const lines = text.replace(/\r/g, "").split("\n");
+  const out = [];
+  let i = 0;
+  const isTable = l => /^\s*\|.*\|\s*$/.test(l);
+  const isItem = l => /^\s*([-*]|\d+\.)\s/.test(l);
+  const cells = l => l.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^```/.test(line)) {
+      const buf = [];
+      for (i++; i < lines.length && !/^```/.test(lines[i]); i++) buf.push(lines[i]);
+      i++;
+      out.push(h("pre", { class: "cmd" }, buf.join("\n")));
+    } else if (/^#{1,6}\s/.test(line)) {
+      const level = line.match(/^#+/)[0].length;
+      const txt = line.replace(/^#+\s*/, "");
+      const plain = txt.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[`*]/g, "");
+      out.push(h("h" + Math.min(level + 1, 6), { id: slug(plain) }, ...inline(txt, base)));
+      i++;
+    } else if (/^\s*(---|\*\*\*)\s*$/.test(line)) {
+      out.push(h("hr", {})); i++;
+    } else if (isTable(line) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+      const head = cells(line);
+      const rows = [];
+      for (i += 2; i < lines.length && isTable(lines[i]); i++) rows.push(cells(lines[i]));
+      out.push(h("div", { class: "md-table" }, h("table", { class: "files" },
+        h("thead", {}, h("tr", {}, ...head.map(c => h("th", {}, ...inline(c, base))))),
+        h("tbody", {}, ...rows.map(r => h("tr", {}, ...r.map(c => h("td", {}, ...inline(c, base)))))))));
+    } else if (isItem(line)) {
+      const list = h(/^\s*\d+\./.test(line) ? "ol" : "ul", {});
+      while (i < lines.length && isItem(lines[i])) {
+        let item = lines[i].replace(/^\s*([-*]|\d+\.)\s+/, "");
+        for (i++; i < lines.length && /^\s{2,}\S/.test(lines[i]) && !isItem(lines[i]); i++) item += " " + lines[i].trim();
+        list.append(h("li", {}, ...inline(item, base)));
+      }
+      out.push(list);
+    } else if (/^>\s?/.test(line)) {
+      const buf = [];
+      for (; i < lines.length && /^>\s?/.test(lines[i]); i++) buf.push(lines[i].replace(/^>\s?/, ""));
+      out.push(h("blockquote", {}, ...inline(buf.join(" "), base)));
+    } else if (!line.trim()) {
+      i++;
+    } else {
+      const buf = [];
+      for (; i < lines.length && lines[i].trim() && !/^(#{1,6}\s|```|>)/.test(lines[i]) && !isItem(lines[i]) && !isTable(lines[i]); i++) buf.push(lines[i].trim());
+      if (!buf.length) { buf.push(line); i++; }
+      out.push(h("p", {}, ...inline(buf.join(" "), base)));
+    }
+  }
+  return out;
+}
+
 // ── 4F gallery ───────────────────────────────────────────────────────
 function thumbUrl(f, w) {
   return `/api/thumb?broj=${S.broj}&w=${w}&t=${encodeURIComponent(TOKEN)}&path=${encodeURIComponent(f.path)}`;
 }
 
-function gallery() {
+function gallery(list) {
+  if (list) return h("div", { class: "gallery" }, ...list.map(photoCard));
   const photos = S.cave.files.filter(f => PHOTO_KINDS.has(f.kind))
     .sort((a, b) => (a.kind === b.kind ? a.name.localeCompare(b.name) : a.kind === "photo_processed" ? -1 : 1));
   if (!photos.length) return h("div", { class: "empty" }, "U mapi objekta nema fotografija. Ubaci ih ili ih povuci iz reda čekanja (gore).");
-  return h("div", { class: "gallery" }, ...photos.map(f => h("div", { class: "card photo" },
+  return h("div", { class: "gallery" }, ...photos.map(photoCard));
+}
+
+const PHOTO_BADGE = { photo_processed: ["done", "obrađena"], photo: ["orig", "original"], queued: ["queued", "u redu čekanja"] };
+function photoCard(f) {
+  const [cls, label] = PHOTO_BADGE[f.kind] || ["orig", f.kind];
+  return h("div", { class: "card photo" },
     h("div", { class: "img", onclick: () => lightbox(f) },
       /\.heic$/i.test(f.name) ? h("span", { class: "muted" }, "HEIC — nema pregleda")
         : h("img", { src: thumbUrl(f, 480), loading: "lazy", alt: f.name })),
     h("div", { class: "meta" },
-      h("span", { class: "k " + (f.kind === "photo_processed" ? "done" : "orig") }, f.kind === "photo_processed" ? "obrađena" : "original"),
+      h("span", { class: "k " + cls }, label),
       f.relative, h("div", { class: "muted" }, `${fmtSize(f.size)} · ${fmtTime(f.modified)}`)),
     h("div", { class: "acts" },
       h("button", { class: "btn small", onclick: () => openTarget({ what: "path", path: f.path }) }, icon("open"), "Otvori"),
       h("button", { class: "btn small ghost", onclick: () => openTarget({ what: "path", path: f.path, reveal: true }) }, icon("folder"), "Mapa"),
-      h("button", { class: "btn small danger", onclick: () => deletePhoto(f) }, icon("trash"), "Obriši")))));
+      h("button", { class: "btn small danger", onclick: () => deletePhoto(f) }, icon("trash"), "Obriši")));
 }
 
 function lightbox(f) {
   if (/\.heic$/i.test(f.name)) return openTarget({ what: "path", path: f.path });
-  $("#lightbox-img").src = thumbUrl(f, 1600);
-  $("#lightbox-cap").textContent = f.relative;
+  lightboxSrc(thumbUrl(f, 1600), f.relative);
+}
+function lightboxSrc(src, caption) {
+  $("#lightbox-img").src = src;
+  $("#lightbox-cap").textContent = caption;
   const dlg = $("#lightbox");
   dlg.showModal();
   dlg.onclick = () => dlg.close();

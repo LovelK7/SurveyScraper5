@@ -352,10 +352,10 @@ when an idea's time comes. Nothing here is a commitment.
   except 3N, which then needs `CSX_TOOLS` pointed at the Drive kit's payload.
 - 2026-09-24 — dashboard: optional SSE instead of 400 ms polling, and a "follow the
   3N chain" mode that pre-selects the next KORAK from the cave's files.
-- 2026-10-02 — cSurvey on the Drive: copy `C:\csurvey64` to `!!!Digitalizacija/SurveyScraper5/cSurvey/`
-  (~175 MB, mark "available offline"), run `csurvey_driver.py info` once from `G:`, then
-  publish the csx kit so the `.bat` launchers pick it up (the driver already looks there).
-  Optionally let `build_csx_kit.py` verify the folder exists.
+- 2026-10-02 — cSurvey on the Drive: the copy is at `!!!Digitalizacija/Software/csurvey64` and
+  drives headless from `G:` (after the `UnsafeLoadFrom` fix). Remaining: publish the csx kit so
+  the `.bat` launchers carry the new driver + ps1; optionally let `build_csx_kit.py` check
+  the folder exists, and test a cold start on a second machine (Drive streaming).
 - 2026-10-02 — 4S: with no dimensions file, the sastavnica's Dubina falls back to the OSZ's
   **Visinska razlika** before its Dubina (`_set_first` order in sastavnica/prefill.py), and
   prints it unsigned. Now that `osz prefill` fills both cells, decide whether Dubina should

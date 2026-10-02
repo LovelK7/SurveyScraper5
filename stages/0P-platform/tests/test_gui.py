@@ -368,3 +368,58 @@ def test_workflow_osz_waits_for_measured_lengths():
     states = _states(workflow.build(detail, {"opis": "x", "duljina": "40", "dubina": "5"}, dims={"l": 18}))
     assert states["osz-dims"] == "stale"  # the OSZ disagrees with the survey
     assert _states(workflow.build(detail, None, "nečitljiv"))["osz-filled"] == "unknown"
+
+
+# ── queue, karta, docs (2026-10-02, round 3) ────────────────────────
+
+
+def test_queue_is_indexed_by_prefix_and_reaches_the_workflow(drive):
+    ws, root, leaf = drive
+    queue_dir = root / "!!Fotografije ulaza" / "!!Fotografije ulaza za istražit"
+    queue_dir.mkdir(parents=True)
+    (queue_dir / "SB_1220_ulaz.jpg").write_bytes(b"x")
+    (queue_dir / "SB_0977_drugi.jpg").write_bytes(b"x")
+    (queue_dir / "bez_prefiksa.jpg").write_bytes(b"x")
+    ws._settings = dataclasses.replace(ws._settings, archive_dirs={
+        **ws._settings.archive_dirs,
+        "queued_photos_dir": "!!Fotografije ulaza/!!Fotografije ulaza za istražit"})
+    assert {k: len(v) for k, v in ws.queue().items()} == {1220: 1, 977: 1}
+    view = ws.cave_view(1220)
+    assert [q["name"] for q in view["queued"]] == ["SB_1220_ulaz.jpg"]
+    foto = next(s for s in view["workflow"]["steps"] if s["id"] == "foto")
+    assert foto["status"] == "todo" and foto["action"] == "photos-pull"
+    assert foto["preset"] == {"--apply": True}
+    # a queued photo is servable/deletable like the cave's own
+    assert ws.cave_file(1220, str(queue_dir / "SB_1220_ulaz.jpg"), {"queued"})
+    assert ws.cave_file(1220, str(queue_dir / "SB_0977_drugi.jpg"), {"queued"}) is None
+
+
+def test_karta_record_read_from_georef_csv(drive):
+    ws, root, _ = drive
+    (root / "!!Isječci karte" / "!georef_zapisi.csv").write_text(
+        "Redni broj,Ime objekta,Georef zapis,Datum\n"
+        "01220,Hrđava špilja,321762;Hrđava špilja;351016;5032974;0.7,2026-09-01\n",
+        encoding="utf-8-sig")
+    karta = ws.cave_detail(1220)["karta"]
+    assert karta["record"]["Ime objekta"] == "Hrđava špilja"
+    assert ws.cave_file(1220, karta["path"], {"karta"})["kind"] == "karta"
+
+
+def test_doc_endpoint_serves_repo_markdown_only(server):
+    base, _, _ = server
+    status, data = _call(base, "/api/doc?path=STATUS.md")
+    assert status == 200 and data["text"].startswith("# STATUS")
+    assert _call(base, "/api/doc?path=pyproject.toml")[0] == 403
+    assert _call(base, "/api/doc?path=../outside.md")[0] == 403
+    assert _call(base, "/api/doc?path=nope.md")[0] == 404
+
+
+def test_queue_reminder_names_queued_caves(monkeypatch, settings, capsys):
+    from cave_dossier import cli
+    import cave_dossier.photos.process as process
+
+    monkeypatch.setattr(process, "staged_for_cave",
+                        lambda _s, serial: [Path("a.jpg")] * 2 if serial == 7 else [])
+    cli._queue_reminder(settings, [7, 8, None])
+    out = capsys.readouterr().out
+    assert "Redni broj 7" in out and "pull-staged 7 --apply" in out and "8" not in out.replace("7", "")

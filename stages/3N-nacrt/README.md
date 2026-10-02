@@ -48,7 +48,7 @@ python $T\nacrt_finish.py $INTAKE --sb 1103 --force            # shows the layou
 
 # KORAK 3b — drive cSurvey headlessly -> <name>_plan.pdf, <name>_profile.pdf, <name>_dimenzije.json
 python $T\csurvey_driver.py finish $INTAKE --sb 1103
-#   needs cSurvey (CSURVEY_DIR in .env, else a cSurvey\ folder beside the kit on the Drive,
+#   needs cSurvey (CSURVEY_DIR in .env, else the shared Drive copy !!!Digitalizacija\Software\csurvey64,
 #   else C:\csurvey64 — it is an unzipped folder, no install) and the "Microsoft Print to PDF" printer
 
 # KORAK 3c — compose plan + profile onto the title block -> SB_1103_nacrt.pdf in the intake leaf

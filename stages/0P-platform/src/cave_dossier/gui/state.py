@@ -23,10 +23,9 @@ from cave_dossier.intake.scanner import find_leaf_folders
 SB_VERSION_RE = re.compile(r"^!?Speleo_baza_SUE_v(\d+)[._](\d+)\.xls[mx]$", re.IGNORECASE)
 
 DEFAULT_CSURVEY_DIR = r"C:\csurvey64"
-#: cSurvey copied beside the csurvey kit on the Drive (an unzipped folder needs
-#: no install — 2026-10-02), relative to LOCAL_DRIVE_ROOT. Same place
-#: csurvey_driver.py looks: the kit's csurvey_alati/ sibling.
-KIT_CSURVEY_REL = "!!!Digitalizacija/SurveyScraper5/cSurvey"
+#: The shared cSurvey copy on the Drive (an unzipped folder needs no install —
+#: 2026-10-02), relative to LOCAL_DRIVE_ROOT. Same place csurvey_driver.py looks.
+KIT_CSURVEY_REL = "!!!Digitalizacija/Software/csurvey64"
 
 #: Drive folders the Pregled tab links to: config.yaml `archive` key -> label.
 DRIVE_DIRS = (
@@ -193,6 +192,7 @@ class Workspace:
         self._settings = settings
         self._settings_error: str | None = None
         self._caves: tuple[float, list[CaveLeaf], list[str]] | None = None
+        self._queue: tuple[float, dict[int, list[dict]]] | None = None
 
     # ── settings ────────────────────────────────────────────────────
     @property
@@ -208,6 +208,7 @@ class Workspace:
         self._settings = None
         self._settings_error = None
         self._caves = None
+        self._queue = None
 
     @property
     def drive_root(self) -> Path | None:
@@ -291,6 +292,29 @@ class Workspace:
         self._caves = (time.monotonic(), caves, unprefixed)
         return caves, unprefixed
 
+    def queue(self, force: bool = False) -> dict[int, list[dict]]:
+        """Photos in `!!Fotografije ulaza za istražit`, by the Redni broj their
+        ``SB_<broj>_`` prefix names. Nobody browses that shared folder (user,
+        2026-10-02), so the page surfaces it: per cave and as one list."""
+        if not force and self._queue and time.monotonic() - self._queue[0] < self.CAVE_TTL:
+            return self._queue[1]
+        found: dict[int, list[dict]] = {}
+        directory = self.drive_dir("queued_photos_dir")
+        if directory is not None and directory.is_dir():
+            for path in sorted(directory.iterdir(), key=lambda p: p.name.lower()):
+                if not path.is_file() or path.suffix.lower() not in _PHOTO_EXT:
+                    continue
+                match = SB_SERIAL_RE.match(path.name)
+                if not match:
+                    continue
+                stat = path.stat()
+                found.setdefault(int(match.group(1)), []).append({
+                    "name": path.name, "path": str(path), "relative": path.name,
+                    "kind": "queued", "modified": stat.st_mtime, "size": stat.st_size,
+                })
+        self._queue = (time.monotonic(), found)
+        return found
+
     def cave_leaves(self, broj: int) -> list[CaveLeaf]:
         return [c for c in self.caves()[0] if c.broj == broj]
 
@@ -320,13 +344,15 @@ class Workspace:
         excerpts = self.drive_dir("map_excerpts_dir")
         if excerpts is not None:
             png = excerpts / f"SB_{broj:04d}.png"
-            karta = {"path": str(png), "exists": png.is_file()}
+            karta = {"path": str(png), "exists": png.is_file(),
+                     "record": _georef_record(excerpts, broj) if png.is_file() else None}
         return {
             "broj": broj,
             "leaves": [leaf.to_json() for leaf in leaves],
             "files": files,
             "locks": locks,
             "karta": karta,
+            "queued": self.queue().get(broj, []),
         }
 
     def cave_view(self, broj: int) -> dict:
@@ -339,10 +365,15 @@ class Workspace:
 
     def cave_file(self, broj: int, path: str, kinds: set[str]) -> dict | None:
         """One of the cave's own files, of one of ``kinds`` — the guard for
-        anything that serves or deletes a file by path."""
-        for item in self.cave_detail(broj)["files"]:
+        anything that serves or deletes a file by path. ``queued`` covers the
+        cave's photos in the staging queue, ``karta`` its map excerpt."""
+        detail = self.cave_detail(broj)
+        for item in detail["files"] + detail["queued"]:
             if item["path"] == path and item["kind"] in kinds:
                 return item
+        karta = detail.get("karta") or {}
+        if "karta" in kinds and karta.get("exists") and karta["path"] == path:
+            return {"path": path, "kind": "karta"}
         return None
 
     def candidate_files(self, broj: int, file_kind: str) -> list[str]:
@@ -367,6 +398,22 @@ class Workspace:
         except OSError:
             return False
         return any(resolved == r or r in resolved.parents for r in self.allowed_roots())
+
+
+def _georef_record(directory: Path, broj: int) -> dict | None:
+    """This cave's row of `!georef_zapisi.csv` (4I), tolerant of Excel's
+    unpadded numbers and BOM; None when absent or unreadable."""
+    import csv
+
+    try:
+        with (directory / "!georef_zapisi.csv").open(encoding="utf-8-sig", newline="") as fh:
+            for row in csv.DictReader(fh):
+                raw = (row.get("Redni broj") or "").strip()
+                if raw.isdigit() and int(raw) == broj:
+                    return {k: (v or "").strip() for k, v in row.items() if k}
+    except (OSError, csv.Error, UnicodeDecodeError):
+        return None
+    return None
 
 
 def _live_filename() -> str:

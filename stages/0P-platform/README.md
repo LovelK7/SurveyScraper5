@@ -50,6 +50,19 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   sends a photo to the bin. On the Drive that means the Google Drive trash
   (30 days), on a local disk the Windows Recycle Bin. Only photos in the
   current cave's folder can be deleted, and always after a confirmation.
+- **Fotografije u redu čekanja.** Nobody browses
+  `!!Fotografije ulaza za istražit`, so the page does. Pregled lists every
+  cave with photos waiting there, the cave picker marks them 📷, the cave's
+  workflow makes "pull them in" its photo step, and 4F shows them in a
+  gallery of their own with one **Povuci u mapu objekta** button
+  (`photos pull-staged --apply`, after a confirm). Photos are shown whole:
+  portrait shots are letterboxed, never cropped.
+- **4I** shows the cave's map excerpt and its `!georef_zapisi.csv` row
+  (georef.hr point id, HTRS coordinates, date); click to enlarge.
+- **Dokumentacija** in the sidebar opens the current stage's README and the
+  project docs (prod upute, ARCHITECTURE, STATUS, commands, decisions) in an
+  in-page viewer; links between docs stay inside it. Dev only: prod has no
+  repo, and the viewer says so.
 - **5D Dosje** draws `report` as the two gates: blockers, warnings, and the
   rules still waiting on a source (folded). **5O** shows the cave's people and
   their izjave from the same data; `people check --broj` is the command form.
@@ -59,8 +72,8 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
 - **Kopiraj** gives the same command for the terminal. 3N commands use `$T`,
   as in the [3N README](../3N-nacrt/README.md).
 - **cSurvey** buttons open a survey in cSurvey, found as: `CSURVEY_DIR` from
-  `.env`, then a copy beside the kit on the Drive
-  (`!!!Digitalizacija/SurveyScraper5/cSurvey`), then `C:\csurvey64`.
+  `.env`, then the shared copy on the Drive
+  (`!!!Digitalizacija/Software/csurvey64`), then `C:\csurvey64`.
 
 How it is built, for whoever turns it into the real GUI:
 
@@ -71,7 +84,7 @@ How it is built, for whoever turns it into the real GUI:
 | `gui/state.py` | Read-only view of the machine: settings, SB versions, Drive dirs, caves in work, a cave's files classified by name, open-document locks. Fail-soft: a missing Drive is a note on the page. |
 | `gui/media.py` | Photo thumbnails and the recoverable delete (shell "allow undo"). |
 | `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. |
-| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/catalog`, `/run`, `/job/<id>`, `/open`, `/delete`, and `/thumb` for images. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
+| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/job/<id>`, `/open`, `/delete`, and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
 | `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`. Plain JS, no build step. |
 
 Only standard library in the base install; Pillow (the `photos` extra) makes

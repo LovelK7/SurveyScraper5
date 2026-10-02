@@ -48,6 +48,25 @@ EXIT_READY = 1
 EXIT_ERROR = 99
 
 
+def _queue_reminder(settings: Settings, serials) -> None:
+    """Name the caves whose photos still sit in the `…za istražit` queue.
+
+    Nobody browses that shared folder (user, 2026-10-02), so the moment a cave
+    gets its working folder is when its queued photos must be mentioned —
+    printed, never moved: `pull-staged --apply` stays a deliberate step.
+    """
+    from cave_dossier.photos.process import staged_for_cave
+
+    for serial in sorted({s for s in serials if s is not None}):
+        try:
+            staged = staged_for_cave(settings, serial)
+        except OSError:
+            continue
+        if staged:
+            print(f"📷 Redni broj {serial}: fotografija u redu čekanja (…za istražit): "
+                  f"{len(staged)} → cavedossier photos pull-staged {serial} --apply")
+
+
 def _print_banner(settings: Settings) -> None:
     print(f"SB mode: {settings.sb_mode} ({settings.sb_workbook_path})")
     if settings.sb_mode == "FALLBACK":
@@ -686,6 +705,11 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
         problems = [o for o in outcomes if o.status != "renamed"]
         print()
         print(f"Renamed {len(renamed)} folder(s).")
+        from cave_dossier.core.matching import SB_SERIAL_RE
+
+        _queue_reminder(settings, [
+            int(m.group(1)) for o in renamed if o.target is not None
+            for m in [SB_SERIAL_RE.match(o.target.name)] if m])
         for outcome in problems:
             print(f"  {outcome.status}: {outcome.source.name}"
                   + (f"  ({outcome.detail})" if outcome.detail else ""))
@@ -1020,6 +1044,7 @@ def cmd_osz_prefill(settings: Settings, serial: int, debug: bool, force_karta: b
     if outcome.delivered_path is not None:
         print(f"Delivered: {outcome.delivered_path}")
     print(f"Run dir:   {outcome.docx_path.parent}")
+    _queue_reminder(settings, [serial])
     if outcome.sb_updates_path is not None:
         print(f"Dopune za SB ({len(result.sb_updates)}): {outcome.sb_updates_path}")
         print("  (upiši ručno u Svi objekti — alat nikad ne piše u SB)")

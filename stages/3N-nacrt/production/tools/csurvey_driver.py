@@ -19,7 +19,9 @@ print in two clicks.
 
 Per-machine facts come from the environment, then from the workspace `.env`:
 
-    CSURVEY_DIR       install folder      (default C:\\csurvey64)
+    CSURVEY_DIR       install folder      (default: the shared Drive copy,
+                                           !!!Digitalizacija\\Software\\csurvey64,
+                                           then C:\\csurvey64)
     CSURVEY_PRINTER   printer to print to (default "Microsoft Print to PDF")
 
 Stdlib only and free of repo imports, like its siblings here: it travels into
@@ -51,9 +53,11 @@ SCRIPT = os.path.join(HERE, "csurvey_headless.ps1")
 DEFAULT_CSURVEY_DIR = r"C:\csurvey64"
 # cSurvey is an unzipped folder, not an installed program (no uninstall entry;
 # a copied folder drives headless exactly like C:\csurvey64 — checked
-# 2026-10-02). So one copy on the shared Drive, beside the kit, serves every
-# operator: !!!Digitalizacija/SurveyScraper5/{csurvey_alati, cSurvey}.
-KIT_CSURVEY_DIR = os.path.join(os.path.dirname(HERE), "cSurvey")
+# 2026-10-02). So one copy on the shared Drive serves every operator; the user
+# put it at !!!Digitalizacija/Software/csurvey64, two levels above the kit's
+# tools (!!!Digitalizacija/SurveyScraper5/csurvey_alati).
+KIT_CSURVEY_DIR = os.path.join(os.path.dirname(os.path.dirname(HERE)),
+                               "Software", "csurvey64")
 DEFAULT_PRINTER = "Microsoft Print to PDF"
 DEFAULT_TIMEOUT = 180
 

@@ -138,7 +138,11 @@ function Assert-NotNull($x, $what) {
 }
 
 try {
-    $asm = [Reflection.Assembly]::LoadFrom($exe)
+    # UnsafeLoadFrom, not LoadFrom: from the shared Drive copy
+    # (!!!Digitalizacija\Software\csurvey64) .NET Framework zones the G: path as
+    # remote and LoadFrom refuses with 0x80131515 (2026-10-02). UnsafeLoadFrom
+    # skips only that zone check; a local C:\csurvey64 loads the same either way.
+    $asm = [Reflection.Assembly]::UnsafeLoadFrom($exe)
     # 1. modMain.GetApplicationPath() derives from Process.MainModule -- that is
     #    powershell.exe here, so pre-seed its cache (modMain.vb:42-47) or
     #    resources/objects/cliparts resolve to the wrong folder.

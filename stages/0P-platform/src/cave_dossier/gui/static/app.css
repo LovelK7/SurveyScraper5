@@ -277,13 +277,53 @@ a { color: var(--brand-text); }
 /* photo gallery (4F) */
 .gallery { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .photo { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
-.photo .img { aspect-ratio: 4 / 3; background: var(--panel-2); display: grid; place-items: center; overflow: hidden; cursor: zoom-in; }
-.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Whole photo, never cropped (user, 2026-10-02): a portrait entrance shot
+   letterboxes inside the same box a landscape one fills. */
+.photo .img { height: 240px; background: var(--panel-2); display: grid; place-items: center; overflow: hidden; cursor: zoom-in; padding: 6px; }
+.photo img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; border-radius: 4px; }
 .photo .meta { padding: 8px 10px 4px; font-size: 12.5px; overflow-wrap: anywhere; }
 .photo .meta .k { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 7px; margin-right: 4px; }
 .photo .meta .k.done { background: var(--ok-soft); color: var(--ok); }
 .photo .meta .k.orig { background: var(--brand-soft); color: var(--brand-text); }
+.photo .meta .k.queued { background: var(--stale-soft); color: var(--stale); }
 .photo .acts { display: flex; gap: 4px; padding: 4px 10px 10px; flex-wrap: wrap; }
+
+/* isječak karte (4I) */
+.karta { display: grid; gap: 14px; grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr); align-items: start; }
+.karta-img { padding: 8px; cursor: zoom-in; }
+.karta-img img { width: 100%; height: auto; display: block; border-radius: 6px; }
+@media (max-width: 1000px) { .karta { grid-template-columns: 1fr; } }
+
+/* hover balloon (the "?" next to a heading) */
+.tip { position: relative; display: inline-grid; place-items: center; width: 20px; height: 20px; margin-left: 4px;
+  border-radius: 50%; font: 700 12px var(--sans); background: var(--brand-soft); color: var(--brand-text);
+  border: 1px solid var(--brand-line); cursor: help; }
+.tip-body { position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%); z-index: 20;
+  width: 290px; padding: 10px 12px; border-radius: 10px; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--brand-line); box-shadow: 0 6px 24px rgba(25,19,0,.18);
+  font: 400 12.5px/1.5 var(--sans); text-align: left; opacity: 0; visibility: hidden; transition: opacity .12s; }
+.tip-body::before { content: ""; position: absolute; top: -6px; left: 50%; width: 10px; height: 10px;
+  background: var(--panel); border-left: 1px solid var(--brand-line); border-top: 1px solid var(--brand-line);
+  transform: translateX(-50%) rotate(45deg); }
+.tip-body b { display: block; margin-bottom: 4px; }
+.tip-body div { display: flex; gap: 6px; padding: 2px 0; }
+.tip:hover .tip-body, .tip:focus .tip-body, .tip:focus-within .tip-body { opacity: 1; visibility: visible; }
+
+/* documentation viewer */
+.md { padding: 18px 26px; max-width: 980px; line-height: 1.6; }
+.md h2, .md h3, .md h4, .md h5, .md h6 { margin: 1.4em 0 .5em; scroll-margin-top: 80px; }
+.md h2 { font-size: 20px; border-bottom: 2px solid var(--brand-soft); padding-bottom: 4px; }
+.md h3 { font-size: 16px; }
+.md h4, .md h5, .md h6 { font-size: 14px; }
+.md p { margin: .6em 0; }
+.md code { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; font-size: 12px; }
+.md pre.cmd { overflow-x: auto; white-space: pre; }
+.md blockquote { margin: .8em 0; padding: 6px 14px; border-left: 4px solid var(--brand); background: var(--brand-softer); border-radius: 0 8px 8px 0; }
+.md .md-table { overflow-x: auto; margin: .8em 0; }
+.md th { text-align: left; padding: 6px; border-bottom: 2px solid var(--line-strong); font-size: 13px; }
+.md td { font-size: 13px; vertical-align: top; }
+.md hr { border: 0; border-top: 1px solid var(--line); margin: 1.4em 0; }
+.md ul, .md ol { padding-left: 22px; }
 
 /* dossier (5D) */
 .gate { border-width: 2px; }

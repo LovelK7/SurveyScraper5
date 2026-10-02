@@ -1011,15 +1011,38 @@ The user's review of the first dashboard settled these:
 - **cSurvey needs no installation.** `C:\csurvey64` is an unzipped folder (no
   uninstall entry). A copy elsewhere drove `csurvey_driver.py dimensions`
   headless in 5 s (2026-10-02). So one copy on the shared Drive can serve
-  every operator. `csurvey_driver.py` and the dashboard now look for
-  `!!!Digitalizacija/SurveyScraper5/cSurvey/` beside the kit after
-  `CSURVEY_DIR` and before `C:\csurvey64`. The copy itself (~175 MB) is the
-  user's call. It has not been made, nor run from `G:` yet. Mark it "available
-  offline" in Drive so the DLLs are not streamed on every start.
+  every operator. The user put it at `!!!Digitalizacija/Software/csurvey64`
+  (round 3); `csurvey_driver.py` and the dashboard look there after
+  `CSURVEY_DIR` and before `C:\csurvey64`. Mark it "available offline" in
+  Drive so the DLLs are not streamed on every start.
+  **From `G:` the headless bootstrap needed one change:** .NET Framework's
+  `Assembly.LoadFrom` zones the Drive path as remote and refuses with
+  `0x80131515`; `csurvey_headless.ps1` now uses `UnsafeLoadFrom`, which skips
+  only that zone check. Verified 2026-10-02: `dimensions` and `print` (plan +
+  profile PDFs, 22 s) both run from the Drive copy, and the local copy is
+  unaffected.
 - **Bind the port exclusively.** `http.server` sets `SO_REUSEADDR`, which on
   Windows let two dashboards listen on 8790 at once: the old one answered
   and the next-free-port fallback never fired. The server now binds with
   `SO_EXCLUSIVEADDRUSE`.
+
+### Round 3 — queue, map, docs (2026-10-02)
+
+- **The photo queue is surfaced, never auto-pulled.** The user doubted anyone
+  ever looks in `!!Fotografije ulaza za istražit` — rightly: 54 photos for 34
+  caves were waiting, three of them for caves that already had a working
+  folder. A warning now appears at the moments a cave gets its folder
+  (`osz prefill`, `intake map --apply`), on Pregled (every queued cave), in the
+  picker (📷), in the cave's workflow (the photo step becomes "pull them") and
+  in 4F (the queued photos as a gallery). Moving stays a confirmed action:
+  `pull-staged` moves files out of a shared folder, so it is not done as a
+  side effect of creating a folder.
+- **Photos are never cropped** in the gallery (portrait entrance shots lost
+  their subject): letterboxed inside a fixed-height box.
+- **READMEs belong to the app**: a "Dokumentacija" sidebar group renders the
+  current stage's README and the project docs in-page (a small DOM-built
+  Markdown renderer; no `innerHTML`, so a doc cannot inject markup). Dev only.
+- **Legends go in hover balloons** (5O's ✓/~/✗/? key), not in running text.
 
 ## 3N entrance: surface legs (2026-09-24)
 

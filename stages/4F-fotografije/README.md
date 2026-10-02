@@ -23,6 +23,14 @@ cavedossier photos match-queued       # one-off 2026-08 staging sweep; finished,
 the queue and prints the `pull-staged` command when this cave still has photos
 waiting there — the leak that otherwise leaves old photos queued forever.
 
+Nobody browses the queue folder itself (user, 2026-10-02), so it is also
+surfaced wherever a cave gets its working folder: `osz prefill` (which creates
+the leaf) and `intake map --apply` (which names it) print a 📷 line with the
+`pull-staged … --apply` command for every cave that has photos waiting. The
+dashboard lists them on Pregled and in 4F. Nothing is moved automatically —
+the pull stays a deliberate, confirmed step. On 2026-10-02 the queue held 54
+photos for 34 caves, three of which (1035, 1087, 1214) already had a leaf.
+
 ## What is still missing
 
 The **mover**: filing finished photos into `!!Fotografije ulaza` under the

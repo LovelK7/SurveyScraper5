@@ -116,11 +116,11 @@ class App:
         return script_argv(script, args), f"python $T\\{action.tool} " + _join(args)
 
     # ── photos ──────────────────────────────────────────────────────
-    PHOTO_KINDS = {"photo", "photo_processed"}
+    PHOTO_KINDS = {"photo", "photo_processed", "queued"}
 
     def thumb(self, query: dict) -> tuple[bytes, str]:
         item = self.ws.cave_file(_int(query.get("broj")), str(query.get("path", "")),
-                                 self.PHOTO_KINDS)
+                                 self.PHOTO_KINDS | {"karta"})
         if item is None:
             raise ApiError("Nije fotografija ovog objekta.", HTTPStatus.NOT_FOUND)
         cache = None
@@ -141,6 +141,21 @@ class App:
                            HTTPStatus.FORBIDDEN)
         self.deleter(Path(item["path"]))
         return {"deleted": item["path"]}
+
+    def doc(self, rel: str) -> dict:
+        """A Markdown doc from the repo for the in-page viewer (dev only —
+        prod has no repo, and says so)."""
+        root = repo_root()
+        if root is None:
+            raise ApiError("Dokumentacija je dostupna samo u razvojnoj kopiji (repo).",
+                           HTTPStatus.NOT_FOUND)
+        target = (root / rel).resolve()
+        if root.resolve() not in target.parents or target.suffix.lower() != ".md":
+            raise ApiError("Samo .md datoteke iz repozitorija.", HTTPStatus.FORBIDDEN)
+        if not target.is_file():
+            raise ApiError(f"Nema {rel}.", HTTPStatus.NOT_FOUND)
+        return {"path": target.relative_to(root.resolve()).as_posix(),
+                "abs": str(target), "text": target.read_text(encoding="utf-8")}
 
     def dossier(self, broj: int) -> dict:
         s = self.ws.settings
@@ -296,10 +311,15 @@ def make_handler(app: App):
                 if head == "catalog":
                     return catalog.catalog_json()
                 if head == "caves":
-                    caves, unprefixed = app.ws.caves(force=query.get("refresh") == "1")
-                    return {"caves": [c.to_json() for c in caves], "unprefixed": unprefixed}
+                    force = query.get("refresh") == "1"
+                    caves, unprefixed = app.ws.caves(force=force)
+                    queue = app.ws.queue(force=force)
+                    return {"caves": [c.to_json() for c in caves], "unprefixed": unprefixed,
+                            "queue": {str(k): len(v) for k, v in queue.items()}}
                 if head == "cave" and len(parts) == 2:
                     return app.ws.cave_view(_int(parts[1]))
+                if head == "doc":
+                    return app.doc(str(query.get("path", "")))
                 if head == "dossier" and len(parts) == 2:
                     return app.dossier(_int(parts[1]))
                 if head == "files":
