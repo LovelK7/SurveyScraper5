@@ -46,6 +46,7 @@ bridge_exempt:
   - check-flag
   - za-istrazit
   - gui
+  - create          # intake create: the explicit leaf step of the intake bridge
 
 stages:
   - id: platform

@@ -572,6 +572,42 @@ def _px(size: tuple[int, int] | None) -> str:
     return "?" if size is None else f"{size[0]}×{size[1]}"
 
 
+def cmd_intake_create(settings: Settings, serial: int) -> int:
+    """Part 1T: make the cave's working folder under `!Za digitalizirat`.
+
+    Until 2026-10-02 a leaf only appeared as a side effect of `osz prefill` or
+    `photos pull-staged` (user: "I don't see SB dir creation"). This is the
+    explicit step, and it names the folder exactly as those two do
+    (`osz.prefill.intake_folder_name`), so whichever runs first, the cave ends
+    up with one leaf. An existing `SB_<broj>_…` leaf anywhere in the tree is
+    reused, never duplicated. Writes only the empty folder.
+    """
+    from cave_dossier.intake import find_cave_leaf
+    from cave_dossier.osz.prefill import intake_folder_name
+
+    cave = _find_serial_or_exit(settings, serial)
+    if cave is None:
+        return EXIT_ERROR
+    root = intake_root(settings)
+    if root is None or not root.is_dir():
+        print("Intake mapa (!!!Digitalizacija/!Za digitalizirat) nije dostupna — "
+              "provjeri LOCAL_DRIVE_ROOT u .env i je li Drive spojen.", file=sys.stderr)
+        return EXIT_ERROR
+    existing = find_cave_leaf(root, serial)
+    if existing is not None:
+        print(f"Mapa već postoji: {existing}")
+    else:
+        target = root / intake_folder_name(cave, serial, settings)
+        try:
+            target.mkdir(parents=False, exist_ok=False)
+        except OSError as exc:
+            print(f"ERROR: ne mogu napraviti {target}: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        print(f"Napravljena mapa: {target}")
+    _queue_reminder(settings, [serial])
+    return 0
+
+
 def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: bool) -> int:
     """Map each field-data leaf folder to its SB row (M2, field-data intake).
 
@@ -1545,6 +1581,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Field-data intake folders (!!!Digitalizacija/!Za digitalizirat)",
     )
     intake_sub = intake.add_subparsers(dest="intake_command", required=True)
+    intake_create = intake_sub.add_parser(
+        "create",
+        help="Make the cave's SB_<broj>_<Ime>[_<Sinonimi>][_<Autori>] folder under "
+             "!Za digitalizirat (reuses an existing SB_<broj>_ leaf)",
+    )
+    intake_create.add_argument("redni_broj", type=int, help="SB Redni broj of the cave")
     intake_map = intake_sub.add_parser(
         "map",
         help="Map each leaf folder to its SB row and propose an SB_<Redni broj> prefix",
@@ -1944,6 +1986,8 @@ def main(argv: list[str] | None = None) -> int:
                     args.out_dir,
                 )
         if args.command == "intake":
+            if args.intake_command == "create":
+                return cmd_intake_create(settings, args.redni_broj)
             if args.intake_command == "map":
                 return cmd_intake_map(settings, args.limit, args.apply, args.unmatched_only)
         if args.command == "karta":

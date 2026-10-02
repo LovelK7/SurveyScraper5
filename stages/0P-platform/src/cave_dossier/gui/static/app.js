@@ -7,6 +7,8 @@ const TOKEN = window.CD_TOKEN;
 const S = {
   summary: null, catalog: null, caves: [], unprefixed: [], queue: {},
   docs: {}, lastStage: null,  // docs: path -> {text} | {error} | {loading}
+  sbIndex: null,              // {rows, error} | {loading} — every SB row, for the picker
+  menuIdx: -1,
   broj: null, cave: null, tab: "home",
   dossier: null,              // {broj, data, error, loading}
   jobs: new Map(), activeJob: null, remember: new Set(), polling: false,
@@ -34,7 +36,7 @@ const KIND_LABEL = {
 };
 
 const STAGE_ICON = {
-  home: "home", "1T": "teren", "2B": "baza", "3N": "nacrt", "4G": "geo", "4I": "karta",
+  home: "home", fast: "star", "1T": "teren", "2B": "baza", "3N": "nacrt", "4G": "geo", "4I": "karta",
   "4O": "osz", "4F": "foto", "4S": "sastavnica", "5O": "osobe", "5D": "dosje", "6P": "predaja",
 };
 const DIR_ICON = {
@@ -131,7 +133,7 @@ async function loadAll(refresh) {
   ]);
   S.summary = summary; S.catalog = catalog;
   S.caves = caves.caves; S.unprefixed = caves.unprefixed; S.queue = caves.queue || {};
-  if (refresh) S.dossier = null;
+  if (refresh) { S.dossier = null; S.sbIndex = null; }
   renderTopbar();
   renderNav();
   if (S.broj !== null) await loadCave(); else render();
@@ -166,9 +168,102 @@ function setCave(broj) {
   S.broj = broj;
   S.dossier = null;
   store("cd.broj", broj === null ? null : String(broj));
-  const info = S.caves.find(c => c.broj === broj);
-  $("#cave-input").value = broj === null ? "" : info ? `${broj} · ${info.name}` : String(broj);
+  $("#cave-input").value = caveLabel(broj);
   loadCave();
+}
+
+// ── cave picker: folders in work first, then every other SB row ──────
+const fold = t => String(t || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+function sbRow(broj) {
+  return S.sbIndex && S.sbIndex.rows ? S.sbIndex.rows.find(r => r.broj === broj) : null;
+}
+// The SB name wins over the folder name: folders carry extra words
+// ("Platak-Hrđava špilja_Flavio" for SB's "Hrđava špilja").
+function caveName(broj) {
+  const row = sbRow(broj);
+  if (row && row.name) return row.name;
+  const info = S.caves.find(c => c.broj === broj);
+  return info ? shortName(info.name) : "";
+}
+function caveLabel(broj) {
+  if (broj === null || broj === undefined) return "";
+  const info = S.caves.find(c => c.broj === broj);
+  if (info) return `${broj} · ${info.name}`;
+  const row = sbRow(broj);
+  return row ? `${broj} · ${row.name} (nema mapu)` : String(broj);
+}
+function loadSbIndex() {
+  if (S.sbIndex) return;
+  S.sbIndex = { loading: true };
+  api("sb-index").then(d => { S.sbIndex = d; }).catch(e => { S.sbIndex = { rows: [], error: e.message }; })
+    .finally(() => {
+      if (!$("#cave-menu").hidden) renderMenu();
+      if (S.broj !== null && document.activeElement !== $("#cave-input")) $("#cave-input").value = caveLabel(S.broj);
+    });
+}
+
+function menuItems(query) {
+  const q = fold(query.trim());
+  const hit = (broj, ...texts) => !q || String(broj).startsWith(q) || texts.some(t => fold(t).includes(q));
+  const folders = S.caves.filter(c => hit(c.broj, c.name, c.relative));
+  const inFolder = new Set(S.caves.map(c => c.broj));
+  let others = [];
+  if (S.sbIndex && S.sbIndex.rows && q) {
+    others = S.sbIndex.rows.filter(r => !inFolder.has(r.broj) && hit(r.broj, r.name, r.syn, r.sue)).slice(0, 60);
+  }
+  return { folders, others };
+}
+
+function renderMenu() {
+  const input = $("#cave-input");
+  const menu = $("#cave-menu");
+  const query = input.dataset.typed === "1" ? input.value : "";
+  const { folders, others } = menuItems(query);
+  const items = [];
+  const option = (broj, name, extra) => {
+    const el = h("div", { class: "opt", role: "option", "data-broj": broj,
+      onmousedown: e => { e.preventDefault(); pickCave(broj); } },
+      h("span", { class: "opt-n" }, broj), h("span", { class: "opt-name" }, name), ...extra);
+    items.push(el);
+    return el;
+  };
+  const kids = [h("div", { class: "opt-group" }, `U radu — imaju mapu (${folders.length})`),
+    ...folders.map(c => option(c.broj, c.name, [
+      S.queue[c.broj] ? h("span", { class: "chip" }, `📷 ${S.queue[c.broj]}`) : null,
+      c.group ? h("span", { class: "opt-grp" }, c.group) : null]))];
+  if (!folders.length) kids.push(h("div", { class: "opt-empty" }, "Nijedna mapa ne odgovara."));
+  kids.push(h("div", { class: "opt-group" }, "Ostali objekti u SB-u — nemaju mapu"));
+  if (!S.sbIndex || S.sbIndex.loading) kids.push(h("div", { class: "opt-empty" }, "Učitavam SB…"));
+  else if (S.sbIndex.error) kids.push(h("div", { class: "opt-empty" }, S.sbIndex.error));
+  else if (!query.trim()) kids.push(h("div", { class: "opt-empty" }, `Upiši ime, sinonim, SUE ili Redni broj za pretragu ${S.sbIndex.rows.length} objekata u SB-u.`));
+  else if (!others.length) kids.push(h("div", { class: "opt-empty" }, "Ništa u SB-u ne odgovara."));
+  else kids.push(...others.map(r => option(r.broj, r.name || "(bez imena)", [
+    r.syn ? h("span", { class: "opt-grp" }, r.syn) : null,
+    S.queue[r.broj] ? h("span", { class: "chip" }, `📷 ${S.queue[r.broj]}`) : null,
+    h("span", { class: "chip" }, "nema mape")])));
+  menu.replaceChildren(...kids);
+  S.menuItems = items;
+  S.menuIdx = Math.min(S.menuIdx, items.length - 1);
+  items.forEach((el, i) => el.classList.toggle("active", i === S.menuIdx));
+}
+
+function openMenu() {
+  const menu = $("#cave-menu");
+  loadSbIndex();
+  S.menuIdx = -1;
+  menu.hidden = false;
+  $("#cave-input").setAttribute("aria-expanded", "true");
+  renderMenu();
+}
+function closeMenu() {
+  $("#cave-menu").hidden = true;
+  $("#cave-input").setAttribute("aria-expanded", "false");
+  $("#cave-input").dataset.typed = "";
+}
+function pickCave(broj) {
+  closeMenu();
+  $("#cave-input").blur();
+  if (broj !== S.broj) setCave(broj); else $("#cave-input").value = caveLabel(broj);
 }
 
 function setTab(tab) {
@@ -192,8 +287,7 @@ function renderTopbar() {
     badge.title = sb.reason ? sb.reason + "\n" + sb.reading : sb.reading;
   }
   $("#btn-open-sb").disabled = !(sb && sb.live_exists);
-  $("#cave-list").replaceChildren(...S.caves.map(c => h("option", {
-    value: `${c.broj} · ${c.name}`, label: S.queue[c.broj] ? `📷 ${S.queue[c.broj]} u redu čekanja` : null })));
+
 }
 
 function renderNav() {
@@ -202,7 +296,7 @@ function renderNav() {
   }, icon(STAGE_ICON[id] || "dot"), title,
      label ? h("span", { class: "nav-label", style: status ? "" : "margin-left:auto" }, label) : null,
      status ? h("span", { class: "dot " + status, title: status, style: "margin-left:6px" }) : null);
-  const kids = [item("home", "", "Pregled")];
+  const kids = [item("home", "", "Pregled"), item("fast", "", "Brze radnje")];
   let group = null;
   for (const s of (S.catalog ? S.catalog.stages : [])) {
     if (s.group !== group) { group = s.group; kids.push(h("div", { class: "nav-group" }, group)); }
@@ -245,6 +339,7 @@ function render() {
   const main = $("#main");
   if (!S.summary || !S.catalog) { main.replaceChildren(h("div", { class: "empty" }, "Učitavam…")); return; }
   if (S.tab === "home") return main.replaceChildren(...renderHome());
+  if (S.tab === "fast") return main.replaceChildren(...renderFast());
   if (S.tab.startsWith("doc:")) return main.replaceChildren(...renderDoc(S.tab.slice(4)));
   const stage = S.catalog.stages.find(s => s.label === S.tab);
   if (!stage) return setTab("home");
@@ -358,9 +453,10 @@ function renderCaveCard() {
   const info = caveInfo();
   const card = h("div", { class: "card hl wide" });
   const head = h("div", { class: "page-head", style: "margin-bottom:6px" },
-    h("div", {}, h("h2", { style: "margin:0" }, icon("home", "lg"), `SB ${S.broj}` + (info ? ` · ${info.name}` : "")),
+    h("div", {}, h("h2", { style: "margin:0" }, icon("home", "lg"), `SB ${S.broj} · ` + (info ? info.name : caveName(S.broj))),
       d && d.leaves.length ? h("div", { class: "muted mono" }, d.leaves.map(l => l.relative).join("  ·  ")) : null),
     h("div", { class: "spacer" }),
+    h("button", { class: "btn", onclick: () => setTab("fast") }, icon("star"), "Brze radnje"),
     d && d.leaves.length ? h("button", { class: "btn", onclick: () => openTarget({ what: "path", path: d.leaves[0].path }) }, icon("folder"), "Otvori mapu") : null);
   card.append(head);
   if (!d) { card.append(h("div", { class: "loading" }, "Učitavam objekt…")); return card; }
@@ -415,10 +511,81 @@ function quickRun(a, preset) {
   Object.assign(vals, preset || {});
   const files = a.file_kind ? candidates(a.file_kind) : [];
   if (a.file_kind && !files.length) return toast("Nema odgovarajuće datoteke u mapi objekta.", true);
-  const ctx = { file: files[0] ? files[0].path : null, query: shortName((caveInfo() || {}).name), vals };
+  const ctx = { file: files[0] ? files[0].path : null, query: caveName(S.broj), vals };
   ctx.writes = writesFor(a, vals);
   ctx.cmd = cmdTextFor(a, ctx);
   runAction(a, ctx);
+}
+
+// ── ★ Brze radnje: several actions as one job ────────────────────────
+// Which workflow step tells whether a recipe step's work already exists.
+const STEP_OF_ACTION = {
+  "intake-create": "mapa", karta: "karta", "osz-prefill": "osz-prefill",
+  "photos-pull": "foto", "photos-process": "foto", "3n-k3c": "3n-k3c",
+};
+
+function renderFast() {
+  const out = [h("div", { class: "page-head" },
+    h("span", { class: "stage-chip" }, icon("star", "xl")),
+    h("div", {}, h("h1", {}, "Brze radnje"),
+      h("div", { class: "sub" }, "Više koraka za odabrani objekt u jednom potezu — jedan posao u Ispisu, jedna potvrda za sve što piše.")))];
+  if (S.broj === null) {
+    out.push(h("div", { class: "card note" }, "Odaberi objekt gore desno (Redni broj ili ime). Za novi objekt upiši njegov Redni broj iz SB-a — mapa još ne mora postojati."));
+    return out;
+  }
+  const info = caveInfo();
+  out.push(h("p", { class: "muted", style: "margin-top:-6px" }, `Objekt: SB ${S.broj} · ${caveName(S.broj) || "?"}` +
+    (info ? ` — mapa ${info.relative}` : " — još nema mapu pod !Za digitalizirat; Novi objekt je napravi.")));
+  out.push(h("div", { class: "grid" }, ...S.catalog.recipes.map(recipeCard)));
+  return out;
+}
+
+function recipeCard(r) {
+  const queued = (S.cave && S.cave.queued) ? S.cave.queued.length : 0;
+  const skip = new Set();
+  const list = h("ol", { class: "recipe" });
+  r.steps.forEach((step, index) => {
+    const a = S.catalog.actions.find(x => x.id === step.action);
+    const inactive = step.when === "queued" && !queued;
+    if (inactive) skip.add(index);
+    const wf = wfStep(STEP_OF_ACTION[step.action]);
+    const done = wf && wf.status === "done" && !["photos-process", "photos-pull"].includes(step.action);
+    list.append(h("li", { class: inactive ? "off" : "" },
+      h("label", { class: "check" },
+        h("input", { type: "checkbox", checked: !inactive, disabled: inactive,
+          onchange: e => { e.target.checked ? skip.delete(index) : skip.add(index); } }),
+        a ? a.title : step.action),
+      writesFor(a, Object.fromEntries(Object.entries(step.options))) ? h("span", { class: "writes-tag" }, "piše") : null,
+      done ? h("span", { class: "chip on", title: "već postoji — korak će to prepoznati" }, "✓ postoji") : null,
+      inactive ? h("span", { class: "muted" }, "— nema fotografija u redu čekanja") : null,
+      step.when === "queued" && queued ? h("span", { class: "chip" }, `📷 ${queued}`) : null,
+      step.keep_going ? h("span", { class: "muted", title: "Ako ovaj korak ne uspije, idući se ipak pokreću." }, " ↷") : null));
+  });
+  const run = h("button", { class: "btn primary" }, icon("star"), "Pokreni sve");
+  run.addEventListener("click", () => runRecipe(r, skip));
+  return h("div", { class: "card hl" },
+    h("h2", {}, icon("star", "lg"), r.title), h("p", { class: "help" }, r.help), list,
+    h("div", { class: "row", style: "margin-top:10px" }, run,
+      h("span", { class: "muted", style: "font-size:12px" }, "↷ = nastavlja i ako taj korak ne uspije")));
+}
+
+async function runRecipe(r, skip) {
+  const queued = (S.cave && S.cave.queued) ? S.cave.queued.length : 0;
+  const chosen = r.steps.map((st, i) => [st, i]).filter(([st, i]) => !skip.has(i) && !(st.when === "queued" && !queued));
+  if (!chosen.length) return toast("Nijedan korak nije odabran.", true);
+  const writes = chosen.map(([st]) => {
+    const a = S.catalog.actions.find(x => x.id === st.action);
+    const w = writesFor(a, Object.fromEntries(Object.entries(st.options)));
+    return w ? `• ${a.title}: ${w}` : null;
+  }).filter(Boolean);
+  if (writes.length) {
+    const ok = await confirmDialog({ title: `${r.title} — SB ${S.broj}`, text: "Ovi koraci pišu:\n" + writes.join("\n"),
+      cmd: chosen.map(([st]) => st.action).join(" → "), okLabel: "Pokreni sve", remember: false });
+    if (!ok) return;
+  }
+  try {
+    addJob(await api("recipe", { recipe: r.id, broj: S.broj, skip: [...skip], confirmed: writes.length > 0 }));
+  } catch (e) { toast(e.message, true); }
 }
 
 // ── stage tabs ───────────────────────────────────────────────────────
@@ -806,7 +973,7 @@ const cmdTextFor = (a, ctx) => (a.tool === "cli" ? "cavedossier " : `python $T\\
 
 function actionCard(a, st) {
   const card = h("div", { class: "card" });
-  const ctx = { vals: {}, file: null, query: shortName((caveInfo() || {}).name) };
+  const ctx = { vals: {}, file: null, query: caveName(S.broj) };
   for (const o of a.options) ctx.vals[o.flag] = o.default;
 
   const preview = h("code", { class: "cmd" });
@@ -988,21 +1155,43 @@ function openConsole() {
 function parseCave(text) {
   const m = String(text).trim().match(/^(?:SB_?)?(\d{1,4})\b/i);
   if (m) return parseInt(m[1], 10);
-  const needle = text.trim().toLowerCase();
+  const needle = fold(text.trim());
   if (!needle) return null;
-  const hit = S.caves.find(c => c.name.toLowerCase().includes(needle));
+  const hit = S.caves.find(c => fold(c.name).includes(needle))
+    || (S.sbIndex && S.sbIndex.rows || []).find(r => fold(r.name).includes(needle) || fold(r.syn).includes(needle));
   return hit ? hit.broj : undefined;
 }
 
 function wire() {
   const input = $("#cave-input");
-  const pick = () => {
-    const broj = parseCave(input.value);
-    if (broj === undefined) return toast("Nema takvog objekta među mapama.", true);
-    if (broj !== S.broj) setCave(broj);
-  };
-  input.addEventListener("change", pick);
-  input.addEventListener("keydown", e => { if (e.key === "Enter") pick(); });
+  input.addEventListener("focus", () => { input.select(); openMenu(); });
+  input.addEventListener("click", () => { if ($("#cave-menu").hidden) openMenu(); });
+  input.addEventListener("input", () => { input.dataset.typed = "1"; S.menuIdx = 0; renderMenu(); });
+  input.addEventListener("blur", () => setTimeout(() => {
+    if (document.activeElement !== input) { closeMenu(); input.value = caveLabel(S.broj); }
+  }, 120));
+  input.addEventListener("keydown", e => {
+    const items = S.menuItems || [];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if ($("#cave-menu").hidden) openMenu();
+      S.menuIdx = Math.max(0, Math.min(items.length - 1, S.menuIdx + (e.key === "ArrowDown" ? 1 : -1)));
+      items.forEach((el, i) => el.classList.toggle("active", i === S.menuIdx));
+      if (items[S.menuIdx]) items[S.menuIdx].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (items[S.menuIdx]) return pickCave(parseInt(items[S.menuIdx].dataset.broj, 10));
+      const broj = parseCave(input.value);
+      if (broj === undefined || broj === null) return toast("Nema takvog objekta.", true);
+      pickCave(broj);
+    } else if (e.key === "Escape") {
+      closeMenu(); input.value = caveLabel(S.broj); input.blur();
+    }
+  });
+  $("#cave-toggle").addEventListener("mousedown", e => {
+    e.preventDefault();
+    if ($("#cave-menu").hidden) { input.focus(); } else { closeMenu(); input.blur(); }
+  });
   $("#btn-cave-clear").addEventListener("click", () => setCave(null));
   $("#btn-cave-folder").addEventListener("click", () => {
     if (S.cave && S.cave.leaves.length) openTarget({ what: "path", path: S.cave.leaves[0].path });
@@ -1046,10 +1235,8 @@ function wire() {
   render();
   try {
     await loadAll(false);
-    if (S.broj !== null) {
-      const info = caveInfo();
-      $("#cave-input").value = info ? `${S.broj} · ${info.name}` : String(S.broj);
-    }
+    if (S.broj !== null) $("#cave-input").value = caveLabel(S.broj);
+    loadSbIndex();
     const jobs = await api("jobs");
     for (const j of jobs.jobs.reverse()) {
       S.jobs.set(j.id, await api(`job/${j.id}?since=0`));

@@ -29,9 +29,13 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
 - **Otvori SB** in the top bar opens the live Speleo baza in Excel. The SB card
   lists every `!Speleo_baza_SUE_v*.xlsm` on Drive and warns when a newer one
   exists than `config.yaml` points at.
-- **Objekt**: pick the cave you are working on (Redni broj or name; the list is
-  the `SB_<broj>_…` leaves under `!Za digitalizirat`). Every command on every
-  tab then uses that number.
+- **Objekt**: pick the cave you are working on. The picker opens with every
+  cave that has an `SB_<broj>_…` folder under `!Za digitalizirat` (📷 = photos
+  queued), and typing searches **all of SB** too (name, synonym, SUE number or
+  Redni broj, diacritics ignored), so a cave with no folder yet can be picked
+  and started with ★ *Novi objekt*. Every command on every tab then uses that
+  number. The SB list is read once (`/api/sb-index`, a few seconds) and again
+  on **Osvježi**.
 - **Pregled → tijek objekta** is the cave's work as a dependency graph
   (`gui/workflow.py`). Every step is **gotovo** (green), **sljedeći** (gold,
   "SADA"), **zastarjelo** (amber: an input changed after the output was made,
@@ -69,6 +73,14 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
 - A Word/Excel owner file (`~$…`) in the cave's folder is reported as "open
   in Word", since steps that rewrite that file cannot replace it while it is
   open.
+- **★ Brze radnje** (sidebar, under Pregled) runs several steps for the
+  current cave as **one job with one confirmation**. *Novi objekt u jednom
+  potezu*: create the folder → map excerpt → OSZ prefill → pull queued photos
+  (only if any) → process photos. *Spoji nakon izmjere*: OSZ prefill → KORAK
+  3c. *Provjeri objekt*: SB row, dosje, izjave (read-only). Every step can be
+  unticked. Each step skips work that already exists, so a chain can be
+  re-run. A failing step stops the chain, unless it is marked ↷ (karta,
+  photos: the OSZ works without them).
 - **Kopiraj** gives the same command for the terminal. 3N commands use `$T`,
   as in the [3N README](../3N-nacrt/README.md).
 - **cSurvey** buttons open a survey in cSurvey, found as: `CSURVEY_DIR` from
@@ -79,12 +91,12 @@ How it is built, for whoever turns it into the real GUI:
 
 | File | Role |
 |---|---|
-| `gui/catalog.py` | **The table of every action**: stage, Croatian label, argv template (`{broj}`, `{file}`, `{query}`), options, what it writes. The page draws its buttons from this, and the server builds argv only from this. A new button is one `Action` entry. Also the stage list with its nav groups. |
+| `gui/catalog.py` | **The table of every action**: stage, Croatian label, argv template (`{broj}`, `{file}`, `{query}`), options, what it writes. The page draws its buttons from this, and the server builds argv only from this. A new button is one `Action` entry. Also the stage list with its nav groups, and the ★ `RECIPES` (fast actions: ordered `RecipeStep`s over catalog actions). |
 | `gui/workflow.py` | **The per-cave dependency graph**: each step's output files, input files and status (done / stale / todo / blocked …), and the catalog action that (re)makes it. Reads file names, mtimes, the OSZ's v10 cells and the dimensions JSON; writes nothing. |
 | `gui/state.py` | Read-only view of the machine: settings, SB versions, Drive dirs, caves in work, a cave's files classified by name, open-document locks. Fail-soft: a missing Drive is a note on the page. |
 | `gui/media.py` | Photo thumbnails and the recoverable delete (shell "allow undo"). |
-| `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. |
-| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/job/<id>`, `/open`, `/delete`, and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
+| `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. `start_sequence` runs a recipe's steps one after another as a single job (stop on exit 2+ unless `keep_going`; 0/1 are the CLI's "done / not ready"). |
+| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
 | `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`. Plain JS, no build step. |
 
 Only standard library in the base install; Pillow (the `photos` extra) makes

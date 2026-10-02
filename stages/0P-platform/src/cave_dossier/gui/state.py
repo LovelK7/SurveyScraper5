@@ -193,6 +193,7 @@ class Workspace:
         self._settings_error: str | None = None
         self._caves: tuple[float, list[CaveLeaf], list[str]] | None = None
         self._queue: tuple[float, dict[int, list[dict]]] | None = None
+        self._sb_index: dict | None = None
 
     # ── settings ────────────────────────────────────────────────────
     @property
@@ -209,6 +210,7 @@ class Workspace:
         self._settings_error = None
         self._caves = None
         self._queue = None
+        self._sb_index = None
 
     @property
     def drive_root(self) -> Path | None:
@@ -314,6 +316,45 @@ class Workspace:
                 })
         self._queue = (time.monotonic(), found)
         return found
+
+    def sb_index(self) -> dict:
+        """Every SB row with a Redni broj, for the cave picker — so a cave can
+        be chosen BEFORE it has a folder (user, 2026-10-02: "Novi objekt"
+        must work for a cave that has none). Read once per refresh; the
+        workbook load is the slow part (a few seconds on the live SB)."""
+        if self._sb_index is not None:
+            return self._sb_index
+        s = self.settings
+        rows: list[dict] = []
+        error = None
+        if s is None:
+            error = self._settings_error or "Postavke nisu učitane."
+        else:
+            try:
+                from cave_dossier.core.normalization import parse_optional_float
+                from cave_dossier.sb.loader import SBReader
+
+                reader = SBReader(s)
+                frame = reader.load_rows()
+                serial_col = s.sb_field_columns.get("serial_number", "Redni broj")
+                syn_col = s.sb_field_columns.get("synonyms")
+                for record in frame.to_dict("records"):
+                    record = {str(k).strip(): v for k, v in record.items()}
+                    serial = parse_optional_float(SBReader._cell_as_text(record, serial_col))
+                    if serial is None:
+                        continue
+                    rows.append({
+                        "broj": int(serial),
+                        "name": SBReader._cell_as_text(record, s.sb_object_name_column) or "",
+                        "syn": (SBReader._cell_as_text(record, syn_col) if syn_col else None) or "",
+                        "sue": (SBReader._cell_as_text(record, s.sb_archive_reference_column)
+                                if s.sb_archive_reference_column else None) or "",
+                    })
+            except Exception as exc:  # noqa: BLE001 — the picker still has the folders
+                error = f"SB se ne može pročitati ({type(exc).__name__}: {exc})"
+        rows.sort(key=lambda r: r["broj"])
+        self._sb_index = {"rows": rows, "error": error}
+        return self._sb_index
 
     def cave_leaves(self, broj: int) -> list[CaveLeaf]:
         return [c for c in self.caves()[0] if c.broj == broj]

@@ -14,10 +14,21 @@ its SB row and hands other stages `find_cave_leaf(broj)`, which is how 4O-osz,
 ## Commands
 
 ```powershell
+# Make a cave's working folder: SB_<broj>_<Ime>[_<Sinonimi>][_<Autori>]
+cavedossier intake create 1220     # an existing SB_1220_… leaf is reused, never duplicated
+
 # Map each leaf folder to its SB row and propose an SB_<Redni broj> prefix
 cavedossier intake map
 cavedossier intake map --apply     # actually perform the renames
 ```
+
+`intake create` is the explicit way to start a cave (2026-10-02). Before it,
+a leaf only appeared as a side effect of `osz prefill` or `photos
+pull-staged`. All three name the folder with the same function
+(`osz.prefill.intake_folder_name`), so whichever runs first, the cave ends up
+with one leaf. It writes only the empty folder, and it prints a 📷 line when
+the cave has photos waiting in `!!Fotografije ulaza za istražit`, as `intake
+map --apply` does for every folder it renames.
 
 ## How it works
 

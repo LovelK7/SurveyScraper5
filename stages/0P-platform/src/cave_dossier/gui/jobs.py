@@ -42,20 +42,24 @@ class Job:
     _chunks: list[str] = field(default_factory=list)
     _proc: subprocess.Popen | None = None
     _lock: threading.Lock = field(default_factory=threading.Lock)
+    _stopped: bool = False
 
     @property
     def running(self) -> bool:
         return self.returncode is None
 
     def append(self, text: str) -> None:
+        # One lock for memory AND the log: the output thread and a stdin echo
+        # both append, and two unsynchronised append handles on Windows
+        # overwrote each other ("odgovor" logged as "or", 2026-10-02).
         with self._lock:
             self._chunks.append(text)
-        if self.log_path is not None:
-            try:
-                with self.log_path.open("a", encoding="utf-8") as fh:
-                    fh.write(text)
-            except OSError:
-                pass
+            if self.log_path is not None:
+                try:
+                    with self.log_path.open("a", encoding="utf-8") as fh:
+                        fh.write(text)
+                except OSError:
+                    pass
 
     def output(self, since: int = 0) -> tuple[str, int]:
         """Text from character offset ``since`` on, and the new offset."""
@@ -76,6 +80,7 @@ class Job:
         return True
 
     def kill(self) -> None:
+        self._stopped = True  # a sequence must not start its next step
         proc = self._proc
         if proc is None or not self.running:
             return
@@ -106,15 +111,7 @@ class JobManager:
 
     def start(self, title: str, argv: list[str], display: str, cwd: Path) -> Job:
         job_id = next(self._ids)
-        log_path = None
-        if self._log_dir is not None:
-            try:
-                self._log_dir.mkdir(parents=True, exist_ok=True)
-                stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-                slug = "".join(c if c.isalnum() else "-" for c in title.lower())[:40]
-                log_path = self._log_dir / f"{stamp}_{job_id:03d}_{slug}.log"
-            except OSError:
-                log_path = None
+        log_path = self._log_path(job_id, title)
         job = Job(job_id, title, argv, display, cwd, log_path)
         job.append(f"> {display}\n\n")
         env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1")
@@ -138,8 +135,65 @@ class JobManager:
                     del self._jobs[old]
         return job
 
+    def start_sequence(self, title: str, steps: list[SequenceStep], cwd: Path) -> Job:
+        """Several commands as ONE job (★ Brze radnje): run in order, output in
+        one stream, stdin goes to whichever is running. A step that fails
+        (exit code 2+, the CLI's 99) stops the chain unless it is
+        ``keep_going``; exit 0/1 are the CLI's "done / not ready yet"."""
+        job_id = next(self._ids)
+        log_path = self._log_path(job_id, title)
+        display = " ; ".join(step.display for step in steps)
+        job = Job(job_id, title, [], display, cwd, log_path)
+        with self._lock:
+            self._jobs[job_id] = job
+        threading.Thread(target=self._run_sequence, args=(job, steps), daemon=True).start()
+        return job
+
+    def _run_sequence(self, job: Job, steps: list[SequenceStep]) -> None:
+        env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1")
+        flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        worst = 0
+        for number, step in enumerate(steps, 1):
+            if job._stopped:
+                job.append("\n[zaustavljeno — ostali koraci preskočeni]\n")
+                worst = max(worst, 99)
+                break
+            job.append(f"{'' if number == 1 else chr(10)}══ {number}/{len(steps)} · {step.title}\n> {step.display}\n\n")
+            try:
+                job._proc = subprocess.Popen(
+                    step.argv, cwd=str(job.cwd), env=env, stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
+                    creationflags=flags,
+                )
+            except OSError as exc:
+                job.append(f"ERROR: ne mogu pokrenuti: {exc}\n")
+                rc = 99
+            else:
+                rc = self._drain(job)
+            job.append(f"\n[korak {number} završio, izlazni kod {rc}]\n")
+            if rc not in (0, 1):
+                worst = max(worst, rc)
+                if not step.keep_going:
+                    job.append("[greška — ostali koraci preskočeni]\n")
+                    break
+        job.append(f"\n[gotovo, izlazni kod {worst}]\n")
+        job.finished = time.time()
+        job.returncode = worst
+
+    def _log_path(self, job_id: int, title: str) -> Path | None:
+        if self._log_dir is None:
+            return None
+        try:
+            self._log_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            return None
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        slug = "".join(c if c.isalnum() else "-" for c in title.lower())[:40]
+        return self._log_dir / f"{stamp}_{job_id:03d}_{slug}.log"
+
     @staticmethod
-    def _pump(job: Job) -> None:
+    def _drain(job: Job) -> int:
+        """Copy the running step's output into the job until it exits."""
         proc = job._proc
         assert proc is not None and proc.stdout is not None
         decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
@@ -157,7 +211,11 @@ class JobManager:
         tail = decoder.decode(b"", final=True)
         if tail:
             job.append(tail)
-        rc = proc.wait()
+        return proc.wait()
+
+    @classmethod
+    def _pump(cls, job: Job) -> None:
+        rc = cls._drain(job)
         job.append(f"\n[gotovo, izlazni kod {rc}]\n")
         job.finished = time.time()
         job.returncode = rc
@@ -167,6 +225,14 @@ class JobManager:
 
     def list(self) -> list[Job]:
         return [self._jobs[k] for k in sorted(self._jobs, reverse=True)]
+
+
+@dataclass
+class SequenceStep:
+    title: str
+    argv: list[str]
+    display: str
+    keep_going: bool = False
 
 
 def cli_argv(args: list[str]) -> list[str]:

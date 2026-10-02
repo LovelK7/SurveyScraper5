@@ -26,7 +26,7 @@ from urllib.parse import parse_qs, urlparse
 
 from cave_dossier.core.paths import repo_root, workspace, workspace_root
 from cave_dossier.gui import catalog, media
-from cave_dossier.gui.jobs import JobManager, cli_argv, script_argv
+from cave_dossier.gui.jobs import JobManager, SequenceStep, cli_argv, script_argv
 from cave_dossier.gui.state import Workspace, csurvey_exe, tools_dir
 
 STATIC = Path(__file__).parent / "static"
@@ -101,6 +101,48 @@ class App:
         argv, display = self.argv_for(action, args)
         cwd = _safe_root()
         job = self.jobs.start(action.title, argv, display, cwd)
+        return job.to_json()
+
+    def recipe(self, body: dict) -> dict:
+        """A ★ fast action: its steps as one sequence job. Each step is built
+        exactly like a single run (catalog argv only); the writes of every
+        step are confirmed together, and a ``queued`` step is dropped when the
+        cave has nothing in the photo queue."""
+        recipe = catalog.RECIPES_BY_ID.get(str(body.get("recipe")))
+        if recipe is None:
+            raise ApiError("Nepoznata brza radnja.")
+        broj = _int_or_none(body.get("broj"))
+        if broj is None:
+            raise ApiError("Odaberi objekt (Redni broj).")
+        skip = {int(i) for i in body.get("skip") or [] if str(i).isdigit()}
+        queued = bool(self.ws.queue().get(broj))
+        steps: list[SequenceStep] = []
+        writes: list[str] = []
+        for index, step in enumerate(recipe.steps):
+            if index in skip or (step.when == "queued" and not queued):
+                continue
+            action = catalog.BY_ID[step.action]
+            selected = dict(step.options)
+            file = None
+            if action.file_kind:
+                candidates = self.ws.candidate_files(broj, action.file_kind)
+                if not candidates:
+                    raise ApiError(f"{action.title}: nema datoteke za taj korak.")
+                file = candidates[0]
+            try:
+                args = catalog.build_args(action, broj=broj, file=file, selected=selected)
+            except catalog.ActionError as exc:
+                raise ApiError(f"{action.title}: {exc}") from exc
+            argv, display = self.argv_for(action, args)
+            steps.append(SequenceStep(action.title, argv, display, step.keep_going))
+            what = catalog.is_write(action, selected)
+            if what:
+                writes.append(f"{action.title}: {what}")
+        if not steps:
+            raise ApiError("Nijedan korak nije odabran.")
+        if writes and not body.get("confirmed"):
+            raise ApiError("Potrebna potvrda: " + "; ".join(writes), HTTPStatus.CONFLICT)
+        job = self.jobs.start_sequence(f"★ {recipe.title} · {broj}", steps, _safe_root())
         return job.to_json()
 
     def argv_for(self, action: catalog.Action, args: list[str]) -> tuple[list[str], str]:
@@ -318,6 +360,8 @@ def make_handler(app: App):
                             "queue": {str(k): len(v) for k, v in queue.items()}}
                 if head == "cave" and len(parts) == 2:
                     return app.ws.cave_view(_int(parts[1]))
+                if head == "sb-index":
+                    return app.ws.sb_index()
                 if head == "doc":
                     return app.doc(str(query.get("path", "")))
                 if head == "dossier" and len(parts) == 2:
@@ -334,6 +378,8 @@ def make_handler(app: App):
                 body = self._body()
                 if head == "run":
                     return app.run(body)
+                if head == "recipe":
+                    return app.recipe(body)
                 if head == "open":
                     return app.open(body)
                 if head == "delete":

@@ -80,3 +80,23 @@ def test_sb_inspect_by_redni_broj(settings, capsys) -> None:
         parser.parse_args(["sb", "inspect", "--cave", "X", "--broj", "3"])
     with pytest.raises(SystemExit):
         parser.parse_args(["sb", "inspect"])
+
+
+def test_reading_releases_the_workbook(settings, tmp_path) -> None:
+    """A read must not leave the .xlsm open: the long-running dashboard held
+    the live SB that way and Excel could not save it (2026-10-02). Windows
+    refuses to rename a file any handle still has open."""
+    import dataclasses
+    import gc
+    import shutil
+
+    copy = tmp_path / "sb.xlsx"
+    shutil.copy2(settings.sb_workbook_path, copy)
+    reader = SBReader(dataclasses.replace(settings, sb_workbook_path=copy))
+    gc.disable()  # prove the release does not depend on garbage collection
+    try:
+        assert not reader.load_rows().empty
+        reader.sheet_names()
+        copy.rename(tmp_path / "renamed.xlsx")
+    finally:
+        gc.enable()

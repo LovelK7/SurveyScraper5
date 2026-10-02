@@ -65,8 +65,8 @@ class SBReader:
     def sheet_names(self) -> list[str]:
         workbook_path = Path(self.settings.sb_workbook_path)
         check_workbook_present(workbook_path)
-        workbook = pd.ExcelFile(workbook_path, engine="openpyxl")
-        return list(workbook.sheet_names)
+        with pd.ExcelFile(workbook_path, engine="openpyxl") as workbook:
+            return list(workbook.sheet_names)
 
     def load_rows(self) -> pd.DataFrame:
         """The configured sheet as a DataFrame: canonicalized columns +
@@ -207,14 +207,14 @@ class SBReader:
         workbook_path = Path(self.settings.sb_workbook_path)
         check_workbook_present(workbook_path)
         try:
-            workbook = pd.ExcelFile(workbook_path, engine="openpyxl")
-            sheet_name = self._resolve_sheet_name(workbook.sheet_names)
-            frame = pd.read_excel(
-                workbook_path,
-                sheet_name=sheet_name,
-                engine="openpyxl",
-                header=None,
-            )
+            # One open, closed by the with-block. An unclosed ExcelFile keeps
+            # the .xlsm open until garbage collection gets to it; harmless in a
+            # one-shot CLI run, but the long-lived dashboard held the LIVE SB
+            # open that way and Excel could not save it ("sharing violation",
+            # 2026-10-02).
+            with pd.ExcelFile(workbook_path, engine="openpyxl") as workbook:
+                sheet_name = self._resolve_sheet_name(workbook.sheet_names)
+                frame = pd.read_excel(workbook, sheet_name=sheet_name, header=None)
         except FileNotFoundError as exc:
             # Race: path existed at preflight but vanished mid-read (Drive
             # may have unmounted between the two probes).

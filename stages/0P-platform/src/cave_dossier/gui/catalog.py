@@ -91,6 +91,14 @@ LOCAL = Option("--local", "Samo lokalno (--local)", safe=True,
 ACTIONS: tuple[Action, ...] = (
     # ── 1T — intake ──────────────────────────────────────────────────
     Action(
+        "intake-create", "1T", "Napravi mapu objekta",
+        "SB_<broj>_<Ime>[_<Sinonimi>][_<Autori>] pod !Za digitalizirat — isto ime "
+        "koje bi dali Pripremi OSZ ili povlačenje fotografija. Postojeća mapa se "
+        "samo pokaže. Javlja ako objekt ima fotografije u redu čekanja.",
+        "cli", ("intake", "create", "{broj}"),
+        writes="stvara praznu mapu objekta pod !Za digitalizirat",
+    ),
+    Action(
         "intake-map", "1T", "Poveži mape s SB-om",
         "Za svaku mapu pod !Za digitalizirat pronađi SB red i predloži prefiks "
         "SB_<broj>_. Bez --apply ništa ne mijenja.",
@@ -295,6 +303,66 @@ ACTIONS: tuple[Action, ...] = (
 BY_ID: dict[str, Action] = {a.id: a for a in ACTIONS}
 
 
+@dataclass(frozen=True)
+class RecipeStep:
+    action: str
+    #: Options ticked for this step (same flags the action's card offers).
+    options: tuple[tuple[str, object], ...] = ()
+    #: ``always`` · ``queued`` (only when the cave has photos in the queue).
+    when: str = "always"
+    #: Go on to the next step even when this one fails (exit 99): a karta that
+    #: georef.hr refuses must not stop the OSZ, which works without it.
+    keep_going: bool = False
+
+
+@dataclass(frozen=True)
+class Recipe:
+    """A fast action (★ Brze radnje): several catalog actions, run in order as
+    one job for the current cave, with one confirmation for all their writes."""
+
+    id: str
+    title: str
+    help: str
+    steps: tuple[RecipeStep, ...]
+
+    def to_json(self) -> dict:
+        data = asdict(self)
+        for step in data["steps"]:
+            step["options"] = dict(step["options"])
+        return data
+
+
+RECIPES: tuple[Recipe, ...] = (
+    Recipe(
+        "novi-objekt", "Novi objekt u jednom potezu",
+        "Mapa objekta → isječak karte → OSZ → fotografije iz reda čekanja → "
+        "obrada fotografija. Svaki korak preskače ono što već postoji, pa se "
+        "smije ponoviti.",
+        (
+            RecipeStep("intake-create"),
+            RecipeStep("karta", keep_going=True),
+            RecipeStep("osz-prefill"),
+            RecipeStep("photos-pull", (("--apply", True),), when="queued", keep_going=True),
+            RecipeStep("photos-process", keep_going=True),
+        ),
+    ),
+    Recipe(
+        "spoji", "Spoji nakon izmjere",
+        "Kad je KORAK 3b gotov: OSZ dobiva duljinu i dubinu iz izmjere, pa se "
+        "Nacrt (3c) slaže iznova sa svježim OSZ-om.",
+        (RecipeStep("osz-prefill"), RecipeStep("3n-k3c")),
+    ),
+    Recipe(
+        "provjera", "Provjeri objekt",
+        "Samo čitanje: red u SB-u, dosje za oba praga i izjave autora.",
+        (RecipeStep("sb-inspect", keep_going=True), RecipeStep("report", keep_going=True),
+         RecipeStep("people-check-cave", keep_going=True)),
+    ),
+)
+
+RECIPES_BY_ID: dict[str, Recipe] = {r.id: r for r in RECIPES}
+
+
 class ActionError(ValueError):
     """The page asked for something the catalog does not allow."""
 
@@ -399,4 +467,5 @@ def catalog_json() -> dict:
     return {
         "stages": [asdict(s) for s in STAGES],
         "actions": [a.to_json() for a in ACTIONS],
+        "recipes": [r.to_json() for r in RECIPES],
     }

@@ -148,6 +148,7 @@ cavedossier people check --broj 1438       # ONE cave: each person ✓/~/✗/? +
 # Odd spellings that derive to nothing get a manual "aliases": [...] entry.
 
 # ── Field-data intake (folders under !!!Digitalizacija/!Za digitalizirat) ─
+cavedossier intake create 1220             # make the cave's SB_<broj>_<Ime>… folder (reuses an existing one)
 cavedossier intake map                     # DRY RUN: map each leaf folder to its SB row
 cavedossier intake map --unmatched-only    # just the ones that need a human
 cavedossier intake map --apply             # rename the folders in place

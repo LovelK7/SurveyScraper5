@@ -423,3 +423,75 @@ def test_queue_reminder_names_queued_caves(monkeypatch, settings, capsys):
     cli._queue_reminder(settings, [7, 8, None])
     out = capsys.readouterr().out
     assert "Redni broj 7" in out and "pull-staged 7 --apply" in out and "8" not in out.replace("7", "")
+
+
+# ── ★ fast actions + intake create (2026-10-02, round 4) ────────────
+
+
+def test_every_recipe_step_is_a_parsable_catalog_action():
+    for recipe in catalog.RECIPES:
+        for step in recipe.steps:
+            action = catalog.BY_ID[step.action]
+            if action.tool != "cli":
+                continue
+            args = catalog.build_args(action, broj=1220, query="x", selected=dict(step.options))
+            build_parser().parse_args(args)
+
+
+def _seq(title, code, keep_going=False):
+    from cave_dossier.gui.jobs import SequenceStep
+
+    return SequenceStep(title, [sys.executable, "-c", code], title, keep_going)
+
+
+def test_sequence_stops_on_failure_unless_keep_going(tmp_path):
+    jobs = JobManager(None)
+    job = jobs.start_sequence("t", [_seq("a", "print('A')"), _seq("b", "raise SystemExit(99)"),
+                                    _seq("c", "print('C')")], tmp_path)
+    _wait(job)
+    text = job.output()[0]
+    assert "A" in text and "C\n" not in text and job.returncode == 99
+    job = jobs.start_sequence("t", [_seq("b", "raise SystemExit(99)", keep_going=True),
+                                    _seq("c", "print('CC'); raise SystemExit(1)")], tmp_path)
+    _wait(job)
+    assert "CC" in job.output()[0] and job.returncode == 99  # 1 = "not ready", not a failure
+
+
+def test_recipe_needs_cave_and_confirmation(server):
+    base, _, _ = server
+    assert _call(base, "/api/recipe", {"recipe": "novi-objekt"})[0] == 400
+    assert _call(base, "/api/recipe", {"recipe": "nope", "broj": 1220})[0] == 400
+    status, data = _call(base, "/api/recipe", {"recipe": "novi-objekt", "broj": 1220})
+    assert status == 409 and "Napravi mapu objekta" in data["error"]
+    # the queue step drops out when nothing is queued; skipping everything is refused
+    assert _call(base, "/api/recipe", {"recipe": "novi-objekt", "broj": 1220,
+                                       "skip": [0, 1, 2, 4], "confirmed": True})[0] == 400
+
+
+def test_intake_create_makes_then_reuses_the_leaf(settings, tmp_path, capsys):
+    from cave_dossier import cli
+
+    root = tmp_path / "Drive"
+    intake = root / "!!!Digitalizacija" / "!Za digitalizirat"
+    intake.mkdir(parents=True)
+    s = dataclasses.replace(settings, local_drive_root=root,
+                            archive_dirs={"intake_dir": "!!!Digitalizacija/!Za digitalizirat"})
+    assert cli.cmd_intake_create(s, 1) == 0
+    made = [d for d in intake.iterdir() if d.is_dir()]
+    assert len(made) == 1 and made[0].name.startswith("SB_1_")
+    assert cli.cmd_intake_create(s, 1) == 0
+    assert [d for d in intake.iterdir() if d.is_dir()] == made
+    assert "već postoji" in capsys.readouterr().out
+    assert cli.cmd_intake_create(s, 99999) == 99
+
+
+def test_sb_index_lists_every_row_with_a_redni_broj(drive):
+    """The picker can choose a cave that has no folder yet (round 5)."""
+    ws, _, _ = drive
+    index = ws.sb_index()
+    assert index["error"] is None and index["rows"]
+    assert all(isinstance(r["broj"], int) and "name" in r for r in index["rows"])
+    assert [r["broj"] for r in index["rows"]] == sorted(r["broj"] for r in index["rows"])
+    assert ws.sb_index() is index  # cached until refresh
+    ws.refresh()
+    assert ws._sb_index is None

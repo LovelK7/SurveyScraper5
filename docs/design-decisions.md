@@ -1044,6 +1044,51 @@ The user's review of the first dashboard settled these:
   Markdown renderer; no `innerHTML`, so a doc cannot inject markup). Dev only.
 - **Legends go in hover balloons** (5O's ✓/~/✗/? key), not in running text.
 
+### Round 4 — an explicit folder step, and fast actions (2026-10-02)
+
+- **Creating the cave's folder is its own command** (`intake create`, 1T).
+  The user could not find "SB dir creation", because there was none: the leaf
+  was a side effect of `osz prefill` / `photos pull-staged`. The new command
+  uses the same naming function, so the three can never disagree, and it
+  reuses any existing `SB_<broj>_` leaf.
+- **★ Brze radnje = recipes over the catalog, not new tools.** A recipe is an
+  ordered list of existing catalog actions with preset options
+  (`catalog.RECIPES`). The server builds each step exactly as a single run
+  would, and the writes of all steps are confirmed once, together. Steps run
+  as one job with one log. A failure (exit 2+, the CLI's 99) stops the chain;
+  0/1 never do, since they mean "done / not ready yet". Steps that may
+  legitimately fail without spoiling the rest (karta: georef.hr down; photos:
+  none yet) are `keep_going`. A "queued" step is dropped when the cave has
+  nothing in the queue.
+- Building it exposed a log race: the output thread and a stdin echo appended
+  to the same run log through separate handles, and on Windows one overwrote
+  the other. Log writes now share the job's lock.
+
+### Round 5 — the picker reaches all of SB (2026-10-02)
+
+- The browser's `<datalist>` only lists entries matching what is already in
+  the box. With a cave selected, that left the user with one option and a
+  dropdown that looked broken. It is replaced by a custom combobox that opens
+  with every folder and filters as you type.
+- **A cave is chosen from SB, not only from folders.** ★ *Novi objekt* exists
+  to start caves that have no folder, so the picker searches every SB row with
+  a Redni broj (1460 on the live SB, read in ~3 s and cached until refresh).
+  Folders in work are listed first, and other rows are marked "nema mape".
+  Names shown and passed to name-based commands are SB's own, not the folder's
+  longer name.
+
+### SB reads must release the file (2026-10-02)
+
+The user could not save the live SB in Excel ("sharing violation"). The
+running dashboard held the `.xlsm` open: `SBReader` opened it with
+`pd.ExcelFile(...)` and never closed it. In a one-shot CLI run the handle dies
+with the process. In a long-lived server it waits for garbage collection, which
+may never come. The loader now opens the workbook once inside a `with` block.
+Regression test `test_reading_releases_the_workbook` renames the file right
+after a read with GC disabled; it fails on the old loader. Rule for any
+long-running process (dashboard, a future GUI): **every workbook handle is
+scoped**, because the live SB is a file people save while tools run.
+
 ## 3N entrance: surface legs (2026-09-24)
 
 Settled by the user on SB 1220 (Hrđava špilja), where the shot 4 → 5 is flagged
