@@ -542,3 +542,222 @@ def test_karta_newly_embedded_detects_placeholder_only_doc(tmp_path):
     # No excerpt to embed / no old doc -> never forces a re-delivery.
     assert prefill._karta_newly_embedded(old, None) is False
     assert prefill._karta_newly_embedded(None, b"png") is False
+
+
+# ── measured dimensions from the 3N dimenzije.json (user, 2026-10-02) ──
+def _write_dims(folder, name="SB_1_test_dimenzije.json", **values):
+    import json
+
+    data = {"calculated": True, "l": 55, "pl": 31, "nvr": 9, "pvr": 1, "vr": 10}
+    data.update(values)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / name
+    path.write_text(json.dumps({k: v for k, v in data.items() if v is not None}),
+                    encoding="utf-8")
+    return path
+
+
+def _leaf(intake_settings, name="SB_1_x"):
+    return intake_settings.local_drive_root / "!Za digitalizirat" / name
+
+
+@pytest.fixture()
+def no_karta(monkeypatch):
+    monkeypatch.setattr(prefill.georef, "delivery_paths", lambda s, serial: None)
+
+
+def test_dimension_values_mapping():
+    values = prefill.dimension_values(
+        {"l": 55.4, "pl": 30.6, "nvr": 9, "pvr": 1, "vr": 10,
+         "nvr_m": -8.6, "pvr_m": 0.4})
+    # nvr_m (the finisher's own, wall-bounded) beats cSurvey's nvr; unsigned.
+    assert values == {"duljina": "55", "horizontalna_duljina": "31",
+                      "dubina": "9", "visinska_razlika": "10"}
+    # No vr -> depth + height; zero = "not surveyed" -> absent.
+    assert prefill.dimension_values({"l": 0, "pl": 0, "nvr": 12, "pvr": 3}) == \
+        {"dubina": "12", "visinska_razlika": "15"}
+    assert prefill.dimension_values({"l": 0, "nvr": 0, "pvr": 0}) == {}
+    assert prefill.dimension_values({"l": "nonsense", "pl": True}) == {}
+
+
+def test_prefill_fills_dimensions_from_nacrt(intake_settings, geo_stubs, run_dir, no_karta):
+    _template_guard()
+    _write_dims(_leaf(intake_settings))
+
+    outcome = prefill.run_prefill(intake_settings, 1)
+    result = outcome.result
+    fields = result.fields
+    assert fields["duljina"].value == "55"
+    assert fields["horizontalna_duljina"].value == "31"
+    assert fields["dubina"].value == "9"
+    assert fields["visinska_razlika"].value == "10"
+    assert all(fields[k].source == "nacrt" for k in prefill.DIMENSION_FIELDS)
+    assert result.dimensions_source == "SB_1_test_dimenzije.json"
+    assert any("SB_1_test_dimenzije.json" in note for note in result.notes)
+    assert "katastarski_broj" not in fields and "datum_istrazivanja" not in fields
+
+    # Round-trip: the delivered cells read back as written, and 4S's readers
+    # sign the depth exactly once.
+    from cave_dossier.osz.reader import read_osz_content
+    from cave_dossier.sastavnica.prefill import _depth, _metres
+
+    content = read_osz_content(outcome.delivered_path)
+    assert content.fields["duljina"] == "55"
+    assert content.fields["dubina"] == "9"
+    assert _depth(content.fields["dubina"]) == "-9 m"
+    assert _metres(content.fields["duljina"]) == "55 m"
+
+
+def test_prefill_dimensions_zero_and_absent_keys(intake_settings, geo_stubs, run_dir, no_karta):
+    _template_guard()
+    _write_dims(_leaf(intake_settings), l=0, pl=None, vr=None, nvr=0, pvr=4)
+
+    fields = prefill.run_prefill(intake_settings, 1).result.fields
+    assert "duljina" not in fields               # 0 = not surveyed
+    assert "horizontalna_duljina" not in fields  # key absent
+    assert "dubina" not in fields                # nvr 0
+    assert fields["visinska_razlika"].value == "4"  # no vr -> nvr + pvr
+
+
+def test_prefill_dimensions_newest_file_wins(intake_settings, geo_stubs, run_dir, no_karta):
+    _template_guard()
+    import os
+
+    leaf = _leaf(intake_settings)
+    old = _write_dims(leaf, name="SB_1_stari_dimenzije.json", l=11)
+    new = _write_dims(leaf, name="SB_1_novi_dimenzije.json", l=77)
+    os.utime(old, (1_000_000, 1_000_000))
+    os.utime(new, (2_000_000, 2_000_000))
+
+    result = prefill.run_prefill(intake_settings, 1).result
+    assert result.fields["duljina"].value == "77"
+    assert result.dimensions_source == "SB_1_novi_dimenzije.json"
+
+
+def test_prefill_dimensions_malformed_and_missing_fail_soft(intake_settings, geo_stubs,
+                                                            run_dir, no_karta):
+    _template_guard()
+    leaf = _leaf(intake_settings)
+    leaf.mkdir(parents=True)
+
+    result = prefill.run_prefill(intake_settings, 1).result
+    assert "duljina" not in result.fields
+    assert result.dimensions_source is None
+    assert any("nema <ime>_dimenzije.json" in note for note in result.notes)
+
+    (leaf / "SB_1_dimenzije.json").write_text("{nije json", encoding="utf-8")
+    result = prefill.run_prefill(intake_settings, 1).result
+    assert "duljina" not in result.fields
+    assert any("Ne mogu pročitati SB_1_dimenzije.json" in n for n in result.notes)
+
+
+def test_prefill_dimensions_not_calculated_still_fill(intake_settings, geo_stubs,
+                                                      run_dir, no_karta):
+    _template_guard()
+    _write_dims(_leaf(intake_settings), calculated=False)
+    result = prefill.run_prefill(intake_settings, 1).result
+    assert result.fields["duljina"].value == "55"
+    assert any("survey nije izračunat" in note for note in result.notes)
+
+
+def test_prefill_measured_beats_old_osz_value(intake_settings, geo_stubs, run_dir, no_karta):
+    """Re-running after the survey 'postfills' a filled zapisnik: the
+    measured number replaces the recorded one, with a note; the rest of the
+    human content still migrates."""
+    _template_guard()
+    leaf = _leaf(intake_settings)
+    _make_old_osz(leaf / "Zapisnik_stari.docx")      # duljina "40", opis, ...
+    _write_dims(leaf)
+
+    outcome = prefill.run_prefill(intake_settings, 1)
+    result = outcome.result
+    assert result.fields["duljina"].value == "55"
+    assert result.fields["duljina"].source == "nacrt"
+    assert any("Stari OSZ (duljina): '40'" in note and "zadržana izmjera" in note
+               for note in result.notes)
+    assert result.fields["opis"].source == "stari-osz"   # human text still carried
+
+    from cave_dossier.osz.reader import read_osz_content
+
+    assert read_osz_content(outcome.delivered_path).fields["duljina"] == "55"
+
+
+def test_prefill_same_measurement_keeps_recorded_text(intake_settings, geo_stubs,
+                                                      run_dir, no_karta):
+    _template_guard()
+    from cave_dossier.osz.writer import OszDocument
+
+    leaf = _leaf(intake_settings)
+    leaf.mkdir(parents=True)
+    doc = OszDocument(TEMPLATE)
+    doc.fill_plain(4, 3, 0, "55,3")   # duljina - same measurement, more precise
+    doc.save(leaf / "Zapisnik.docx")
+    _write_dims(leaf)
+
+    result = prefill.run_prefill(intake_settings, 1).result
+    assert result.fields["duljina"].value == "55,3"
+    assert not any("Stari OSZ (duljina)" in note for note in result.notes)
+
+
+def test_prefill_dimensions_rerun_is_idempotent(intake_settings, geo_stubs, run_dir, no_karta):
+    _template_guard()
+    leaf = _leaf(intake_settings)
+    _make_old_osz(leaf / "Zapisnik_stari.docx")
+    _write_dims(leaf)
+
+    first = prefill.run_prefill(intake_settings, 1)
+    second = prefill.run_prefill(intake_settings, 1)
+    assert second.delivered_path == first.delivered_path
+    assert any("ostavljen netaknut" in note for note in second.result.notes)
+    assert len(list(leaf.glob("*_stari_*.docx"))) == 1
+
+
+def test_word_lock_matches_owner_file_names(tmp_path):
+    doc = tmp_path / "SB_1220_OSZ.docx"
+    assert prefill._word_lock(doc) is None
+    (tmp_path / "~$_1220_OSZ.docx").write_bytes(b"x")
+    assert prefill._word_lock(doc).name == "~$_1220_OSZ.docx"
+    assert prefill._word_lock(tmp_path / "SB_1221_OSZ.docx") is None
+    (tmp_path / "~$a.docx").write_bytes(b"x")
+    assert prefill._word_lock(tmp_path / "a.docx").name == "~$a.docx"
+
+
+def test_prefill_locked_osz_stays_local(intake_settings, geo_stubs, run_dir, no_karta, capsys):
+    """The zapisnik is open in Word: warn up front, touch nothing in the leaf,
+    keep the run-dir copy."""
+    _template_guard()
+    first = prefill.run_prefill(intake_settings, 1)       # delivers SB_0001_OSZ.docx
+    assert first.delivered_path is not None
+    leaf = first.delivered_path.parent
+    before = first.delivered_path.read_bytes()
+    (leaf / "~$_0001_OSZ.docx").write_bytes(b"lock")
+    _write_dims(leaf)                                     # content now changes
+
+    capsys.readouterr()
+    outcome = prefill.run_prefill(intake_settings, 1)
+    assert "OSZ je otvoren u Wordu" in capsys.readouterr().out   # warned up front
+    assert outcome.delivered_path is None
+    assert outcome.docx_path.exists()
+    assert any("OSZ je otvoren u Wordu — zatvori ga i ponovi" in note
+               for note in outcome.result.notes)
+    assert not list(leaf.glob("*_stari_*.docx"))
+    assert first.delivered_path.read_bytes() == before
+
+
+def test_deliver_permission_error_restores_old_file(intake_settings, geo_stubs, run_dir,
+                                                    no_karta, monkeypatch):
+    """A copy that fails after the old file was renamed must put it back."""
+    _template_guard()
+    leaf = _leaf(intake_settings)
+    _make_old_osz(leaf / "Zapisnik_stari.docx")
+    _write_dims(leaf)
+
+    def denied(src, dst, *a, **k):
+        raise PermissionError(13, "Permission denied", str(dst))
+
+    monkeypatch.setattr(prefill.shutil, "copy2", denied)
+    outcome = prefill.run_prefill(intake_settings, 1)
+    assert outcome.delivered_path is None
+    assert (leaf / "Zapisnik_stari.docx").exists()
+    assert not list(leaf.glob("*_stari_*.docx"))
+    assert any("zatvori ga i ponovi" in note for note in outcome.result.notes)

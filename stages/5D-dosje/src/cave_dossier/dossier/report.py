@@ -183,15 +183,15 @@ def _file_lines(dossier: CaveDossier) -> list[str]:
     return lines
 
 
-def _people_lines(dossier: CaveDossier) -> list[str]:
-    """One line per person named in the dossier: izjava status + roles + files.
+def people_entries(dossier: CaveDossier) -> list[dict]:
+    """People named in the dossier, merged per person (roles collected).
 
-    ``✓`` an izjava covers this cave · ``~`` izjave exist but none covers it
-    (scope names another locality/cave) · ``✗`` none on file · ``?`` not in
-    the people registry.
+    Each entry: ``name`` (canonical when resolved), ``roles``, ``status`` and
+    ``files`` (izjava file names). Status: ``ok`` an izjava covers this cave ·
+    ``scope`` izjave exist but none covers it (scope names another
+    locality/cave) · ``missing`` none on file · ``unknown`` not in the people
+    registry. Shared by the text report and :func:`to_view`.
     """
-    if not dossier.person_statements:
-        return []
     merged: dict[str, dict] = {}
     for entry in dossier.person_statements:
         key = (entry.canonical or entry.name).casefold()
@@ -201,20 +201,114 @@ def _people_lines(dossier: CaveDossier) -> list[str]:
         )
         if entry.role.value not in slot["roles"]:
             slot["roles"].append(entry.role.value)
-    lines = []
+    people = []
     for slot in merged.values():
         entry = slot["entry"]
         if entry.in_registry is False:
-            mark = "?"
+            status = "unknown"
         elif entry.covering:
-            mark = "✓"
+            status = "ok"
         elif entry.statements:
-            mark = "~"
+            status = "scope"
         else:
-            mark = "✗"
-        files = ", ".join(path.name for path in entry.statements) or "(nema izjave)"
-        lines.append(f"{mark} {slot['display']:<24} {', '.join(slot['roles']):<20} {files}")
-    return lines
+            status = "missing"
+        people.append(
+            {
+                "name": slot["display"],
+                "roles": list(slot["roles"]),
+                "status": status,
+                "files": [path.name for path in entry.statements],
+            }
+        )
+    return people
+
+
+#: Report mark per person status — see :func:`people_entries`.
+PERSON_MARKS: dict[str, str] = {"ok": "✓", "scope": "~", "missing": "✗", "unknown": "?"}
+
+
+def _people_lines(dossier: CaveDossier) -> list[str]:
+    """One line per person named in the dossier: izjava status + roles + files.
+
+    ``✓`` an izjava covers this cave · ``~`` izjave exist but none covers it
+    (scope names another locality/cave) · ``✗`` none on file · ``?`` not in
+    the people registry.
+    """
+    return [person_line(person) for person in people_entries(dossier)]
+
+
+def person_line(person: dict) -> str:
+    """One ``people_entries`` item as the report prints it."""
+    files = ", ".join(person["files"]) or "(nema izjave)"
+    return (f"{PERSON_MARKS[person['status']]} {person['name']:<24} "
+            f"{', '.join(person['roles']):<20} {files}")
+
+
+# ── JSON view (the dashboard) ─────────────────────────────────────────
+
+
+def to_view(dossier: CaveDossier) -> dict:
+    """The same content :func:`render` prints, as a JSON-serialisable dict.
+
+    The local dashboard renders this; the key set is a contract with its
+    front end. ``dossier`` must already be evaluated (``readiness`` set).
+    Gate 2 lists only what it adds on top of gate 1, exactly like the text.
+    """
+    survey = dossier.survey
+    return {
+        "name": dossier.display_name,
+        "serial": dossier.serial_number,
+        "working_id": dossier.working_id,
+        "sue": dossier.sue_number,
+        "excel_row": dossier.sb_row_number,
+        "lifecycle": dossier.lifecycle.value,
+        "lifecycle_hint": _LIFECYCLE_HINT[dossier.lifecycle],
+        "sources": [
+            {"key": source.value, "label": _SOURCE_LABELS[source], "gathered": dossier.has(source)}
+            for source in Source
+        ],
+        "sb": [[label, value] for label, value in _sb_pairs(dossier)]
+        if dossier.has(Source.SB)
+        else [],
+        "survey": {
+            "length_m": survey.length_m,
+            "depth_m": survey.depth_m,
+            "horizontal_length_m": survey.horizontal_length_m,
+            "vertical_difference_m": survey.vertical_difference_m,
+        }
+        if survey
+        else None,
+        "files": _file_lines(dossier),
+        "people": people_entries(dossier),
+        "gates": [_gate_view(dossier, gate) for gate in (GateLevel.SUE, GateLevel.CROSPELEO)],
+    }
+
+
+def _gate_view(dossier: CaveDossier, gate: GateLevel) -> dict:
+    report = dossier.readiness
+    blockers = report.blockers_for(gate)
+    warnings = report.warnings_for(gate)
+    unchecked = report.unchecked_for(gate)
+    if gate is GateLevel.CROSPELEO:
+        blockers = [i for i in blockers if i.level is GateLevel.CROSPELEO]
+        warnings = [i for i in warnings if i.level is GateLevel.CROSPELEO]
+        unchecked = [u for u in unchecked if u.level is GateLevel.CROSPELEO]
+    return {
+        "gate": "sue" if gate is GateLevel.SUE else "crospeleo",
+        "ordinal": 1 if gate is GateLevel.SUE else 2,
+        "label": GATE_LABELS[gate],
+        "ready": report.ready_for(gate),
+        "blockers": [issue.message for issue in blockers],
+        "warnings": [issue.message for issue in warnings],
+        "unchecked": [
+            {
+                "label": rule.label,
+                "source_label": _SOURCE_LABELS[rule.source],
+                "severity": "blocker" if rule.severity is Severity.BLOCKER else "warning",
+            }
+            for rule in unchecked
+        ],
+    }
 
 
 def _num(value: float | None) -> str:

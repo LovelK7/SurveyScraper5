@@ -423,3 +423,19 @@ def test_end_to_end_on_sb1103(tmp_path):
     written = json.loads(Path(result["json"]).read_text(encoding="utf-8"))
     assert written["mjerilo"] == "1:100"
     assert written["plan_scale"] == written["profile_scale"] == 100
+
+
+def test_csurvey_dir_order(monkeypatch, tmp_path):
+    """--csurvey-dir, then CSURVEY_DIR, then the kit's cSurvey/ on the Drive,
+    then C:\csurvey64 — the Drive copy needs no per-machine setup."""
+    kit = tmp_path / "cSurvey"
+    monkeypatch.delenv("CSURVEY_DIR", raising=False)
+    monkeypatch.setattr(csurvey_driver, "read_dotenv", lambda: {})
+    monkeypatch.setattr(csurvey_driver, "KIT_CSURVEY_DIR", str(kit))
+    assert csurvey_driver.find_csurvey_dir() == csurvey_driver.DEFAULT_CSURVEY_DIR
+    kit.mkdir()
+    (kit / "cSurveyPC.exe").write_bytes(b"")
+    assert csurvey_driver.find_csurvey_dir() == str(kit)
+    monkeypatch.setenv("CSURVEY_DIR", "D:\elsewhere")
+    assert csurvey_driver.find_csurvey_dir() == "D:\elsewhere"
+    assert csurvey_driver.find_csurvey_dir("E:\arg") == "E:\arg"

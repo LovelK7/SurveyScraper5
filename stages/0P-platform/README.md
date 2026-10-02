@@ -12,7 +12,7 @@
 | `core/matching.py` | The weighted-evidence matcher: a free-form folder or filename → an SB row. |
 | `core/people.py`, `core/person_aliases.py` | Split an author cell into people; generate the abbreviation spellings (`L.Kukuljan` ↔ `Lovel Kukuljan`). |
 | `cli/` | The single `argparse` entry point. Every `cavedossier` subcommand is parsed and dispatched here; the work happens in the stage modules. |
-| `gui/` | The local dashboard, `cavedossier gui` — every stage's commands behind buttons, the current cave, "open SB". A mockup of the future GUI that already runs things. See [The dashboard](#the-dashboard--cavedossier-gui). |
+| `gui/` | The local dashboard, `cavedossier gui` — the current cave's workflow (done / next / stale), every stage's commands behind buttons, "open SB", photos, the dossier. A mockup of the future GUI that already runs things. See [The dashboard](#the-dashboard--cavedossier-gui). |
 
 ## The dashboard — `cavedossier gui`
 
@@ -22,38 +22,61 @@ cavedossier gui --port 8800     # another port (the next free one up to +19 is t
 cavedossier gui --no-browser    # just serve; open the URL yourself
 ```
 
-One page, one tab per stage (1T … 6P) plus **Pregled**, in Croatian:
+One page, in Croatian, with a tab per stage. The tabs follow the **working order
+for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4O,
+3N, 4S, 4F) → Provjera i predaja (5O, 5D, 6P).
 
-- **Otvori SB** in the top bar opens the live Speleo baza in Excel. Pregled also
+- **Otvori SB** in the top bar opens the live Speleo baza in Excel. The SB card
   lists every `!Speleo_baza_SUE_v*.xlsm` on Drive and warns when a newer one
   exists than `config.yaml` points at.
 - **Objekt**: pick the cave you are working on (Redni broj or name; the list is
   the `SB_<broj>_…` leaves under `!Za digitalizirat`). Every command on every
-  tab then uses that number, and the 3N steps offer that cave's files
-  (`_pp`, `_lt`, `_lt_fin`…), newest first. Pregled shows the cave's checklist:
-  which Nacrt steps, OSZ, karta, photos and sastavnica already exist.
-- **Pokreni** runs the command. Output streams into the **Ispis** panel at the
-  bottom, and when a tool asks something (the 3N file menu, the layout menu) you
-  answer in the box under the output. Every run is also logged to `runs/gui/`.
+  tab then uses that number.
+- **Pregled → tijek objekta** is the cave's work as a dependency graph
+  (`gui/workflow.py`). Every step is **gotovo** (green), **sljedeći** (gold,
+  "SADA"), **zastarjelo** (amber: an input changed after the output was made,
+  so redo it), or waiting. A button runs the step directly. Two examples:
+  the OSZ filled after the Nacrt was composed turns KORAK 3c amber, and a
+  survey measured after the OSZ was made turns "OSZ ← duljina i dubina" gold.
+  The 3N tab colours its KORAK cards the same way.
+- **Pokreni** runs a command. Output streams into the **Ispis** panel at the
+  bottom; when a tool asks something (the 3N file menu, the layout menu) you
+  answer in the box under the output. Every run is logged to `runs/gui/`.
 - Runs that only read go on one click. Anything that writes to Drive, to the
   cave's folder or to georef.hr asks first (orange **Pokreni…**). Ticking
   `--dry-run` / `--local` makes it a plain run again.
+- **4F** shows the cave's photos as a gallery (Pillow thumbnails cached in
+  `runs/gui/thumbs`; without Pillow the originals are served). **Obriši**
+  sends a photo to the bin. On the Drive that means the Google Drive trash
+  (30 days), on a local disk the Windows Recycle Bin. Only photos in the
+  current cave's folder can be deleted, and always after a confirmation.
+- **5D Dosje** draws `report` as the two gates: blockers, warnings, and the
+  rules still waiting on a source (folded). **5O** shows the cave's people and
+  their izjave from the same data; `people check --broj` is the command form.
+- A Word/Excel owner file (`~$…`) in the cave's folder is reported as "open
+  in Word", since steps that rewrite that file cannot replace it while it is
+  open.
 - **Kopiraj** gives the same command for the terminal. 3N commands use `$T`,
   as in the [3N README](../3N-nacrt/README.md).
-- **cSurvey** buttons open a survey file in `C:\csurvey64\cSurveyPC.exe`
-  (or `CSURVEY_DIR` from `.env`).
+- **cSurvey** buttons open a survey in cSurvey, found as: `CSURVEY_DIR` from
+  `.env`, then a copy beside the kit on the Drive
+  (`!!!Digitalizacija/SurveyScraper5/cSurvey`), then `C:\csurvey64`.
 
 How it is built, for whoever turns it into the real GUI:
 
 | File | Role |
 |---|---|
-| `gui/catalog.py` | **The table of every action**: stage, Croatian label, argv template (`{broj}`, `{file}`, `{query}`), options, what it writes. The page draws its buttons from this, and the server builds argv only from this. A new button is one `Action` entry. |
-| `gui/state.py` | Read-only view of the machine: settings, SB versions, Drive dirs, caves in work, a cave's files classified by name. Fail-soft: a missing Drive is a note on the page. |
+| `gui/catalog.py` | **The table of every action**: stage, Croatian label, argv template (`{broj}`, `{file}`, `{query}`), options, what it writes. The page draws its buttons from this, and the server builds argv only from this. A new button is one `Action` entry. Also the stage list with its nav groups. |
+| `gui/workflow.py` | **The per-cave dependency graph**: each step's output files, input files and status (done / stale / todo / blocked …), and the catalog action that (re)makes it. Reads file names, mtimes, the OSZ's v10 cells and the dimensions JSON; writes nothing. |
+| `gui/state.py` | Read-only view of the machine: settings, SB versions, Drive dirs, caves in work, a cave's files classified by name, open-document locks. Fail-soft: a missing Drive is a note on the page. |
+| `gui/media.py` | Photo thumbnails and the recoverable delete (shell "allow undo"). |
 | `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. |
-| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API (`/api/state`, `/caves`, `/cave/<broj>`, `/catalog`, `/run`, `/job/<id>`, `/open`). Every API call needs the random token the page was served with. Opening is limited to paths under Drive, the workspace and the repo. |
-| `gui/static/` | `index.html`, `app.css`, `app.js`: plain JS, no build step, light and dark theme. |
+| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/catalog`, `/run`, `/job/<id>`, `/open`, `/delete`, and `/thumb` for images. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
+| `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`. Plain JS, no build step. |
 
-Only standard library, so it runs in the base install. Why it is built this way:
+Only standard library in the base install; Pillow (the `photos` extra) makes
+the gallery faster, and lxml (the `osz` extra) lets the workflow read the OSZ.
+Why it is built this way:
 [design decisions §The dashboard](../../docs/design-decisions.md#the-dashboard--cavedossier-gui-2026-09-24).
 
 ## Why this stage exists

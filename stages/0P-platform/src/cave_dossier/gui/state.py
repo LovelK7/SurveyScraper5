@@ -2,7 +2,8 @@
 
 Everything here is read-only and fail-soft — a missing Drive, an SB open in
 Excel, no cSurvey on this machine each become a note on the page, never an
-error page. Files are classified by name only; nothing is opened or parsed.
+error page. Files are classified by name; the cave's workflow (workflow.py)
+additionally reads its OSZ cells and dimensions file.
 """
 
 from __future__ import annotations
@@ -22,6 +23,10 @@ from cave_dossier.intake.scanner import find_leaf_folders
 SB_VERSION_RE = re.compile(r"^!?Speleo_baza_SUE_v(\d+)[._](\d+)\.xls[mx]$", re.IGNORECASE)
 
 DEFAULT_CSURVEY_DIR = r"C:\csurvey64"
+#: cSurvey copied beside the csurvey kit on the Drive (an unzipped folder needs
+#: no install — 2026-10-02), relative to LOCAL_DRIVE_ROOT. Same place
+#: csurvey_driver.py looks: the kit's csurvey_alati/ sibling.
+KIT_CSURVEY_REL = "!!!Digitalizacija/SurveyScraper5/cSurvey"
 
 #: Drive folders the Pregled tab links to: config.yaml `archive` key -> label.
 DRIVE_DIRS = (
@@ -164,10 +169,19 @@ def _env_value(key: str) -> str | None:
     return None
 
 
-def csurvey_exe() -> Path | None:
-    directory = Path(_env_value("CSURVEY_DIR") or DEFAULT_CSURVEY_DIR)
-    exe = directory / "cSurveyPC.exe"
-    return exe if exe.is_file() else None
+def csurvey_exe(drive_root: Path | None = None) -> Path | None:
+    """CSURVEY_DIR, then the Drive copy beside the kit, then C:\csurvey64."""
+    candidates = []
+    if _env_value("CSURVEY_DIR"):
+        candidates.append(Path(_env_value("CSURVEY_DIR")))
+    if drive_root is not None:
+        candidates.append(drive_root / KIT_CSURVEY_REL)
+    candidates.append(Path(DEFAULT_CSURVEY_DIR))
+    for directory in candidates:
+        exe = directory / "cSurveyPC.exe"
+        if exe.is_file():
+            return exe
+    return None
 
 
 class Workspace:
@@ -217,7 +231,7 @@ class Workspace:
             "repo": _safe(lambda: str(repo_root()) if repo_root() else None),
             "settings_error": self._settings_error,
             "tools_dir": str(tools_dir()) if tools_dir() else None,
-            "csurvey": str(csurvey_exe()) if csurvey_exe() else None,
+            "csurvey": _safe(lambda: str(csurvey_exe(self.drive_root) or "") or None),
         }
         if s is None:
             return data
@@ -286,9 +300,14 @@ class Workspace:
             # The cache may predate a folder made a minute ago.
             leaves = [c for c in self.caves(force=True)[0] if c.broj == broj]
         files = []
+        locks = []
         for leaf in leaves:
             for path in sorted(leaf.path.rglob("*"), key=lambda p: p.name.lower()):
                 if not path.is_file() or path.name.lower() in _SKIP_NAMES:
+                    continue
+                if path.name.startswith("~$"):
+                    # Word/Excel owner file: the document is open right now.
+                    locks.append(path.name)
                     continue
                 stat = path.stat()
                 files.append({
@@ -306,8 +325,25 @@ class Workspace:
             "broj": broj,
             "leaves": [leaf.to_json() for leaf in leaves],
             "files": files,
+            "locks": locks,
             "karta": karta,
         }
+
+    def cave_view(self, broj: int) -> dict:
+        """The detail plus its workflow — what the page asks for."""
+        from cave_dossier.gui import workflow
+
+        detail = self.cave_detail(broj)
+        detail["workflow"] = workflow.for_detail(detail)
+        return detail
+
+    def cave_file(self, broj: int, path: str, kinds: set[str]) -> dict | None:
+        """One of the cave's own files, of one of ``kinds`` — the guard for
+        anything that serves or deletes a file by path."""
+        for item in self.cave_detail(broj)["files"]:
+            if item["path"] == path and item["kind"] in kinds:
+                return item
+        return None
 
     def candidate_files(self, broj: int, file_kind: str) -> list[str]:
         """Files a ``{file}`` action may take, newest first."""

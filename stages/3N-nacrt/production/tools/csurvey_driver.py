@@ -49,6 +49,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIPT = os.path.join(HERE, "csurvey_headless.ps1")
 
 DEFAULT_CSURVEY_DIR = r"C:\csurvey64"
+# cSurvey is an unzipped folder, not an installed program (no uninstall entry;
+# a copied folder drives headless exactly like C:\csurvey64 — checked
+# 2026-10-02). So one copy on the shared Drive, beside the kit, serves every
+# operator: !!!Digitalizacija/SurveyScraper5/{csurvey_alati, cSurvey}.
+KIT_CSURVEY_DIR = os.path.join(os.path.dirname(HERE), "cSurvey")
 DEFAULT_PRINTER = "Microsoft Print to PDF"
 DEFAULT_TIMEOUT = 180
 
@@ -207,6 +212,17 @@ def _powershell():
     return path if os.path.exists(path) else "powershell"
 
 
+def find_csurvey_dir(override=None):
+    """Where cSurvey is: --csurvey-dir, then CSURVEY_DIR (env, .env), then the
+    kit's own cSurvey/ folder on the Drive, then C:\csurvey64."""
+    explicit = setting("CSURVEY_DIR", None, override)
+    if explicit:
+        return explicit
+    if os.path.exists(os.path.join(KIT_CSURVEY_DIR, "cSurveyPC.exe")):
+        return KIT_CSURVEY_DIR
+    return DEFAULT_CSURVEY_DIR
+
+
 def run(command, survey, out=None, design="Both", timeout=DEFAULT_TIMEOUT,
         csurvey_dir=None, printer=None, scale_mode=None, scale=None,
         landscape=False):
@@ -215,11 +231,12 @@ def run(command, survey, out=None, design="Both", timeout=DEFAULT_TIMEOUT,
         raise DriverError("csurvey_headless.ps1 is missing next to %s" % __file__)
     if not os.path.exists(survey):
         raise DriverError("survey not found: %s" % survey)
-    directory = setting("CSURVEY_DIR", DEFAULT_CSURVEY_DIR, csurvey_dir)
+    directory = find_csurvey_dir(csurvey_dir)
     if not os.path.exists(os.path.join(directory, "cSurveyPC.exe")):
         raise DriverError(
-            "cSurvey is not installed in %s — set CSURVEY_DIR in .env or pass "
-            "--csurvey-dir" % directory)
+            "cSurvey is not installed in %s (nor beside the kit in %s) — set "
+            "CSURVEY_DIR in .env, pass --csurvey-dir, or copy the cSurvey folder there"
+            % (directory, KIT_CSURVEY_DIR))
 
     argv = [_powershell(), "-STA", "-NoProfile", "-ExecutionPolicy", "Bypass",
             "-File", SCRIPT,

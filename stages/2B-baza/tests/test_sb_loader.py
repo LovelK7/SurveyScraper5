@@ -63,3 +63,20 @@ def test_stats(reader: SBReader) -> None:
     assert count == 6
     _, coords_count = stats["fill_counts"]["X HTRS"]
     assert coords_count == 4  # one cave has no coordinates
+
+
+def test_sb_inspect_by_redni_broj(settings, capsys) -> None:
+    import pytest
+
+    from cave_dossier.cli import EXIT_ERROR, build_parser, cmd_sb_inspect
+
+    assert cmd_sb_inspect(settings, None, 3) == 0
+    assert "Ponor pod Kukom" in capsys.readouterr().out
+    assert cmd_sb_inspect(settings, None, 999) == EXIT_ERROR
+
+    parser = build_parser()
+    assert parser.parse_args(["sb", "inspect", "--broj", "3"]).broj == 3
+    with pytest.raises(SystemExit):
+        parser.parse_args(["sb", "inspect", "--cave", "X", "--broj", "3"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["sb", "inspect"])

@@ -12,6 +12,33 @@ The OSZ is one of the pipeline's two final products (the other is the Nacrt).
 to take to the cave. It fills identity, coordinates with their sources, locality,
 kota, the "Položaj i pristup" text, and embeds the map excerpt.
 
+**Measured dimensions (from the Nacrt).** When the cave's intake leaf holds a
+`<name>_dimenzije.json` — what [3N-nacrt](../3N-nacrt/README.md)'s cSurvey route
+leaves there — prefill also fills the four "Karakteristike objekta" numbers from
+the **newest** such file:
+
+| OSZ cell | from the JSON |
+|---|---|
+| Duljina | `l` |
+| Horizontalna duljina | `pl` |
+| Dubina | `nvr_m`, else `nvr` (depth below the entrance) |
+| Visinska razlika | `vr`, else depth + `pvr_m`/`pvr` |
+
+Bare whole metres, unsigned (`9`, not `-9 m` — the headers say `(m)`, and 4S
+adds the minus when it prints the nacrt); a zero means "not surveyed" and stays
+empty. SB's Duljina/Dubina are **never** used to fill these. No file, an
+unreadable one, or `"calculated": false` is a note (the last still fills).
+
+**Re-run after the survey.** The zapisnik and the nacrt need each other, so
+whichever comes first, run `osz prefill` again once the Nacrt is done: the
+filled zapisnik in the leaf is migrated forward (narratives, team, ticks…), the
+measured numbers go in, and the old file is kept as `…_stari_<datum>.docx`. A
+measured value **wins** over a different number the old zapisnik recorded (the
+note names both); one that rounds to the same metres keeps the recorder's text.
+Nothing changed → the document is left untouched. If the zapisnik is **open in
+Word** (`~$…` file in the leaf), prefill warns at the start and leaves the leaf
+alone — close Word and run it again.
+
 **Backfill** — the reverse. Reads a **filled** zapisnik and proposes the SB
 backfill (pločica, ime→sinonimi, duljina/dubina, godina, autori via the alias
 registry) as a review CSV. It never writes to SB.

@@ -25,7 +25,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from cave_dossier.core.paths import repo_root, workspace, workspace_root
-from cave_dossier.gui import catalog
+from cave_dossier.gui import catalog, media
 from cave_dossier.gui.jobs import JobManager, cli_argv, script_argv
 from cave_dossier.gui.state import Workspace, csurvey_exe, tools_dir
 
@@ -34,6 +34,24 @@ _CONTENT_TYPES = {".html": "text/html", ".js": "text/javascript", ".css": "text/
                   ".svg": "image/svg+xml"}
 
 DEFAULT_PORT = 8765
+
+
+class _Server(ThreadingHTTPServer):
+    """No address reuse. ``http.server`` turns SO_REUSEADDR on, and on Windows
+    that lets a second server bind a port that is already serving — both then
+    "listen", the older one answers, and the next-free-port fallback in
+    ``serve`` never triggers (found 2026-10-02 with two dashboards on 8790).
+    SO_EXCLUSIVEADDRUSE makes the second bind fail as it should."""
+
+    allow_reuse_address = False
+    daemon_threads = True
+
+    def server_bind(self):
+        import socket
+
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
 
 
 class ApiError(Exception):
@@ -46,7 +64,7 @@ class App:
     """Everything the handler needs; one per server, easy to build in tests."""
 
     def __init__(self, ws: Workspace | None = None, jobs: JobManager | None = None,
-                 token: str | None = None, opener=None) -> None:
+                 token: str | None = None, opener=None, deleter=None) -> None:
         self.ws = ws or Workspace()
         log_dir = None
         try:
@@ -56,6 +74,7 @@ class App:
         self.jobs = jobs or JobManager(log_dir)
         self.token = token or secrets.token_urlsafe(16)
         self.opener = opener or _open_with_os
+        self.deleter = deleter or media.recycle
 
     # ── actions ─────────────────────────────────────────────────────
     def run(self, body: dict) -> dict:
@@ -96,6 +115,46 @@ class App:
             raise ApiError(f"Nema skripte {script}.")
         return script_argv(script, args), f"python $T\\{action.tool} " + _join(args)
 
+    # ── photos ──────────────────────────────────────────────────────
+    PHOTO_KINDS = {"photo", "photo_processed"}
+
+    def thumb(self, query: dict) -> tuple[bytes, str]:
+        item = self.ws.cave_file(_int(query.get("broj")), str(query.get("path", "")),
+                                 self.PHOTO_KINDS)
+        if item is None:
+            raise ApiError("Nije fotografija ovog objekta.", HTTPStatus.NOT_FOUND)
+        cache = None
+        try:
+            cache = workspace("runs", "gui", "thumbs")
+        except Exception:  # noqa: BLE001
+            pass
+        return media.thumbnail(Path(item["path"]), cache, _int(query.get("w", "240")))
+
+    def delete(self, body: dict) -> dict:
+        """Photos only, only the current cave's, always recoverable (media.recycle)."""
+        if not body.get("confirmed"):
+            raise ApiError("Potrebna potvrda brisanja.", HTTPStatus.CONFLICT)
+        item = self.ws.cave_file(_int(body.get("broj")), str(body.get("path", "")),
+                                 self.PHOTO_KINDS)
+        if item is None:
+            raise ApiError("Briše se samo fotografija iz mape ovog objekta.",
+                           HTTPStatus.FORBIDDEN)
+        self.deleter(Path(item["path"]))
+        return {"deleted": item["path"]}
+
+    def dossier(self, broj: int) -> dict:
+        s = self.ws.settings
+        if s is None:
+            raise ApiError("Postavke nisu učitane.")
+        try:
+            from cave_dossier.dossier import view_for_serial
+        except ImportError as exc:
+            raise ApiError(f"Dosje još nije dostupan na stranici ({exc}).") from exc
+        view = view_for_serial(s, broj)
+        if view is None:
+            raise ApiError(f"Nijedan SB red nema Redni broj {broj}.", HTTPStatus.NOT_FOUND)
+        return view
+
     def open(self, body: dict) -> dict:
         what = body.get("what")
         target: Path | None = None
@@ -120,7 +179,7 @@ class App:
         elif what in ("path", "csurvey"):
             target = Path(str(body.get("path") or ""))
             if what == "csurvey":
-                app = csurvey_exe()
+                app = csurvey_exe(self.ws.drive_root)
                 if app is None:
                     raise ApiError("cSurvey nije pronađen (C:\\csurvey64 ili CSURVEY_DIR u .env).")
         else:
@@ -185,6 +244,26 @@ def make_handler(app: App):
                     return self._json({"error": "nema"}, HTTPStatus.NOT_FOUND)
                 ctype = _CONTENT_TYPES.get(path.suffix, "application/octet-stream")
                 return self._send(HTTPStatus.OK, path.read_bytes(), ctype)
+            if url.path == "/api/thumb":
+                # An <img> cannot send a header, so this one GET takes the
+                # token as a query parameter. It only ever serves the
+                # current cave's photos (App.thumb).
+                query = {k: v[-1] for k, v in parse_qs(url.query).items()}
+                if not secrets.compare_digest(query.get("t", ""), app.token):
+                    return self._json({"error": "Nedostaje token."}, HTTPStatus.FORBIDDEN)
+                try:
+                    data, ctype = app.thumb(query)
+                except ApiError as exc:
+                    return self._json({"error": str(exc)}, exc.status)
+                except OSError as exc:
+                    return self._json({"error": str(exc)}, HTTPStatus.NOT_FOUND)
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "private, max-age=300")
+                self.end_headers()
+                self.wfile.write(data)
+                return None
             if url.path.startswith("/api/"):
                 return self._api("GET", url)
             return self._json({"error": "nema"}, HTTPStatus.NOT_FOUND)
@@ -220,7 +299,9 @@ def make_handler(app: App):
                     caves, unprefixed = app.ws.caves(force=query.get("refresh") == "1")
                     return {"caves": [c.to_json() for c in caves], "unprefixed": unprefixed}
                 if head == "cave" and len(parts) == 2:
-                    return app.ws.cave_detail(_int(parts[1]))
+                    return app.ws.cave_view(_int(parts[1]))
+                if head == "dossier" and len(parts) == 2:
+                    return app.dossier(_int(parts[1]))
                 if head == "files":
                     return {"files": app.ws.candidate_files(_int(query.get("broj")),
                                                             query.get("kind", ""))}
@@ -235,6 +316,11 @@ def make_handler(app: App):
                     return app.run(body)
                 if head == "open":
                     return app.open(body)
+                if head == "delete":
+                    try:
+                        return app.delete(body)
+                    except OSError as exc:
+                        raise ApiError(str(exc)) from exc
                 if head == "refresh":
                     app.ws.refresh()
                     return {"ok": True}
@@ -263,7 +349,7 @@ def serve(port: int = DEFAULT_PORT, open_browser: bool = True) -> int:
     server = None
     for candidate in range(port, port + 20):
         try:
-            server = ThreadingHTTPServer(("127.0.0.1", candidate), make_handler(app))
+            server = _Server(("127.0.0.1", candidate), make_handler(app))
             break
         except OSError:
             continue

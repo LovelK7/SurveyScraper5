@@ -10,6 +10,10 @@
 4. resolve every field under the precedence rule (user, 2026-08-30):
    **SB wins** — a computed value only fills an empty cell, a disagreement
    is a printed warning, never an override;
+4a. take Duljina / Horizontalna duljina / Dubina / Visinska razlika from the
+   newest 3N ``<name>_dimenzije.json`` in the cave's intake leaf, when there
+   is one (user, 2026-10-02) — measured facts, so they outrank a value an
+   older OSZ recorded; SB's Duljina/Dubina still never fill the zapisnik;
 5. fill the v10 template, embed the PNG, deliver
    ``SB_<padded>_OSZ.docx`` into ``archive.osz_prefill_dir`` and keep run
    artifacts (DOCX copy, prefill.json, dopune-sb.csv) under
@@ -103,6 +107,14 @@ def run_prefill(
     x_htrs = _sb_float(cave, settings.sb_x_htrs_column)
     y_htrs = _sb_float(cave, settings.sb_y_htrs_column)
 
+    # The cave's intake leaf, resolved first: a zapisnik open in Word there
+    # is worth a warning BEFORE the slow karta/finder work, not after it.
+    intake_folder = _existing_intake_folder(settings, serial)
+    if intake_folder is not None:
+        lock = _word_lock(intake_folder / f"{_sb_prefix(serial)}_OSZ.docx")
+        if lock is not None:
+            print(f"⚠ {_LOCKED_NOTE} ({lock.name}) — dokument će ostati samo lokalno.")
+
     png_bytes = _ensure_karta(settings, cave, serial, result,
                               debug=debug, force=force_karta, offline=offline,
                               has_coords=x_htrs is not None and y_htrs is not None)
@@ -132,8 +144,10 @@ def run_prefill(
     # Migration (user, 2026-08-30): an OSZ already in the cave's intake
     # leaf — an older prefill someone filled in, or a hand-made zapisnik in
     # the v10 layout — carries content forward into the fresh document; the
-    # old file survives as a _stari backup for comparison.
-    intake_folder = _existing_intake_folder(settings, serial)
+    # old file survives as a _stari backup for comparison. The survey's
+    # measured dimensions go in BEFORE the migration so they hold their
+    # ground against the old document's recorded numbers.
+    _resolve_dimensions(intake_folder, result)
     old_osz_path = _find_old_osz(intake_folder, result) if intake_folder else None
     old_content = None
     if old_osz_path is not None:
@@ -260,11 +274,13 @@ def _resolve_fields(
 ) -> None:
     fields = result.fields
 
-    # Deliberately NOT filled (user, 2026-08-30): Katastarski broj — the
-    # archivist assigns it manually at the very end, never a prefill;
-    # Duljina/Dubina — supplied by the survey process (2.1a), not SB;
+    # Deliberately NOT filled from SB (user, 2026-08-30): Katastarski broj —
+    # the archivist assigns it manually at the very end, never a prefill;
+    # Duljina/Dubina — supplied by the survey process (2.1a, now 3N), not SB;
     # Datum istraživanja — SB only holds a year, the real date comes from
-    # the field data.
+    # the field data. Amended 2026-10-02: the survey process now exists, so
+    # the measured dimensions come from the 3N dimensions file in
+    # `_resolve_dimensions` — still never from SB.
     plaque = _sb_text(cave, settings.sb_plaque_column)
     if plaque:
         fields["broj_plocice"] = FieldValue(value=plaque, source="sb")
@@ -413,6 +429,121 @@ def _resolve_kota(settings: Settings, cave: CaveRow, result: PrefillResult,
         ))
 
 
+# ── the survey's measured dimensions (3N) ────────────────────────────
+#: OSZ field → how to pull it out of ``<name>_dimenzije.json``.
+DIMENSION_FIELDS = ("duljina", "horizontalna_duljina", "dubina", "visinska_razlika")
+DIMENSION_SOURCE = "nacrt"
+
+
+def _resolve_dimensions(folder: Path | None, result: PrefillResult) -> None:
+    """Fill the four "Karakteristike objekta" numbers from the newest 3N
+    ``<name>_dimenzije.json`` in the cave's intake leaf (user, 2026-10-02).
+
+    The file is the cSurvey route's artifact (``csurvey_driver.py``
+    ``finish_and_print``) and is read directly — the same file 4S's
+    sastavnica prints its title block from, mapped the same way, so the
+    zapisnik and the nacrt agree. Fail-soft: no file or an unreadable one is
+    a note and leaves the fields untouched; ``"calculated": false`` still
+    fills, with a "provjeri" note (as 4S does).
+    """
+    if folder is None:
+        return
+    try:
+        found = sorted(folder.glob("*_dimenzije.json"),
+                       key=lambda path: path.stat().st_mtime, reverse=True)
+    except OSError:
+        found = []
+    if not found:
+        result.notes.append(
+            f"U mapi {folder.name} nema <ime>_dimenzije.json (nacrt još nije "
+            "izrađen) — Duljina/Dubina ostaju prazne; ponovi prefill nakon nacrta."
+        )
+        return
+    path = found[0]
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        result.notes.append(
+            f"Ne mogu pročitati {path.name} ({exc.__class__.__name__}) — "
+            "Duljina/Dubina nisu popunjene iz nacrta."
+        )
+        return
+    if not isinstance(data, dict):
+        result.notes.append(
+            f"{path.name} nije JSON objekt — Duljina/Dubina nisu popunjene iz nacrta."
+        )
+        return
+
+    values = dimension_values(data)
+    result.dimensions_source = path.name
+    if not data.get("calculated"):
+        result.notes.append(f"{path.name}: survey nije izračunat — provjeri duljine.")
+    for key, value in values.items():
+        result.fields[key] = FieldValue(value=value, source=DIMENSION_SOURCE,
+                                        note=path.name)
+    if values:
+        result.notes.append(
+            f"Duljine iz nacrta ({path.name}): "
+            + ", ".join(f"{key}={value}" for key, value in values.items())
+        )
+    else:
+        result.notes.append(f"{path.name} nema izmjerenih duljina (sve 0) — polja ostaju prazna.")
+
+
+def dimension_values(dims: dict) -> dict[str, str]:
+    """The OSZ cells the dimensions JSON answers, as the zapisnik writes them.
+
+    Bare whole metres, unsigned: the v10 headers already say ``(m)``, legacy
+    zapisnici record ``Dubina: 45 m`` positive (``legacy.to_v10_fields``),
+    ``osz backfill`` parses the cell back into SB's positive Dubina, and 4S's
+    ``_depth`` adds the minus itself — a signed cell would print fine there but
+    disagree with SB in the backfill. Whole metres match what the nacrt's
+    title block prints from the same file. Zero means "not surveyed" → absent.
+
+    Mapping as 4S's ``_dimension_values``: ``l`` stvarna duljina, ``pl``
+    tlocrtna (horizontalna) duljina; depth below the entrance prefers the
+    finisher's own ``nvr_m`` over cSurvey's bounding-box ``nvr`` (a symbol
+    drawn above the entrance inflates the latter); the visinska razlika is
+    cSurvey's ``vr``, else depth + height (``pvr_m``/``pvr``).
+    """
+    def metres(value) -> float | None:
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            return abs(float(value))
+        except (TypeError, ValueError):
+            return None
+
+    nvr = metres(dims["nvr_m"] if dims.get("nvr_m") is not None else dims.get("nvr"))
+    pvr = metres(dims["pvr_m"] if dims.get("pvr_m") is not None else dims.get("pvr"))
+    span = metres(dims.get("vr"))
+    if span is None and (nvr is not None or pvr is not None):
+        span = (nvr or 0.0) + (pvr or 0.0)
+
+    out: dict[str, str] = {}
+    for key, number in (("duljina", metres(dims.get("l"))),
+                        ("horizontalna_duljina", metres(dims.get("pl"))),
+                        ("dubina", nvr),
+                        ("visinska_razlika", span)):
+        if number is not None and round(number):
+            out[key] = str(round(number))
+    return out
+
+
+def _same_measurement(recorded: str, measured: str) -> bool:
+    """Whether an older OSZ's number is the SAME measurement as the survey's
+    whole metres — ``40,3`` / ``40 m`` / ``-9`` against ``40`` / ``9``. Then
+    the recorder's text stays (it is no less true and maybe more precise), so
+    a re-run does not churn the document. Anything not purely a number
+    ("oko 40", "?") is a hedge the measurement replaces."""
+    text = recorded.strip().lower().removesuffix("m").strip().replace(",", ".")
+    try:
+        number = abs(float(text))
+    except ValueError:
+        return False
+    return round(number) == int(measured)
+
+
 # ── migration of an older OSZ found in the intake leaf ───────────────
 # Identity/location fields where the fresh prefill (SB + finders) wins and
 # an older OSZ's differing value is only a note. Everything else — the
@@ -507,6 +638,20 @@ def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
             if _canon(merged) != _canon(existing.value):
                 result.fields[key] = FieldValue(value=merged, source="sb+stari-osz")
                 carried += 1
+        elif existing.source == DIMENSION_SOURCE:
+            # The survey's measurement is a fact (user, 2026-10-02): it beats
+            # the recorded number unless both say the same thing, in which
+            # case the recorder's text stays (no churn, no lost decimals).
+            if _same_measurement(value, existing.value):
+                if _canon(existing.value) != _canon(value):
+                    result.fields[key] = FieldValue(value=value, source="stari-osz",
+                                                    note=f"potvrđeno nacrtom ({existing.note})")
+            else:
+                preview = " ".join(value.split())[:60]
+                result.notes.append(
+                    f"Stari OSZ ({key}): '{preview}' ≠ izmjera iz nacrta "
+                    f"'{existing.value}' — zadržana izmjera."
+                )
         elif _old_osz_wins(key, existing):
             # Recorded content beats what the fresh prefill merely assumed:
             # the GPS default, the shared pristup template, and the inferred
@@ -680,12 +825,45 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
                 "ostavljen netaknut."
             )
             return old_osz_path
+
+        # A zapisnik open in Word (its ~$ lock file beside it): renaming the
+        # old file or overwriting the target would fail — or, on a Drive
+        # mount, half-succeed and leave only a _stari backup in the leaf.
+        # Touch nothing; the run-dir copy is the result.
+        for candidate in (target, old_osz_path):
+            lock = _word_lock(candidate) if candidate is not None else None
+            if lock is not None:
+                result.notes.append(
+                    f"{_LOCKED_NOTE} ({lock.name}). Novi dokument je ostao lokalno: "
+                    f"{docx_path}. Ako Word nije otvoren, obriši zaostalu "
+                    f"datoteku {lock.name} iz mape {lock.parent.name}."
+                )
+                return None
+
+        backup = None
         if old_osz_path is not None and old_osz_path.exists():
             backup = _backup_path(old_osz_path)
             old_osz_path.rename(backup)
+        try:
+            shutil.copy2(docx_path, target)
+        except OSError:
+            if backup is not None:
+                # Undo the rename so the leaf is never left with only a backup.
+                try:
+                    backup.rename(old_osz_path)
+                except OSError:
+                    result.notes.append(
+                        f"Stari OSZ je ostao preimenovan u {backup.name} — vrati ime ručno."
+                    )
+            raise
+        if backup is not None:
             result.notes.append(f"Stari OSZ sačuvan kao: {backup.name}")
-
-        shutil.copy2(docx_path, target)
+    except PermissionError as exc:
+        result.notes.append(
+            f"{_LOCKED_NOTE} (ili ga drži sinkronizacija: {exc}). "
+            f"Novi dokument je ostao lokalno: {docx_path}."
+        )
+        return None
     except OSError as exc:
         result.notes.append(
             f"Isporuka na Drive nije uspjela ({exc.__class__.__name__}: {exc}) — "
@@ -694,6 +872,30 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
         )
         return None
     return target
+
+
+_LOCKED_NOTE = "OSZ je otvoren u Wordu — zatvori ga i ponovi"
+
+
+def _word_lock(path: Path) -> Path | None:
+    """The Word owner file (``~$…``) for *path*, when one sits beside it.
+
+    Word names it after the document with the first one or two characters
+    replaced (``SB_1220_OSZ.docx`` → ``~$_1220_OSZ.docx``; a short name gets
+    the prefix outright), so the match is "the document's name ends with the
+    lock's tail, at most two characters shorter". A stale lock left by a
+    crashed Word counts too — the note tells the operator to delete it.
+    """
+    try:
+        names = [entry for entry in path.parent.iterdir() if entry.name.startswith("~$")]
+    except OSError:
+        return None
+    name = path.name.lower()
+    for lock in names:
+        tail = lock.name[2:].lower()
+        if tail and name.endswith(tail) and len(name) - len(tail) <= 2:
+            return lock
+    return None
 
 
 def _backup_path(old_path: Path) -> Path:

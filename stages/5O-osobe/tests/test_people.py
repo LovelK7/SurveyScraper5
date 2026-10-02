@@ -339,3 +339,66 @@ def test_statement_gates_stay_unchecked_until_the_dir_is_scanned() -> None:
     report = evaluate(dossier)
     labels = {rule.label for rule in report.unchecked if rule.source is Source.STATEMENTS}
     assert labels == {"Izjava za katastar (po autoru)", "Izjava po osobi (registar osoba)"}
+
+
+# ── people check --broj (per-cave izjave check) ───────────────────────
+
+
+def _cave_settings(settings, tmp_path: Path, izjave: tuple[str, ...]):
+    """Fixture SB with shorthand authors on Redni broj 2, a registry, an izjave dir."""
+    import dataclasses
+
+    import openpyxl
+
+    from conftest import FIXTURE
+
+    workbook = openpyxl.load_workbook(FIXTURE)
+    sheet = workbook["Svi objekti"]
+    header = [cell.value for cell in sheet[2]]
+    column = header.index("Autori nacrta") + 1
+    for row in sheet.iter_rows(min_row=3):
+        if row[0].value == 2:
+            sheet.cell(row=row[0].row, column=column, value="A.Anić; I.Ivić")
+    book = tmp_path / "sb.xlsx"
+    workbook.save(book)
+
+    (tmp_path / "izjave").mkdir()
+    _touch(tmp_path / "izjave", *izjave)
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"people": ["Ana Anić", "Ivo Ivić"]}), encoding="utf-8")
+    return dataclasses.replace(
+        settings,
+        sb_workbook_path=book,
+        local_drive_root=tmp_path,
+        archive_dirs={"statements_dir": "izjave"},
+        people_registry_path=registry,
+    )
+
+
+def test_people_check_broj_blocks_on_a_missing_author_izjava(settings, tmp_path, capsys) -> None:
+    from cave_dossier.cli import EXIT_NOT_READY, cmd_people_check
+
+    cave_settings = _cave_settings(settings, tmp_path, ("Izjava_AAnić.pdf",))
+    assert cmd_people_check(cave_settings, 40, 2) == EXIT_NOT_READY
+    out = capsys.readouterr().out
+    assert "Redni broj 2: Jama Čavlić" in out
+    assert "✓ Ana Anić" in out and "Izjava_AAnić.pdf" in out
+    assert "✗ Ivo Ivić" in out and "(nema izjave)" in out
+    assert "BLOCKER" in out and "I.Ivić" in out
+    # Only statement findings — no SB-field or file rules leak in.
+    assert "Zapisnik" not in out
+
+
+def test_people_check_broj_passes_when_every_author_is_covered(settings, tmp_path, capsys) -> None:
+    from cave_dossier.cli import EXIT_READY, cmd_people_check
+
+    cave_settings = _cave_settings(settings, tmp_path, ("Izjava_AAnić.pdf", "Izjava_IIvić.pdf"))
+    assert cmd_people_check(cave_settings, 40, 2) == EXIT_READY
+    assert "BLOCKER" not in capsys.readouterr().out
+
+
+def test_people_check_broj_unknown_serial_is_an_error(settings, tmp_path) -> None:
+    from cave_dossier.cli import EXIT_ERROR, cmd_people_check
+
+    cave_settings = _cave_settings(settings, tmp_path, ())
+    assert cmd_people_check(cave_settings, 40, 999) == EXIT_ERROR

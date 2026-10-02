@@ -9,7 +9,8 @@ class FieldValue(BaseModel):
     """One OSZ field as resolved by the precedence rule (SB wins)."""
 
     value: str | None = None
-    # "sb" | "geo-admin" | "geo-rgi" | "dmv-dgu" | None (nothing available)
+    # "sb" | "geo-admin" | "geo-rgi" | "dmv-dgu" | "nacrt" (the 3N dimensions
+    # file) | "stari-osz" | … | None (nothing available)
     source: str | None = None
     note: str | None = None
 
@@ -37,6 +38,9 @@ class PrefillResult(BaseModel):
     # carried into the fresh document.
     migrated_from: str | None = None
     ticked_checkboxes: list[str] = Field(default_factory=list)
+    # The 3N ``<name>_dimenzije.json`` the measured Duljina / Dubina /
+    # Horizontalna duljina / Visinska razlika came from (user, 2026-10-02).
+    dimensions_source: str | None = None
     mismatches: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     sb_updates: list[SBUpdate] = Field(default_factory=list)

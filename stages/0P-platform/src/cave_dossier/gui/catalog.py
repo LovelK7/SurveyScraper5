@@ -109,8 +109,10 @@ ACTIONS: tuple[Action, ...] = (
            "Prepoznati red zaglavlja i svi nazivi stupaca.",
            "cli", ("sb", "columns"), group="Pregled SB-a"),
     Action("sb-inspect", "2B", "Red objekta u SB-u",
-           "Ispis cijelog SB reda za objekt (ime, SUE broj ili broj pločice; "
-           "dio imena je dovoljan).",
+           "Ispis cijelog SB reda za odabrani objekt (po Rednom broju).",
+           "cli", ("sb", "inspect", "--broj", "{broj}"), group="Pregled SB-a"),
+    Action("sb-search", "2B", "Pretraži SB po imenu",
+           "Ime, SUE broj ili broj pločice; dio imena je dovoljan.",
            "cli", ("sb", "inspect", "--cave", "{query}"), group="Pregled SB-a"),
     Action("sb-audit-authors", "2B", "Nečitljivi autori",
            "Ćelije 'Autori nacrta ili izvor' koje razdjelnik imena ne razumije.",
@@ -182,8 +184,10 @@ ACTIONS: tuple[Action, ...] = (
     ),
     Action(
         "3n-k3c", "3N", "Složi Nacrt na sastavnicu",
-        "Tlocrt + profil na stranicu sastavnice → SB_<broj>_nacrt.pdf. Ako crtež "
-        "ne stane, javlja preklop u mm: ponovi 3a s --layout N.",
+        "Tlocrt + profil na stranicu sastavnice → SB_<broj>_nacrt.pdf. Sastavnica "
+        "se svaki put puni iznova iz SB-a, popunjenog OSZ-a i dimenzija, pa ovaj "
+        "korak ponovi kad se OSZ promijeni. Ako crtež ne stane, javlja preklop "
+        "u mm: ponovi 3a s --layout N.",
         "cli", ("nacrt", "{broj}"),
         options=(OFFLINE, LOCAL, Option("--force", "Prepiši tuđi nacrt (--force)")),
         writes="isporučuje SB_<broj>_nacrt.pdf u mapu objekta",
@@ -224,9 +228,10 @@ ACTIONS: tuple[Action, ...] = (
            ),
            writes="STVARA TOČKU NA georef.hr i sprema PNG u !!Isječci karte"),
     # ── 4O — OSZ ─────────────────────────────────────────────────────
-    Action("osz-prefill", "4O", "Pripremi OSZ",
-           "SB + tražilice → popunjeni SB_<broj>_OSZ.docx u mapi objekta, "
-           "+ dopune-sb.csv za ručni unos u SB.",
+    Action("osz-prefill", "4O", "Pripremi / osvježi OSZ",
+           "SB + tražilice + karta (+ duljina i dubina iz izmjere, kad postoje) → "
+           "SB_<broj>_OSZ.docx u mapi objekta, + dopune-sb.csv za ručni unos u SB. "
+           "Ponovno pokretanje zadržava sve što je već upisano.",
            "cli", ("osz", "prefill", "{broj}"),
            options=(
                OFFLINE,
@@ -268,14 +273,18 @@ ACTIONS: tuple[Action, ...] = (
     # ── 5O — osobe ───────────────────────────────────────────────────
     Action("people-list", "5O", "Registar osoba",
            "Svaka osoba iz registra, njeni nadimci i povezane izjave.",
-           "cli", ("people", "list")),
-    Action("people-check", "5O", "Provjera izjava",
+           "cli", ("people", "list"), group="Cijeli registar"),
+    Action("people-check-cave", "5O", "Izjave za ovaj objekt",
+           "Svaki autor odabranog objekta: je li u registru, ima li izjavu i "
+           "pokriva li ona ovaj objekt.",
+           "cli", ("people", "check", "--broj", "{broj}")),
+    Action("people-check", "5O", "Provjera izjava — cijeli registar",
            "Osobe bez izjave, izjave bez osobe, SB autori koje registar ne zna.",
-           "cli", ("people", "check")),
+           "cli", ("people", "check"), group="Cijeli registar"),
     # ── 5D — dosje ───────────────────────────────────────────────────
-    Action("report", "5D", "Dosje objekta (oba praga)",
-           "Što postoji, što nedostaje, što blokira — prag SUE i prag CroSpeleo.",
-           "cli", ("report", "--cave", "{query}"),
+    Action("report", "5D", "Dosje kao tekst",
+           "Isti dosje kao gore, ispisan kao tekst ili JSON.",
+           "cli", ("report", "--broj", "{broj}"),
            options=(
                Option("--json", "Kao JSON (--json)"),
                Option("--gate", "Izlazni kod prati prag", kind="choice",
@@ -350,32 +359,37 @@ class Stage:
     readme: str
     status: str
     notes: tuple[str, ...] = field(default_factory=tuple)
+    #: Nav heading. The nav follows the per-cave working order (workflow.py),
+    #: not the label digits: 4O and 4I come before 3N, 4S sits beside 3N.
+    group: str = ""
 
 
-#: The tabs, in pipeline order. Status mirrors pipeline.yaml.
+#: The tabs, in working order (user, 2026-10-02). Status mirrors pipeline.yaml.
 STAGES: tuple[Stage, ...] = (
     Stage("1T", "Teren", "Mape s terena pod !Za digitalizirat",
-          "stages/1T-teren/README.md", "parked"),
+          "stages/1T-teren/README.md", "parked", group="Baza"),
     Stage("2B", "Speleo baza", "SB radna knjiga i satelitske tablice",
-          "stages/2B-baza/README.md", "operational"),
-    Stage("3N", "Nacrt", "TopoDroid .csx → SB_<broj>_nacrt.pdf preko cSurveya",
-          "stages/3N-nacrt/README.md", "operational"),
+          "stages/2B-baza/README.md", "operational", group="Baza"),
     Stage("4G", "Geo", "Lokalitet i kota iz otvorenih DGU servisa",
-          "stages/4G-geo/README.md", "operational"),
+          "stages/4G-geo/README.md", "operational", group="Objekt — redom rada"),
     Stage("4I", "Isječak karte", "Isječak karte s georef.hr",
-          "stages/4I-isjecak/README.md", "operational"),
+          "stages/4I-isjecak/README.md", "operational", group="Objekt — redom rada"),
     Stage("4O", "OSZ", "Osnovni speleološki zapisnik (v10 predložak)",
-          "stages/4O-osz/README.md", "operational"),
+          "stages/4O-osz/README.md", "operational", group="Objekt — redom rada"),
+    Stage("3N", "Nacrt", "TopoDroid .csx → SB_<broj>_nacrt.pdf preko cSurveya",
+          "stages/3N-nacrt/README.md", "operational", group="Objekt — redom rada"),
+    Stage("4S", "Sastavnica", "Sastavnica Nacrta za Illustrator (ruta B)",
+          "stages/4S-sastavnica/README.md", "operational", group="Objekt — redom rada",
+          notes=("Na cSurvey ruti sastavnica se slaže sama u KORAKU 3c (3N). "
+                 "Ovaj korak treba samo kad se nacrt crta u Illustratoru.",)),
     Stage("4F", "Fotografije", "Fotografije ulaza",
-          "stages/4F-fotografije/README.md", "partial"),
-    Stage("4S", "Sastavnica", "Sastavnica Nacrta za Illustrator",
-          "stages/4S-sastavnica/README.md", "operational"),
+          "stages/4F-fotografije/README.md", "partial", group="Objekt — redom rada"),
     Stage("5O", "Osobe", "Registar osoba i izjave",
-          "stages/5O-osobe/README.md", "operational"),
+          "stages/5O-osobe/README.md", "operational", group="Provjera i predaja"),
     Stage("5D", "Dosje", "Dosje objekta i dva praga",
-          "stages/5D-dosje/README.md", "partial"),
+          "stages/5D-dosje/README.md", "partial", group="Provjera i predaja"),
     Stage("6P", "Predaja", "Isporuka u arhivu i upis u SB",
-          "stages/6P-predaja/README.md", "planned",
+          "stages/6P-predaja/README.md", "planned", group="Provjera i predaja",
           notes=("Samo dizajn (M6): upis u SB preko Excel COM-a i premještanje "
                  "u arhivske mape. Gumbi ispod su maketa budućeg sučelja.",)),
 )

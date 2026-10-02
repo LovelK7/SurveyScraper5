@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -18,6 +19,8 @@ from cave_dossier.cli import build_parser
 from cave_dossier.gui import catalog
 from cave_dossier.gui.jobs import JobManager
 from cave_dossier.gui.server import App, make_handler
+from cave_dossier.gui import workflow
+from cave_dossier.gui.server import _Server
 from cave_dossier.gui.state import Workspace, classify, sb_versions, tools_dir
 
 
@@ -207,7 +210,8 @@ def server(drive):
     ws, root, leaf = drive
     opened: list = []
     app = App(ws=ws, jobs=JobManager(None), token="t0k",
-              opener=lambda target, app=None, reveal=False: opened.append(target))
+              opener=lambda target, app=None, reveal=False: opened.append(target),
+              deleter=lambda target: target.unlink())  # never the real Recycle Bin
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(app))
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{httpd.server_address[1]}", opened, leaf
@@ -266,3 +270,101 @@ def test_open_guarded(server, tmp_path):
     assert _call(base, "/api/open", {"what": "path", "path": str(outside)})[0] == 403
     assert _call(base, "/api/open", {"what": "sb"})[0] in (200, 400)
     assert opened[0] == leaf
+
+
+def test_thumb_serves_only_the_caves_photos(server):
+    base, _, leaf = server
+    photo = leaf / "SB_1220_Hrđava špilja_LKukuljan_1.jpg"
+    photo.write_bytes(bytes([0xFF, 0xD8]) + b"not-really-a-jpeg")  # Pillow fails -> original bytes
+    query = urllib.parse.urlencode({"broj": 1220, "path": str(photo), "w": 240})
+    with urllib.request.urlopen(f"{base}/api/thumb?{query}&t=t0k", timeout=10) as res:
+        assert res.status == 200 and res.read().startswith(bytes([0xFF, 0xD8]))
+    with pytest.raises(urllib.error.HTTPError) as err:
+        urllib.request.urlopen(f"{base}/api/thumb?{query}&t=wrong", timeout=10)
+    assert err.value.code == 403
+    other = urllib.parse.urlencode({"broj": 1220, "path": str(leaf / "a.csx")})
+    with pytest.raises(urllib.error.HTTPError) as err:
+        urllib.request.urlopen(f"{base}/api/thumb?{other}&t=t0k", timeout=10)
+    assert err.value.code == 404
+
+
+def test_delete_photos_only_and_only_confirmed(server):
+    base, _, leaf = server
+    photo = leaf / "IMG_0001.jpg"
+    photo.write_bytes(b"x")
+    assert _call(base, "/api/delete", {"broj": 1220, "path": str(photo)})[0] == 409
+    assert _call(base, "/api/delete", {"broj": 1220, "path": str(leaf / "a.csx"),
+                                       "confirmed": True})[0] == 403
+    assert (leaf / "a.csx").exists()
+    status, data = _call(base, "/api/delete", {"broj": 1220, "path": str(photo), "confirmed": True})
+    assert status == 200 and not photo.exists()
+
+
+def test_cave_view_carries_workflow_and_locks(server):
+    base, _, leaf = server
+    (leaf / "~$_1220_OSZ.docx").write_text("lock", encoding="utf-8")
+    status, data = _call(base, "/api/cave/1220")
+    assert status == 200
+    assert data["locks"] == ["~$_1220_OSZ.docx"]
+    assert all(not f["name"].startswith("~$") for f in data["files"])
+    ids = [s["id"] for s in data["workflow"]["steps"]]
+    assert ids[:3] == ["mapa", "karta", "osz-prefill"] and "3n-k3c" in ids
+
+
+def test_exclusive_bind_refuses_a_busy_port():
+    """Windows SO_REUSEADDR let two dashboards share 8790 (2026-10-02)."""
+    first = _Server(("127.0.0.1", 0), make_handler(App(ws=Workspace(None), token="x")))
+    try:
+        with pytest.raises(OSError):
+            _Server(("127.0.0.1", first.server_address[1]), make_handler(App(token="y")))
+    finally:
+        first.server_close()
+
+
+# ── workflow ────────────────────────────────────────────────────────
+
+
+def _f(kind, name, t):
+    return {"kind": kind, "name": name, "path": "/x/" + name, "modified": float(t), "size": 1}
+
+
+def _states(steps):
+    return {s.id: s.status for s in steps}
+
+
+def test_workflow_fresh_cave_points_at_karta():
+    detail = {"leaves": [{"path": "/x"}], "files": [], "karta": {"exists": False}}
+    steps = workflow.build(detail)
+    current = [s.id for s in steps if s.current]
+    assert current == ["karta"]
+    assert _states(steps)["3n-k1"] == "blocked"
+
+
+def test_workflow_survey_change_makes_downstream_stale():
+    files = [_f("raw", "a.csx", 100), _f("pp", "a_pp.csx", 200), _f("lt", "a_pp_lt.csx", 300),
+             _f("fin", "a_pp_lt_fin.csx", 400), _f("plan", "a_plan.pdf", 500),
+             _f("profile", "a_profile.pdf", 500), _f("dimenzije", "a_dimenzije.json", 500),
+             _f("nacrt", "SB_1220_nacrt.pdf", 600), _f("osz", "SB_1220_OSZ.docx", 50)]
+    detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
+    osz = {"opis": "Ulaz je…", "duljina": "18", "dubina": "5"}
+    states = _states(workflow.build(detail, osz, dims={"l": 18}))
+    assert states["3n-k3c"] == "done" and states["osz-dims"] == "done"
+    # The sketch is corrected again after finishing: 3a and everything after it moves.
+    files[2] = _f("lt", "a_pp_lt.csx", 450)
+    states = _states(workflow.build(detail, osz, dims={"l": 18}))
+    assert states["3n-k3a"] == "stale"
+    # The OSZ is filled after the nacrt was composed: 3c must be redone (postfill).
+    files[2] = _f("lt", "a_pp_lt.csx", 300)
+    files[8] = _f("osz", "SB_1220_OSZ.docx", 700)
+    states = _states(workflow.build(detail, osz, dims={"l": 18}))
+    assert states["3n-k3c"] == "stale"
+
+
+def test_workflow_osz_waits_for_measured_lengths():
+    files = [_f("osz", "SB_1220_OSZ.docx", 50), _f("dimenzije", "a_dimenzije.json", 60)]
+    detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
+    states = _states(workflow.build(detail, {"opis": "x"}, dims={"l": 18}))
+    assert states["osz-dims"] == "todo"
+    states = _states(workflow.build(detail, {"opis": "x", "duljina": "40", "dubina": "5"}, dims={"l": 18}))
+    assert states["osz-dims"] == "stale"  # the OSZ disagrees with the survey
+    assert _states(workflow.build(detail, None, "nečitljiv"))["osz-filled"] == "unknown"

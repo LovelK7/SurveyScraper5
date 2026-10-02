@@ -352,3 +352,18 @@ when an idea's time comes. Nothing here is a commitment.
   except 3N, which then needs `CSX_TOOLS` pointed at the Drive kit's payload.
 - 2026-09-24 — dashboard: optional SSE instead of 400 ms polling, and a "follow the
   3N chain" mode that pre-selects the next KORAK from the cave's files.
+- 2026-10-02 — cSurvey on the Drive: copy `C:\csurvey64` to `!!!Digitalizacija/SurveyScraper5/cSurvey/`
+  (~175 MB, mark "available offline"), run `csurvey_driver.py info` once from `G:`, then
+  publish the csx kit so the `.bat` launchers pick it up (the driver already looks there).
+  Optionally let `build_csx_kit.py` verify the folder exists.
+- 2026-10-02 — 4S: with no dimensions file, the sastavnica's Dubina falls back to the OSZ's
+  **Visinska razlika** before its Dubina (`_set_first` order in sastavnica/prefill.py), and
+  prints it unsigned. Now that `osz prefill` fills both cells, decide whether Dubina should
+  come first.
+- 2026-10-02 — stage labels vs working order: 4S is built inside 3N's KORAK 3c and 4O/4I run
+  before 3N for a cave. The dashboard nav follows the working order; whether to renumber the
+  repo stages (e.g. 4S → part of 3N, or OSZ before Nacrt) is an open repo-wide decision.
+- 2026-10-02 — dashboard workflow: "Pokreni sve zastarjelo" (run every stale step in dependency
+  order with one confirm), and a per-cave history from `runs/gui/*.log`.
+- 2026-10-02 — dashboard: the cave list could carry each cave's workflow summary (done/stale
+  counts) so the picker itself shows which caves need attention.

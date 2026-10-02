@@ -665,6 +665,33 @@ Settled with the user during the prefill build; enforced in `osz/prefill.py`:
   (format migrations), missing CSV rows, unreadable PNGs all auto-refresh on
   the next run; nothing requires a manual cleanup ritual.
 
+**Amendment (2026-10-02) — measured dimensions from the Nacrt.** The "never
+prefilled" rule for Duljina / Dubina pointed at *the survey process*; that
+process now exists (3N's cSurvey route leaves `<name>_dimenzije.json` in the
+cave's intake leaf), so the rule is narrowed, not reversed:
+
+- `osz prefill` reads the **newest** `*_dimenzije.json` in the leaf (as a file
+  artifact — no import of 4S or 3N code) and fills **Duljina** ← `l`,
+  **Horizontalna duljina** ← `pl`, **Dubina** ← `nvr_m` else `nvr`, and
+  **Visinska razlika** ← `vr` else depth + height (`pvr_m`/`pvr`) — the same
+  mapping 4S's title block uses, so zapisnik and nacrt agree. Cells hold bare,
+  unsigned whole metres (the template headers say `(m)`; SB and legacy
+  zapisnici record Dubina positive; 4S adds the minus itself). Zero = not
+  surveyed → left empty. Source label `nacrt`.
+- **The measurement wins** over a value an older OSZ recorded (migration):
+  a differing number is replaced and the note says so; a number that rounds
+  to the same metres keeps the recorder's text (no churn, no lost decimals).
+- **SB still never fills these four cells** — unchanged.
+- **Why** (user, 2026-10-02): the two products depend on each other — the
+  zapisnik needs the survey's numbers, the survey work happens around the
+  zapisnik — so whichever of 3N and 4O runs first, the other needs a later
+  update. Re-running `osz prefill` after the Nacrt is that update: it migrates
+  the filled zapisnik forward and "postfills" the measured values.
+- Fail-soft: no file / unreadable JSON → note, cells untouched;
+  `"calculated": false` → filled, with a "provjeri" note. A zapisnik open in
+  Word (`~$…` owner file in the leaf) is warned about up front and never
+  overwritten — the new document stays in the run dir.
+
 ## OSZ backfill → SB rules (2026-08-30)
 
 The reverse direction (`cavedossier osz backfill`, renamed from `osz fetch`
@@ -934,6 +961,65 @@ LIVE with v2.4 seen as older, SB 1220's leaf classified correctly, a 3a
 `--dry-run` on its `_lt` run from the page, `geo locate 1220 --offline` streamed
 and logged, and the unconfirmed-write / foreign-file / missing-token refusals
 checked over HTTP.
+
+### Round 2 — one cave's work is a graph, not a line (2026-10-02)
+
+The user's review of the first dashboard settled these:
+
+- **The order of stages is not the order of work.** Do 3N first and the
+  composed Nacrt's title block lacks everything the OSZ would give it. Do the
+  OSZ first and it lacks Duljina/Dubina, which only the survey measures. So
+  either way one side needs a later update (user). The answer is not a better
+  fixed order but a **dependency graph of artifacts** (`gui/workflow.py`).
+  Each step knows its output files and input files. An output older than an
+  input, or an OSZ whose Duljina disagrees with the dimensions file, is
+  **stale**, and the step's own action refreshes it. "Postfill" is therefore
+  not a new tool. It is re-running the step whose inputs moved:
+  - **OSZ ← survey:** `osz prefill` now takes Duljina / horizontalna duljina /
+    Dubina / visinska razlika from `_dimenzije.json` and keeps the filled
+    content, so re-running it after 3N adds the measurements
+    ([amendment](#21b-prefill-rules-2026-08-30)).
+  - **Nacrt ← filled OSZ:** `cavedossier nacrt` (3c) already rebuilds its
+    sastavnica from SB + the leaf's filled OSZ + the dimensions every run, so
+    re-running 3c after the OSZ is filled is the whole postfill.
+  The recommended working order this produces: automatic steps first (karta,
+  OSZ prefill), then the two pieces of human work **in parallel** (fill the
+  OSZ in Word, draw in cSurvey), then the merge (OSZ ← lengths, 3c), then
+  photos and checks.
+- **Where 4S sits.** On the cSurvey route the sastavnica is not a late step: it
+  is built inside 3c. As a stage of its own it serves only the Illustrator
+  route (B), which branches off at the same point as 3c. The nav therefore
+  lists 4S right after 3N, and the workflow marks it optional. The repo labels
+  (`3N`, `4S`) are left alone. Renumbering is a repo-wide change and a
+  separate decision, and the GUI order no longer depends on the digits.
+- **Done is green, next is gold, stale is amber** (user asked for done steps to
+  be visibly green so "where am I" reads at a glance). The brand is gold
+  `#EBAF01` with the user's 50–950 scale; state colours stay separate from the
+  brand so a gold button never reads as a status.
+- **Icons** for every Drive folder and stage are one inline SVG sprite
+  (`static/index.html`), stroke-only and `currentColor`, so they theme with
+  the page and carry over to a real GUI unchanged.
+- **4F: photos visible and deletable** (user). Deletion is always recoverable:
+  the shell's "allow undo" sends a local file to the Recycle Bin, and on the
+  Drive folder deleting moves the file to the Google Drive trash (30 days).
+  Only photos of the current cave, only after a confirm, and the server
+  refuses an unconfirmed or foreign path.
+- **5O per cave** (user): `people check --broj N`, and the 5O/5D tabs draw the
+  same `view_for_serial` data. `report` and `sb inspect` got `--broj` because
+  the dashboard knows the Redni broj while the intake folder name differs from
+  SB's (`Platak-Hrđava špilja` vs `Hrđava špilja` made `report --cave` fail).
+- **cSurvey needs no installation.** `C:\csurvey64` is an unzipped folder (no
+  uninstall entry). A copy elsewhere drove `csurvey_driver.py dimensions`
+  headless in 5 s (2026-10-02). So one copy on the shared Drive can serve
+  every operator. `csurvey_driver.py` and the dashboard now look for
+  `!!!Digitalizacija/SurveyScraper5/cSurvey/` beside the kit after
+  `CSURVEY_DIR` and before `C:\csurvey64`. The copy itself (~175 MB) is the
+  user's call. It has not been made, nor run from `G:` yet. Mark it "available
+  offline" in Drive so the DLLs are not streamed on every start.
+- **Bind the port exclusively.** `http.server` sets `SO_REUSEADDR`, which on
+  Windows let two dashboards listen on 8790 at once: the old one answered
+  and the next-free-port fallback never fired. The server now binds with
+  `SO_EXCLUSIVEADDRUSE`.
 
 ## 3N entrance: surface legs (2026-09-24)
 

@@ -115,12 +115,14 @@ cavedossier gui --port 8800 --no-browser   # another port; do not open the brows
 # ── Read-only SB inspection (part 2.2a) ────────────────────────────────
 cavedossier sb columns                     # detected header row + all column names
 cavedossier sb inspect --cave "Ponor X"    # dump a cave's row (name / SUE / plaque; substring OK)
+cavedossier sb inspect --broj 1438         # ... or by SB Redni broj (exactly one of --cave/--broj)
 cavedossier sb stats                       # sheets, row counts, fill counts of key columns
 
 # ── Per-cave dossier report (part 2.1) ─────────────────────────────────
 cavedossier report --cave "Konglomeratača"      # both gates, text
 cavedossier report --cave 570 --json            # the dossier as data
 cavedossier report --cave 570 --gate crospeleo  # exit code follows gate 2 instead
+cavedossier report --broj 1438                  # by SB Redni broj (exactly one of --cave/--broj)
 
 # ── Workbook-wide audits (read-only worklists for an Excel cleanup pass) ─
 cavedossier sb audit-authors --limit 40    # author cells the splitter cannot read
@@ -132,6 +134,9 @@ cavedossier people check                   # audit: people without an izjava · 
                                            #   signer is not in the registry · SB author names
                                            #   the registry cannot resolve; also writes the
                                            #   person↔izjava JSON to runs/people/
+cavedossier people check --broj 1438       # ONE cave: each person ✓/~/✗/? + the statement
+                                           #   blockers (gate 1) / warnings (gate 2);
+                                           #   exit 1 = gate 1's people all covered, 0 = not
 # Author vs finder: in `Autori nacrta ili izvor` only names written N.Prezime
 # (L.Kukuljan) are survey authors and get statement-checked; everything else
 # (bare first names, full names) is a cave finder/source — no izjava needed,

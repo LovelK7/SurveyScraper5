@@ -6,6 +6,7 @@ and isječak karte (2.1c) fill the remaining sources in later milestones.
 """
 
 from cave_dossier.dossier.gating import RULES, evaluate, start_year
+from cave_dossier.dossier.assemble import assemble, view_for_serial
 from cave_dossier.dossier.model import (
     AUTHOR_ROLES,
     GATE_LABELS,
@@ -26,7 +27,7 @@ from cave_dossier.dossier.model import (
     SurveyResult,
     UncheckedRule,
 )
-from cave_dossier.dossier.report import render
+from cave_dossier.dossier.report import render, to_view
 from cave_dossier.dossier.sb_mapper import (
     NESREDENI_KEYWORDS,
     build_from_sb,
@@ -55,10 +56,13 @@ __all__ = [
     "Source",
     "SurveyResult",
     "UncheckedRule",
+    "assemble",
     "build_from_sb",
     "derive_lifecycle",
     "evaluate",
     "parse_queue_flag",
     "render",
     "start_year",
+    "to_view",
+    "view_for_serial",
 ]

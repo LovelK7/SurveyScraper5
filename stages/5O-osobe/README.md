@@ -15,9 +15,21 @@ names fall outside it entirely.
 ```powershell
 cavedossier people list    # every person with derived/curated aliases + linked izjave
 cavedossier people check   # the audit; writes runs/people/statements-index.json
+cavedossier people check --broj 1438   # ONE cave: its people and their izjave
 ```
 
 Both are read-only. They change nothing, ever.
+
+`people check --broj N` is the per-cave face of the statement gates. It
+assembles the cave's dossier exactly like `cavedossier report` and prints only
+the izjave part: one line per person (`✓` an izjava covers this cave · `~` izjave
+exist but for another locality/cave · `✗` none on file · `?` not in the
+registry), then the statement findings of gate 1 (per-author blockers) and gate 2
+(per-person warnings, only what it adds). The findings are picked out by
+`Source.STATEMENTS` — only the two statement rules carry it, so SB-field and
+file rules never leak in. Exit codes: `1` every person gate 1 needs is covered ·
+`0` not, or the izjave dir could not be read (Drive) · `99` error / no row with
+that Redni broj. It writes no snapshot.
 
 ## How it works
 

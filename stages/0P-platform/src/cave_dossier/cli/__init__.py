@@ -16,7 +16,7 @@ from pathlib import Path
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
 from cave_dossier.core.matching import SB_PREFIX
-from cave_dossier.dossier import GateLevel, build_from_sb, evaluate, render
+from cave_dossier.dossier import GateLevel, assemble, render
 from cave_dossier.photos import (
     apply_renames,
     build_candidates,
@@ -84,9 +84,16 @@ def cmd_sb_columns(settings: Settings) -> int:
     return 0
 
 
-def cmd_sb_inspect(settings: Settings, query: str) -> int:
-    reader = SBReader(settings)
-    matches = reader.find_caves(query)
+def cmd_sb_inspect(settings: Settings, query: str | None, serial: int | None = None) -> int:
+    """Dump a cave's SB row, found by name/SUE/plaque (``query``) or Redni broj (``serial``)."""
+    if serial is not None:
+        cave = _find_serial_or_exit(settings, serial)
+        if cave is None:
+            return EXIT_ERROR
+        matches = [cave]
+        query = f"Redni broj {serial}"
+    else:
+        matches = SBReader(settings).find_caves(query)
     if not matches:
         print(f"No SB row matches {query!r} (tried object name, SUE number, plaque;")
         print("diacritic- and case-insensitive; then name substring).")
@@ -129,36 +136,40 @@ def cmd_sb_stats(settings: Settings) -> int:
     return 0
 
 
-def cmd_report(settings: Settings, query: str, as_json: bool, gate: str) -> int:
-    """Per-cave dossier report (M2).
-
-    Both gates are always printed; ``--gate`` only picks which one the exit
-    code reports on. Exit codes are the user's convention (2026-08-26):
-    ``1`` ready, ``0`` not ready, ``99`` error.
-    """
-    reader = SBReader(settings)
-    matches = reader.find_caves(query)
+def _resolve_one_cave(settings: Settings, query: str | None, serial: int | None):
+    """The ONE SB row for ``--cave`` or ``--broj``, or None after printing why."""
+    if serial is not None:
+        return _find_serial_or_exit(settings, serial)
+    matches = SBReader(settings).find_caves(query)
     if not matches:
         print(f"No SB row matches {query!r} (tried object name, SUE number, plaque).")
-        return EXIT_ERROR
+        return None
     if len(matches) > 1:
-        print(f"{len(matches)} rows match {query!r} — refine the query:")
+        print(f"{len(matches)} rows match {query!r} — refine the query (or use --broj):")
         for cave in matches:
             print(f"  row {cave.row_number}: {cave.object_name} (SUE {cave.sue_number or '—'})")
+        return None
+    return matches[0]
+
+
+def cmd_report(
+    settings: Settings, query: str | None, as_json: bool, gate: str, serial: int | None = None
+) -> int:
+    """Per-cave dossier report (M2).
+
+    The cave comes from ``--cave`` (name / SUE / plaque, must resolve to one
+    row) or ``--broj`` (Redni broj). Both gates are always printed; ``--gate``
+    only picks which one the exit code reports on. Exit codes are the user's
+    convention (2026-08-26): ``1`` ready, ``0`` not ready, ``99`` error.
+    """
+    cave = _resolve_one_cave(settings, query, serial)
+    if cave is None:
         return EXIT_ERROR
 
-    dossier = build_from_sb(matches[0], settings)
-
-    # Statement gathering: the izjave dir is shared (not per-cave), so it can
-    # be scanned before archive intake exists. Unreachable Drive → the
-    # statement gates honestly report "not checked yet".
-    from cave_dossier.people.registry import PersonRegistry
-    from cave_dossier.people.statements import enrich as enrich_statements
-
-    registry = PersonRegistry.load(settings.people_registry_path)
-    enrich_statements(dossier, settings, registry)
-
-    report = evaluate(dossier)
+    # SB mapping + izjave linkage + gating, shared with the dashboard and
+    # `people check --broj`. Unreachable Drive → statement gates "not checked".
+    dossier = assemble(settings, cave)
+    report = dossier.readiness
     if as_json:
         print(dossier.model_dump_json(indent=2, exclude={"sb_record"}))
     else:
@@ -1234,7 +1245,75 @@ def cmd_people_list(settings: Settings) -> int:
     return 0
 
 
-def cmd_people_check(settings: Settings, limit: int) -> int:
+def cmd_people_check_cave(settings: Settings, serial: int) -> int:
+    """Per-cave izjave check: is every person this cave names covered?
+
+    Assembles the cave's dossier exactly like ``report`` and prints only the
+    statement part: one line per person (report's "Osobe · izjave" marks) and
+    the findings of the two statement rules — gate 1's per-author blocker and
+    gate 2's per-person warnings. Those are picked out by source
+    (``Source.STATEMENTS``): only the statement rules carry it, so nothing
+    else (SB fields, files, queue notes) leaks in.
+
+    Exit: ``1`` every gate-1-relevant person is covered (izjave dir scanned
+    and no statement blocker at gate 1) · ``0`` not, or the dir could not be
+    scanned · ``99`` error / no such Redni broj.
+    """
+    from cave_dossier.dossier import Source
+    from cave_dossier.dossier.report import people_entries, person_line
+
+    cave = _find_serial_or_exit(settings, serial)
+    if cave is None:
+        return EXIT_ERROR
+    dossier = assemble(settings, cave)
+    report = dossier.readiness
+
+    print(f"Redni broj {serial}: {dossier.display_name}")
+    print(f"Registar: {settings.people_registry_path}")
+    if not dossier.has(Source.STATEMENTS):
+        print("Izjave:   mapa nedostupna (Drive? LOCAL_DRIVE_ROOT / archive.statements_dir)"
+              " — izjave nisu provjerene")
+        return EXIT_NOT_READY
+    print()
+
+    people = people_entries(dossier)
+    if people:
+        print("Osobe · izjave  (✓ pokriva ovaj objekt · ~ izjava za drugi lokalitet ·"
+              " ✗ nema izjave · ? nije u registru)")
+        for person in people:
+            print(f"  {person_line(person)}")
+    else:
+        print("Objekt ne imenuje nijednu osobu (autori nacrta / fotografija, ekipa).")
+
+    def statement_issues(gate: GateLevel):
+        own = [i for i in report.issues_for(gate) if i.source is Source.STATEMENTS]
+        if gate is GateLevel.CROSPELEO:
+            # Gate 2 repeats gate 1's findings; show only what it adds.
+            own = [i for i in own if i.level is GateLevel.CROSPELEO]
+        return own
+
+    gate1 = statement_issues(GateLevel.SUE)
+    gate2 = statement_issues(GateLevel.CROSPELEO)
+    for ordinal, label, issues in (
+        ("1", "katastarski broj SUE", gate1),
+        ("2", "CroSpeleo (dodatno uz gate 1)", gate2),
+    ):
+        print()
+        print(f"Gate {ordinal} — {label}:")
+        if not issues:
+            print("  (bez nalaza za izjave)")
+        for issue in issues:
+            tag = "BLOCKER" if issue.blocking else "warning"
+            print(f"  {tag:<8} {issue.message}")
+
+    covered = not any(issue.blocking for issue in gate1)
+    print()
+    print("✓ Sve osobe bitne za gate 1 imaju izjavu koja pokriva ovaj objekt."
+          if covered else "✗ Nedostaju izjave za gate 1 (vidi BLOCKER gore).")
+    return EXIT_READY if covered else EXIT_NOT_READY
+
+
+def cmd_people_check(settings: Settings, limit: int, serial: int | None = None) -> int:
     """Registry-wide audit: aliases used anywhere + who is missing an izjava.
 
     The registry-level face of the statement gates: (1) registry people with
@@ -1243,6 +1322,9 @@ def cmd_people_check(settings: Settings, limit: int) -> int:
     registry — names that resolve to no one. Writes the person↔izjava JSON
     snapshot under runs/people/.
     """
+    if serial is not None:
+        return cmd_people_check_cave(settings, serial)
+
     from cave_dossier.core.paths import workspace
     from cave_dossier.people.registry import PersonRegistry
     from cave_dossier.people.statements import (
@@ -1384,10 +1466,13 @@ def build_parser() -> argparse.ArgumentParser:
     sb_sub.add_parser("columns", help="Detected header row + all column names")
 
     inspect = sb_sub.add_parser("inspect", help="Dump a cave's SB row")
-    inspect.add_argument(
+    inspect_which = inspect.add_mutually_exclusive_group(required=True)
+    inspect_which.add_argument(
         "--cave",
-        required=True,
         help="Object name, SUE number, or plaque number (diacritic-insensitive; name substring works)",
+    )
+    inspect_which.add_argument(
+        "--broj", type=int, metavar="N", help="SB Redni broj (alternative to --cave)",
     )
 
     sb_sub.add_parser("stats", help="Sheet inventory + row/fill counts")
@@ -1408,10 +1493,13 @@ def build_parser() -> argparse.ArgumentParser:
         "report",
         help="Per-cave dossier: what is present, what is missing, what blocks",
     )
-    report.add_argument(
+    report_which = report.add_mutually_exclusive_group(required=True)
+    report_which.add_argument(
         "--cave",
-        required=True,
         help="Object name, SUE number, or plaque number (must resolve to ONE row)",
+    )
+    report_which.add_argument(
+        "--broj", type=int, metavar="N", help="SB Redni broj (alternative to --cave)",
     )
     report.add_argument(
         "--json",
@@ -1670,6 +1758,11 @@ def build_parser() -> argparse.ArgumentParser:
              "names outside the registry; writes runs/people/statements-index.json",
     )
     people_check.add_argument("--limit", type=int, default=40, help="Rows printed per list")
+    people_check.add_argument(
+        "--broj", type=int, metavar="N",
+        help="Check ONE cave (SB Redni broj): its people and their izjave, instead "
+             "of the registry-wide audit",
+    )
 
     photos = subparsers.add_parser(
         "photos",
@@ -1791,7 +1884,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.sb_command == "columns":
                 return cmd_sb_columns(settings)
             if args.sb_command == "inspect":
-                return cmd_sb_inspect(settings, args.cave)
+                return cmd_sb_inspect(settings, args.cave, args.broj)
             if args.sb_command == "stats":
                 return cmd_sb_stats(settings)
             if args.sb_command == "audit-authors":
@@ -1802,7 +1895,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.people_command == "list":
                 return cmd_people_list(settings)
             if args.people_command == "check":
-                return cmd_people_check(settings, args.limit)
+                return cmd_people_check(settings, args.limit, args.broj)
         if args.command == "photos":
             if args.photos_command == "match-queued":
                 return cmd_photos_match_queued(settings, args.limit, args.apply)
@@ -1850,7 +1943,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.osz_command == "backfill":
                 return cmd_osz_backfill(settings, args.redni_broj, args.osz_path, args.osz_dir)
         if args.command == "report":
-            return cmd_report(settings, args.cave, args.as_json, args.gate)
+            return cmd_report(settings, args.cave, args.as_json, args.gate, args.broj)
         return EXIT_ERROR
     except (ConfigError, SBWorkbookUnreachable) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

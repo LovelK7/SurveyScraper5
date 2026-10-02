@@ -20,7 +20,8 @@ joined on shared keys — never on a local row id.
 ```powershell
 cavedossier sb stats               # sheet inventory + row/fill counts
 cavedossier sb columns             # detected header row + all column names
-cavedossier sb inspect --cave 1220 # dump one cave's SB row
+cavedossier sb inspect --cave 1220 # dump one cave's SB row (name / SUE / plaque)
+cavedossier sb inspect --broj 1438 # ... or by SB Redni broj (exactly one of the two)
 cavedossier sb audit-authors       # author cells the name splitter cannot read
 cavedossier sb unclassified        # named rows in none of SB's views
 

@@ -371,3 +371,98 @@ def _p(name: str):
     from pathlib import Path
 
     return Path("C:/tmp/arhiva") / name
+
+
+# ── assemble / to_view / report --broj (the dashboard path) ───────────
+
+
+def _isolated(settings: Settings, tmp_path) -> Settings:
+    """Fixture settings with no Drive and a registry that is not the real one."""
+    import dataclasses
+
+    return dataclasses.replace(settings, people_registry_path=tmp_path / "registry.json")
+
+
+def test_assemble_is_fail_soft_without_drive(settings: Settings, tmp_path) -> None:
+    from cave_dossier.dossier import assemble
+
+    cave = SBReader(settings).find_caves("Špilja Testovka")[0]
+    dossier = assemble(_isolated(settings, tmp_path), cave)
+    assert dossier.readiness is not None
+    assert not dossier.has(Source.STATEMENTS)
+    assert any(
+        rule.source is Source.STATEMENTS for rule in dossier.readiness.unchecked_for(GateLevel.SUE)
+    )
+
+
+def test_to_view_schema(settings: Settings, tmp_path) -> None:
+    import json
+
+    from cave_dossier.dossier import to_view, view_for_serial
+
+    view = view_for_serial(_isolated(settings, tmp_path), 1)
+    assert view is not None
+    json.dumps(view)  # JSON-serialisable as is
+    assert set(view) == {
+        "name", "serial", "working_id", "sue", "excel_row", "lifecycle", "lifecycle_hint",
+        "sources", "sb", "survey", "files", "people", "gates",
+    }
+    assert view["name"] == "Špilja Testovka (SUE 001)"
+    assert view["serial"] == 1 and view["sue"] == "001" and view["excel_row"] == 3
+    assert view["lifecycle"] == "istraženi" and isinstance(view["lifecycle_hint"], str)
+    assert [s["key"] for s in view["sources"]] == [s.value for s in Source]
+    assert all(set(s) == {"key", "label", "gathered"} for s in view["sources"])
+    assert ["SUE broj", "001"] in view["sb"]
+    assert view["survey"] is None and view["files"] == [] and view["people"] == []
+    assert [(g["gate"], g["ordinal"]) for g in view["gates"]] == [("sue", 1), ("crospeleo", 2)]
+    for gate in view["gates"]:
+        assert set(gate) == {"gate", "ordinal", "label", "ready", "blockers", "warnings", "unchecked"}
+        assert all(set(u) == {"label", "source_label", "severity"} for u in gate["unchecked"])
+        assert all(u["severity"] in ("blocker", "warning") for u in gate["unchecked"])
+    # Gate 2 lists only what it adds: gate 1's unchecked rules are not repeated.
+    gate1 = {u["label"] for u in view["gates"][0]["unchecked"]}
+    assert not gate1 & {u["label"] for u in view["gates"][1]["unchecked"]}
+
+    # The complete dossier carries survey, files and a person.
+    from cave_dossier.people.statements import link_person_statements
+
+    dossier = _complete_dossier()
+    dossier.person_statements = link_person_statements(dossier)
+    evaluate(dossier)
+    full = to_view(dossier)
+    assert set(full["survey"]) == {
+        "length_m", "depth_m", "horizontal_length_m", "vertical_difference_m",
+    }
+    assert any(line.startswith("izjava") for line in full["files"])
+    assert full["people"] and set(full["people"][0]) == {"name", "roles", "status", "files"}
+    assert full["people"][0] == {
+        "name": "A.Anić", "roles": ["nacrt"], "status": "ok", "files": ["Izjava_AAnić.pdf"],
+    }
+
+
+def test_view_for_serial_unknown_is_none(settings: Settings, tmp_path) -> None:
+    from cave_dossier.dossier import view_for_serial
+
+    assert view_for_serial(_isolated(settings, tmp_path), 999, reader=SBReader(settings)) is None
+
+
+def test_report_broj_resolves_by_redni_broj(settings: Settings, tmp_path, capsys) -> None:
+    from cave_dossier.cli import EXIT_ERROR, EXIT_NOT_READY, cmd_report
+
+    code = cmd_report(_isolated(settings, tmp_path), None, False, "sue", serial=2)
+    assert code == EXIT_NOT_READY
+    assert "Jama Čavlić (SUE 002)" in capsys.readouterr().out
+
+    assert cmd_report(_isolated(settings, tmp_path), None, False, "sue", serial=999) == EXIT_ERROR
+    assert "Redni broj 999" in capsys.readouterr().err
+
+
+def test_report_cave_and_broj_are_mutually_exclusive_and_one_is_required() -> None:
+    from cave_dossier.cli import build_parser
+
+    parser = build_parser()
+    assert parser.parse_args(["report", "--broj", "7"]).broj == 7
+    assert parser.parse_args(["report", "--cave", "Testovka"]).broj is None
+    for argv in (["report", "--cave", "X", "--broj", "7"], ["report"]):
+        with pytest.raises(SystemExit):
+            parser.parse_args(argv)
