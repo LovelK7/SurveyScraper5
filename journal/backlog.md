@@ -367,3 +367,9 @@ when an idea's time comes. Nothing here is a commitment.
   order with one confirm), and a per-cave history from `runs/gui/*.log`.
 - 2026-10-02 — dashboard: the cave list could carry each cave's workflow summary (done/stale
   counts) so the picker itself shows which caves need attention.
+- 2026-10-02 — 3N: `nacrt_finish.read_stations` reads the direct `<t><p>` whose `d` is always 0; take it from
+  `<tcon><p>` so the profile-side entrance-sign witness compares against the real profile x (project 0005).
+- 2026-10-02 — 3N: the Borders sequence/fill-join rendering fact (cItemFreeHandArea.vb:193-195) belongs in
+  `stages/3N-nacrt/reference/` drawing docs once project 0005 closes.
+- 2026-10-02 — 3N: entrance dimensions could also run on the raw `_pp.csx` (walls are `name="wall" outline="1"`
+  lines) if the OSZ ever needs them before the Nacrt is finished.

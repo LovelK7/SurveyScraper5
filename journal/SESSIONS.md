@@ -12,6 +12,13 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-02 (evening) — 3N: entrance dimensions — feasibility on SB 1220 and SB 1103 (agent) ✅
+
+- **Did:** opened [project 0005](../stages/3N-nacrt/projects/0005-entrance-dimensions/brief.md) (`research`). Traced how `_lt_fin.csx` encodes the entrance station, the station coordinates and the Borders walls, then wrote `findings/entrance_dims_proto.py`: entrance station from the trigpoint flag (else `decide_entrance`), passage axis from the in-cave shot at that station, a ray cast perpendicular to it in the plan and vertically in the profile against the Borders split into `B` sequences, nearest drawn wall per side, short fill bridge as fallback, a scan along the axis, a pit branch (two plan extents + footprint Feret), and a splay LRUD cross-check. Plots + JSON reports under `findings/`; board row; brief with the open rules.
+- **Result:** SB 1220 (horizontal, entrance 4): width **0.64 m** (walls) vs 0.57 m (surveyor's left/right splays); height **1.49 m** = 0.69 m drawn floor + 0.81 m ceiling taken from a fill edge, flagged; the width scan shows the station is the narrowest point (0.64 → 0.79 inward, 3.2–3.7 on the drawn porch outward). SB 1103 (pit): 1.47 × 1.68 m plan opening at the station, no ceiling — correct. Not productionized; the user's rules come first.
+- **Learned:** a Borders item's `<points data>` is several sub-paths split on the `B` flag (cPoints.vb:564); cSurvey strokes each one alone but **fills the item as one polygon with straight joins from each sequence's end to the next's start** (cItemFreeHandArea.vb:193-195). The "ceiling" over SB 1220's entrance in the screenshot is such a join, and the item's 15 m closing edge passes 5 cm above the station — hence "drawn wall first, bridge only if shorter than 5 m". Station `<t>` has a direct `<p d="0">`; the real profile distance is only in the `<tcon><p>` copies, so `nacrt_finish.read_stations` has `d=0` for every station and its profile-side sign witness compares against x = 0 (latent; the plan witness answered first on every cave so far). cSurvey's own per-shot splay-left/right/up/down fields are unset in our files; raw TopoDroid exports carry walls as `name="wall" outline="1"` lines.
+- **Next:** the user settles brief §3 phase 2 (fallback source, entrance plane, pit pair, format); gather caves with a vouched entrance size; then fold the measurement into `nacrt_finish.py` (fixing `read_stations` on the way) → `_dimenzije.json` → 4O `sirina_ulaza` / `visina_duljina_ulaza`.
+
 ### 2026-09-20 (evening) — 3N/4S: KORAK 3 shipped — the cSurvey route delivers a Nacrt (agent + delegated sessions) ✅
 
 - **Did:** orchestrated five delegated sessions from project 0004's task prompts and reviewed each
