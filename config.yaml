@@ -137,7 +137,7 @@ intake:
     # Overrides a lookalike automatic match:
     - "Božur_Frustuck"           # resembles "Božur" (1087) but is a different cave
     # Confirmed by the user 2026-08-29, re-checked 2026-09-19 — still no SB row.
-    - "Ona mala špilja_Mileni"
+    # ("Ona mala špilja_Mileni" removed 2026-10-02: SB row 1459 now exists.)
     - "Mune_Nat4_Natalija"
     - "kurvica_na_putu_ivana"
 

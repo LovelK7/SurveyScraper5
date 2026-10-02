@@ -495,3 +495,24 @@ def test_sb_index_lists_every_row_with_a_redni_broj(drive):
     assert ws.sb_index() is index  # cached until refresh
     ws.refresh()
     assert ws._sb_index is None
+
+
+def test_duplicate_redni_broj_is_found_and_blocks_intake_create(settings, tmp_path, monkeypatch, capsys):
+    """Three SB rows shared 1458 on 2026-10-02; the tools must refuse, not merge."""
+    from cave_dossier import cli
+    from cave_dossier.core.matching import CaveCandidate, duplicate_serials
+
+    def cand(serial, name):
+        return CaveCandidate(serial, name, None, None, None, name.lower())
+
+    dups = duplicate_serials([cand(1458, "VP2"), cand(1458, "Ona mala špilja"), cand(1457, "VP1")])
+    assert list(dups) == [1458] and len(dups[1458]) == 2
+
+    root = tmp_path / "Drive"
+    (root / "!!!Digitalizacija" / "!Za digitalizirat").mkdir(parents=True)
+    s = dataclasses.replace(settings, local_drive_root=root,
+                            archive_dirs={"intake_dir": "!!!Digitalizacija/!Za digitalizirat"})
+    monkeypatch.setattr(cli, "duplicate_serials", lambda _c: {1: [cand(1, "A"), cand(1, "B")]})
+    assert cli.cmd_intake_create(s, 1) == 99
+    assert not any((root / "!!!Digitalizacija" / "!Za digitalizirat").iterdir())
+    assert "nije jedinstven" in capsys.readouterr().err

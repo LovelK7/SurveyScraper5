@@ -344,6 +344,22 @@ class RenameOutcome:
     detail: str | None = None
 
 
+def duplicate_serials(candidates: list[CaveCandidate]) -> dict[int, list[CaveCandidate]]:
+    """Redni brojevi that more than one SB row carries.
+
+    The number is the cave's working identity (folder prefix, file names,
+    every `--broj` command), so a duplicate silently makes two caves one. On
+    2026-10-02 three rows shared 1458 (a new row had copied the number above
+    it) and `intake map` was about to give a second folder the prefix
+    SB_1458_. Callers refuse to act on these numbers until SB is fixed.
+    """
+    by_serial: dict[int, list[CaveCandidate]] = {}
+    for candidate in candidates:
+        if candidate.serial_number is not None:
+            by_serial.setdefault(candidate.serial_number, []).append(candidate)
+    return {serial: rows for serial, rows in by_serial.items() if len(rows) > 1}
+
+
 def apply_renames(matches: list[PathMatch]) -> list[RenameOutcome]:
     """Perform the proposed renames in place.
 

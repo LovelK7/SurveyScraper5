@@ -30,6 +30,14 @@ with one leaf. It writes only the empty folder, and it prints a 📷 line when
 the cave has photos waiting in `!!Fotografije ulaza za istražit`, as `intake
 map --apply` does for every folder it renames.
 
+**A Redni broj several SB rows share is refused** (2026-10-02). It happened:
+three rows carried 1458, because a new row copied the number above it, and
+`intake map` was about to give a second folder the prefix `SB_1458_`. Both
+commands now print the clashing rows (⛔), `intake create` refuses such a
+number, and `intake map --apply` leaves those folders alone until SB is fixed.
+The dashboard shows the same list on Pregled and marks the numbers in the
+cave picker.
+
 ## How it works
 
 Folder names are free-form and written by people, so the match is evidence-based

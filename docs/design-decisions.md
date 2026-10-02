@@ -1077,6 +1077,19 @@ The user's review of the first dashboard settled these:
   Names shown and passed to name-based commands are SB's own, not the folder's
   longer name.
 
+### Redni broj must be unique, or nothing is numbered (2026-10-02)
+
+Three SB rows shared 1458 (VP2, Ona mala špilja, Brložnik1): a new row had
+copied the number above it. The number is a cave's working identity (folder
+prefix, file names, every `--broj` command), so a duplicate silently merges
+two caves. Only the stale-override guard stopped a second `SB_1458_` folder.
+Now `core.matching.duplicate_serials` is checked by `intake map` (listed;
+`--apply` skips those folders) and `intake create` (refused), and the dashboard
+shows the clash on Pregled. The fix belongs in SB and is made by a person; the
+tools only refuse. Resolved the same day: the user renumbered the rows to 1459
+and 1460, the `intake.new_entries` line was dropped, and the folder became
+`SB_1459_Ona mala špilja_Mileni`.
+
 ### SB reads must release the file (2026-10-02)
 
 The user could not save the live SB in Excel ("sharing violation"). The

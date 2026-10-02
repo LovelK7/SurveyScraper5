@@ -15,7 +15,7 @@ from datetime import date
 from pathlib import Path
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
-from cave_dossier.core.matching import SB_PREFIX
+from cave_dossier.core.matching import SB_PREFIX, duplicate_serials
 from cave_dossier.dossier import GateLevel, assemble, render
 from cave_dossier.photos import (
     apply_renames,
@@ -65,6 +65,15 @@ def _queue_reminder(settings: Settings, serials) -> None:
         if staged:
             print(f"📷 Redni broj {serial}: fotografija u redu čekanja (…za istražit): "
                   f"{len(staged)} → cavedossier photos pull-staged {serial} --apply")
+
+
+def _print_duplicates(dups) -> None:
+    """The SB rows that share a Redni broj — printed, for a person to fix in SB."""
+    print(f"⛔ {len(dups)} Redni broj(eva) nosi više SB redova — ispravi u SB-u "
+          "(svaki objekt svoj broj) prije rada na tim objektima:")
+    for serial in sorted(dups):
+        names = ", ".join(c.object_name or "<bez imena>" for c in dups[serial])
+        print(f"   {serial}: {names}")
 
 
 def _print_banner(settings: Settings) -> None:
@@ -588,6 +597,11 @@ def cmd_intake_create(settings: Settings, serial: int) -> int:
     cave = _find_serial_or_exit(settings, serial)
     if cave is None:
         return EXIT_ERROR
+    dups = duplicate_serials(build_candidates(SBReader(settings), settings))
+    if serial in dups:
+        _print_duplicates({serial: dups[serial]})
+        print(f"Mapa za {serial} se ne pravi dok broj nije jedinstven.", file=sys.stderr)
+        return EXIT_ERROR
     root = intake_root(settings)
     if root is None or not root.is_dir():
         print("Intake mapa (!!!Digitalizacija/!Za digitalizirat) nije dostupna — "
@@ -636,6 +650,11 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
                            settings.intake_new_entries, sheet_rows,
                            settings.intake_split_folders)
     by_path = {leaf.path: leaf for leaf in leaves}
+
+    dups = duplicate_serials(candidates)
+    if dups:
+        _print_duplicates(dups)
+        print()
 
     matched = [m for m in matches if m.cave is not None and m.confidence != "conflict"]
     conflicts = [m for m in matches if m.confidence == "conflict"]
@@ -736,7 +755,14 @@ def cmd_intake_map(settings: Settings, limit: int, apply: bool, unmatched_only: 
         print(f"\n  … {remaining} more (raise --limit)")
 
     if apply:
-        outcomes = apply_renames(matches)
+        # A folder is never numbered with a Redni broj several SB rows share:
+        # the second SB_<broj>_ leaf would merge two caves (2026-10-02).
+        blocked = [m for m in matches if m.cave is not None and m.proposed_name
+                   and m.cave.serial_number in dups]
+        for match in blocked:
+            print(f"  ⛔ ne preimenujem {match.path.name}: Redni broj "
+                  f"{match.cave.serial_number} nije jedinstven u SB-u")
+        outcomes = apply_renames([m for m in matches if m not in blocked])
         renamed = [o for o in outcomes if o.status == "renamed"]
         problems = [o for o in outcomes if o.status != "renamed"]
         print()

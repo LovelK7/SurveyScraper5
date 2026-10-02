@@ -344,6 +344,11 @@ a { color: var(--brand-text); }
 .md hr { border: 0; border-top: 1px solid var(--line); margin: 1.4em 0; }
 .md ul, .md ol { padding-left: 22px; }
 
+/* duplicate Redni broj warning */
+.card.dup { border: 2px solid var(--danger); background: var(--danger-soft); }
+.card.dup h2 .ico { color: var(--danger); }
+.chip.dupchip { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+
 /* ★ recipes */
 .recipe { margin: 4px 0 0; padding-left: 22px; }
 .recipe li { padding: 5px 0; border-bottom: 1px dashed var(--line); }

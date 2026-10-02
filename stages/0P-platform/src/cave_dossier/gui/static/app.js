@@ -192,11 +192,15 @@ function caveLabel(broj) {
   const row = sbRow(broj);
   return row ? `${broj} · ${row.name} (nema mapu)` : String(broj);
 }
+function isDup(broj) {
+  return !!(S.sbIndex && S.sbIndex.duplicates && S.sbIndex.duplicates[String(broj)]);
+}
 function loadSbIndex() {
   if (S.sbIndex) return;
   S.sbIndex = { loading: true };
   api("sb-index").then(d => { S.sbIndex = d; }).catch(e => { S.sbIndex = { rows: [], error: e.message }; })
     .finally(() => {
+      if (S.tab === "home") render();
       if (!$("#cave-menu").hidden) renderMenu();
       if (S.broj !== null && document.activeElement !== $("#cave-input")) $("#cave-input").value = caveLabel(S.broj);
     });
@@ -229,6 +233,7 @@ function renderMenu() {
   };
   const kids = [h("div", { class: "opt-group" }, `U radu — imaju mapu (${folders.length})`),
     ...folders.map(c => option(c.broj, c.name, [
+      isDup(c.broj) ? h("span", { class: "chip dupchip", title: "Više SB redova nosi ovaj broj" }, "⚠ dvostruki broj") : null,
       S.queue[c.broj] ? h("span", { class: "chip" }, `📷 ${S.queue[c.broj]}`) : null,
       c.group ? h("span", { class: "opt-grp" }, c.group) : null]))];
   if (!folders.length) kids.push(h("div", { class: "opt-empty" }, "Nijedna mapa ne odgovara."));
@@ -239,6 +244,7 @@ function renderMenu() {
   else if (!others.length) kids.push(h("div", { class: "opt-empty" }, "Ništa u SB-u ne odgovara."));
   else kids.push(...others.map(r => option(r.broj, r.name || "(bez imena)", [
     r.syn ? h("span", { class: "opt-grp" }, r.syn) : null,
+    isDup(r.broj) ? h("span", { class: "chip dupchip", title: "Više SB redova nosi ovaj broj" }, "⚠ dvostruki broj") : null,
     S.queue[r.broj] ? h("span", { class: "chip" }, `📷 ${S.queue[r.broj]}`) : null,
     h("span", { class: "chip" }, "nema mape")])));
   menu.replaceChildren(...kids);
@@ -358,6 +364,16 @@ function renderHome() {
       h("div", { class: "sub" }, "Trenutni objekt i njegov tijek rada, Speleo baza, mape na Driveu.")))];
   if (sum.settings_error) out.push(h("div", { class: "card note" }, h("b", {}, "Postavke se ne mogu učitati: "), sum.settings_error));
 
+  const dups = S.sbIndex && S.sbIndex.duplicates ? Object.entries(S.sbIndex.duplicates) : [];
+  if (dups.length) {
+    out.push(h("div", { class: "card dup", style: "margin-bottom:14px" },
+      h("h2", {}, icon("baza", "lg"), `Redni broj nije jedinstven — ${dups.length}`),
+      h("p", { class: "help" }, "Ove brojeve nosi više SB redova. Broj je identitet objekta (mapa SB_<broj>_, datoteke, sve naredbe), pa se dva objekta stapaju u jedan. Ispravi u SB-u; dotad intake map i intake create odbijaju te brojeve."),
+      h("table", { class: "files" }, ...dups.map(([b, names]) => h("tr", {},
+        h("td", { class: "kind" }, b), h("td", { class: "name" }, names.join(" · "))))),
+      h("div", { class: "row", style: "margin-top:8px" },
+        h("button", { class: "btn primary", onclick: () => openTarget({ what: "sb" }) }, icon("sb"), "Otvori SB u Excelu"))));
+  }
   out.push(renderCaveCard());
 
   const grid = h("div", { class: "grid", style: "margin-top:14px" });

@@ -353,7 +353,11 @@ class Workspace:
             except Exception as exc:  # noqa: BLE001 — the picker still has the folders
                 error = f"SB se ne može pročitati ({type(exc).__name__}: {exc})"
         rows.sort(key=lambda r: r["broj"])
-        self._sb_index = {"rows": rows, "error": error}
+        seen: dict[int, list[str]] = {}
+        for row in rows:
+            seen.setdefault(row["broj"], []).append(row["name"])
+        duplicates = {str(b): names for b, names in seen.items() if len(names) > 1}
+        self._sb_index = {"rows": rows, "error": error, "duplicates": duplicates}
         return self._sb_index
 
     def cave_leaves(self, broj: int) -> list[CaveLeaf]:
