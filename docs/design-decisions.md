@@ -43,6 +43,7 @@ keeps the chronology.
 - [The dashboard — `cavedossier gui` (2026-09-24)](#the-dashboard--cavedossier-gui-2026-09-24)
 - [3N entrance: surface legs (2026-09-24)](#3n-entrance-surface-legs-2026-09-24)
 - [3N scale bar: beside or under the plan (2026-09-24)](#3n-scale-bar-beside-or-under-the-plan-2026-09-24)
+- [3N entrance dimensions: splays first, walls as fallback (2026-10-02)](#3n-entrance-dimensions-splays-first-walls-as-fallback-2026-10-02)
 
 ---
 
@@ -1157,3 +1158,39 @@ also outside cSurvey's centring. It has not been cut so far.
 
 Code: `gadget_anchor`, `with_gadgets`, `gadgets_on_page` and `place_gadgets`
 in `stages/3N-nacrt/production/tools/nacrt_finish.py`.
+
+## 3N entrance dimensions: splays first, walls as fallback (2026-10-02)
+
+The OSZ's *Širina ulaza* and *Visina/duljina ulaza* can be read off the finished
+survey at the station `decide_entrance` picks (project
+[0005](../stages/3N-nacrt/projects/0005-entrance-dimensions/brief.md)). Four rules,
+settled by the user on the SB 1220 / SB 1103 feasibility run:
+
+- **The surveyor's splays come first.** They were shot at the entrance on
+  purpose. The open question is which of many: per direction (left, right of
+  the passage axis in the plan; up, down in the profile) the splay **best
+  aligned** with that direction wins, within a 40° cone, and its length along
+  the direction is the measure. An up splay with no down splay means the
+  station stands on the floor (down = 0).
+- **The drawn walls are the fallback**, measured at the **narrowest point**
+  within 0.5 m of the station on the cave side of it (outward, the drawn porch
+  converges toward the surface and would fake a narrower opening). A drawn wall
+  beats a fill edge. A Borders item is several `B` sequences; cSurvey strokes
+  each alone but fills the item as one polygon with straight joins between
+  sequences (cSurvey/cSurveyPC/cItemFreeHandArea.vb:193-195), so an undrawn
+  ceiling shows as such a join - accepted only when shorter than 5 m, since the
+  item's closing join can cross the whole cave.
+- **A pit is two plan extents, small × large.** The opening is a hole in the
+  plan: the min and max extents (Feret) of the splay cloud from the rim station,
+  the wall footprint around it as fallback. *Širina* takes the smaller number,
+  *Visina/duljina* the larger; 1 × 2, never 2 × 1. For a horizontal entrance
+  width is the plan and height the profile, never swapped.
+- **Whole metres, never below 1.** The map is not precise at 0.1 m.
+
+Measured: SB 1220 (horizontal, station 4) 0.57 × 1.37 m from splays 4(71),
+4(72), 4(80), walls 0.63 × 1.49 → **1 × 1**. SB 1103 (pit, station 2)
+1.08 × 1.71 m from twelve splays, walls 1.39 × 4.42 (the footprint, too wide) →
+**1 × 2**.
+
+Code: `findings/entrance_dims_proto.py` in the project folder; to be folded
+into `nacrt_finish.py` and carried by `_dimenzije.json` to 4O's prefill.

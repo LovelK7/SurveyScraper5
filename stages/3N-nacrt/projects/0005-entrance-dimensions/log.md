@@ -24,3 +24,17 @@ Brief: [brief.md](brief.md)
   therefore compares against x = 0. Not fixed here (phase 3).
 - **Next:** the user's call on brief §3 phase 2 (source precedence, entrance plane, pit pair,
   format); then a corpus of caves with vouched entrance sizes.
+
+### 2026-10-02 (later) — the four rules settled and applied (user + agent) ✅
+
+- **Did:** the user answered brief §3 phase 2: splays first (pick the best-aligned one per
+  direction), walls as fallback at the narrowest point, pits from the splay cloud with
+  small × large ordering, whole metres. Rewrote the prototype around them; recorded the rules in
+  `docs/design-decisions.md`.
+- **Result:** SB 1220 → 0.57 × 1.37 m from splays 4(71)/4(72)/4(80) → **1 × 1**; SB 1103 →
+  1.08 × 1.71 m from twelve splays → **1 × 2**. The wall fallback agrees on SB 1220 (0.63 × 1.49)
+  and over-reads the pit (its footprint, 1.39 × 4.42). Caught on the rerun: "narrowest within
+  ±0.5 m" looked outward into SB 1220's converging porch (0.29 m) — the window is now cave-side only.
+- **Evidence:** `findings/SB_1220_report.json`, `findings/SB_1103_report.json`, the two PNGs.
+- **Next:** caves with a vouched entrance size; then phase 3 (fold into `nacrt_finish.py`,
+  fix `read_stations`, carry via `_dimenzije.json` to 4O).

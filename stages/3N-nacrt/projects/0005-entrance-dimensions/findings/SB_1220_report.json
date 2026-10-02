@@ -2,90 +2,48 @@
  "file": "SB_1220_lt_fin.csx",
  "entrance": "4",
  "entrance_how": "trigpoint entrance=2",
- "warnings": [
-  "profile: no ceiling drawn over the entrance - used the area's fill edge"
- ],
+ "warnings": [],
  "axis_shot": "3->4 inc=47.7",
  "kind": "horizontal",
+ "splays_at_station": 11,
  "plan": {
   "axis_into_cave": [
    -0.992,
    0.128
   ],
   "side_a": {
-   "m": 0.42,
-   "at": [
-    15.32,
-    -3.11
-   ],
-   "via": "wall"
+   "m": 0.35,
+   "source": "splay",
+   "splay": "4(72)",
+   "inc": 17.7
   },
   "side_b": {
-   "m": 0.21,
-   "at": [
-    15.4,
-    -2.48
-   ],
-   "via": "wall"
+   "m": 0.22,
+   "source": "splay",
+   "splay": "4(71)",
+   "inc": 16.1
   },
-  "width_m": 0.64,
-  "width_scan": [
-   [
-    -1.0,
-    3.67,
-    ""
-   ],
-   [
-    -0.75,
-    3.43,
-    ""
-   ],
-   [
-    -0.5,
-    3.35,
-    ""
-   ],
-   [
-    -0.25,
-    3.24,
-    ""
-   ],
-   [
-    0.0,
-    0.64,
-    ""
-   ],
-   [
-    0.25,
-    0.67,
-    ""
-   ],
-   [
-    0.5,
-    0.79,
-    ""
-   ],
-   [
-    0.75,
-    1.81,
-    ""
-   ],
-   [
-    1.0,
-    2.27,
-    ""
-   ],
-   [
-    1.25,
-    2.52,
-    ""
-   ],
-   [
-    1.5,
-    2.7,
-    ""
-   ]
-  ]
+  "width_m": 0.57,
+  "wall_narrowest": {
+   "at_s": 0.1,
+   "width_m": 0.63,
+   "plus": {
+    "m": 0.41,
+    "at": [
+     15.22,
+     -3.08
+    ],
+    "via": "wall"
+   },
+   "minus": {
+    "m": 0.22,
+    "at": [
+     15.3,
+     -2.46
+    ],
+    "via": "wall"
+   }
+  }
  },
  "profile": {
   "station_at": [
@@ -93,112 +51,45 @@
    0.16
   ],
   "up": {
-   "m": 0.81,
-   "at": [
-    15.88,
-    -0.64
-   ],
-   "via": "bridge"
+   "m": 1.37,
+   "source": "splay",
+   "splay": "4(80)",
+   "inc": 81.3
   },
   "down": {
-   "m": 0.69,
-   "at": [
-    15.88,
-    0.85
-   ],
-   "via": "wall"
+   "m": 0.0,
+   "source": "station on the floor (up splay, no down splay)"
   },
-  "height_m": 1.49,
-  "height_scan": [
-   [
-    -1.0,
-    null,
-    ""
-   ],
-   [
-    -0.75,
-    null,
-    ""
-   ],
-   [
-    -0.5,
-    0.29,
-    "bridge"
-   ],
-   [
-    -0.25,
-    0.8,
-    "bridge"
-   ],
-   [
-    0.0,
-    1.49,
-    "bridge"
-   ],
-   [
-    0.25,
-    2.14,
-    "bridge"
-   ],
-   [
-    0.5,
-    2.55,
-    "bridge"
-   ],
-   [
-    0.75,
-    5.07,
-    ""
-   ],
-   [
-    1.0,
-    5.28,
-    ""
-   ],
-   [
-    1.25,
-    5.46,
-    ""
-   ],
-   [
-    1.5,
-    5.57,
-    ""
-   ]
-  ]
+  "height_m": 1.37,
+  "wall_narrowest": {
+   "at_s": 0.0,
+   "height_m": 1.49,
+   "up": {
+    "m": 0.81,
+    "at": [
+     15.88,
+     -0.64
+    ],
+    "via": "bridge"
+   },
+   "down": {
+    "m": 0.69,
+    "at": [
+     15.88,
+     0.85
+    ],
+    "via": "wall"
+   }
+  }
  },
- "splays": {
-  "width_m": 0.57,
-  "side_a_m": 0.35,
-  "side_b_m": 0.22,
-  "height_m": 1.75,
-  "up_m": 1.75,
-  "down_m": null,
-  "used": [
-   [
-    "4(71)",
-    "b",
-    16.1,
-    0.22
-   ],
-   [
-    "4(72)",
-    "a",
-    17.7,
-    0.35
-   ],
-   [
-    "4(80)",
-    "up",
-    81.3,
-    1.37
-   ],
-   [
-    "4(81)",
-    "up",
-    70.7,
-    1.75
-   ]
+ "osz": {
+  "sirina_ulaza": 1,
+  "visina_duljina_ulaza": 1,
+  "sources": [
+   "splay",
+   "splay",
+   "splay",
+   "station on the floor (up splay, no down splay)"
   ]
  }
 }

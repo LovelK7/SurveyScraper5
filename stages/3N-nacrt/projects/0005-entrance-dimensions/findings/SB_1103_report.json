@@ -5,217 +5,42 @@
  "warnings": [],
  "axis_shot": "1->2 inc=87.8",
  "kind": "pit",
+ "splays_at_station": 12,
  "plan": {
   "axis_into_cave": [
-   1.0,
-   0.0
+   0.969,
+   0.245
   ],
-  "side_a": {
-   "m": 0.64,
-   "at": [
-    -0.25,
-    0.57
-   ],
-   "via": "wall"
+  "splay_cloud": {
+   "min_m": 1.08,
+   "min_deg": 50,
+   "max_m": 1.71,
+   "max_deg": 105,
+   "splays": 12
   },
-  "side_b": {
-   "m": 0.83,
-   "at": [
-    -0.25,
-    -0.9
-   ],
-   "via": "wall"
+  "wall_footprint": {
+   "min_m": 1.39,
+   "min_deg": 35,
+   "max_m": 4.42,
+   "max_deg": 120,
+   "rays_hit": 24
   },
-  "width_m": 1.47,
-  "width_scan": [
-   [
-    -1.0,
-    null,
-    ""
-   ],
-   [
-    -0.75,
-    null,
-    ""
-   ],
-   [
-    -0.5,
-    0.99,
-    ""
-   ],
-   [
-    -0.25,
-    1.27,
-    ""
-   ],
-   [
-    0.0,
-    1.47,
-    ""
-   ],
-   [
-    0.25,
-    1.32,
-    ""
-   ],
-   [
-    0.5,
-    2.0,
-    ""
-   ],
-   [
-    0.75,
-    2.78,
-    ""
-   ],
-   [
-    1.0,
-    0.24,
-    ""
-   ],
-   [
-    1.25,
-    null,
-    ""
-   ],
-   [
-    1.5,
-    null,
-    ""
-   ]
-  ],
-  "length_m": 1.68,
-  "footprint": {
-   "points": 213,
-   "min_m": 1.66,
-   "min_deg": 20,
-   "max_m": 4.79,
-   "max_deg": 110,
-   "bbox": [
-    -0.91,
-    -3.97,
-    1.63,
-    0.54
-   ]
-  }
+  "chosen": "splays"
  },
  "profile": {
   "station_at": [
    -0.26,
    -6.77
   ],
-  "up": null,
-  "down": {
-   "m": 8.01,
-   "at": [
-    -0.26,
-    1.23
-   ],
-   "via": "wall"
-  },
-  "height_m": null,
-  "height_scan": [
-   [
-    -1.0,
-    null,
-    ""
-   ],
-   [
-    -0.75,
-    null,
-    ""
-   ],
-   [
-    -0.5,
-    0.16,
-    "bridge"
-   ],
-   [
-    -0.25,
-    null,
-    ""
-   ],
-   [
-    0.0,
-    null,
-    ""
-   ],
-   [
-    0.25,
-    null,
-    ""
-   ],
-   [
-    0.5,
-    null,
-    ""
-   ],
-   [
-    0.75,
-    0.84,
-    ""
-   ],
-   [
-    1.0,
-    null,
-    ""
-   ],
-   [
-    1.25,
-    null,
-    ""
-   ],
-   [
-    1.5,
-    null,
-    ""
-   ]
-  ]
+  "first_drop_m": 3.94,
+  "note": "a pit has no entrance height; the drop below the rim is informative only"
  },
- "splays": {
-  "width_m": 1.09,
-  "side_a_m": 0.63,
-  "side_b_m": 0.46,
-  "height_m": 3.94,
-  "up_m": null,
-  "down_m": 3.94,
-  "used": [
-   [
-    "2(46)",
-    "down",
-    -77.0,
-    2.8
-   ],
-   [
-    "2(47)",
-    "down",
-    -85.2,
-    3.94
-   ],
-   [
-    "2(48)",
-    "a",
-    14.3,
-    0.29
-   ],
-   [
-    "2(49)",
-    "a",
-    11.5,
-    0.5
-   ],
-   [
-    "2(50)",
-    "a",
-    10.3,
-    0.63
-   ],
-   [
-    "2(54)",
-    "b",
-    6.6,
-    0.46
-   ]
+ "osz": {
+  "sirina_ulaza": 1,
+  "visina_duljina_ulaza": 2,
+  "sources": [
+   "splays",
+   "splays"
   ]
  }
 }

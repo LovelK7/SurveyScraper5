@@ -1,7 +1,7 @@
 # Task brief: Entrance dimensions — read the entrance width and height off the finished survey
 
 - **ID:** 0005-entrance-dimensions
-- **Status:** `research` — feasibility shown 2026-10-02 on SB 1220 (horizontal entrance) and SB 1103 (pit); prototype + plots under `findings/`. Next: the user's verdict on the source precedence (§3, phase 2) and a corpus of caves with known entrance sizes to validate against
+- **Status:** `validation` — feasibility shown 2026-10-02 on SB 1220 (horizontal) and SB 1103 (pit); the user settled the four rules the same evening (§3 phase 2, recorded in `docs/design-decisions.md`); prototype applies them: SB 1220 → 1 × 1 m, SB 1103 → 1 × 2 m. Next: a corpus of caves with vouched entrance sizes, then fold into `nacrt_finish.py` (phase 3)
 - **Owner:** both
 - **Opened:** 2026-10-02 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [0004-nacrt-finishing/brief.md](../0004-nacrt-finishing/brief.md) (the entrance-station decision this builds on), `production/tools/nacrt_finish.py` (`decide_entrance`, `wall`/`item_points` helpers)
@@ -95,20 +95,29 @@ Plots: `findings/SB_1220_entrance.png`, `findings/SB_1103_entrance.png` (magenta
 wall, orange = hit on a fill bridge, grey dashed = bridges), `findings/SB_1220_profile_sequences.png`
 (the ten profile sequences and their joins). Reports: `findings/SB_*_report.json`.
 
-**Phase 2 — rules the user settles (proposal).** Open questions, with the prototype's current answer:
+**Phase 2 — rules (settled by the user 2026-10-02; the decision record has the whole).**
 
-1. *Source precedence.* Drawn wall › short fill bridge › nothing, splays as a check only. Should a
-   missing side fall back to the surveyor's splay instead of the fill edge? (On SB 1220 the bridge
-   says 0.81 m up, the splays say 1.37–1.75 m.)
-2. *Where is the entrance plane?* At the station, by definition. Alternative: the narrowest width
-   within ±0.5 m along the axis. On SB 1220 both agree.
-3. *Pits.* Two plan extents at the station (across/along the first shot), or the footprint's
-   min/max Feret, or N–S × E–W? Which pair goes into *Širina* × *Visina/duljina*?
-4. *Rounding / format.* OSZ text wants one decimal with a comma (`0,6`, `1,5`); the dossier JSON
-   keeps two decimals.
-5. *Multiple entrances / branches.* The prototype measures only the main entrance (`entrance="2"`).
-6. *Splines.* cSurvey draws Borders as splines through the points; the prototype intersects the
-   control polygon. Error is centimetres, below the rounding.
+1. *Source precedence:* **splays first** — the surveyor shot them at the entrance on purpose; the
+   job is to pick the right one. Per direction (left/right across the axis in the plan, up/down in
+   the profile) the splay best aligned with it, within a 40° cone, measured by its length along
+   that direction. An up splay with no down splay = the station is on the floor (down = 0).
+   Walls only when no splay serves a side.
+2. *Entrance plane:* the wall fallback takes the **narrowest** opening within 0.5 m of the station,
+   **on the cave side only** (outward, SB 1220's drawn porch converges to 0.3 m in the profile).
+3. *Pits:* two plan extents from the **splay cloud** (min/max Feret), the wall footprint as
+   fallback; **Širina = the smaller, Visina/duljina = the larger** (1 × 2, never 2 × 1). For a
+   horizontal entrance width stays the plan and height the profile.
+4. *Format:* **whole metres, never below 1**.
+
+Applied (prototype rerun, `findings/SB_*_report.json`):
+
+| Cave | From splays | From walls (fallback, unused) | OSZ |
+|---|---|---|---|
+| SB 1220 | 0.57 wide (4(71) 0.22 + 4(72) 0.35), 1.37 high (4(80) up, no down shot) | 0.63 × 1.49 (ceiling = fill join) | **1 × 1** |
+| SB 1103 pit | 1.08 × 1.71 (12 splays) | 1.39 × 4.42 (the footprint, too wide) | **1 × 2** |
+
+Still open: multiple entrances (only the main one is measured) and splines vs the control polygon
+(centimetres, below the rounding).
 
 **Phase 3 — productionize (validation).** Move the measurement into `nacrt_finish.py` (it already
 holds the station, the walls and the item helpers; fix `read_stations` to take `d` from `tcon/p` on
@@ -119,7 +128,7 @@ fixtures with the numbers above; a unit test per rule (B-split, bridge cap, draw
 
 ## 4. Definition of done
 
-- [ ] The user has settled phase 2 questions 1–4 (recorded in `docs/design-decisions.md`).
+- [x] The user has settled phase 2 questions 1–4 (recorded in `docs/design-decisions.md`, 2026-10-02).
 - [ ] Validated on ≥ 5 caves with an entrance size the user vouches for (SB 1220, 1103, + three
       more as they come through the intake), each within 0.1 m of the vouched width/height or with a
       warning that explains the miss.
