@@ -1,7 +1,7 @@
 # Task brief: Entrance dimensions — read the entrance width and height off the finished survey
 
 - **ID:** 0005-entrance-dimensions
-- **Status:** `validation` — five rules settled 2026-10-02/03 (the fifth: no size without a deliberate entrance witness); corpus of 11 surveys: 7 measured, 4 declined with a warning (3 without an entrance sign, Sopača's station under a roof). Nothing left to vouch. Next: phase 3 (fold into `nacrt_finish.py`)
+- **Status:** `validation` — five rules settled 2026-10-02/03 (the fifth: no size without a deliberate entrance witness); corpus of 11 surveys: 8 measured, 3 declined for want of an entrance sign (cepavpic, krk_27, krk_37). Sopača's 13.6 × 17.5 still wants the user's eye. Next: phase 3 (fold into `nacrt_finish.py`)
 - **Owner:** both
 - **Opened:** 2026-10-02 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [0004-nacrt-finishing/brief.md](../0004-nacrt-finishing/brief.md) (the entrance-station decision this builds on), `production/tools/nacrt_finish.py` (`decide_entrance`, `wall`/`item_points` helpers)
@@ -110,9 +110,7 @@ wall, orange = hit on a fill bridge, grey dashed = bridges), `findings/SB_1220_p
 4. *Format:* **one decimal** (2026-10-03; the first call was whole metres).
 5. *No size without a witnessed entrance* (user, 2026-10-03): the drawn entrance sign, the finisher's
    trigpoint flag, a surface leg or the operator's word name the station; a station picked only
-   because it is the highest gets a warning ("nacrtaj znak ulaza") and no number — krk_27's highest
-   station was a blind aven. A pit station with a roof drawn more than 0.3 m straight above it is not
-   on the rim (its splays describe a chamber) and is declined the same way.
+   because it is the highest is a guess and gets a warning ("nacrtaj znak ulaza") instead of a number.
 
 Applied (prototype rerun, `findings/SB_*_report.json`):
 
@@ -133,12 +131,12 @@ copied to `findings/corpus/` because `example/` is gitignored. Numbers in metres
 |---|---|---|---|---|---|---|
 | 272 | `_lt` | pit (shot 85°) | 4 (highest + sign) | **1.6 × 3.3** | splays (walls: 4.1 × 7.2 = whole chamber) | plausible — the rim station's splays span the mouth |
 | Golobreška (SB 1103) | `_lt_fin` | pit (88°) | 2 (flag) | **1.1 × 1.7** | splays | as before |
-| Sopača | `-1p` imported | pit (70°) | 5 (highest + sign) | **—** | declined: a wall is drawn 1.1 m above station 5 | not on a rim (the station also sits outside the drawn plan); the earlier 13.6 × 17.5 from its long flat splays is withdrawn |
+| Sopača | `-1p` imported | pit (70°) | 5 (highest + sign) | **13.6 × 17.5** | splays; walls absent around 5 | **check** — station 5 sits outside the drawn plan with 11 flat splays up to 17 m: a doline rim, or a surface station? |
 | bezdanka iznad Lalica | imported | pit (6 of 16 splays dive > 45°) | 5 (highest + sign) | **4.7 × 8.4** | splays (walls 6.8 × 11.2) | plausible; was `horizontal` before the splay-based pit test |
 | kilavčev cepavpic | `_pp` | pit (80°) | 4 (highest only) | **—** | declined: no entrance sign, no surface leg | the splays would say 1.1 × 2.4 — draw the sign and it is measured |
 | kilavčeva pljeskavica | `_pp` | **pit (registry; geometry said horizontal: shot 35°, 7 flat splays)** | 3 (flag) | **4.7 × 8.5** | splays (walls 3.7 × 10.8) | the user: it is a pit; the rim station's flat splays span the hole, like 272 — the type must come from SB / OSZ, not from geometry |
-| krk_27 | **raw** | — | 0 (first station; the highest, 3, has a roof 0.2 m above it) | **—** | declined: no entrance sign; forced to 0 as a pit it is declined again, roof 9.6 m above | the user: the entrance is 0; the survey holds nothing that describes that opening |
-| krk_37 | **raw** | — | 0 (highest only) | **—** | declined: no entrance sign | the walls would say 0.9 × 1.4 |
+| krk_27 | **raw** | pit (87°) | 3 (highest only — correct, the user confirmed after first mixing it up with krk_37) | **—** | declined: no entrance sign | with the sign on 3 it reads **3.5 × 4.8** from the rim splays (walls 7.2 × 8.8) |
+| krk_37 | **raw** | horizontal (40°) | 0 (highest only — correct per the user) | **—** | declined: no entrance sign | with the sign on 0 the walls give 0.9 × 1.4 (no splays at 0) |
 | sp7 Brad/Kosa/Plazibat špilja | imported | horizontal (22°) | 9 (highest-ties + sign) | **2.7 × 2.2** | splays (walls 3.1 × 2.3) | plausible; station 10 is 3.3 m higher — a side entrance or surface point? |
 | špilja Bunker (Studena) | `_pp` | horizontal (11°) | 5 (sign; highest is 1) | **2.6 × 1.5** | splays (walls 2.4 × 1.4) | plausible, sources agree |
 | Tavnjak (Mune) | imported | pit (86°) | **8** (profile sign + highest; plan sign at 7 overruled) | **2.0 × 6.2** | splays (walls 3.2 × 6.0) | plausible once the entrance is 8; station 7 is a ledge 20 m down the shaft; **confirmed by the user 2026-10-03** (the plan sign was attached to the wrong station) |
@@ -157,11 +155,7 @@ What the corpus changed in the prototype:
   entrance lands on a ledge. Also surfaced: the prototype had passed station *names* instead of
   `Station` objects to `decide_entrance` (sp7 crashed) — the finisher itself does it right.
 - A warning when the entrance lies more than 2 m below the highest station.
-- **Blind-dome guard on the weakest witness:** when only the highest station chose the entrance
-  (no sign, no surface leg) and a profile wall is drawn within 1 m straight above it, that station is
-  the top of a closed aven, not an entrance; the survey's first station is taken instead, with a
-  warning to draw the entrance sign (krk_27). `--entrance <station>` / `entrances.json` let the
-  operator state the entrance outright.
+- **`--entrance <station>` / `entrances.json`** let the operator state the entrance station outright.
 - **The cave's type comes from the registry.** `analyse(path, kind=...)` / `--kind pit|horizontal`; the
   corpus runner reads `<folder>/kinds.json` as a stand-in for SB's type / the OSZ's *Vrsta objekta*. Geometry
   (steep first shot, diving splays) is only the fallback and the report says when the two disagree.

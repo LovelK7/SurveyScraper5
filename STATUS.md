@@ -224,7 +224,7 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 ## Waiting on user
 
 - **3N cSurvey settings:** close cSurvey and run `python stages/3N-nacrt/production/tools/csurvey_app_settings.py apply` once (pen smoothing is still on here; the live `apply` was blocked because cSurvey was open), then `/publish` the csx kit (v1.6: KORAK 0, the per-cave mapping, `tdx_mapping.py`, en-dash messages, red station numbers). Name further settings to predefine as they come up. Decide the mapping for the speleo 2 symbols that arrive without a proper sign (dashboard › 3N › Mapiranje › "Bez pravog znaka"); an agent can propose a first pass.
-- **3N entrance dimensions (project 0005):** nothing left to vouch — rule 5 (no size without an entrance sign / surface leg; no size for a pit station under a drawn roof) declines Sopača, cepavpic and the two Krk files with a warning instead of a guess. Next is phase 3: fold into `nacrt_finish.py` (sign tie-break, blind-dome guard, registry type, rule 5) → `_dimenzije.json` → 4O prefill. Say when.
+- **3N entrance dimensions (project 0005):** one optional look — Sopača (13.6 × 17.5 from station 5, which sits outside the drawn plan: doline rim or surface tie-in?). Rule 5 declines the three surveys without an entrance sign. Next is phase 3: fold into `nacrt_finish.py` (sign tie-break, registry type, rule 5) → `_dimenzije.json` → 4O prefill. Say when.
 
 - ~~Society's blank OSZ template DOCX~~ → delivered 2026-08-23:
   [stages/4O-osz/src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx](stages/4O-osz/src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx)

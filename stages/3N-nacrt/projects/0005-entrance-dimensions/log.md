@@ -96,3 +96,17 @@ Brief: [brief.md](brief.md)
 - **Evidence:** `findings/corpus/*.json` refreshed.
 - **Next:** phase 3 — fold into `nacrt_finish.py` with the sign tie-break, the blind-dome guard, the registry
   type and rule 5; `_dimenzije.json`; 4O prefill.
+
+### 2026-10-03 (night) — correction: krk_27 and krk_37 had been swapped (user + agent) ✅
+
+- **Did:** the user had mixed up the two Krk files: krk_27's entrance IS station 3, the top of the shaft, as the
+  data said all along, and krk_37's is station 0 — both what the prototype chose in the first run. Removed the
+  blind-dome guard and the pit roof gate that the mix-up had motivated (the small loop drawn above krk_27's
+  station 3 is how the surveyor closed the profile at the pit mouth, not a dome). Kept rule 5 and the
+  `--entrance` override; corrected the brief, the decision record, STATUS, the journal and the backlog.
+- **Result:** 8 measured, 3 declined for want of a sign (cepavpic, krk_27, krk_37). krk_27 with the sign on 3
+  would read 3.5 × 4.8. Sopača measures again (13.6 × 17.5) and stays flagged: its station is outside the drawn
+  plan.
+- **Lesson:** a rule built on one disputed cave is a rule built on nothing — two guards came and went in an
+  evening. Rule 5 is the durable answer: the sign names the station, or there is no number.
+- **Next:** Sopača's verdict (optional); phase 3.

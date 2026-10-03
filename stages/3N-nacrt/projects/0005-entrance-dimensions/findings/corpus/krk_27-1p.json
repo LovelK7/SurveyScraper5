@@ -3,11 +3,10 @@
  "raw": true,
  "warnings": [
   "najvisa stanica je 3, a properties@origin je 1 - provjeri je li ulaz na pravoj stanici",
-  "najvisa stanica 3 ima nacrtan strop 0.2 m iznad sebe (slijepi dimnjak) - uzimam prvu stanicu vlaka 0; nacrtaj znak ulaza",
   "ulaz nije oznacen (nema znaka ulaza ni povrsinskog vlaka) - dimenzije ulaza nisu izracunate; nacrtaj znak ulaza na ulaznoj stanici"
  ],
- "entrance": "0",
- "entrance_how": "first station of the survey (highest station 3 has a drawn roof 0.2 m above it)",
+ "entrance": "3",
+ "entrance_how": "decide_entrance: najvisa stanica (nema nacrtanog znaka ulaza)",
  "entrance_witnessed": false,
  "osz": {
   "sirina_ulaza": null,
