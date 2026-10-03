@@ -122,9 +122,9 @@ def test_viewoptions_set_attributes_on_the_named_views_only():
     assert fixer.apply_view_options(root, None) == 0
 
 
-def test_the_shipped_viewoptions_show_splays_as_rays():
+def test_the_shipped_viewoptions_show_splays_as_rays_in_combined_style():
     rules = json.loads(Path(fixer.DEFAULT_MAP).read_text(encoding="utf-8"))["postimport"]
     vo = rules["viewoptions"]
     for view in ("design.plan", "design.profile"):
-        assert vo[view] == {"drawsplay": 1, "splaystyle": 2}
+        assert vo[view] == {"drawsplay": 1, "splaystyle": 2, "designstyle": 2}
     assert all(k in fixer.VIEW_NAMES for k in vo if not k.startswith("_"))

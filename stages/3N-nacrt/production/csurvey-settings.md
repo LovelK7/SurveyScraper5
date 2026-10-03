@@ -85,7 +85,7 @@ unintentionally.
 |---|---|
 | `centerline` | Properties → Centerline: **red** stations, shots and station numbers (`PlotPenColor`/`PlotPointColor`/`PlotTextColor` = -65536, `PlotCenterlineForceColor` = 1), pen widths, triangle stations, splay, LRUD, translation-line and surface-profile pens, `PlotTextScaleFactor` (station/shot-number text, 1.0, cSurvey's default) and `PlotNoteTextScaleFactor` (notes, **1.0**; cSurvey's default is 0.5, raised 2026-10-03). To make shot numbers smaller, lower `PlotTextScaleFactor`. |
 | `designproperties` | Any other survey-wide property, each with its type (empty so far) |
-| `viewoptions` | Per-view display options, attributes on the file's `<options><_design.plan>` etc. (view named without the leading `_`): Properties → Centerline → **Splay on, style Rays** (`drawsplay` = 1, `splaystyle` = 2; 0 Points, 1 Points and rays) for `design.plan` and `design.profile` (2026-10-03). Preview and export views keep cSurvey's values. |
+| `viewoptions` | Per-view display options, attributes on the file's `<options><_design.plan>` etc. (view named without the leading `_`): Properties → Centerline → **Splay on, style Rays** (`drawsplay` = 1, `splaystyle` = 2; 0 Points, 1 Points and rays) and Properties → Design → **Style Combined** (`designstyle` = 2; 0 Survey, 1 Areas) for `design.plan` and `design.profile` (2026-10-03). Preview and export views keep cSurvey's values. |
 | `sign_sizes` | Item sizes per sign: entrance default, air draught, stalactite, stalagmite medium |
 | `label_sizes` | Item sizes per label text: `"!"` large |
 | `spline_linetypes`, `nonstandard_water` | Import fixes (splines so decorations render; the water brush) |

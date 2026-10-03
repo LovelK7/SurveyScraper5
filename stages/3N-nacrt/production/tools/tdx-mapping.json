@@ -135,14 +135,16 @@
       "_readme": "Any other survey-wide FILE setting: \"Name\": {\"type\": \"single|integer|color|boolean|string|...\", \"value\": ...}. How to find name and type: production/csurvey-settings.md"
     },
     "viewoptions": {
-      "_readme": "Per-view display options, attributes on the file's <options><_design.plan> etc. (view named here without the leading _): drawsplay 0/1 = Properties > Centerline > Splay; splaystyle 0 Points, 1 Points and rays, 2 Rays.",
+      "_readme": "Per-view display options, attributes on the file's <options><_design.plan> etc. (view named here without the leading _): drawsplay 0/1 = Properties > Centerline > Splay; splaystyle 0 Points, 1 Points and rays, 2 Rays; designstyle 0 Survey, 1 Areas, 2 Combined (Properties > Design > Style).",
       "design.plan": {
         "drawsplay": 1,
-        "splaystyle": 2
+        "splaystyle": 2,
+        "designstyle": 2
       },
       "design.profile": {
         "drawsplay": 1,
-        "splaystyle": 2
+        "splaystyle": 2,
+        "designstyle": 2
       }
     }
   }

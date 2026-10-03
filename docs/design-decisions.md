@@ -1256,6 +1256,10 @@ was open.
   int}). Views are named without cSurvey's leading `_`, because `_` keys are
   comments to the mapping merge. Only `design.plan`/`design.profile`: the export
   views are left as cSurvey has them, so splays don't reach the Nacrt unasked.
+- 2026-10-03: **design style Combined** in the same two views (user: "also let
+  the design style be Combined by default"): `designstyle` = 2 in
+  `postimport.viewoptions` (DesignStyleEnum Design 0 / Areas 1 / Combined 2,
+  cOptions.vb:411, 1069, 1206).
 
 ## 3N mapping per cave, edited in the dashboard (2026-10-03)
 
