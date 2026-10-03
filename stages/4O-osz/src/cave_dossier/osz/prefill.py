@@ -113,7 +113,7 @@ def run_prefill(
     if intake_folder is not None:
         lock = _word_lock(intake_folder / f"{_sb_prefix(serial)}_OSZ.docx")
         if lock is not None:
-            print(f"⚠ {_LOCKED_NOTE} ({lock.name}) — dokument će ostati samo lokalno.")
+            print(f"⚠ {_LOCKED_NOTE} ({lock.name}) – dokument će ostati samo lokalno.")
 
     png_bytes = _ensure_karta(settings, cave, serial, result,
                               debug=debug, force=force_karta, offline=offline,
@@ -133,7 +133,7 @@ def run_prefill(
         result.notes.extend(kota_finding.notes)
     else:
         result.notes.append(
-            "SB red nema upotrebljive X/Y HTRS koordinate — lokacija, kota i karta preskočeni."
+            "SB red nema upotrebljive X/Y HTRS koordinate – lokacija, kota i karta preskočeni."
         )
 
     _resolve_fields(settings, cave, result, x_htrs, y_htrs, finding, kota_finding)
@@ -196,7 +196,7 @@ def _ensure_karta(
     paths = georef.delivery_paths(settings, serial)
     if paths is None:
         result.notes.append(
-            "Nije konfiguriran archive.map_excerpts_dir / LOCAL_DRIVE_ROOT — "
+            "Nije konfiguriran archive.map_excerpts_dir / LOCAL_DRIVE_ROOT – "
             "isječak karte preskočen."
         )
         return None
@@ -210,12 +210,12 @@ def _ensure_karta(
             # Can't refresh without georef.hr — the stale excerpt is still
             # better than an empty frame; the note says why.
             result.notes.append(
-                f"offline način: isječak karte je zastario ({reason}) — "
+                f"offline način: isječak karte je zastario ({reason}) – "
                 "ugrađen postojeći, osvježi kad bude mreže."
             )
             result.karta_status = "reused"
             return paths.png.read_bytes()
-        result.notes.append(f"Isječak karte je zastario ({reason}) — dohvaćam ponovno.")
+        result.notes.append(f"Isječak karte je zastario ({reason}) – dohvaćam ponovno.")
 
     if offline:
         if paths.png.exists():  # --force-karta while offline: keep what exists
@@ -240,21 +240,21 @@ def _ensure_karta(
         # name that step, not leak a Python import error.
         result.notes.append(
             "Isječak karte za ovaj objekt još nije prikupljen, a prikupljanje "
-            "nije dostupno na ovom računalu — javi razvijatelju da pokrene "
+            "nije dostupno na ovom računalu – javi razvijatelju da pokrene "
             f"`cavedossier karta {serial}`, pa ponovi prefill."
         )
         return None
 
-    print("Isječak karte nedostaje — pokrećem georef.hr tijek (2.1c) …")
+    print("Isječak karte nedostaje – pokrećem georef.hr tijek (2.1c) …")
     try:
         georef_input = georef.build_input(cave, settings)
         flow_result = georef.run_for_cave(settings, georef_input, debug=debug)
     except Exception as exc:  # noqa: BLE001 — karta failure must not kill the prefill
-        result.notes.append(f"Georef tijek se srušio: {exc} — okvir karte ostaje prazan.")
+        result.notes.append(f"Georef tijek se srušio: {exc} – okvir karte ostaje prazan.")
         return None
     if not flow_result.success:
         message = flow_result.error_message or str(flow_result.georef_status)
-        result.notes.append(f"Georef tijek NIJE uspio ({message}) — okvir karte ostaje prazan.")
+        result.notes.append(f"Georef tijek NIJE uspio ({message}) – okvir karte ostaje prazan.")
         result.notes.extend(f"georef: {w}" for w in flow_result.warnings)
         return None
     delivered = georef.deliver(settings, cave.object_name or "", serial, flow_result)
@@ -332,7 +332,7 @@ def _resolve_fields(
                         column=_field_column(settings, "nearest_place") or "Najbliže mjesto",
                         value=finding.najblize_mjesto,
                         source="DGU naselja (točka ulaza)",
-                        note=f"ispravak — SB kaže '{sb_current}'",
+                        note=f"ispravak – SB kaže '{sb_current}'",
                     ))
         if finding.lokalitet:
             fields["lokalitet"] = FieldValue(
@@ -456,7 +456,7 @@ def _resolve_dimensions(folder: Path | None, result: PrefillResult) -> None:
     if not found:
         result.notes.append(
             f"U mapi {folder.name} nema <ime>_dimenzije.json (nacrt još nije "
-            "izrađen) — Duljina/Dubina ostaju prazne; ponovi prefill nakon nacrta."
+            "izrađen) – Duljina/Dubina ostaju prazne; ponovi prefill nakon nacrta."
         )
         return
     path = found[0]
@@ -464,20 +464,20 @@ def _resolve_dimensions(folder: Path | None, result: PrefillResult) -> None:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         result.notes.append(
-            f"Ne mogu pročitati {path.name} ({exc.__class__.__name__}) — "
+            f"Ne mogu pročitati {path.name} ({exc.__class__.__name__}) – "
             "Duljina/Dubina nisu popunjene iz nacrta."
         )
         return
     if not isinstance(data, dict):
         result.notes.append(
-            f"{path.name} nije JSON objekt — Duljina/Dubina nisu popunjene iz nacrta."
+            f"{path.name} nije JSON objekt – Duljina/Dubina nisu popunjene iz nacrta."
         )
         return
 
     values = dimension_values(data)
     result.dimensions_source = path.name
     if not data.get("calculated"):
-        result.notes.append(f"{path.name}: survey nije izračunat — provjeri duljine.")
+        result.notes.append(f"{path.name}: survey nije izračunat – provjeri duljine.")
     for key, value in values.items():
         result.fields[key] = FieldValue(value=value, source=DIMENSION_SOURCE,
                                         note=path.name)
@@ -487,7 +487,7 @@ def _resolve_dimensions(folder: Path | None, result: PrefillResult) -> None:
             + ", ".join(f"{key}={value}" for key, value in values.items())
         )
     else:
-        result.notes.append(f"{path.name} nema izmjerenih duljina (sve 0) — polja ostaju prazna.")
+        result.notes.append(f"{path.name} nema izmjerenih duljina (sve 0) – polja ostaju prazna.")
 
 
 def dimension_values(dims: dict) -> dict[str, str]:
@@ -574,7 +574,7 @@ def _find_old_osz(folder: Path, result: PrefillResult) -> Path | None:
     path, pool = pick_osz_docx(folder)
     if pool:
         result.notes.append(
-            "Više OSZ kandidata u intake mapi — migracija preskočena: "
+            "Više OSZ kandidata u intake mapi – migracija preskočena: "
             + ", ".join(f.name for f in pool)
         )
     return path
@@ -605,7 +605,7 @@ def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
         except legacy_mod.LegacyParseError as exc:
             result.notes.append(
                 f"Postojeći OSZ ({old_path.name}) nije čitljiv ni kao v10 ni kao "
-                f"legacy zapisnik — migracija preskočena ({exc}). Migriraj ručno."
+                f"legacy zapisnik – migracija preskočena ({exc}). Migriraj ručno."
             )
             return None
         fields, ticks, legacy_notes = legacy_mod.to_v10_fields(legacy_content)
@@ -650,7 +650,7 @@ def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
                 preview = " ".join(value.split())[:60]
                 result.notes.append(
                     f"Stari OSZ ({key}): '{preview}' ≠ izmjera iz nacrta "
-                    f"'{existing.value}' — zadržana izmjera."
+                    f"'{existing.value}' – zadržana izmjera."
                 )
         elif _old_osz_wins(key, existing):
             # Recorded content beats what the fresh prefill merely assumed:
@@ -665,9 +665,9 @@ def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
                 preview = preview[:57] + "…"
             result.notes.append(
                 f"Stari OSZ ({key}): '{preview}' ≠ nova vrijednost "
-                f"'{existing.value}' — zadržana nova."
+                f"'{existing.value}' – zadržana nova."
                 if key in _PREFILL_WINS else
-                f"Stari OSZ ({key}) se razlikuje: '{preview}' — zadržana nova vrijednost."
+                f"Stari OSZ ({key}) se razlikuje: '{preview}' – zadržana nova vrijednost."
             )
     result.ticked_checkboxes = sorted(content.ticked)
     result.notes.append(
@@ -801,7 +801,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
     subdir = settings.archive_dirs.get("intake_dir")
     if not settings.local_drive_root or not subdir:
         result.notes.append(
-            "Nije konfiguriran archive.intake_dir / LOCAL_DRIVE_ROOT — "
+            "Nije konfiguriran archive.intake_dir / LOCAL_DRIVE_ROOT – "
             "dokument je ostao samo lokalno."
         )
         return None
@@ -809,7 +809,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
     try:
         if not intake_root.is_dir():
             result.notes.append(
-                f"Intake mapa nije dostupna ({intake_root}) — dokument je ostao lokalno."
+                f"Intake mapa nije dostupna ({intake_root}) – dokument je ostao lokalno."
             )
             return None
         folder = intake_folder or _find_intake_folder(intake_root, serial)
@@ -821,7 +821,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
 
         if old_osz_path is not None and unchanged:
             result.notes.append(
-                f"{old_osz_path.name} već sadrži sve što i novi dokument — "
+                f"{old_osz_path.name} već sadrži sve što i novi dokument – "
                 "ostavljen netaknut."
             )
             return old_osz_path
@@ -853,7 +853,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
                     backup.rename(old_osz_path)
                 except OSError:
                     result.notes.append(
-                        f"Stari OSZ je ostao preimenovan u {backup.name} — vrati ime ručno."
+                        f"Stari OSZ je ostao preimenovan u {backup.name} – vrati ime ručno."
                     )
             raise
         if backup is not None:
@@ -866,7 +866,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
         return None
     except OSError as exc:
         result.notes.append(
-            f"Isporuka na Drive nije uspjela ({exc.__class__.__name__}: {exc}) — "
+            f"Isporuka na Drive nije uspjela ({exc.__class__.__name__}: {exc}) – "
             f"dokument je ostao lokalno; zatvori {docx_name} u Wordu / pričekaj "
             "mrežu i ponovi."
         )
@@ -874,7 +874,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, docx_path: Path,
     return target
 
 
-_LOCKED_NOTE = "OSZ je otvoren u Wordu — zatvori ga i ponovi"
+_LOCKED_NOTE = "OSZ je otvoren u Wordu – zatvori ga i ponovi"
 
 
 def _word_lock(path: Path) -> Path | None:

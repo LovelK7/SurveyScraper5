@@ -30,7 +30,7 @@ _SOURCE_LABELS: dict[Source, str] = {
 }
 
 _LIFECYCLE_HINT: dict[LifecycleState, str] = {
-    LifecycleState.ISTRAZENI: "has a SUE number — gate 1 already passed",
+    LifecycleState.ISTRAZENI: "has a SUE number – gate 1 already passed",
     LifecycleState.ZA_ISTRAZIT: "queue: not explored yet",
     LifecycleState.NESREDENI: "queue: explored, not finished",
     LifecycleState.SUDJELOVANJE: "another society's cave, SUE took part",
@@ -44,7 +44,7 @@ def render(dossier: CaveDossier) -> str:
 
     add("─" * _WIDTH)
     add(f"  {dossier.display_name}")
-    add(f"  SB status: {dossier.lifecycle.value}  —  {_LIFECYCLE_HINT[dossier.lifecycle]}")
+    add(f"  SB status: {dossier.lifecycle.value}  –  {_LIFECYCLE_HINT[dossier.lifecycle]}")
     add("─" * _WIDTH)
 
     add("")
@@ -59,8 +59,8 @@ def render(dossier: CaveDossier) -> str:
         add("")
         # Redni broj is the working ID until a SUE number exists; the Excel row
         # is bookkeeping (the M6 write-back handle), not an identifier.
-        add(f"  SB — Redni broj {dossier.serial_number or '—'}  ·  working ID "
-            f"{dossier.working_id or '—'}  ·  Excel row {dossier.sb_row_number}")
+        add(f"  SB – Redni broj {dossier.serial_number or '–'}  ·  working ID "
+            f"{dossier.working_id or '–'}  ·  Excel row {dossier.sb_row_number}")
         for label, value in _sb_pairs(dossier):
             add(f"    {label:<22} {value}")
 
@@ -98,7 +98,7 @@ def _render_gate(dossier: CaveDossier, gate: GateLevel, add) -> None:
     report = dossier.readiness
     ready = report.ready_for(gate)
     ordinal = "1" if gate is GateLevel.SUE else "2"
-    add(f"  Gate {ordinal} — {GATE_LABELS[gate]}: {'READY' if ready else 'NOT READY'}")
+    add(f"  Gate {ordinal} – {GATE_LABELS[gate]}: {'READY' if ready else 'NOT READY'}")
 
     blockers = report.blockers_for(gate)
     warnings = report.warnings_for(gate)
@@ -118,7 +118,7 @@ def _render_gate(dossier: CaveDossier, gate: GateLevel, add) -> None:
     if not blockers and not warnings:
         add("    (no issues among the checks that could run)")
     if unchecked:
-        add(f"    Not checked yet ({len(unchecked)} rules — source not gathered):")
+        add(f"    Not checked yet ({len(unchecked)} rules – source not gathered):")
         for rule in unchecked:
             tier = "blocker" if rule.severity is Severity.BLOCKER else "warning"
             add(f"      · {rule.label:<38} needs {_SOURCE_LABELS[rule.source]}  [{tier}]")
@@ -127,18 +127,18 @@ def _render_gate(dossier: CaveDossier, gate: GateLevel, add) -> None:
 def _sb_pairs(dossier: CaveDossier) -> list[tuple[str, str]]:
     georeference = dossier.georeference
     pairs: list[tuple[str, str]] = [
-        ("SUE broj", dossier.sue_number or "—"),
-        ("Broj pločice", dossier.plaque_number or "—"),
-        ("Lokalitet", dossier.locality or "—"),
-        ("Najbliže mjesto", dossier.nearest_place or "—"),
+        ("SUE broj", dossier.sue_number or "–"),
+        ("Broj pločice", dossier.plaque_number or "–"),
+        ("Lokalitet", dossier.locality or "–"),
+        ("Najbliže mjesto", dossier.nearest_place or "–"),
         (
             "Koordinate (HTRS96)",
             f"X {_num(georeference.x_htrs)}  Y {_num(georeference.y_htrs)}  "
-            f"Z {_num(georeference.z_m)}" if georeference else "—",
+            f"Z {_num(georeference.z_m)}" if georeference else "–",
         ),
         ("Duljina / Dubina", f"{_num(dossier.length_m)} / {_num(dossier.depth_m)} m"),
-        ("Razdoblje istraž.", dossier.exploration_period or "—"),
-        ("Autori nacrta", _authors(dossier) or "—"),
+        ("Razdoblje istraž.", dossier.exploration_period or "–"),
+        ("Autori nacrta", _authors(dossier) or "–"),
     ]
     if dossier.synonyms:
         pairs.append(("Sinonimi", ", ".join(dossier.synonyms)))
@@ -319,7 +319,7 @@ def _num(value: float | None) -> str:
     fractional ones keep up to two decimals.
     """
     if value is None:
-        return "—"
+        return "–"
     if float(value).is_integer():
         return str(int(value))
     return f"{value:.2f}".rstrip("0").rstrip(".")

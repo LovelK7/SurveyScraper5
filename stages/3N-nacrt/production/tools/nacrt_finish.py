@@ -156,7 +156,7 @@ def load_root(path):
     if is_zip(path):
         with zipfile.ZipFile(path) as z:
             if DATA_ENTRY not in z.namelist():
-                raise ValueError("zip has no %s — not a cSurvey file" % DATA_ENTRY)
+                raise ValueError("zip has no %s – not a cSurvey file" % DATA_ENTRY)
             data = z.read(DATA_ENTRY)
         return ET.fromstring(data), True, Style(data)
     with open(path, "rb") as f:
@@ -1613,7 +1613,7 @@ def main(argv=None):
         try:
             sidecar, ok = finish(inp, out_path, args, print)
         except (ET.ParseError, ValueError, zipfile.BadZipFile) as e:
-            print("ERROR: cannot process %s (%s) — is it really a cSurvey file?"
+            print("ERROR: cannot process %s (%s) – is it really a cSurvey file?"
                   % (inp, e), file=sys.stderr)
             rc = 1
             continue

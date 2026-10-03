@@ -124,7 +124,7 @@ def run_prefill(settings: Settings, serial: int, *, offline: bool = False,
         )
     else:
         result.notes.append(
-            "SB red nema upotrebljive X/Y HTRS koordinate — koordinate, "
+            "SB red nema upotrebljive X/Y HTRS koordinate – koordinate, "
             "nadmorska visina i lokacija preskočene."
         )
 
@@ -153,7 +153,7 @@ def run_prefill(settings: Settings, serial: int, *, offline: bool = False,
         if item.overflowed:
             result.notes.append(
                 f"'{addresses.V1[item.key].label}' ne stane u ćeliju ni na "
-                f"{addresses.MIN_FONT_SIZE:g} pt — skrati tekst u Illustratoru."
+                f"{addresses.MIN_FONT_SIZE:g} pt – skrati tekst u Illustratoru."
             )
 
     run_dir = RUNS_DIR / georef.padded_serial(serial)
@@ -291,7 +291,7 @@ def _resolve_kota(settings: Settings, cave: CaveRow, result: SastavnicaResult,
         if computed is not None and abs(computed - sb_z) > settings.geo_elevation_tolerance_m:
             result.notes.append(
                 f"Nadmorska visina: SB kaže {_number(sb_z)} m, {label} kaže "
-                f"{_number(computed)} m — zadržana SB vrijednost."
+                f"{_number(computed)} m – zadržana SB vrijednost."
             )
         return
     if computed is not None:
@@ -360,19 +360,19 @@ def _read_dimensions(folder: Path | None, result: SastavnicaResult) -> dict | No
                    key=lambda path: path.stat().st_mtime, reverse=True)
     if not found:
         result.notes.append(
-            f"U mapi {folder.name} nema <ime>_dimenzije.json — duljine i "
+            f"U mapi {folder.name} nema <ime>_dimenzije.json – duljine i "
             "mjerilo dolaze iz zapisnika/SB-a, ne iz izmjere."
         )
         return None
     try:
         data = compose_mod.read_dimensions(found[0])
     except compose_mod.ComposeError as exc:
-        result.notes.append(f"{exc} — duljine i mjerilo iz zapisnika/SB-a.")
+        result.notes.append(f"{exc} – duljine i mjerilo iz zapisnika/SB-a.")
         return None
     result.dimensions_source = found[0].name
     if not data.get("calculated"):
         result.notes.append(
-            f"{found[0].name} kaže da survey nije izracunat — provjeri duljine."
+            f"{found[0].name} kaže da survey nije izracunat – provjeri duljine."
         )
     return data
 
@@ -478,7 +478,7 @@ def _read_osz(folder: Path | None, result: SastavnicaResult) -> dict[str, str | 
     """
     if folder is None:
         result.notes.append(
-            "Objekt još nema intake mapu — podaci iz zapisnika (mjerili, ekipa, "
+            "Objekt još nema intake mapu – podaci iz zapisnika (mjerili, ekipa, "
             "duljine, datum) nisu dostupni."
         )
         return {}
@@ -487,7 +487,7 @@ def _read_osz(folder: Path | None, result: SastavnicaResult) -> dict[str, str | 
         from cave_dossier.osz.reader import read_osz
     except ImportError:
         result.notes.append(
-            "OSZ čitač nije dostupan na ovom računalu (nedostaje [osz] dodatak) — "
+            "OSZ čitač nije dostupan na ovom računalu (nedostaje [osz] dodatak) – "
             "podaci iz zapisnika preskočeni."
         )
         return {}
@@ -495,20 +495,20 @@ def _read_osz(folder: Path | None, result: SastavnicaResult) -> dict[str, str | 
     path, pool = pick_osz_docx(folder)
     if pool:
         result.notes.append(
-            "Više OSZ kandidata u intake mapi — zapisnik preskočen: "
+            "Više OSZ kandidata u intake mapi – zapisnik preskočen: "
             + ", ".join(f.name for f in pool)
         )
         return {}
     if path is None:
         result.notes.append(
-            f"U mapi {folder.name} nema OSZ zapisnika — mjerili, ekipa, duljine "
+            f"U mapi {folder.name} nema OSZ zapisnika – mjerili, ekipa, duljine "
             "i datum ostaju prazni."
         )
         return {}
     try:
         values = read_osz(path)
     except Exception as exc:  # noqa: BLE001 — an unreadable OSZ must not kill the run
-        result.notes.append(f"OSZ {path.name} nije pročitan ({exc}) — preskočen.")
+        result.notes.append(f"OSZ {path.name} nije pročitan ({exc}) – preskočen.")
         return {}
     result.osz_source = path.name
     return {key: (value.strip() if isinstance(value, str) else value)
@@ -532,7 +532,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, pdf_path: Path,
     subdir = settings.archive_dirs.get("intake_dir")
     if not settings.local_drive_root or not subdir:
         result.notes.append(
-            "Nije konfiguriran archive.intake_dir / LOCAL_DRIVE_ROOT — "
+            "Nije konfiguriran archive.intake_dir / LOCAL_DRIVE_ROOT – "
             "dokument je ostao samo lokalno."
         )
         return None
@@ -540,7 +540,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, pdf_path: Path,
     try:
         if not intake_root.is_dir():
             result.notes.append(
-                f"Intake mapa nije dostupna ({intake_root}) — dokument je ostao lokalno."
+                f"Intake mapa nije dostupna ({intake_root}) – dokument je ostao lokalno."
             )
             return None
         folder = intake_folder or find_cave_leaf(intake_root, serial)
@@ -553,7 +553,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, pdf_path: Path,
         if target.exists() and not force and not _is_ours(target, stamp):
             result.notes.append(
                 f"{target.name} već postoji i NIJE ga napravio ovaj alat "
-                "(vjerojatno ga je netko uredio) — isporuka odbijena da se rad ne "
+                "(vjerojatno ga je netko uredio) – isporuka odbijena da se rad ne "
                 "prepiše. Preimenuj ili makni tu datoteku, ili pokreni s --force."
             )
             return None
@@ -561,7 +561,7 @@ def _deliver(settings: Settings, cave: CaveRow, serial: int, pdf_path: Path,
         shutil.copy2(pdf_path, target)
     except OSError as exc:
         result.notes.append(
-            f"Isporuka na Drive nije uspjela ({exc.__class__.__name__}: {exc}) — "
+            f"Isporuka na Drive nije uspjela ({exc.__class__.__name__}: {exc}) – "
             f"dokument je ostao lokalno; zatvori {pdf_name} i ponovi."
         )
         return None

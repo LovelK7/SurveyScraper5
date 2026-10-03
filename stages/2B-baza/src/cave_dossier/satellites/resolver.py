@@ -399,7 +399,7 @@ def resolve_rows(
                             record=record,
                             status=LinkStatus.LINKED,
                             key="coordinate",
-                            evidence=f"{distance:.1f} m — ista točka",
+                            evidence=f"{distance:.1f} m – ista točka",
                             distance_m=distance,
                         )
                     )
@@ -498,7 +498,7 @@ def resolve_rows(
                     status=LinkStatus.CONFLICT,
                     key="name",
                     evidence=f"SB već ima ime \"{twin.name}\" (Redni broj "
-                             f"{twin.serial_number}) — isti objekt ili imenjak?",
+                             f"{twin.serial_number}) – isti objekt ili imenjak?",
                 )
             )
             continue

@@ -71,7 +71,7 @@ class RGIClient:
         try:
             import requests
         except ImportError:
-            logger.warning("requests is not installed — RGI WFS unavailable")
+            logger.warning("requests is not installed – RGI WFS unavailable")
             return None
         try:
             resp = requests.get(
@@ -175,7 +175,7 @@ class RGIClient:
         try:
             import geopandas as gpd  # type: ignore[import-untyped]
         except ImportError:
-            logger.warning("geopandas is not installed — RGI offline fallback unavailable")
+            logger.warning("geopandas is not installed – RGI offline fallback unavailable")
             return None
         try:
             gdf = gpd.read_file(path)

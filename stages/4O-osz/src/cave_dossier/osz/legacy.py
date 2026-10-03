@@ -180,7 +180,7 @@ def parse_legacy_osz(path: Path) -> LegacyContent:
         from docx import Document  # type: ignore[import-untyped]
     except ImportError as exc:
         raise LegacyParseError(
-            "python-docx nije instaliran (extra [osz]) — legacy parser nedostupan."
+            "python-docx nije instaliran (extra [osz]) – legacy parser nedostupan."
         ) from exc
     if path.suffix.lower() != ".docx":
         raise LegacyParseError(f"{path.name}: legacy parser čita samo .docx "
@@ -692,7 +692,7 @@ def to_v10_fields(content: LegacyContent) -> tuple[dict[str, str], list[str], li
             if not value:
                 continue
             if legacy_key == "morphological_type":
-                notes.append(f"Morfološki tip '{value}' nema v10 kućicu — provjeri ručno.")
+                notes.append(f"Morfološki tip '{value}' nema v10 kućicu – provjeri ručno.")
                 continue
             ticks.append(value)
     origin = content.fields.get("origin_of_name")

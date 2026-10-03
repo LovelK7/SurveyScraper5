@@ -262,7 +262,7 @@ def process_item(item, stats, warnings):
                                           % (recovered, opts))
                 process_item(item, stats, warnings)  # apply mapping to it too
             else:
-                warnings.append("point 'user' not recoverable (options=%r) — "
+                warnings.append("point 'user' not recoverable (options=%r) – "
                                 "will be an X-box" % opts)
     elif kind == "line":
         if name in LINE_RENAMES:
@@ -302,7 +302,7 @@ def process_item(item, stats, warnings):
     leave = {"point": POINT_LEAVE, "line": LINE_LEAVE,
              "area": AREA_LEAVE}.get(kind, set())
     if (kind, name) in KNOWN_DEGRADED and name not in leave:
-        warnings.append("%s '%s' left as-is — %s"
+        warnings.append("%s '%s' left as-is – %s"
                         % (kind, name, KNOWN_DEGRADED[(kind, name)]))
 
     for xsec in item.findall("crosssection"):
@@ -328,11 +328,11 @@ def process_file(input_path, out, force):
     props = root.find("properties")
     creatid = (props.get("creatid") or "").lower() if props is not None else ""
     if creatid != "topodroid":
-        print("WARNING: creatid=%r — not a TopoDroid export; proceeding anyway"
+        print("WARNING: creatid=%r – not a TopoDroid export; proceeding anyway"
               % creatid, file=sys.stderr)
     elif props.get("creat_postprocessed"):
         print("WARNING: file is already post-import (creat_postprocessed set) "
-              "— renames feed a conversion that will NOT run again",
+              "– renames feed a conversion that will NOT run again",
               file=sys.stderr)
 
     stats = {"renamed": [], "labeled": [], "recovered": []}

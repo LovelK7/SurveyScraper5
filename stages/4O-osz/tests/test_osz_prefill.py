@@ -738,7 +738,7 @@ def test_prefill_locked_osz_stays_local(intake_settings, geo_stubs, run_dir, no_
     assert "OSZ je otvoren u Wordu" in capsys.readouterr().out   # warned up front
     assert outcome.delivered_path is None
     assert outcome.docx_path.exists()
-    assert any("OSZ je otvoren u Wordu — zatvori ga i ponovi" in note
+    assert any("OSZ je otvoren u Wordu – zatvori ga i ponovi" in note
                for note in outcome.result.notes)
     assert not list(leaf.glob("*_stari_*.docx"))
     assert first.delivered_path.read_bytes() == before

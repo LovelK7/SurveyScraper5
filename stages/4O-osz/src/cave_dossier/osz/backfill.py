@@ -97,7 +97,7 @@ def locate_filled_osz(settings: Settings, serial: int,
         prefilled = (settings.local_drive_root / subdir
                      / f"SB_{str(serial).zfill(4)}_OSZ.docx")
         if prefilled.exists():
-            notes.append("nađen samo prefill primjerak u osz_prefill_dir — "
+            notes.append("nađen samo prefill primjerak u osz_prefill_dir – "
                          "provjeri je li stvarno ispunjen")
             return OszLocation(path=prefilled, notes=tuple(notes))
         notes.append(f"ni prefill primjerka nema: {prefilled}")
@@ -229,7 +229,7 @@ def _resolve_name_and_synonyms(result: BackfillResult, cave: CaveRow,
 
     if not osz_name:
         if sb_name:
-            result.notes.append("OSZ nema Ime objekta — ime i sinonimi preskočeni.")
+            result.notes.append("OSZ nema Ime objekta – ime i sinonimi preskočeni.")
         return
 
     renamed = sb_name and normalize_lookup_key(sb_name) != normalize_lookup_key(osz_name)
@@ -321,7 +321,7 @@ def _resolve_authors(result: BackfillResult, cave: CaveRow,
         ))
     if extra:
         result.notes.append(
-            f"{column}: SB navodi i {', '.join(extra)} — OSZ Crtali ih nema "
+            f"{column}: SB navodi i {', '.join(extra)} – OSZ Crtali ih nema "
             "(možda raniji nacrt); zadržani."
         )
 

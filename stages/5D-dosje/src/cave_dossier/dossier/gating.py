@@ -200,7 +200,7 @@ def _entrance_photo_flag_matches_archive(dossier: CaveDossier) -> str | None:
     if present and not claimed:
         return (
             f"{len(dossier.entrance_photos)} entrance photo(s) found on Drive, but SB "
-            f"'Fotografija ulaza' is {dossier.entrance_photo_flag or 'empty'} — SB cell is stale."
+            f"'Fotografija ulaza' is {dossier.entrance_photo_flag or 'empty'} – SB cell is stale."
         )
     return None
 
@@ -277,7 +277,7 @@ RULES: tuple[Rule, ...] = (
          _SUE, (Source.SB, Source.ARCHIVE), _entrance_photo_flag_matches_archive),
 
     # ── Entrance-photo processing (2.1d) ──────────────────────────────
-    Rule("Fotografije ulaza — obrada (2.1d)", IssueCode.MISSING_ENTRANCE_PHOTO, Severity.WARNING,
+    Rule("Fotografije ulaza – obrada (2.1d)", IssueCode.MISSING_ENTRANCE_PHOTO, Severity.WARNING,
          _SUE, (Source.ARCHIVE, Source.PHOTOS), _entrance_photos_processed),
 
     # ── Isječak karte (2.1c, M3) — CroSpeleo only ─────────────────────
@@ -369,7 +369,7 @@ def _year_conditional_issues(
     qualifier = (
         f"exploration year {year} ≥ {PHOTO_REQUIRED_FROM_YEAR}"
         if modern
-        else f"exploration year {year or 'unknown'} — Protokol §5.1 does not gate on it"
+        else f"exploration year {year or 'unknown'} – Protokol §5.1 does not gate on it"
     )
 
     if dossier.exploration_period and not _YEAR_PATTERN.search(dossier.exploration_period):
@@ -521,7 +521,7 @@ def _statement_issues(
                         source=Source.STATEMENTS,
                         message=(
                             f"{entry.name} has an izjava, but none that covers this cave "
-                            f"({scoped}) — the scope suffix names another locality/cave, "
+                            f"({scoped}) – the scope suffix names another locality/cave, "
                             f"so a fresh `Izjava_<ime>.<ext>` is needed."
                         ),
                     )
@@ -576,7 +576,7 @@ def _person_statement_warnings(
                     label="Registar osoba",
                     source=Source.STATEMENTS,
                     message=(
-                        f"'{entry.name}' ({role_word}) is not in the people registry — "
+                        f"'{entry.name}' ({role_word}) is not in the people registry – "
                         f"add them to data/people/registry.json so aliases and izjave "
                         f"can be assessed."
                     ),
@@ -591,7 +591,7 @@ def _person_statement_warnings(
                     label="Izjava po osobi",
                     source=Source.STATEMENTS,
                     message=(
-                        f"No 'Izjava za katastar' on file for {display} ({role_word}) — "
+                        f"No 'Izjava za katastar' on file for {display} ({role_word}) – "
                         f"advisory: only authors are blocked, but the statement will be "
                         f"needed the moment they author a nacrt or photo."
                     ),
@@ -606,16 +606,16 @@ def _context_notes(dossier: CaveDossier) -> list[DossierIssue]:
 
     if dossier.is_queued:
         detail = {
-            LifecycleState.ZA_ISTRAZIT: "not explored yet — SB data is provisional",
+            LifecycleState.ZA_ISTRAZIT: "not explored yet – SB data is provisional",
             LifecycleState.NESREDENI: (
                 "explored but unfinished: "
                 + ", ".join(dossier.nesredeni_keywords or ["flagged in Napomena"])
             ),
             LifecycleState.SUDJELOVANJE: (
-                "another society explored it and SUE took part — not ours to finish"
+                "another society explored it and SUE took part – not ours to finish"
             ),
             LifecycleState.UNCLASSIFIED: (
-                "no SUE number and no Napomena flag — this row appears in none of "
+                "no SUE number and no Napomena flag – this row appears in none of "
                 "SB's three views (Istraženi / Nesređeni / Za istražit)"
             ),
         }[dossier.lifecycle]
@@ -631,7 +631,7 @@ def _context_notes(dossier: CaveDossier) -> list[DossierIssue]:
                 level=GateLevel.SUE,
                 label=f"SB: {dossier.lifecycle.value}",
                 source=Source.SB,
-                message=f"Queue item{old} — {detail}.",
+                message=f"Queue item{old} – {detail}.",
             )
         )
 
@@ -644,7 +644,7 @@ def _context_notes(dossier: CaveDossier) -> list[DossierIssue]:
                 label="Autori nacrta",
                 source=Source.SB,
                 message=(
-                    f"'{author}' is flagged as drawing for {society} — an author from "
+                    f"'{author}' is flagged as drawing for {society} – an author from "
                     f"outside SUE. The izjava requirement applies to them all the same."
                 ),
             )

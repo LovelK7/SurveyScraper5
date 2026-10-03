@@ -84,7 +84,7 @@ def _diagnose_unreachable(path: Path) -> str:
         # reboot.  The G:\ / H:\ drive will appear once Drive launches.
         return (
             f"Drive root {anchor} is not mounted.  Google Drive Desktop is "
-            "most likely offline or still starting after wake-from-sleep — "
+            "most likely offline or still starting after wake-from-sleep – "
             "open Drive from the system tray, wait for the drive letter to "
             "appear, then retry."
         )

@@ -46,12 +46,12 @@ class AuthorFinding:
 
 #: flag -> what it means, printed as the legend of `sb audit-authors`.
 AUTHOR_FLAG_HELP: dict[str, str] = {
-    "empty": "cell is empty — no author and no source recorded",
+    "empty": "cell is empty – no author and no source recorded",
     "placeholder": "cell holds a placeholder ('/', '-') that means 'nobody'",
     "citation": "looks like a literature source (year in brackets), not a survey author",
-    "single_name": "one bare word — a first name or nickname, not resolvable to a person",
-    "long_entry": f"a single parsed name longer than {_LONG_NAME_CHARS} chars — probably a phrase",
-    "conjunction": "split on the word 'i'/'te' — verify the two halves are really two people",
+    "single_name": "one bare word – a first name or nickname, not resolvable to a person",
+    "long_entry": f"a single parsed name longer than {_LONG_NAME_CHARS} chars – probably a phrase",
+    "conjunction": "split on the word 'i'/'te' – verify the two halves are really two people",
     "society": "carries an outside-society bracket, e.g. (SOV)",
 }
 

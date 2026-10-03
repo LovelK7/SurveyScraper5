@@ -137,7 +137,7 @@ class LocalityFinder:
         finding.admin_available = admin.source != "unavailable"
         if not finding.admin_available:
             finding.notes.append(
-                "DGU administrativne granice nisu dostupne — pokreni "
+                "DGU administrativne granice nisu dostupne – pokreni "
                 "`cavedossier geo fetch-data` (Županija/Grad-općina ostaju prazni)."
             )
         finding.zupanija = admin.zupanija
@@ -150,7 +150,7 @@ class LocalityFinder:
             reason = ("offline način" if self.rgi_client.config.offline
                       else "RGI WFS nedostupan")
             finding.notes.append(
-                f"{reason} — korišten lokalni rgi_named_places.gpkg "
+                f"{reason} – korišten lokalni rgi_named_places.gpkg "
                 "(podaci mogu kasniti za registrom)."
             )
         elif not hits:
@@ -207,7 +207,7 @@ class LocalityFinder:
             if sb_value and normalize_for_matching(sb_value) != normalize_for_matching(admin_naselje):
                 finding.notes.append(
                     f"Najbliže mjesto: SB kaže {sb_value!r}, geokodirano naselje "
-                    f"ulazne točke je {admin_naselje!r} — upisano geokodirano "
+                    f"ulazne točke je {admin_naselje!r} – upisano geokodirano "
                     "(geo-admin ima prednost)."
                 )
             return
@@ -238,7 +238,7 @@ class LocalityFinder:
                     token, nearby_naselja, score_cutoff=_LOCALITY_SETTLEMENT_CUTOFF
                 ) is not None:
                     finding.notes.append(
-                        f"Lokalitet (SB) sadrži naselje {token!r} — naselja pripadaju "
+                        f"Lokalitet (SB) sadrži naselje {token!r} – naselja pripadaju "
                         "polju 'Najbliže mjesto'. SB vrijednost je zadržana."
                     )
             return

@@ -238,7 +238,7 @@ def run(command, survey, out=None, design="Both", timeout=DEFAULT_TIMEOUT,
     directory = find_csurvey_dir(csurvey_dir)
     if not os.path.exists(os.path.join(directory, "cSurveyPC.exe")):
         raise DriverError(
-            "cSurvey is not installed in %s (nor beside the kit in %s) — set "
+            "cSurvey is not installed in %s (nor beside the kit in %s) – set "
             "CSURVEY_DIR in .env, pass --csurvey-dir, or copy the cSurvey folder there"
             % (directory, KIT_CSURVEY_DIR))
 

@@ -181,7 +181,7 @@ def render(blank_path: Path, values: dict[str, str], font_path: Path,
         raise RenderError(f"Unknown sastavnica field(s): {', '.join(unknown)}")
     if not blank_path.exists():
         raise RenderError(
-            f"Blank template not found: {blank_path} — run "
+            f"Blank template not found: {blank_path} – run "
             "sastavnica-template/tools/build_blank.py"
         )
 

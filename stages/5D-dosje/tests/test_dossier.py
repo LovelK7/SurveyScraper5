@@ -310,8 +310,8 @@ def test_render_shows_identity_lifecycle_and_both_gates(
 
     assert "Špilja Testovka (SUE 001)" in text
     assert "SB status: istraženi" in text
-    assert "Gate 1 — katastarski broj (SUE): NOT READY" in text
-    assert "Gate 2 — CroSpeleo: NOT READY" in text
+    assert "Gate 1 – katastarski broj (SUE): NOT READY" in text
+    assert "Gate 2 – CroSpeleo: NOT READY" in text
     assert "not gathered yet" in text
     # 7-digit HTRS96 northings must not degrade to scientific notation.
     assert "5023456" in text

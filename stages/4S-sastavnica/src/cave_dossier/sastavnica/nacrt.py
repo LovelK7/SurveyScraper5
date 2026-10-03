@@ -54,7 +54,7 @@ def run_nacrt(settings: Settings, serial: int, *, offline: bool = False,
     if folder is None:
         raise ComposeError(
             f"Objekt {serial} nema intake mapu na Driveu (ili Drive nije "
-            "dostupan) — tamo su KORAK 3 datoteke koje se slažu u nacrt.")
+            "dostupan) – tamo su KORAK 3 datoteke koje se slažu u nacrt.")
     inputs = compose_mod.find_inputs(folder)
     dims = compose_mod.read_dimensions(inputs.dimensions)
     layout = Layout.from_mapping(

@@ -93,7 +93,7 @@ def _read_values(path: Path, br_sep: str) -> dict[str, str | None]:
         except IndexError as exc:
             raise OszReadError(
                 f"{path.name}: table[{addr.table}].row[{addr.row}].cell[{addr.cell}] "
-                f"({key}) does not exist — is this a v10 document?"
+                f"({key}) does not exist – is this a v10 document?"
             ) from exc
         if addr.kind == "sdt_inline":
             text = _inline_sdt_text(node, br_sep)

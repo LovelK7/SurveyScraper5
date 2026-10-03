@@ -69,7 +69,7 @@ class ElevationFinder:
         transformed = _to_etrs_tm33(x_htrs, y_htrs)
         if transformed is None:
             finding.notes.append(
-                "pyproj nije instaliran (extra [geo]) — kota se ne može odrediti."
+                "pyproj nije instaliran (extra [geo]) – kota se ne može odrediti."
             )
             return finding
         easting, northing = transformed
@@ -108,12 +108,12 @@ class ElevationFinder:
         if not cache.exists():
             if self.offline:
                 finding.notes.append(
-                    "offline način: EL-COV indeks nije u predmemoriji — kota preskočena."
+                    "offline način: EL-COV indeks nije u predmemoriji – kota preskočena."
                 )
                 return []
             if not _download(ATOM_BASE_URL + INDEX_GML_NAME, cache, _INDEX_TIMEOUT_S):
                 finding.notes.append(
-                    "EL-COV GML indeks nije dohvatljiv (mreža?) — kota preskočena."
+                    "EL-COV GML indeks nije dohvatljiv (mreža?) – kota preskočena."
                 )
                 return []
         try:
@@ -123,7 +123,7 @@ class ElevationFinder:
             tiles = []
         if not tiles:
             finding.notes.append(
-                f"EL-COV indeks ({cache.name}) ne sadrži čitljive pločice — kota preskočena."
+                f"EL-COV indeks ({cache.name}) ne sadrži čitljive pločice – kota preskočena."
             )
         return tiles
 
@@ -133,13 +133,13 @@ class ElevationFinder:
             return path
         if self.offline:
             finding.notes.append(
-                f"offline način: pločica {name} nije u predmemoriji — preskočena."
+                f"offline način: pločica {name} nije u predmemoriji – preskočena."
             )
             return None
         logger.info("Downloading EL-COV tile %s (~34 MB, one-time)…", name)
         print(f"  Preuzimam EL-COV pločicu {name} (~34 MB, jednokratno) …")
         if not _download(ATOM_BASE_URL + name, path, _DOWNLOAD_TIMEOUT_S):
-            finding.notes.append(f"EL-COV pločica {name} nije dohvatljiva — kota preskočena.")
+            finding.notes.append(f"EL-COV pločica {name} nije dohvatljiva – kota preskočena.")
             return None
         return path
 
@@ -214,7 +214,7 @@ def _to_etrs_tm33(x_htrs: float, y_htrs: float) -> tuple[float, float] | None:
     try:
         from pyproj import Transformer
     except ImportError:
-        logger.warning("pyproj is not installed — elevation finder unavailable")
+        logger.warning("pyproj is not installed – elevation finder unavailable")
         return None
     transformer = Transformer.from_crs("EPSG:3765", "EPSG:3045", always_xy=True)
     easting, northing = transformer.transform(x_htrs, y_htrs)
@@ -234,7 +234,7 @@ def _sample_geotiff(
     try:
         import rasterio
     except ImportError:
-        finding.notes.append("rasterio nije instaliran (extra [geo]) — kota preskočena.")
+        finding.notes.append("rasterio nije instaliran (extra [geo]) – kota preskočena.")
         return None
     try:
         with rasterio.open(path) as src:
@@ -286,7 +286,7 @@ def _nearest_valid(src, easting: float, northing: float, nodata: float | None,
         return None
     cells_away = best[0] ** 0.5
     finding.notes.append(
-        f"Točka pada na nodata ćeliju — uzeta najbliža valjana "
+        f"Točka pada na nodata ćeliju – uzeta najbliža valjana "
         f"(~{cells_away * abs(src.res[0]):.0f} m dalje)."
     )
     return best[1]
@@ -296,7 +296,7 @@ def _download(url: str, target: Path, timeout_s: float) -> bool:
     try:
         import requests
     except ImportError:
-        logger.warning("requests is not installed — cannot download %s", url)
+        logger.warning("requests is not installed – cannot download %s", url)
         return False
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".part")

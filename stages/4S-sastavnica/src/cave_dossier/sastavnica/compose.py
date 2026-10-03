@@ -134,7 +134,7 @@ class Layout:
                    if not data.get(key)]
         if missing:
             raise ComposeError(
-                "Dimenzije JSON ne sadrži raspored (%s) — nacrt_finish.py je "
+                "Dimenzije JSON ne sadrži raspored (%s) – nacrt_finish.py je "
                 "vjerojatno završio s 'fit-to-page' (ništa ne stane na A4) ili "
                 "je datoteka od starije verzije. Pokreni KORAK 3 ponovno."
                 % ", ".join(missing))
@@ -200,7 +200,7 @@ def find_inputs(folder: Path) -> NacrtInputs:
         have = sorted({kind for trio in found.values() for kind in trio})
         raise ComposeError(
             "U mapi %s nema kompletnog KORAKA 3 (%s). Treba: <ime>_plan.pdf, "
-            "<ime>_profile.pdf, <ime>_dimenzije.json — napravi ih s "
+            "<ime>_profile.pdf, <ime>_dimenzije.json – napravi ih s "
             "nacrt_finish.py pa csurvey_driver.py finish."
             % (folder.name, "nađeno: " + ", ".join(have) if have else "mapa je prazna"))
     complete.sort(key=lambda pair: max(p.stat().st_mtime for p in pair[1].values()),
@@ -236,7 +236,7 @@ def ink_bbox(page) -> Rect:
     for block in page.get_text("dict")["blocks"]:
         boxes.append(block["bbox"])
     if not boxes:
-        raise ComposeError("Stranica je prazna — nema što složiti.")
+        raise ComposeError("Stranica je prazna – nema što složiti.")
     page_rect = page.rect
     x0 = max(min(float(b[0]) for b in boxes), page_rect.x0)
     y0 = max(min(float(b[1]) for b in boxes), page_rect.y0)
@@ -303,7 +303,7 @@ def _check(placed: list[Placement], layout: Layout, *, gap_mm: float,
             raise ComposeError(
                 "%s: nacrtano %.1f x %.1f mm, a raspored je rezervirao "
                 "%.1f x %.1f mm (dopušteno odstupanje %.1f mm). Ne smanjujem "
-                "crtež — mjerilo 1:%d mora ostati vjerno. Pokreni nacrt_finish.py "
+                "crtež – mjerilo 1:%d mora ostati vjerno. Pokreni nacrt_finish.py "
                 "ponovno i izaberi drugi raspored (--layout N)."
                 % (_HR[item.design], ink_w, ink_h, res_w, res_h, slack_mm,
                    item.scale))

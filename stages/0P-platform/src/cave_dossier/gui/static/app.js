@@ -65,7 +65,7 @@ function h(tag, attrs, ...kids) {
   }
   for (const kid of kids.flat()) {
     if (kid === null || kid === undefined || kid === false) continue;
-    el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+    el.append(kid instanceof Node ? kid : document.createTextNode(hrDash(kid)));
   }
   return el;
 }
@@ -123,6 +123,9 @@ const fmtTime = ts => ts ? new Date(ts * 1000).toLocaleString("hr-HR", {
 const fmtSize = n => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " kB";
 const shortName = s => (s || "").split("_")[0];
 const fileName = p => (p || "").split(/[\\/]/).pop();
+// Croatian typography: the dash is the en dash. Text the page did not write
+// itself (the repo's English Markdown, tool output, SB cells) is shown that way too.
+const hrDash = t => String(t ?? "").replace(/—/g, "–");
 
 // ── loading ──────────────────────────────────────────────────────────
 async function loadAll(refresh) {
@@ -796,7 +799,7 @@ function renderDoc(path) {
     h("button", { class: "btn ghost", onclick: () => { delete S.docs[path]; render(); } }, icon("refresh"), "Ponovno učitaj"),
     h("button", { class: "btn", onclick: () => openTarget({ what: "readme", path }) }, icon("open"), "Otvori u editoru"));
   const body = h("article", { class: "card md" });
-  body.append(...markdown(doc.text, path));
+  body.append(...markdown(hrDash(doc.text), path));
   return [head, body];
 }
 
@@ -1161,7 +1164,7 @@ function renderJobs() {
   const j = S.jobs.get(S.activeJob);
   const out = $("#job-output");
   const atBottom = out.scrollHeight - out.scrollTop - out.clientHeight < 40;
-  out.textContent = j ? j.text : "Još ništa nije pokrenuto. Pokreni naredbu s bilo koje kartice.";
+  out.textContent = j ? hrDash(j.text) : "Još ništa nije pokrenuto. Pokreni naredbu s bilo koje kartice.";
   if (atBottom) out.scrollTop = out.scrollHeight;
   $("#job-kill").disabled = !(j && j.running);
   $("#job-input").disabled = !(j && j.running);

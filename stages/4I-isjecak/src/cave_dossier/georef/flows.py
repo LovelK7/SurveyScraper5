@@ -413,7 +413,7 @@ def _save_marker_centered_map(page: object, artifacts: GeorefArtifacts) -> None:
             const mapHeight = Math.max(0, bottomLimit - topInset);
 
             // Landscape 5:4 crop of the cave's NEAR vicinity (user,
-            // 2026-08-30 — replaces the original square crop, which read
+            // 2026-08-30 – replaces the original square crop, which read
             // as ~2.5 km in every direction and, being 1:1, blew up the
             // OSZ frame's height).  heightFactor 0.42 keeps roughly
             // 1.5 km above and below the entrance at the default-window

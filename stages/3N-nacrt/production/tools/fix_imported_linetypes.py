@@ -197,7 +197,7 @@ def load_root(path):
     if is_zip(path):
         with zipfile.ZipFile(path) as z:
             if DATA_ENTRY not in z.namelist():
-                raise ValueError("zip has no %s — not a cSurvey file" % DATA_ENTRY)
+                raise ValueError("zip has no %s – not a cSurvey file" % DATA_ENTRY)
             return ET.fromstring(z.read(DATA_ENTRY)), True
     return ET.parse(path).getroot(), False
 
@@ -365,7 +365,7 @@ def main(argv=None):
         try:
             root, is_csz = load_root(inp)
         except (ET.ParseError, ValueError, zipfile.BadZipFile) as e:
-            print("ERROR: cannot read %s (%s) — is it really a cSurvey file?"
+            print("ERROR: cannot read %s (%s) – is it really a cSurvey file?"
                   % (inp, e), file=sys.stderr)
             rc = 1
             continue
@@ -445,7 +445,7 @@ def main(argv=None):
             print("    NOTE: no TopoDroid-imported items found in this file. "
                   "If it wasn't a TopoDroid import, nothing here needed fixing.")
         elif fixed_lines == 0 and rules.get("spline_linetypes"):
-            print("    NOTE: lines were already splines — nothing to change "
+            print("    NOTE: lines were already splines – nothing to change "
                   "(safe to have re-run).")
     return rc
 

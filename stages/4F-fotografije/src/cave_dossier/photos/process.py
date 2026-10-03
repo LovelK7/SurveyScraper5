@@ -240,7 +240,7 @@ def build_job(
         root = intake_root(settings)
         if root is None:
             notes.append(
-                "Nije konfiguriran archive.intake_dir / LOCAL_DRIVE_ROOT — "
+                "Nije konfiguriran archive.intake_dir / LOCAL_DRIVE_ROOT – "
                 "pokaži mapu s --from."
             )
             return PhotoJob(serial=serial, folder=None, notes=tuple(notes))
@@ -304,21 +304,21 @@ def _author_from_osz(
             notes.extend(location.notes)
     if osz_path is None:
         notes.append(
-            "Nema ispunjenog OSZ-a — 'Autor fotografije ulaza' ostaje prazan "
+            "Nema ispunjenog OSZ-a – 'Autor fotografije ulaza' ostaje prazan "
             "(dodaj ga s --author)."
         )
         return None, None, None
     try:
         author, raw = entrance_photo_author(osz_path)
     except ImportError:
-        notes.append("Nedostaje lxml (extra `osz`) — autor se ne može pročitati iz OSZ-a.")
+        notes.append("Nedostaje lxml (extra `osz`) – autor se ne može pročitati iz OSZ-a.")
         return None, None, osz_path
     except (OSError, RuntimeError) as exc:  # OszReadError is a RuntimeError
-        notes.append(f"OSZ se ne može pročitati ({exc}) — autor ostaje prazan.")
+        notes.append(f"OSZ se ne može pročitati ({exc}) – autor ostaje prazan.")
         return None, None, osz_path
     if author is None:
         notes.append(
-            f"OSZ nema 'Autor fotografije ulaza' ({osz_path.name}) — "
+            f"OSZ nema 'Autor fotografije ulaza' ({osz_path.name}) – "
             "ime datoteke ostaje bez autora."
         )
     return author, raw, osz_path
@@ -408,7 +408,7 @@ def plan_pull(
     folder_exists = folder is not None
     if folder is None:
         folder = root / intake_folder_name(cave, serial, settings)
-        notes.append(f"Intake mapa ne postoji — bit će stvorena: {folder.name}")
+        notes.append(f"Intake mapa ne postoji – bit će stvorena: {folder.name}")
 
     moves = tuple(
         PullMove(source=path, target=folder / strip_sb_prefix(path.name, serial))
@@ -427,7 +427,7 @@ def apply_pull(plan: PullPlan) -> list[PullOutcome]:
     plan.folder.mkdir(parents=True, exist_ok=True)
     for move in plan.moves:
         if move.target.exists():
-            outcomes.append(PullOutcome(move, "exists", "postoji — preskočeno"))
+            outcomes.append(PullOutcome(move, "exists", "postoji – preskočeno"))
             continue
         try:
             shutil.move(str(move.source), str(move.target))
@@ -453,13 +453,13 @@ def process_photo(
             plan, "unsupported", f"{plan.source.suffix} treba pillow-heif", source_bytes
         )
     if plan.target.exists() and not overwrite:
-        return ProcessedPhoto(plan, "exists", "postoji — preskočeno", source_bytes)
+        return ProcessedPhoto(plan, "exists", "postoji – preskočeno", source_bytes)
 
     try:
         from PIL import Image, ImageOps
     except ImportError:
         return ProcessedPhoto(
-            plan, "error", "nedostaje Pillow — instaliraj extra `photos`", source_bytes
+            plan, "error", "nedostaje Pillow – instaliraj extra `photos`", source_bytes
         )
 
     try:

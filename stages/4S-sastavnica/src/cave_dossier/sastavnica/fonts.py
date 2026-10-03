@@ -72,7 +72,7 @@ def resolve(configured: str | None = None) -> ResolvedFont:
         if not _covers_croatian(path):
             raise FontUnavailable(
                 f"sastavnica.font_path ({path.name}) cannot draw Croatian diacritics "
-                "(č ć ž š đ) — pick another face."
+                "(č ć ž š đ) – pick another face."
             )
         return ResolvedFont(path, "config")
 
@@ -88,7 +88,7 @@ def resolve(configured: str | None = None) -> ResolvedFont:
         if path.exists() and _covers_croatian(path):
             return ResolvedFont(
                 path, "fallback",
-                note=(f"Microsoft Sans Serif nije nađen — vrijednosti su složene u "
+                note=(f"Microsoft Sans Serif nije nađen – vrijednosti su složene u "
                       f"{path.stem}. Izgled se malo razlikuje od naslova na "
                       "predlošku; postavi sastavnica.font_path ako smeta."),
             )

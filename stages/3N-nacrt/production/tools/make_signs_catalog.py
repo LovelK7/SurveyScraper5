@@ -57,7 +57,7 @@ STRIPPED_TO_SIGN = {n.lower(): v for v, n in SIGN_NAMES.items()}
 
 # (import name, description, designtools.xml tool name for icon + app captions)
 LINE_TARGETS = [  # number 101.. in this order
-    ("wall", "cave border — inverted filled area (Borders)",
+    ("wall", "cave border – inverted filled area (Borders)",
      "btnDesignTools_Borders_CaveBorder"),
     ("wall:presumed", "presumed cave border (Borders)",
      "btnDesignTools_Borders_PresumedCaveBorder"),
@@ -67,7 +67,7 @@ LINE_TARGETS = [  # number 101.. in this order
      "btnDesignTools_Borders_Border"),
     ("overhang", "overhang curve (Water/floor)",
      "btnDesignTools_Water_OverhangCurve"),
-    ("pit", "cliff/drop curve — the black-triangles line (Water/floor)",
+    ("pit", "cliff/drop curve – the black-triangles line (Water/floor)",
      "btnDesignTools_Water_CliffCurve"),
     ("chimney", "ceiling cliff curve (Ceiling)",
      "btnDesignTools_TerrainLevel_PresumedCliffCurve"),
@@ -347,13 +347,13 @@ def resolve_point(name, sign_to_num, glyphs):
     if stripped in STRIPPED_TO_SIGN:
         v = STRIPPED_TO_SIGN[stripped]
         num = sign_to_num.get(v)
-        verdict = SIGN_NAMES[v] + (" — renders" if v in glyphs
-                                   else " — NO GLYPH, X-box")
+        verdict = SIGN_NAMES[v] + (" – renders" if v in glyphs
+                                   else " – NO GLYPH, X-box")
         css = "ok" if v in glyphs else "warn"
         prefill = (str(num) + extras_suffix("points", n)
                    if explicit and num else "")
         return (verdict, css, num, prefill)
-    return ("UNMAPPED — X-box", "bad", None, "")
+    return ("UNMAPPED – X-box", "bad", None, "")
 
 
 def resolve_line(name, name_to_num):
@@ -536,13 +536,13 @@ def main(argv=None):
 
     cs_page = """<!doctype html><html><head><meta charset="utf-8">
 <title>cSurvey targets (numbered)</title><style>%s</style></head><body>
-<h1>cSurvey targets — the numbered menu</h1>
+<h1>cSurvey targets – the numbered menu</h1>
 <p class="note">Use these numbers in the mapping workbench. Point glyphs are the real
 gallery SVGs from the installed build; line/area previews are stylized approximations.</p>
 <h2>Points (type the number in a point row)</h2>%s
 <h2>Lines (101–113, for line rows)</h2>%s
 <h2>Areas (201–206, for area rows)</h2>%s
-<h2>Designer-only tools — NOT reachable via TopoDroid import</h2>
+<h2>Designer-only tools – NOT reachable via TopoDroid import</h2>
 <p class="note">These exist only in cSurvey's drawing toolbars (icons + names shown as in
 the app). The import converter cannot produce them; to use one, draw/re-type in cSurvey
 after import (a post-import re-typing tool is on the backlog).</p>%s
@@ -733,10 +733,10 @@ function exportMap(){
 for the numbered menu. In each row's box type a <b>target number</b> (points take 1–99,
 lines 101–113, areas 201–206), or <code>label:TEXT</code> (points only), or
 <code>leave</code>. Empty = default behavior. Optional flags after the number:
-<code>r</code> (lines only — reverse the stroke so pen decorations face the other side)
-and <code>oNN</code> (points only — force orientation to NN degrees), e.g.
+<code>r</code> (lines only – reverse the stroke so pen decorations face the other side)
+and <code>oNN</code> (points only – force orientation to NN degrees), e.g.
 <code>105 r</code> or <code>12 o90</code>. The → preview updates live.
-Then press the button — it downloads <code>tdx-mapping.json</code>; replace
+Then press the button – it downloads <code>tdx-mapping.json</code>; replace
 <code>production/tools/tdx-mapping.json</code> with it and re-run
 <code>preprocess_tdx_csx.py</code>. Prefilled boxes show the current explicit mapping.
 Post-import switches (spline linetypes, non-standard water brush) live in the file's

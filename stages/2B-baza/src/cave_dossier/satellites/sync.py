@@ -129,7 +129,7 @@ def sheet_differences(resolution: Resolution) -> tuple[list[Difference], list[De
     ):
         propose(
             liburnija.COL_NAME_NEW,
-            row.name_new or "—",
+            row.name_new or "–",
             record.name,
             f"SB {record.serial_number} je mjerodavan za ime",
         )
@@ -137,7 +137,7 @@ def sheet_differences(resolution: Resolution) -> tuple[list[Difference], list[De
     if record.plaque and not row.plaque:
         propose(
             liburnija.COL_PLAQUE,
-            "—",
+            "–",
             record.plaque,
             f"SB {record.serial_number} ima pločicu",
         )
@@ -166,7 +166,7 @@ def sheet_differences(resolution: Resolution) -> tuple[list[Difference], list[De
             continue
         reason = (
             f"SB {record.serial_number} ima katastarski broj SUE "
-            f"{record.sue_number} — dakle i {label}"
+            f"{record.sue_number} – dakle i {label}"
             if record.sue_number
             else f"SB {record.serial_number} ima digitalni {label}"
         )
@@ -187,7 +187,7 @@ def sheet_differences(resolution: Resolution) -> tuple[list[Difference], list[De
                 row_id=row.row_id,
                 issue="tablica tvrdi Foto ulaza, SB ne kaže DA",
                 detail=f"SB {record.serial_number} · {record.name}"
-                       f" — provjeriti i po potrebi ispraviti SB",
+                       f" – provjeriti i po potrebi ispraviti SB",
             )
         )
 
@@ -211,7 +211,7 @@ def synonym_edit(resolution: Resolution) -> SBEdit | None:
     return SBEdit(
         serial_number=record.serial_number,
         column="Sinonimi",
-        current=current or "—",
+        current=current or "–",
         proposed=f"{current}; {row.kristal_name}" if current else row.kristal_name,
         reason=f"tablica red {row.row_id} → {record.name}; sinonim čini vezu trajnom",
         row_id=row.row_id,
@@ -242,16 +242,16 @@ def new_sb_row(
         # A field find (`nije na Lidaru`) — no number, so the convention cannot
         # reach it and the crosswalk is the only link back.
         name, synonym = field_name, None
-        warning = "nema LiDAR broj (nalaz s terena) — veza postoji samo ovdje"
+        warning = "nema LiDAR broj (nalaz s terena) – veza postoji samo ovdje"
     elif kristal:
         name, synonym = kristal, None
     else:
         name, synonym = row.row_id, None
-        warning = "nema ni ime ni LiDAR broj — imenovati ručno prije unosa"
+        warning = "nema ni ime ni LiDAR broj – imenovati ručno prije unosa"
 
     if row.state is CandidateState.EXPLORED:
         note = row.comment or ""
-        warning = "istražen, a nije u SB — provjeriti status prije unosa"
+        warning = "istražen, a nije u SB – provjeriti status prije unosa"
     else:
         # The v3.0 queue flag, so SB's own Power Query files it under
         # "Za istražit" without anyone touching the view.
@@ -381,7 +381,7 @@ def render_sb_edits(edits: list[SBEdit]) -> str:
     """List 2: cells to add to rows SB already has."""
     return _joined(
         [
-            "DOPUNE SB — dodati u postojeće retke `Svi objekti`.",
+            "DOPUNE SB – dodati u postojeće retke `Svi objekti`.",
             "Samo dopuna: postojeći sadržaj ćelije ostaje.",
             "",
             *_table(
@@ -400,7 +400,7 @@ def render_sheet_list(differences: list[Difference]) -> str:
     """List 3 as a worksheet: one line per cell, to tick off in the browser."""
     return _joined(
         [
-            "ZA TABLICU — ćelije koje SB zna bolje.",
+            "ZA TABLICU – ćelije koje SB zna bolje.",
             "Ispraviti rukom u Liburnija tablici; SB je mjerodavan.",
             "",
             *_table(
@@ -417,7 +417,7 @@ def render_sheet_list(differences: list[Difference]) -> str:
 
 def render_decision_list(decisions: list[Decision]) -> str:
     """List 4 as a worksheet. Nothing here may be actioned by a rule."""
-    lines = ["ZA ODLUKU — ništa se ne mijenja automatski.", ""]
+    lines = ["ZA ODLUKU – ništa se ne mijenja automatski.", ""]
     for item in decisions:
         lines.append(f"red {item.row_id}: {item.issue}")
         if item.detail:

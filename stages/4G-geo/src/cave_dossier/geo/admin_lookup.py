@@ -85,7 +85,7 @@ class AdminLookup:
         try:
             from shapely.geometry import Point  # type: ignore[import-untyped]
         except ImportError:
-            logger.warning("shapely not installed — nearby_naselje_names returning []")
+            logger.warning("shapely not installed – nearby_naselje_names returning []")
             return []
         try:
             buffer = Point(x_htrs, y_htrs).buffer(radius_m)
@@ -128,7 +128,7 @@ class AdminLookup:
         try:
             import geopandas as gpd  # type: ignore[import-untyped]
         except ImportError:
-            logger.warning("geopandas is not installed — admin lookup unavailable")
+            logger.warning("geopandas is not installed – admin lookup unavailable")
             return None
 
         # GeoPackage files with a stale journal (e.g. interrupted QGIS write)
@@ -181,7 +181,7 @@ class AdminLookup:
         try:
             from shapely.geometry import Point  # type: ignore[import-untyped]
         except ImportError:
-            logger.warning("shapely not installed — PIP skipped for %s", layer_key)
+            logger.warning("shapely not installed – PIP skipped for %s", layer_key)
             return None
         try:
             matches = gdf[gdf.contains(Point(x, y))]  # type: ignore[index]

@@ -68,12 +68,12 @@ def load_survey(path):
 
     if is_csx and looks_zipped:
         warnings.append(
-            "extension is .csx but content is a ZIP — cSurvey would fail to "
+            "extension is .csx but content is a ZIP – cSurvey would fail to "
             "open this file; inspecting the zip anyway")
         is_csx = False
     elif not is_csx and not looks_zipped:
         warnings.append(
-            "extension says zip (.csz) but content is not a ZIP — cSurvey "
+            "extension says zip (.csz) but content is not a ZIP – cSurvey "
             "would fail to open this file; trying bare XML anyway")
         is_csx = True
 
@@ -500,12 +500,12 @@ def print_report(r):
                                for k, v in c["assets"].items())
         print("  Container:   zip, %d entries, _data.xml %s%s"
               % (c["entries"], human_size(c["xml_bytes"]),
-                 ("   [assets — %s]" % asset_bits) if asset_bits else ""))
+                 ("   [assets – %s]" % asset_bits) if asset_bits else ""))
 
     print("  Provenance:  %s" % p["verdict"])
     print("               creatid=%s  creatversion=%s  file version=%s  "
           "creat_postprocessed=%s"
-          % (p["creatid"] or "—", p["creatversion"] or "—",
+          % (p["creatid"] or "–", p["creatversion"] or "–",
              p["file_version"], "yes" if p["creat_postprocessed"] else "no"))
     if p["survey_name"]:
         print("               survey name: %s" % p["survey_name"])
@@ -522,10 +522,10 @@ def print_report(r):
              cl["trigpoints"], cl["lrud_nonzero"]))
     print("               caves: %d, branches: %d, sessions: %d, origin: %s"
           % (cl["caves"], cl["branches"], cl["sessions"],
-             cl["origin"] or "— (none set!)"))
+             cl["origin"] or "– (none set!)"))
     if cl["distox_attr_segments"]:
         print("               raw DistoX attrs (g/m/dip/distox) on %d segments "
-              "— raw TopoDroid marker" % cl["distox_attr_segments"])
+              "– raw TopoDroid marker" % cl["distox_attr_segments"])
 
     print("  Sketch:      TOTAL DRAWING ITEMS: %d   ← the headline number"
           % sk["total_items"])
@@ -541,7 +541,7 @@ def print_report(r):
               % (calc["stations"],
                  ", speleometrics" if calc["has_speleometrics"] else ""))
     else:
-        print("  Calculate:   ABSENT — cSurvey will recalculate on load "
+        print("  Calculate:   ABSENT – cSurvey will recalculate on load "
               "(needs therion)")
 
 
@@ -560,7 +560,7 @@ def print_summary_table(reports):
               % (r["file"][:28], human_size(r["container"]["xml_bytes"]),
                  cl["segments"], cl["splays"], cl["lrud_nonzero"],
                  cl["trigpoints"], r["sketch"]["total_items"],
-                 r["provenance"]["creatid"] or "—"))
+                 r["provenance"]["creatid"] or "–"))
 
 
 # ---------------------------------------------------------------------------
@@ -571,12 +571,12 @@ def main(argv=None):
                     "(Stage 0 of the MCP roadmap).")
     ap.add_argument("files", nargs="+", help=".csz or .csx file(s)")
     ap.add_argument("--json", action="store_true", dest="as_json",
-                    help="emit JSON (stable key order — designed for diffing "
+                    help="emit JSON (stable key order – designed for diffing "
                          "two reports)")
     ap.add_argument("-o", "--out", metavar="FILE",
                     help="write the report to FILE as BOM-free UTF-8 "
                          "(PowerShell's '>' redirection adds a BOM that "
-                         "breaks strict JSON parsers — prefer -o)")
+                         "breaks strict JSON parsers – prefer -o)")
     args = ap.parse_args(argv)
 
     reports = []
