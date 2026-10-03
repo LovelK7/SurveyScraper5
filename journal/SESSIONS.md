@@ -12,6 +12,32 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-03 (evening) — 3N/4O: entrance dimensions shipped end to end (agent) ✅
+
+- **Did:** phase 3 of project 0005 through `/feature-dev`. New `production/tools/entrance_dims.py`
+  (the prototype ported: splays first with the best-aligned splay per direction, Borders walls split on
+  the `B` flag with short fill joins as fallback at the narrowest cave-side point, both the horizontal
+  and the pit reading, Broj ulaza from the plan's entrance signs, rule 5). `nacrt_finish.py` calls it
+  after the entrance decision, settles two disagreeing signs toward the highest station (Tavnjak) and
+  reads station `d` from `<tcon><p>`; `csurvey_driver.py` copies `entrance_size` into
+  `_dimenzije.json`; the csx kit list ships the module. 4O `osz prefill` fills Broj / Širina /
+  Visina-duljina ulaza (one decimal, comma), choosing pit vs horizontal by the zapisnik's ticked
+  *Vrsta objekta* once the old OSZ is read, and `_same_measurement` compares such cells at a tenth.
+  Tests: `test_entrance_dims.py` (14), tie-break tests, 4O entrance tests — 784 green. Docs: stage
+  READMEs, commands, decision record, ARCHITECTURE B6, STATUS, brief closed, board, backlog.
+- **Result:** live on SB 1220: KORAK 3a + 3b re-run on the Drive file, `osz prefill 1220 --offline`
+  delivered the OSZ with Broj ulaza 1, Širina 0,6, Visina/duljina 1,4 and Duljina 18 / 16 / Dubina 5 /
+  Visinska razlika 10; the old document survives as `_stari_2026-10-03`. The prod csx kit on the Drive
+  does not carry `entrance_dims.py` until the next `/publish` — the KORAK 3 launcher there would
+  ImportError.
+- **Learned:** the OSZ prefill reads the dimensions BEFORE the old OSZ, so a choice that depends on
+  the zapisnik's ticks has to be redone inside the migration step. The finisher's own warnings must
+  stay quiet about how a reading was obtained: the pit reading of a horizontal entrance is always a
+  little lame and would warn on every cave — such notes live in the block only. `_same_measurement`
+  did `int(measured)` and would have crashed on the first `0,6`.
+- **Next:** `/publish` the csx kit (v1.4) so operators' KORAK 3 gets the module; re-run 3a + 3b for
+  SB 1103 and 1256; optionally Sopača's station 5.
+
 ### 2026-10-03 — 3N: walls — which side is the cave; KORAK 2 merges, turns and orders them (agent) ✅
 
 - **Did:** project 0006 from problem to prod. Read how cSurvey imports, merges, reverses and fills wall

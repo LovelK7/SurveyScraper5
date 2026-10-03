@@ -407,3 +407,5 @@ when an idea's time comes. Nothing here is a commitment.
   side for strokes the surveyor reversed on the phone. Check on a real reversed pit line.
 - 2026-10-03 — 3N: the live `_lt_fin` files finished before today (SB 1103, 1256) carry no
   `entrance_size`; re-run KORAK 3a + 3b for them before `osz prefill` is expected to fill the entrance cells.
+- 2026-10-03 — prod: `/publish` the csx kit so the Drive's KORAK 3 launcher carries `entrance_dims.py`
+  (until then `csurvey_3_dovrsi_nacrt.bat` on an operator machine ImportErrors in `nacrt_finish.py`).
