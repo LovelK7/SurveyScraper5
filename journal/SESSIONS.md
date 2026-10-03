@@ -45,6 +45,9 @@ numbers through the mapping in
   size. Plus a roof test for pits (a wall drawn > 0.3 m straight above the station = not on the rim). Corpus:
   7 measured, 4 declined (cepavpic, krk_27, krk_37 without a sign; Sopača under a roof - its 13.6 × 17.5
   withdrawn). Nothing left to vouch.
+- **Correction (night):** the user had swapped krk_27 and krk_37 - krk_27's entrance is station 3, the top of the
+  shaft, exactly as the data said. The blind-dome guard and the pit roof gate built on the mix-up are removed; rule 5
+  stands. Corpus: 8 measured, 3 declined without a sign; Sopača measures again (13.6 × 17.5) and stays flagged.
 - **Next:** phase 3.
 
 ### 2026-10-03 (later) — 3N Mapiranje review round, en dash everywhere, speleo 2 set (agent) ✅

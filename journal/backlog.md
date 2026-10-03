@@ -399,10 +399,7 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-10-03 — 3N `decide_entrance`: when the plan and profile entrance signs disagree, prefer the one
   that agrees with the highest station (today the plan wins; Tavnjak's plan sign sits on a ledge 20 m
   down the shaft). Prototype in project 0005 already does it; **accepted by the user 2026-10-03** - do it in phase 3 with a test.
-- 2026-10-03 — 3N `decide_entrance`: blind-dome guard - when only the highest station chose the entrance and a
-  profile wall is drawn within 1 m straight above it, take the survey's first station and warn (krk_27).
-  Prototype in project 0005 does it; fold in with the sign tie-break in phase 3.
 - 2026-10-03 — 3N phase 3 of project 0005: fold the entrance measurement into `nacrt_finish.py` - sign
-  tie-break, blind-dome guard, registry type (SB jama/špilja), rule 5 (no size without a witnessed entrance,
-  pit station under a roof declined), `read_stations` d fix; sidecar + `_dimenzije.json` keys; 4O prefill
+  tie-break, registry type (SB jama/špilja), rule 5 (no size without a witnessed entrance), `read_stations`
+  d fix; sidecar + `_dimenzije.json` keys; 4O prefill
   of `sirina_ulaza` / `visina_duljina_ulaza`; tests from the 11-survey corpus.
