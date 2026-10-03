@@ -1,7 +1,7 @@
 # Task brief: Entrance dimensions — read the entrance width and height off the finished survey
 
 - **ID:** 0005-entrance-dimensions
-- **Status:** `validation` — feasibility shown 2026-10-02 on SB 1220 (horizontal) and SB 1103 (pit); the user settled the four rules the same evening (§3 phase 2, recorded in `docs/design-decisions.md`); prototype applies them: SB 1220 → 1 × 1 m, SB 1103 → 1 × 2 m. Next: a corpus of caves with vouched entrance sizes, then fold into `nacrt_finish.py` (phase 3)
+- **Status:** `validation` — feasibility shown 2026-10-02 on SB 1220 (horizontal) and SB 1103 (pit); the user settled the four rules the same evening (§3 phase 2, recorded in `docs/design-decisions.md`); prototype applies them: SB 1220 → 0,6 × 1,4 m, SB 1103 → 1,1 × 1,7 m (one decimal, 2026-10-03). Next: a corpus of caves with vouched entrance sizes, then fold into `nacrt_finish.py` (phase 3)
 - **Owner:** both
 - **Opened:** 2026-10-02 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [0004-nacrt-finishing/brief.md](../0004-nacrt-finishing/brief.md) (the entrance-station decision this builds on), `production/tools/nacrt_finish.py` (`decide_entrance`, `wall`/`item_points` helpers)
@@ -107,14 +107,14 @@ wall, orange = hit on a fill bridge, grey dashed = bridges), `findings/SB_1220_p
 3. *Pits:* two plan extents from the **splay cloud** (min/max Feret), the wall footprint as
    fallback; **Širina = the smaller, Visina/duljina = the larger** (1 × 2, never 2 × 1). For a
    horizontal entrance width stays the plan and height the profile.
-4. *Format:* **whole metres, never below 1**.
+4. *Format:* **one decimal** (2026-10-03; the first call was whole metres).
 
 Applied (prototype rerun, `findings/SB_*_report.json`):
 
 | Cave | From splays | From walls (fallback, unused) | OSZ |
 |---|---|---|---|
-| SB 1220 | 0.57 wide (4(71) 0.22 + 4(72) 0.35), 1.37 high (4(80) up, no down shot) | 0.63 × 1.49 (ceiling = fill join) | **1 × 1** |
-| SB 1103 pit | 1.08 × 1.71 (12 splays) | 1.39 × 4.42 (the footprint, too wide) | **1 × 2** |
+| SB 1220 | 0.57 wide (4(71) 0.22 + 4(72) 0.35), 1.37 high (4(80) up, no down shot) | 0.63 × 1.49 (ceiling = fill join) | **0,6 × 1,4** |
+| SB 1103 pit | 1.08 × 1.71 (12 splays) | 1.39 × 4.42 (the footprint, too wide) | **1,1 × 1,7** |
 
 Still open: multiple entrances (only the main one is measured) and splines vs the control polygon
 (centimetres, below the rounding).

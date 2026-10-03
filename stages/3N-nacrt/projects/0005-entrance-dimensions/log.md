@@ -38,3 +38,9 @@ Brief: [brief.md](brief.md)
 - **Evidence:** `findings/SB_1220_report.json`, `findings/SB_1103_report.json`, the two PNGs.
 - **Next:** caves with a vouched entrance size; then phase 3 (fold into `nacrt_finish.py`,
   fix `read_stations`, carry via `_dimenzije.json` to 4O).
+
+### 2026-10-03 — rule 4 reversed: one decimal (user) ✅
+
+- **Did:** `round_osz` now rounds to 0.1 m instead of whole metres; reports, decision record and brief updated.
+- **Result:** SB 1220 → **0,6 × 1,4**, SB 1103 → **1,1 × 1,7**.
+- **Next:** unchanged — a vouched corpus, then phase 3.

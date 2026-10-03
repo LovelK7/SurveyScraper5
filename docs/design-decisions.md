@@ -1185,12 +1185,13 @@ settled by the user on the SB 1220 / SB 1103 feasibility run:
   the wall footprint around it as fallback. *Širina* takes the smaller number,
   *Visina/duljina* the larger; 1 × 2, never 2 × 1. For a horizontal entrance
   width is the plan and height the profile, never swapped.
-- **Whole metres, never below 1.** The map is not precise at 0.1 m.
+- **One decimal.** Tenths of a metre, not whole metres (user, 2026-10-03, reversing
+  the first call for whole metres).
 
 Measured: SB 1220 (horizontal, station 4) 0.57 × 1.37 m from splays 4(71),
-4(72), 4(80), walls 0.63 × 1.49 → **1 × 1**. SB 1103 (pit, station 2)
+4(72), 4(80), walls 0.63 × 1.49 → **0,6 × 1,4**. SB 1103 (pit, station 2)
 1.08 × 1.71 m from twelve splays, walls 1.39 × 4.42 (the footprint, too wide) →
-**1 × 2**.
+**1,1 × 1,7**.
 
 Code: `findings/entrance_dims_proto.py` in the project folder; to be folded
 into `nacrt_finish.py` and carried by `_dimenzije.json` to 4O's prefill.
