@@ -2,108 +2,17 @@
  "file": "krk_37-1s.csx",
  "raw": true,
  "warnings": [
-  "najvisa stanica je 0, a properties@origin je 1 - provjeri je li ulaz na pravoj stanici"
+  "najvisa stanica je 0, a properties@origin je 1 - provjeri je li ulaz na pravoj stanici",
+  "ulaz nije oznacen (nema znaka ulaza ni povrsinskog vlaka) - dimenzije ulaza nisu izracunate; nacrtaj znak ulaza na ulaznoj stanici"
  ],
  "entrance": "0",
  "entrance_how": "decide_entrance: najvisa stanica (nema nacrtanog znaka ulaza)",
- "splays_at_station": 0,
- "axis_shot": "0->1 inc=-39.5",
- "kind_why": "shot 40 deg, 0 of 0 splays dive",
- "kind": "horizontal",
- "plan": {
-  "axis_into_cave": [
-   0.11,
-   0.994
-  ],
-  "side_a": {
-   "m": 0.68,
-   "at": [
-    -0.86,
-    -1.62
-   ],
-   "source": "wall"
-  },
-  "side_b": {
-   "m": 0.19,
-   "at": [
-    -0.0,
-    -1.72
-   ],
-   "source": "wall"
-  },
-  "width_m": 0.87,
-  "width_source": "walls",
-  "wall_narrowest": {
-   "at_s": 0.3,
-   "width_m": 0.86,
-   "plus": {
-    "m": 0.68,
-    "at": [
-     -0.86,
-     -1.62
-    ],
-    "source": "wall"
-   },
-   "minus": {
-    "m": 0.19,
-    "at": [
-     -0.0,
-     -1.72
-    ],
-    "source": "wall"
-   }
-  }
- },
- "profile": {
-  "station_at": [
-   2.01,
-   -1.65
-  ],
-  "up": {
-   "m": 0.12,
-   "at": [
-    1.71,
-    -1.78
-   ],
-   "source": "wall"
-  },
-  "down": {
-   "m": 1.26,
-   "at": [
-    1.71,
-    -0.39
-   ],
-   "source": "wall"
-  },
-  "height_m": 1.38,
-  "height_source": "walls",
-  "wall_narrowest": {
-   "at_s": 0.3,
-   "height_m": 1.39,
-   "up": {
-    "m": 0.12,
-    "at": [
-     1.71,
-     -1.78
-    ],
-    "source": "wall"
-   },
-   "down": {
-    "m": 1.26,
-    "at": [
-     1.71,
-     -0.39
-    ],
-    "source": "wall"
-   }
-  }
- },
+ "entrance_witnessed": false,
  "osz": {
-  "sirina_ulaza": 0.9,
-  "visina_duljina_ulaza": 1.4,
+  "sirina_ulaza": null,
+  "visina_duljina_ulaza": null,
   "sources": [
-   "walls",
-   "walls"
+   "no witnessed entrance"
   ]
  }
 }

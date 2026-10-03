@@ -1,7 +1,7 @@
 # Task brief: Entrance dimensions — read the entrance width and height off the finished survey
 
 - **ID:** 0005-entrance-dimensions
-- **Status:** `validation` — rules settled 2026-10-02/03; corpus of 11 surveys run 2026-10-03 (§3, "Corpus run"); the user confirmed Tavnjak's entrance 8 (sign tie-break accepted) and that pljeskavica is a pit → the cave's **type comes from the registry** (SB / OSZ), geometry only as fallback. Open: Sopača. Next: phase 3 (fold into `nacrt_finish.py`)
+- **Status:** `validation` — five rules settled 2026-10-02/03 (the fifth: no size without a deliberate entrance witness); corpus of 11 surveys: 7 measured, 4 declined with a warning (3 without an entrance sign, Sopača's station under a roof). Nothing left to vouch. Next: phase 3 (fold into `nacrt_finish.py`)
 - **Owner:** both
 - **Opened:** 2026-10-02 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [0004-nacrt-finishing/brief.md](../0004-nacrt-finishing/brief.md) (the entrance-station decision this builds on), `production/tools/nacrt_finish.py` (`decide_entrance`, `wall`/`item_points` helpers)
@@ -108,6 +108,11 @@ wall, orange = hit on a fill bridge, grey dashed = bridges), `findings/SB_1220_p
    fallback; **Širina = the smaller, Visina/duljina = the larger** (1 × 2, never 2 × 1). For a
    horizontal entrance width stays the plan and height the profile.
 4. *Format:* **one decimal** (2026-10-03; the first call was whole metres).
+5. *No size without a witnessed entrance* (user, 2026-10-03): the drawn entrance sign, the finisher's
+   trigpoint flag, a surface leg or the operator's word name the station; a station picked only
+   because it is the highest gets a warning ("nacrtaj znak ulaza") and no number — krk_27's highest
+   station was a blind aven. A pit station with a roof drawn more than 0.3 m straight above it is not
+   on the rim (its splays describe a chamber) and is declined the same way.
 
 Applied (prototype rerun, `findings/SB_*_report.json`):
 
@@ -128,12 +133,12 @@ copied to `findings/corpus/` because `example/` is gitignored. Numbers in metres
 |---|---|---|---|---|---|---|
 | 272 | `_lt` | pit (shot 85°) | 4 (highest + sign) | **1.6 × 3.3** | splays (walls: 4.1 × 7.2 = whole chamber) | plausible — the rim station's splays span the mouth |
 | Golobreška (SB 1103) | `_lt_fin` | pit (88°) | 2 (flag) | **1.1 × 1.7** | splays | as before |
-| Sopača | `-1p` imported | pit (70°) | 5 (highest + sign) | **13.6 × 17.5** | splays; walls absent around 5 | **check** — station 5 sits outside the drawn plan, 11 flat splays up to 17 m: a doline rim, or a surface station? |
+| Sopača | `-1p` imported | pit (70°) | 5 (highest + sign) | **—** | declined: a wall is drawn 1.1 m above station 5 | not on a rim (the station also sits outside the drawn plan); the earlier 13.6 × 17.5 from its long flat splays is withdrawn |
 | bezdanka iznad Lalica | imported | pit (6 of 16 splays dive > 45°) | 5 (highest + sign) | **4.7 × 8.4** | splays (walls 6.8 × 11.2) | plausible; was `horizontal` before the splay-based pit test |
-| kilavčev cepavpic | `_pp` | pit (80°) | 4 (highest) | **1.1 × 2.4** | splays (walls 1.6 × 3.2) | plausible |
+| kilavčev cepavpic | `_pp` | pit (80°) | 4 (highest only) | **—** | declined: no entrance sign, no surface leg | the splays would say 1.1 × 2.4 — draw the sign and it is measured |
 | kilavčeva pljeskavica | `_pp` | **pit (registry; geometry said horizontal: shot 35°, 7 flat splays)** | 3 (flag) | **4.7 × 8.5** | splays (walls 3.7 × 10.8) | the user: it is a pit; the rim station's flat splays span the hole, like 272 — the type must come from SB / OSZ, not from geometry |
-| krk_27 | **raw** | horizontal by geometry (20°), type unknown | **0** (first station of the survey; the highest, 3, has a drawn roof 0.2 m above it — a blind 20 m aven) | **7.2 × 9.3** as horizontal, 8.6 × 12.9 as pit | splays | **check** — the user: the entrance is 0, which the data cannot show (no sign, no surface leg; the first run took 3). The numbers at 0 are the chamber, not the opening: a drawn ceiling 9.5 m above 0, 33 splays to the chamber walls, nothing describing the entrance itself |
-| krk_37 | **raw** | horizontal (40°) | 0 (highest) | **0.9 × 1.4** | walls (no splays at 0) | raw; the `wall` lines are tight around station 0 |
+| krk_27 | **raw** | — | 0 (first station; the highest, 3, has a roof 0.2 m above it) | **—** | declined: no entrance sign; forced to 0 as a pit it is declined again, roof 9.6 m above | the user: the entrance is 0; the survey holds nothing that describes that opening |
+| krk_37 | **raw** | — | 0 (highest only) | **—** | declined: no entrance sign | the walls would say 0.9 × 1.4 |
 | sp7 Brad/Kosa/Plazibat špilja | imported | horizontal (22°) | 9 (highest-ties + sign) | **2.7 × 2.2** | splays (walls 3.1 × 2.3) | plausible; station 10 is 3.3 m higher — a side entrance or surface point? |
 | špilja Bunker (Studena) | `_pp` | horizontal (11°) | 5 (sign; highest is 1) | **2.6 × 1.5** | splays (walls 2.4 × 1.4) | plausible, sources agree |
 | Tavnjak (Mune) | imported | pit (86°) | **8** (profile sign + highest; plan sign at 7 overruled) | **2.0 × 6.2** | splays (walls 3.2 × 6.0) | plausible once the entrance is 8; station 7 is a ledge 20 m down the shaft; **confirmed by the user 2026-10-03** (the plan sign was attached to the wrong station) |

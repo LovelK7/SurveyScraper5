@@ -4,6 +4,7 @@
  "warnings": [],
  "entrance": "2",
  "entrance_how": "trigpoint entrance=2",
+ "entrance_witnessed": true,
  "splays_at_station": 12,
  "axis_shot": "1->2 inc=87.8",
  "kind_why": "shot 88 deg",

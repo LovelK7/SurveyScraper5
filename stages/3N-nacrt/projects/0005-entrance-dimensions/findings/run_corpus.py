@@ -33,6 +33,6 @@ for f in sorted(f for f in glob.glob("*.csx") + glob.glob("*.csz") if "_backup" 
             print("   width  %-5s a=%s b=%s | walls %s" % (p["width_m"], p["side_a"], p["side_b"], p["wall_narrowest"] and p["wall_narrowest"]["width_m"]))
             print("   height %-5s up=%s down=%s | walls %s" % (pr["height_m"], pr["up"], pr["down"], pr["wall_narrowest"] and pr["wall_narrowest"]["height_m"]))
         elif rep.get("kind") == "pit":
-            print("   splay cloud %s | wall footprint %s" % (rep["plan"]["splay_cloud"], rep["plan"]["wall_footprint"]))
+            print("   splay cloud %s | wall footprint %s" % (rep["plan"].get("splay_cloud"), rep["plan"].get("wall_footprint")))
     except Exception:
         print("## %-46s ERROR" % f[:46]); traceback.print_exc(limit=2)

@@ -4,6 +4,7 @@
  "warnings": [],
  "entrance": "4",
  "entrance_how": "decide_entrance: oba svjedoka slozna (najvisa stanica i znak ulaza)",
+ "entrance_witnessed": true,
  "splays_at_station": 12,
  "axis_shot": "2->4 inc=85.1",
  "kind_why": "shot 85 deg",

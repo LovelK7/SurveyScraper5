@@ -6,6 +6,7 @@
  ],
  "entrance": "9",
  "entrance_how": "decide_entrance: oba svjedoka slozna (najvisa stanica i znak ulaza)",
+ "entrance_witnessed": true,
  "splays_at_station": 22,
  "axis_shot": "8->9 inc=22.1",
  "kind_why": "shot 22 deg, 0 of 22 splays dive",

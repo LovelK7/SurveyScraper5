@@ -83,3 +83,16 @@ Brief: [brief.md](brief.md)
   what the entrance at 0 looks like (skylight above? passage in?) before a rule can be written.
 - **Evidence:** `findings/corpus/krk_27-1p.json`, `example/csx_entrances/_out/krk_27_items.png` (plan + profile with every symbol).
 - **Next:** the user describes krk_27's entrance; Sopača's verdict; phase 3.
+
+### 2026-10-03 (evening) — rule 5: no size without a witnessed entrance (user + agent) ✅
+
+- **Did:** the user's rule: the entrance sign is a requirement for the entrance size, otherwise a warning and
+  no number. Implemented as `entrance_witnessed` (sign, finisher flag, surface leg, operator = yes; highest
+  station or first station = no) plus, for pits, a roof test (a profile wall drawn > 0.3 m straight above the
+  station = not on the rim; the 0.3 m skips the floor/surface line drawn through the station itself).
+- **Result:** 7 measured, 4 declined with a Croatian warning: cepavpic, krk_27, krk_37 (no sign) and Sopača
+  (roof 1.1 m above station 5 — which also sits outside the drawn plan; its 13.6 × 17.5 is withdrawn). krk_27
+  forced to station 0 is declined too (roof 9.6 m above). Nothing left to vouch.
+- **Evidence:** `findings/corpus/*.json` refreshed.
+- **Next:** phase 3 — fold into `nacrt_finish.py` with the sign tie-break, the blind-dome guard, the registry
+  type and rule 5; `_dimenzije.json`; 4O prefill.

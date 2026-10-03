@@ -6,6 +6,7 @@
  ],
  "entrance": "3",
  "entrance_how": "trigpoint entrance=2",
+ "entrance_witnessed": true,
  "splays_at_station": 7,
  "axis_shot": "2->3 inc=35.4",
  "kind_why": "registry says pit (geometry: horizontal, shot 35 deg, 0 of 7 splays dive)",

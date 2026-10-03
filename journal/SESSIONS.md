@@ -40,7 +40,12 @@ numbers through the mapping in
   choice with a drawn roof within 1 m above it falls back to the survey's first station, with a warning to draw the
   entrance sign; `--entrance` / `entrances.json` for when the operator knows. The numbers at 0 are the chamber, not the
   opening - nothing in the survey describes krk_27's entrance.
-- **Next:** krk_27's entrance described by the user; Sopača's verdict; phase 3.
+- **Rule 5 (user, evening):** the entrance sign is a requirement for the size - no sign, no surface leg, no
+  operator's word = a warning ("nacrtaj znak ulaza") and no number; the highest-station guess never yields a
+  size. Plus a roof test for pits (a wall drawn > 0.3 m straight above the station = not on the rim). Corpus:
+  7 measured, 4 declined (cepavpic, krk_27, krk_37 without a sign; Sopača under a roof - its 13.6 × 17.5
+  withdrawn). Nothing left to vouch.
+- **Next:** phase 3.
 
 ### 2026-10-03 (later) — 3N Mapiranje review round, en dash everywhere, speleo 2 set (agent) ✅
 

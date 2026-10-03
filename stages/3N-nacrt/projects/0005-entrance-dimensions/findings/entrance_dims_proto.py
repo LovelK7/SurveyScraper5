@@ -13,6 +13,11 @@ Rules (user, 2026-10-02/03 - see brief.md section 3, phase 2):
      every splay from the station, min/max Feret extents) with the walls as
      fallback; width = the smaller number, visina/duljina = the larger.
   4. Both numbers round to one decimal (0.1 m).
+  5. No size without a deliberate entrance witness: the drawn entrance sign, the
+     finisher's trigpoint flag, a surface leg, or the operator. A station picked
+     only because it is the highest gets a warning, not a number (krk_27's highest
+     station was a blind aven). A pit station with a roof drawn above it is not
+     on the rim, so it gets a warning too.
 
 Walls = Borders-layer items split into sequences on the B (BeginSequence)
 point flag (cSurvey cPoints.vb:564). cSurvey strokes each sequence on its own
@@ -41,6 +46,7 @@ SCAN_STEP = 0.1
 MAX_REACH_M = 15.0      # a wall further than this is not this entrance's wall
 BRIDGE_MAX_M = 5.0      # a fill bridge longer than this is a drawing-order artifact, not an edge
 PIT_RAYS = 24           # directions for the wall-based pit footprint
+ROOF_MIN_M = 0.3        # a profile wall closer above a pit station is its own floor/surface line, not a roof
 RAW_WALL_NAMES = ("wall", "wall:presumed")
 
 
@@ -162,12 +168,12 @@ def entrance_station(root, st, warn, forced=None):
     blind 20 m aven, its dome drawn 0.2 m over station 3; the entrance is station 0,
     where the survey started)."""
     if forced is not None:
-        return forced, "forced (registry / operator)"
+        return forced, "forced (registry / operator)", True
     tps = root.find("trigpoints")
     if tps is not None:
         for tp in tps.findall("trigpoint"):
             if tp.get("entrance") == nf.ENTRANCE_MAIN:
-                return tp.get("name"), "trigpoint entrance=2"
+                return tp.get("name"), "trigpoint entrance=2", True
     objs = [nf.Station(n, s["x"], s["y"], s["z"], s["d"]) for n, s in st.items()]
     cave, outside = nf.split_cave_stations(root, objs)
     outer = [s for s in objs if s.name in outside]
@@ -184,9 +190,10 @@ def entrance_station(root, st, warn, forced=None):
             if w is not None and w["station"] == witnesses.get("highest"):
                 warn("znak ulaza u %su pokazuje na najvisu stanicu %s, drugi znak na %s - uzimam %s"
                      % ("tlocrt" if design == "plan" else "profil", w["station"], chosen, w["station"]))
-                return w["station"], "%s sign agrees with the highest station (other sign overruled)" % design
-    # the highest station alone chose: is there sky above it?
-    if witnesses.get("decision", "").startswith("najvisa stanica") and chosen in st:
+                return w["station"], "%s sign agrees with the highest station (other sign overruled)" % design, True
+    # the highest station alone chose: a weak witness, and is there even sky above it?
+    weak = witnesses.get("decision", "").startswith("najvisa stanica")
+    if weak and chosen in st:
         paths, _bridges = wall_paths(root, "profile")
         roof = ray_hit((st[chosen]["d"], st[chosen]["z"]), (0.0, -1.0), paths, reach=BLIND_TOP_M)
         if roof is not None:
@@ -194,8 +201,8 @@ def entrance_station(root, st, warn, forced=None):
             warn("najvisa stanica %s ima nacrtan strop %.1f m iznad sebe (slijepi dimnjak) - uzimam prvu stanicu "
                  "vlaka %s; nacrtaj znak ulaza" % (chosen, roof[0], start))
             if start in st:
-                return start, "first station of the survey (highest station %s has a drawn roof %.1f m above it)" % (chosen, roof[0])
-    return chosen, how
+                return start, "first station of the survey (highest station %s has a drawn roof %.1f m above it)" % (chosen, roof[0]), False
+    return chosen, how, not weak
 
 
 # ---------------------------------------------------------------------------
@@ -377,10 +384,18 @@ def analyse(path, kind=None, entrance=None):
     sh = shots(root)
     report = dict(file=os.path.basename(path), raw=is_raw(root), warnings=[])
     warn = report["warnings"].append
-    ent, how = entrance_station(root, st, warn, entrance)
-    report.update(entrance=ent, entrance_how=how)
+    ent, how, witnessed = entrance_station(root, st, warn, entrance)
+    report.update(entrance=ent, entrance_how=how, entrance_witnessed=witnessed)
     if ent not in st:
         warn("entrance station %r has no coordinates" % ent)
+        return report, None
+    if not witnessed:
+        # user rule 2026-10-03: no deliberate witness (sign, finisher flag, surface leg,
+        # operator) = no entrance size. The highest station is a guess (krk_27's was a
+        # blind aven), and a size at a guessed station is worse than none.
+        warn("ulaz nije oznacen (nema znaka ulaza ni povrsinskog vlaka) - dimenzije ulaza nisu izracunate; "
+             "nacrtaj znak ulaza na ulaznoj stanici")
+        report["osz"] = dict(sirina_ulaza=None, visina_duljina_ulaza=None, sources=["no witnessed entrance"])
         return report, None
     E = st[ent]
     sps = splay_vectors(root, ent, E)
@@ -454,6 +469,19 @@ def analyse(path, kind=None, entrance=None):
                              sources=[wsrc, hsrc])
     else:
         # ---- pit: the opening is a hole in the plan - splay cloud first, wall footprint as fallback
+        roof = ray_hit((E["d"], E["z"]), (0.0, -1.0), prof_walls[0])
+        if roof is not None and roof[0] < ROOF_MIN_M:
+            # the floor / surface line drawn through the station itself (Sopača's runs 0.0 m above 5)
+            roof = ray_hit((E["d"], E["z"] - ROOF_MIN_M), (0.0, -1.0), prof_walls[0])
+        if roof is not None:
+            # a rim station has sky above it; a roof drawn above means the station stands
+            # under the entrance (or elsewhere) and its splays describe a chamber (krk_27)
+            warn("jama: iznad ulazne stanice %s nacrtan je strop %.1f m visoko - stanica nije na rubu otvora, "
+                 "dimenzije ulaza nisu izracunate" % (ent, roof[0]))
+            report["plan"] = dict(roof_above_m=round(roof[0], 2))
+            report["profile"] = dict(station_at=[round(E["d"], 2), round(E["z"], 2)])
+            report["osz"] = dict(sirina_ulaza=None, visina_duljina_ulaza=None, sources=["pit station under a roof"])
+            return report, (root, st, E, axis, across, plan_walls, prof_walls, sps)
         cloud = [(sp["dx"], sp["dy"]) for sp in sps] + [(0.0, 0.0)]
         splay_ext = None
         if len(sps) >= 3:

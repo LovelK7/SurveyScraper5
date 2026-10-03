@@ -4,101 +4,16 @@
  "warnings": [
   "najvisa stanica je 3, a properties@origin je 1 - provjeri je li ulaz na pravoj stanici",
   "najvisa stanica 3 ima nacrtan strop 0.2 m iznad sebe (slijepi dimnjak) - uzimam prvu stanicu vlaka 0; nacrtaj znak ulaza",
-  "entrance 0 lies 22.5 m below the highest station 3 - check the entrance",
-  "entrance station has 2 in-cave shots, using the first"
+  "ulaz nije oznacen (nema znaka ulaza ni povrsinskog vlaka) - dimenzije ulaza nisu izracunate; nacrtaj znak ulaza na ulaznoj stanici"
  ],
  "entrance": "0",
  "entrance_how": "first station of the survey (highest station 3 has a drawn roof 0.2 m above it)",
- "splays_at_station": 33,
- "axis_shot": "0->1 inc=-20.2",
- "kind_why": "shot 20 deg, 1 of 33 splays dive",
- "kind": "horizontal",
- "plan": {
-  "axis_into_cave": [
-   -0.9,
-   0.435
-  ],
-  "side_a": {
-   "m": 2.55,
-   "source": "splay",
-   "splay": "0(16)",
-   "inc": -18.7
-  },
-  "side_b": {
-   "m": 4.68,
-   "source": "splay",
-   "splay": "0(25)",
-   "inc": 19.0
-  },
-  "width_m": 7.23,
-  "width_source": "splays",
-  "wall_narrowest": {
-   "at_s": 0.5,
-   "width_m": 6.98,
-   "plus": {
-    "m": 2.52,
-    "at": [
-     2.73,
-     -4.12
-    ],
-    "source": "wall"
-   },
-   "minus": {
-    "m": 4.46,
-    "at": [
-     5.77,
-     2.17
-    ],
-    "source": "wall"
-   }
-  }
- },
- "profile": {
-  "station_at": [
-   4.75,
-   -1.75
-  ],
-  "up": {
-   "m": 8.83,
-   "source": "splay",
-   "splay": "0(8)",
-   "inc": 84.6
-  },
-  "down": {
-   "m": 0.46,
-   "source": "splay",
-   "splay": "0(1)",
-   "inc": -63.8
-  },
-  "height_m": 9.29,
-  "height_source": "splays",
-  "wall_narrowest": {
-   "at_s": 0.5,
-   "height_m": 9.31,
-   "up": {
-    "m": 8.73,
-    "at": [
-     4.25,
-     -10.48
-    ],
-    "source": "wall"
-   },
-   "down": {
-    "m": 0.58,
-    "at": [
-     4.25,
-     -1.16
-    ],
-    "source": "wall"
-   }
-  }
- },
+ "entrance_witnessed": false,
  "osz": {
-  "sirina_ulaza": 7.2,
-  "visina_duljina_ulaza": 9.3,
+  "sirina_ulaza": null,
+  "visina_duljina_ulaza": null,
   "sources": [
-   "splays",
-   "splays"
+   "no witnessed entrance"
   ]
  }
 }

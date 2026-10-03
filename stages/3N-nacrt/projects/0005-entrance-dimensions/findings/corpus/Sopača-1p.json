@@ -2,43 +2,29 @@
  "file": "Sopača-1p.csx",
  "raw": false,
  "warnings": [
-  "pit: the plan walls around the station give only 3 of 24 ray hits - station outside the drawing?"
+  "jama: iznad ulazne stanice 5 nacrtan je strop 1.1 m visoko - stanica nije na rubu otvora, dimenzije ulaza nisu izracunate"
  ],
  "entrance": "5",
  "entrance_how": "decide_entrance: oba svjedoka slozna (najvisa stanica i znak ulaza)",
+ "entrance_witnessed": true,
  "splays_at_station": 11,
  "axis_shot": "5->4 inc=-70.3",
  "kind_why": "shot 70 deg",
  "kind": "pit",
  "plan": {
-  "axis_into_cave": [
-   -0.999,
-   -0.044
-  ],
-  "splay_cloud": {
-   "min_m": 13.55,
-   "min_deg": 175,
-   "max_m": 17.5,
-   "max_deg": 55,
-   "splays": 11
-  },
-  "wall_footprint": null,
-  "chosen": "splays"
+  "roof_above_m": 1.09
  },
  "profile": {
   "station_at": [
    14.44,
    -33.57
-  ],
-  "first_drop_m": null,
-  "note": "a pit has no entrance height; the drop below the rim is informative only"
+  ]
  },
  "osz": {
-  "sirina_ulaza": 13.6,
-  "visina_duljina_ulaza": 17.5,
+  "sirina_ulaza": null,
+  "visina_duljina_ulaza": null,
   "sources": [
-   "splays",
-   "splays"
+   "pit station under a roof"
   ]
  }
 }

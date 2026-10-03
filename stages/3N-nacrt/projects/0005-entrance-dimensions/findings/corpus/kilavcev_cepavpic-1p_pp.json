@@ -2,49 +2,17 @@
  "file": "kilavcev_cepavpic-1p_pp.csx",
  "raw": false,
  "warnings": [
-  "najvisa stanica je 4, a properties@origin je 2 - provjeri je li ulaz na pravoj stanici"
+  "najvisa stanica je 4, a properties@origin je 2 - provjeri je li ulaz na pravoj stanici",
+  "ulaz nije oznacen (nema znaka ulaza ni povrsinskog vlaka) - dimenzije ulaza nisu izracunate; nacrtaj znak ulaza na ulaznoj stanici"
  ],
  "entrance": "4",
  "entrance_how": "decide_entrance: najvisa stanica (nema nacrtanog znaka ulaza)",
- "splays_at_station": 6,
- "axis_shot": "2->4 inc=80.0",
- "kind_why": "shot 80 deg",
- "kind": "pit",
- "plan": {
-  "axis_into_cave": [
-   0.46,
-   0.888
-  ],
-  "splay_cloud": {
-   "min_m": 1.11,
-   "min_deg": 20,
-   "max_m": 2.4,
-   "max_deg": 110,
-   "splays": 6
-  },
-  "wall_footprint": {
-   "min_m": 1.61,
-   "min_deg": 30,
-   "max_m": 3.23,
-   "max_deg": 120,
-   "rays_hit": 24
-  },
-  "chosen": "splays"
- },
- "profile": {
-  "station_at": [
-   -0.65,
-   -3.67
-  ],
-  "first_drop_m": null,
-  "note": "a pit has no entrance height; the drop below the rim is informative only"
- },
+ "entrance_witnessed": false,
  "osz": {
-  "sirina_ulaza": 1.1,
-  "visina_duljina_ulaza": 2.4,
+  "sirina_ulaza": null,
+  "visina_duljina_ulaza": null,
   "sources": [
-   "splays",
-   "splays"
+   "no witnessed entrance"
   ]
  }
 }

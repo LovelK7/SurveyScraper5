@@ -1206,6 +1206,13 @@ Measured: SB 1220 (horizontal, station 4) 0.57 × 1.37 m from splays 4(71),
   20 m down the shaft, the profile's sign and the highest station agreed on the rim;
   the user confirmed the rim. `decide_entrance` still takes the plan on disagreement -
   to change in phase 3 (backlog).
+- **No size without a witnessed entrance (2026-10-03).** The entrance sign (or the
+  finisher's flag, a surface leg, or the operator's word) is a requirement for the
+  entrance size; a station picked only because it is the highest gets the warning
+  "nacrtaj znak ulaza" and no number. krk_27's highest station was the top of a
+  blind 20 m aven. A pit station with a roof drawn more than 0.3 m straight above it
+  is not on the rim - its splays describe a chamber (krk_27 station 0, Sopača
+  station 5) - and is declined the same way.
 Code: `findings/entrance_dims_proto.py` in the project folder; to be folded
 into `nacrt_finish.py` and carried by `_dimenzije.json` to 4O's prefill.
 

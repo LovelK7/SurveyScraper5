@@ -8,6 +8,7 @@
  ],
  "entrance": "8",
  "entrance_how": "profile sign agrees with the highest station (other sign overruled)",
+ "entrance_witnessed": true,
  "splays_at_station": 14,
  "axis_shot": "7->8 inc=85.6",
  "kind_why": "shot 86 deg",
