@@ -139,6 +139,11 @@ Regenerate it after a cSurvey or TopoDroid upgrade. It ships with the kit.
 
 ## Adding a setting
 
+The quick path is the **`/csurvey-defaults`** skill: name the setting and
+the value, and it picks the file, writes the entry, validates it with
+`check_defaults.py`, updates this page and commits. The steps below are what
+it does.
+
 **1. Find out which kind it is.** Change the setting in cSurvey and see where
 the change lands:
 

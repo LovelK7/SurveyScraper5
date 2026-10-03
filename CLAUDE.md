@@ -144,6 +144,12 @@ Doc updates are part of the work, not a follow-up request.
 doctor and tests as gates, version bump, commit, build + deploy, verify on the
 Drive. Never run `build_prod.py --publish` / `build_csx_kit.py --publish` outside it.
 
+**Changing a shared cSurvey default goes through `/csurvey-defaults`**
+(`.claude/skills/csurvey-defaults/SKILL.md`): symbol mapping, centerline,
+sizes, registry app settings — which file, value formats, how to find an
+unknown key in `../cSurvey`, `check_defaults.py`, docs, commit. One cave only
+is the dashboard's 3N › Mapiranje page instead.
+
 **End every working session with `/wrap-up`** (`.claude/skills/wrap-up/SKILL.md`):
 it updates [STATUS.md](STATUS.md), appends a block to
 [journal/SESSIONS.md](journal/SESSIONS.md), captures ideas into
