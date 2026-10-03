@@ -115,9 +115,10 @@ function renderMapping() {
   if (M.loading || M.broj !== S.broj) { out.push(h("div", { class: "empty" }, "Učitavam mapiranje…")); return out; }
   if (M.error) { out.push(h("div", { class: "card note" }, M.error)); return out; }
   out.push(statusCard());
+  // in working order: KORAK 1 (before the import) first, then KORAK 2
+  out.push(h("h3", { class: "group-title" }, "Simboli, linije i površine – KORAK 1"), symbolsCard());
   out.push(h("h3", { class: "group-title" }, "Poligon – KORAK 2"), centerlineCard());
   out.push(h("h3", { class: "group-title" }, "Veličine i uvoz – KORAK 2"), h("div", { class: "grid" }, sizesCard(), importCard()));
-  out.push(h("h3", { class: "group-title" }, "Simboli, linije i površine – KORAK 1"), symbolsCard());
   requestAnimationFrame(() => autofitIn($("#main")));
   return out;
 }
