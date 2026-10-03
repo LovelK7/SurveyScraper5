@@ -307,11 +307,18 @@ function renderNav() {
      status ? h("span", { class: "dot " + status, title: status, style: "margin-left:6px" }) : null);
   const kids = [item("home", "", "Pregled"), item("fast", "", "Brze radnje")];
   let group = null;
-  for (const s of (S.catalog ? S.catalog.stages : [])) {
+  const stages = S.catalog ? S.catalog.stages : [];
+  for (const s of stages) {
+    if (s.parent) continue;                       // listed under its parent below
     if (s.group !== group) { group = s.group; kids.push(h("div", { class: "nav-group" }, group)); }
     kids.push(item(s.label, s.label, s.title, s.status));
-    // the mapping page is a sub-page of 3N: listed only while 3N or it is open
-    if (s.label === "3N" && (S.tab === "3N" || S.tab === "map3n")) kids.push(item("map3n", "3N", "Mapiranje simbola", null, true));
+    // sub-pages (3N: Mapiranje simbola, Sastavnica) are listed only while the
+    // parent or one of them is open
+    const children = stages.filter(c => c.parent === s.label);
+    const open = S.tab === s.label || children.some(c => c.label === S.tab) || (s.label === "3N" && S.tab === "map3n");
+    if (!open) continue;
+    if (s.label === "3N") kids.push(item("map3n", "3N", "Mapiranje simbola", null, true));
+    for (const c of children) kids.push(item(c.label, c.label, c.title, c.status, true));
   }
   kids.push(h("div", { class: "nav-group" }, "Dokumentacija"));
   const docItem = (path, title) => h("button", {
@@ -628,6 +635,10 @@ function renderStage(stage) {
     h("div", { class: "row" }, icon("nacrt", "lg"),
       h("span", { style: "flex:1" }, "Koji TopoDroid simbol postaje koji cSurvey znak, boja poligona, veličine znakova – zadano za sve objekte, a za ovaj objekt se može prilagoditi prije KORAKA 1 ili 2."),
       h("button", { class: "btn", onclick: () => setTab("map3n") }, "Mapiranje simbola →"))));
+  if (stage.label === "3N") out.push(h("div", { class: "card note", style: "margin-bottom:14px" },
+    h("div", { class: "row" }, icon("sastavnica", "lg"),
+      h("span", { style: "flex:1" }, "Sastavnica Nacrta za Illustrator (ruta B): na cSurvey ruti slaže se sama u KORAKU 3c, ovaj podkorak treba samo kad se nacrt crta u Illustratoru."),
+      h("button", { class: "btn", onclick: () => setTab("4S") }, "Sastavnica (Illustrator) →"))));
 
   const actions = S.catalog.actions.filter(a => a.stage === stage.label);
   const steps = actions.filter(a => a.step);

@@ -577,3 +577,10 @@ def test_mapping_page_refuses_bad_input_and_caves_without_a_folder(server):
     status, data = _call(base, "/api/mapping/999", {"effective": {}})
     assert status == 400 and "nema mapu" in data["error"]
     assert not (leaf / "tdx-mapping-objekt.json").exists()
+
+def test_catalog_nests_the_sastavnica_under_the_nacrt():
+    """4S is a sub-page of 3N in the nav, like Mapiranje simbola (user, 2026-10-03)."""
+    from cave_dossier.gui import catalog
+    stages = {s["label"]: s for s in catalog.catalog_json()["stages"]}
+    assert stages["4S"]["parent"] == "3N"
+    assert stages["3N"]["parent"] == "" and stages["4O"]["parent"] == ""

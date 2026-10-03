@@ -1109,6 +1109,17 @@ after a read with GC disabled; it fails on the old loader. Rule for any
 long-running process (dashboard, a future GUI): **every workbook handle is
 scoped**, because the live SB is a file people save while tools run.
 
+### Round 6 — the sastavnica is a page of the Nacrt (2026-10-03)
+
+4S moved under 3N in the nav, a sub-page beside *Mapiranje simbola* (user,
+2026-10-03). The sastavnica is the Nacrt's title block whichever route draws the
+map - on the cSurvey route KORAK 3c composes it, on the Illustrator route the
+drafter gets it prefilled - so it has no life of its own in the working order.
+`Stage.parent` carries the nesting; the stage keeps its label, its actions, its
+README and its workflow step, only the nav changed. The OSZ ← izmjera step in
+*spajanje* now also waits for Broj / Širina / Visina ulaza when the finisher
+witnessed the entrance (project 0005).
+
 ## 3N entrance: surface legs (2026-09-24)
 
 Settled by the user on SB 1220 (Hrđava špilja), where the shot 4 → 5 is flagged

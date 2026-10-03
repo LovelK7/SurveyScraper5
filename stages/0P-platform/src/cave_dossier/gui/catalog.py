@@ -429,8 +429,12 @@ class Stage:
     status: str
     notes: tuple[str, ...] = field(default_factory=tuple)
     #: Nav heading. The nav follows the per-cave working order (workflow.py),
-    #: not the label digits: 4O and 4I come before 3N, 4S sits beside 3N.
+    #: not the label digits: 4O and 4I come before 3N.
     group: str = ""
+    #: A sub-page of another stage: listed under it in the nav, like 3N's
+    #: "Mapiranje simbola" (user, 2026-10-03: 4S lives inside 3N - the
+    #: sastavnica is the Nacrt's title block, whichever route draws the map).
+    parent: str = ""
 
 
 #: The tabs, in working order (user, 2026-10-02). Status mirrors pipeline.yaml.
@@ -448,7 +452,7 @@ STAGES: tuple[Stage, ...] = (
     Stage("3N", "Nacrt", "TopoDroid .csx → SB_<broj>_nacrt.pdf preko cSurveya",
           "stages/3N-nacrt/README.md", "operational", group="Objekt – redom rada"),
     Stage("4S", "Sastavnica", "Sastavnica Nacrta za Illustrator (ruta B)",
-          "stages/4S-sastavnica/README.md", "operational", group="Objekt – redom rada",
+          "stages/4S-sastavnica/README.md", "operational", group="Objekt – redom rada", parent="3N",
           notes=("Na cSurvey ruti sastavnica se slaže sama u KORAKU 3c (3N). "
                  "Ovaj korak treba samo kad se nacrt crta u Illustratoru.",)),
     Stage("4F", "Fotografije", "Fotografije ulaza",
