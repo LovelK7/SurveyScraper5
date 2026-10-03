@@ -388,4 +388,11 @@ when an idea's time comes. Nothing here is a commitment.
   tweak that proves itself, via a reviewed repo change + `/publish`, never from the page.
 - 2026-10-03 — 3N: `preprocess_tdx_csx.py` crashes with `charmap` on the warning sign in its output when stdout is a
   non-UTF-8 pipe (fine in a console and in the dashboard, which sets PYTHONIOENCODING); reconfigure stdout.
-
+- 2026-10-03 — 3N Mapiranje: draft a first-pass mapping for the speleo 2 symbols without a proper cSurvey sign
+  (29 points, 10 lines, 10 areas) for the user to accept or change (nearest sign, or a text label).
+- 2026-10-03 — 3N Mapiranje: the two KORAK 1 switches (line subtypes, -area suffix) sit in the KORAK 2 "Uvozne
+  postavke" card; move them into the KORAK 1 section if it confuses.
+- 2026-10-03 — dashboard: tooltip (`title`) texts still carry em dashes; route them through `hrDash` too.
+- 2026-10-03 — Brze radnje: optional read-only "Geo provjera" (geo locate + kota) beside "Provjeri objekt".
+- 2026-10-03 — dashboard: warn on the page when the server is older than the static files (a stale server answers
+  new pages with "Nepoznat zahtjev.").

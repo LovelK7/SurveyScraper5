@@ -12,6 +12,28 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-03 (later) — 3N Mapiranje review round, en dash everywhere, speleo 2 set (agent) ✅
+
+- **Did:** On the user's review of the new page: the Mapiranje nav row now appears only while 3N is open
+  (indented sub-row); the KORAK 1 symbols section moved above the KORAK 2 sections; the sizes table stopped
+  inheriting the dashboard's `.kv` grid (it overflowed); the status card always keeps its "Nespremljeno" line so
+  editing never shifts the page. Shared default: `PlotTextColor` red, `PlotNoteTextScaleFactor` 1.0. En dash:
+  162 printed string literals across every stage and the 3N tools (docstrings/comments untouched, none used for
+  matching), the dashboard's own strings, plus display-time conversion in `h()`, the doc viewer and Ispis. The
+  "Novi objekt" fast action now says its OSZ step runs 4G (no separate geo step: `osz prefill` already calls the
+  locality and kota finders, prefill.py:125-133). TopoDroid's "Extra speleo symbols" set (`symbols_extra`, the
+  user's "speleo (2)" palette) is labelled **speleo 2**, shown by default, and a "Bez pravog znaka" filter lists
+  what would arrive as an empty sign, a plain border or generic soil.
+- **Result:** 743 tests green, doctor 0 fail. An Edge sweep over all 17 tabs and doc pages finds 0 em dashes; the
+  five review fixes, the section order and the filters checked in the browser at the user's 1090 px width.
+  Commits 995a10b, 829f7cc, c0473c7, 317b560, 5704ede.
+- **Learned:** The user's "Nepoznat zahtjev." was a dashboard server started the day before: Python routes load at
+  start, static files are read fresh, so a new page can call an API the old server lacks; restart after any
+  server-side change. Mapping is by TopoDroid name, so any set maps; 9 speleo 2 symbols were already mapped but
+  hidden by the default filter. Speleo 2 without a proper sign: 29 points, 10 lines, 10 areas.
+- **Next:** The user picks targets for the speleo 2 symbols (an agent can draft a first pass); `/publish` the csx
+  kit; close cSurvey and prime KORAK 0 on this machine.
+
 ### 2026-10-03 — 3N: predefined cSurvey settings, and the mapping page in the dashboard (agent) ✅
 
 - **Did:** Traced where cSurvey keeps settings: file settings live in the `.csx` (`designproperties`), app settings
