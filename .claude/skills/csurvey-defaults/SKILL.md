@@ -28,6 +28,7 @@ All paths under `stages/3N-nacrt/production/tools/`.
 | a TopoDroid symbol/line/area to become a cSurvey sign/line/area, a text label, or be left alone | file, KORAK 1 | `tdx-mapping.json` › `points` / `lines` / `areas` | new `_pp` (KORAK 1, re-import, KORAK 2) |
 | centerline (polygon) colour, width, style; station symbol/size/colour; station-number or note text scale/colour; splay, LRUD, translation line, surface profile pens | file, KORAK 2 | `tdx-mapping.json` › `postimport.centerline` | next KORAK 2 |
 | any other survey-wide Properties value | file, KORAK 2 | `tdx-mapping.json` › `postimport.designproperties` | next KORAK 2 |
+| splays on/off and their style (Points / Points and rays / Rays) – any per-view option saved as an attribute on `<options><_design.plan>` etc. | file, KORAK 2 | `tdx-mapping.json` › `postimport.viewoptions` (`"design.plan": {"splaystyle": 2}`, no leading `_`; views in `VIEW_NAMES`) | next KORAK 2 |
 | size of a sign (entrance, stalactite…) or of a text label | file, KORAK 2 | `postimport.sign_sizes` / `label_sizes` | next KORAK 2 |
 | splines for imported lines, non-standard water brush; line-subtype / `-area` stripping | switch | `postimport.spline_linetypes` / `nonstandard_water`; `generic.*` | KORAK 2 / KORAK 1 |
 | a cSurvey ribbon/options toggle (pen smoothing, rulers, grid, quality…) — anything cSurvey keeps per computer | app, KORAK 0 | `csurvey-app-settings.json` › `settings` | each computer re-runs KORAK 0 (KORAK 2 warns) |
@@ -87,6 +88,7 @@ Match the registry type cSurvey itself writes: JSON string → REG_SZ (decimals 
    `git -C ../cSurvey grep -n "<controlName>" -- "cSurveyPC/*.vb"`.
 2. `My.Application.Settings.GetSetting("x.y")` → **app setting** (registry key `x.y`; its default is the second argument).
    `DesignProperties.GetValue("Key")` → **file setting** (`designproperties`).
+   A property of `cOptions`/`cOptionsDesign` (e.g. `Options.DrawSplay`) → **view option** (`viewoptions`; attribute name from `SaveTo` in `cOptions.vb`).
 3. When unsure, ask the user to change it in cSurvey and then compare: `reg query` before and after with cSurvey **closed**, or the saved `.csx`'s `<designproperties>`.
 
 Cite the `path:line` in the entry's `source`, or in the commit message for file settings.

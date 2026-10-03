@@ -163,6 +163,42 @@ def apply_design_properties(root, spec):
     return n
 
 
+# Per-view display options: attributes on <options><_design.plan> etc., one
+# element per view (cOptions.vb:1198-1241 writes them, :1068-1104 reads them),
+# not designproperties. Properties > Centerline > Splay is `drawsplay` (0/1)
+# and its combo `splaystyle` (cOptionsDesign.SplayStyleEnum, cOptions.vb:424:
+# Points 0, PointsAndRays 1, Rays 2). The json's `postimport.viewoptions`
+# gives view -> {attribute: value}, the view named without cSurvey's leading
+# "_" (json keys starting with "_" are comments).
+VIEW_NAMES = {"design.plan", "design.profile", "design.3d", "viewer.plan",
+              "viewer.profile", "preview.plan", "preview.profile",
+              "export.plan", "export.profile"}
+
+
+def apply_view_options(root, spec):
+    """Set view-option attributes from `spec` (view name -> {attr: int}).
+
+    Returns the number of attributes written. A view cSurvey has not saved
+    yet is skipped with a warning rather than invented.
+    """
+    if not spec:
+        return 0
+    opts = root.find("options")
+    n = 0
+    for view, attrs in spec.items():
+        if view.startswith("_"):
+            continue
+        el = opts.find("_" + view) if opts is not None else None
+        if el is None or not isinstance(attrs, dict):
+            print("WARNING: viewoptions %r not in the file - skipped" % view,
+                  file=sys.stderr)
+            continue
+        for name, value in attrs.items():
+            el.set(name, str(int(value)))
+            n += 1
+    return n
+
+
 SIZES = {"default": 0, "verysmall": 1, "small": 2, "medium": 3,
          "large": 4, "big": 4, "verylarge": 5}
 
@@ -434,7 +470,8 @@ def main(argv=None):
                     fixed_sizes += 1
 
         centerline_set = (apply_centerline(root, rules.get("centerline"))
-                          + apply_design_properties(root, rules.get("designproperties")))
+                          + apply_design_properties(root, rules.get("designproperties"))
+                          + apply_view_options(root, rules.get("viewoptions")))
 
         write_root(root, inp, out, is_csz)
         print("OK  %s\n    %d line(s) -> splines, %d water area(s) -> "

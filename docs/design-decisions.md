@@ -1231,6 +1231,16 @@ Validated: unit tests over a dict-backed registry; live `show`/`check` against
 this machine's registry; the live `apply` stopped with BLOCKED because cSurvey
 was open.
 
+- 2026-10-03: **splays on, shown as Rays** in the plan and profile design views
+  (user: "by default set Splays on and set to Rays"). These are not design
+  properties but attributes on each view's options element
+  (`<options><_design.plan drawsplay splaystyle>`, cOptions.vb:1068-1074,
+  1205-1211; SplayStyleEnum Points 0 / PointsAndRays 1 / Rays 2, cOptions.vb:424),
+  so KORAK 2 got a third file channel, `postimport.viewoptions` (view → {attribute:
+  int}). Views are named without cSurvey's leading `_`, because `_` keys are
+  comments to the mapping merge. Only `design.plan`/`design.profile`: the export
+  views are left as cSurvey has them, so splays don't reach the Nacrt unasked.
+
 ## 3N mapping per cave, edited in the dashboard (2026-10-03)
 
 The user wanted the TDX → cSurvey mapping visible and changeable before a

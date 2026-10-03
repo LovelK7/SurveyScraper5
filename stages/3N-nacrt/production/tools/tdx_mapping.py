@@ -15,7 +15,7 @@ Override semantics, per section:
                            behaviour)
   generic                  per key
   postimport               a dict value (centerline, sign_sizes, label_sizes,
-                           designproperties) merges per key, `null` removing
+                           designproperties, viewoptions) merges per key, `null` removing
                            one; any other value replaces
 Keys starting with "_" are comments and never merged or diffed.
 

@@ -85,6 +85,7 @@ unintentionally.
 |---|---|
 | `centerline` | Properties → Centerline: **red** stations, shots and station numbers (`PlotPenColor`/`PlotPointColor`/`PlotTextColor` = -65536, `PlotCenterlineForceColor` = 1), pen widths, triangle stations, splay, LRUD, translation-line and surface-profile pens, `PlotTextScaleFactor` (station/shot-number text, 1.0, cSurvey's default) and `PlotNoteTextScaleFactor` (notes, **1.0**; cSurvey's default is 0.5, raised 2026-10-03). To make shot numbers smaller, lower `PlotTextScaleFactor`. |
 | `designproperties` | Any other survey-wide property, each with its type (empty so far) |
+| `viewoptions` | Per-view display options, attributes on the file's `<options><_design.plan>` etc. (view named without the leading `_`): Properties → Centerline → **Splay on, style Rays** (`drawsplay` = 1, `splaystyle` = 2; 0 Points, 1 Points and rays) for `design.plan` and `design.profile` (2026-10-03). Preview and export views keep cSurvey's values. |
 | `sign_sizes` | Item sizes per sign: entrance default, air draught, stalactite, stalagmite medium |
 | `label_sizes` | Item sizes per label text: `"!"` large |
 | `spline_linetypes`, `nonstandard_water` | Import fixes (splines so decorations render; the water brush) |
@@ -100,7 +101,7 @@ in the same schema. `tools/tdx_mapping.py` merges the two:
 - an entry under `points`/`lines`/`areas` replaces the default's entry for that
   TopoDroid name, and `null` removes it, giving the natural import behaviour;
 - dicts under `postimport` (`centerline`, `sign_sizes`, `label_sizes`,
-  `designproperties`) merge key by key; other values replace.
+  `designproperties`, `viewoptions`) merge key by key; other values replace.
 
 KORAK 1 and KORAK 2 look for the file from each survey's folder up to the
 `SB_` folder, per file, so in a batch one cave's override never reaches

@@ -102,3 +102,29 @@ def test_the_shipped_designproperties_section_is_valid():
     root = ET.fromstring("<csurvey><properties/></csurvey>")
     real = {k: v for k, v in rules.get("designproperties", {}).items() if not k.startswith("_")}
     assert fixer.apply_design_properties(root, real) == len(real)
+
+
+def test_viewoptions_set_attributes_on_the_named_views_only():
+    root = ET.fromstring("<csurvey><options>"
+                         "<_design.plan drawsplay='0' splaystyle='0'/>"
+                         "<_export.plan drawsplay='1' splaystyle='0'/>"
+                         "</options></csurvey>")
+    n = fixer.apply_view_options(root, {
+        "_readme": "ignored",
+        "design.plan": {"drawsplay": 1, "splaystyle": 2},
+        "design.profile": {"splaystyle": 2},  # not in the file: skipped
+    })
+    assert n == 2
+    plan = root.find("options/_design.plan")
+    assert (plan.get("drawsplay"), plan.get("splaystyle")) == ("1", "2")
+    assert root.find("options/_export.plan").get("splaystyle") == "0"
+    assert fixer.apply_view_options(ET.fromstring("<csurvey/>"), {"design.plan": {"drawsplay": 1}}) == 0
+    assert fixer.apply_view_options(root, None) == 0
+
+
+def test_the_shipped_viewoptions_show_splays_as_rays():
+    rules = json.loads(Path(fixer.DEFAULT_MAP).read_text(encoding="utf-8"))["postimport"]
+    vo = rules["viewoptions"]
+    for view in ("design.plan", "design.profile"):
+        assert vo[view] == {"drawsplay": 1, "splaystyle": 2}
+    assert all(k in fixer.VIEW_NAMES for k in vo if not k.startswith("_"))

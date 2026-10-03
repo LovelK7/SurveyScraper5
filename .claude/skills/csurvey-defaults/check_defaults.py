@@ -83,6 +83,15 @@ for key, entry in post.get("designproperties", {}).items():
     if not isinstance(entry, dict) or entry.get("type") not in fixer.DESIGN_PROPERTY_TYPES or "value" not in entry:
         problems.append("postimport.designproperties.%s: needs {type: one of %s, value}"
                         % (key, "/".join(sorted(fixer.DESIGN_PROPERTY_TYPES))))
+for view, attrs in post.get("viewoptions", {}).items():
+    if view.startswith("_"):
+        continue
+    if view not in fixer.VIEW_NAMES:
+        problems.append("postimport.viewoptions.%s: unknown view (one of %s; no leading _)"
+                        % (view, ", ".join(sorted(fixer.VIEW_NAMES))))
+    elif not isinstance(attrs, dict) or not all(
+            isinstance(v, int) and not isinstance(v, bool) for v in attrs.values()):
+        problems.append("postimport.viewoptions.%s: needs {attribute: integer}" % view)
 for key, size in post.get("sign_sizes", {}).items():
     if key.lower() not in fixer.SIGN_VALUES:
         problems.append("postimport.sign_sizes.%s: unknown sign name" % key)
@@ -106,7 +115,8 @@ if problems:
     sys.exit(1)
 cl = post.get("centerline", {})
 print("OK: %d point / %d line / %d area mappings, %d centerline, %d designproperties, "
-      "%d sign sizes, %d label sizes, %d app settings"
+      "%d viewoptions, %d sign sizes, %d label sizes, %d app settings"
       % (len(mapping.get("points", {})), len(mapping.get("lines", {})), len(mapping.get("areas", {})),
          len(cl), len([k for k in post.get("designproperties", {}) if not k.startswith("_")]),
+         len([k for k in post.get("viewoptions", {}) if not k.startswith("_")]),
          len(post.get("sign_sizes", {})), len(post.get("label_sizes", {})), len(app_settings)))
