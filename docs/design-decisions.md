@@ -1217,6 +1217,38 @@ Measured: SB 1220 (horizontal, station 4) 0.57 × 1.37 m from splays 4(71),
   more often than not (krk_27, krk_37) but cannot be told apart from a wrong one
   (Tavnjak's ledge) without the sign.
 
+**Where it runs (phase 3, shipped 2026-10-03).** `production/tools/entrance_dims.py`,
+called by `nacrt_finish.py` (KORAK 3a) once the entrance station is decided;
+the block `entrance_size` goes into the `.layout.json` sidecar, `csurvey_driver.py
+finish` (KORAK 3b) copies it into `<name>_dimenzije.json`, and `cavedossier osz
+prefill` writes the cells. Three more calls made there:
+
+- **3N measures both readings, 4O chooses.** The toolkit has no SB and no
+  zapisnik; the geometric guess (`kind_geo`) travels beside a horizontal reading
+  and a pit reading. The prefill takes the kind from the zapisnik's ticked
+  *Vrsta objekta* (SB has no type column): *jama*, *špilja s jamskim ulazom*,
+  *jamski sustav* → pit; *špilja*, *jama sa špiljskim ulazom*, *špiljski sustav*
+  → horizontal; nothing or both → the geometric guess, and it says so in a note.
+  Because the old OSZ is read after the dimensions, the choice is redone once
+  its ticks are known.
+- **Broj ulaza = the plan's entrance signs, counted by station** (user,
+  2026-10-03); profile signs only when the plan has none; surface legs when there
+  is no sign at all; else the cell stays empty. The profile's sign repeats the
+  plan's and, on Tavnjak, sat on another station - so the plan alone counts.
+- **How a reading was obtained stays in the block.** The finisher's own warnings
+  carry only what needs the operator: rule 5 ("nacrtaj znak ulaza") and a station
+  no shot touches. The pit reading of a horizontal entrance is always a little
+  lame and would otherwise warn on every cave.
+- **One decimal with a comma** in the cells (`0,6`), two decimals in the JSON.
+  The old-OSZ comparison (`_same_measurement`) compares such cells at a tenth.
+- **Two entrance signs that disagree** are now settled in `decide_entrance`: the
+  sign on the highest station wins, else the plan. And `read_stations` takes the
+  profile distance from `<tcon><p>` (the direct `<p>` always says `d="0"`).
+
+Validated on the eleven-survey corpus (project 0005 brief §3) and live on SB 1220.
+Tests: `stages/3N-nacrt/tests/test_entrance_dims.py`, the tie-break tests in
+`test_nacrt_finish.py`, the entrance tests in `stages/4O-osz/tests/test_osz_prefill.py`.
+
 ## 3N predefined cSurvey settings: file vs app (2026-10-03)
 
 Whoever opens a survey in cSurvey during 3N should get the same settings
@@ -1406,10 +1438,9 @@ The drafter re-authored the title block (`!SUE_sastavnica_v2.pdf`, Drive
 and what the code now does:
 
 - **Ekipa is a full-width row** (12.6 pt high) with its label on the value's
-  line. The value is centred in the span right of the label
-  (`Cell.label_x1`); the drafter's example starts it right after the label,
-  but centring is the rule of every other cell and the two coincide once the
-  team fills the row. Its baseline is the drafter's own 3.3 pt (`Cell.lift`),
+  line. The value starts right after the label, **left-aligned** as in the
+  drafter's example (`Cell.label_x1` + 2 pt, `Cell.align`; user, 2026-10-03,
+  after a centred first cut) — the one cell that is not centred. Its baseline is the drafter's own 3.3 pt (`Cell.lift`),
   which centres 8 pt caps in the shorter row.
 - **No cell wraps any more.** v1's two exceptions (`render.MULTILINE`: Mjerilo's
   two-scale form, Ekipa below 8 pt) are removed with their code: the drafter's
@@ -1437,3 +1468,15 @@ map reproduce the authored v2 to the eye (every size the drafter chose, every
 value centred within 0.25 pt but Ekipa), and `cavedossier nacrt 1220 --local`
 (Hrđava špilja) composes with Nacrt uredio from its zapisnik, Ekipa deduped to
 the two uncredited members, and both drawings clear of the taller block.
+The drafter then raised **Istražili from 8 to 9 pt** in the Drive template;
+the committed copy, the blank and `Cell.size` follow (nothing else moved).
+
+**A printed design cut at the page edge is reported** (same day). That run
+showed SB 1220's 10 m scale bar labelled "1": the plan PDF, printed 2026-09-24
+at 22:10, predates the bar-under-the-plan fix committed at 22:27 (see
+[3N scale bar](#3n-scale-bar-beside-or-under-the-plan-2026-09-24)) — its bar
+still sat beside the plan, and the "0" lies past the paper. A dry run of the
+current kit puts that bar under the plan. Compose cannot recover what the
+paper clipped, so `cavedossier nacrt` now names any edge a printed design runs
+past (`compose.cut_edges`, 0.5 pt tolerance) and says to redo KORAK 3. Of the
+Drive's KORAK 3 prints only that plan is flagged.

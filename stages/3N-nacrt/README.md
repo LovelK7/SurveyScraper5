@@ -50,7 +50,7 @@ python $T\fix_imported_linetypes.py $INTAKE --sb 1103 --force
 
 # [cSurvey] open <name>_lt.csx, correct the sketch, save
 
-# KORAK 3a — _lt -> <name>_lt_fin (entrance, depth label, scale bar, north arrow, A4 print setup)
+# KORAK 3a — _lt -> <name>_lt_fin (entrance + its size for the OSZ, depth label, scale bar, north arrow, A4 print setup)
 python $T\nacrt_finish.py $INTAKE --sb 1103 --force            # shows the layout menu
 #   --yes accepts the proposed layout; --layout N picks menu entry N; --dry-run writes nothing
 

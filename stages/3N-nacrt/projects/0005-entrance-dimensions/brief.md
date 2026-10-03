@@ -1,9 +1,9 @@
 # Task brief: Entrance dimensions — read the entrance width and height off the finished survey
 
 - **ID:** 0005-entrance-dimensions
-- **Status:** `validation` — five rules settled 2026-10-02/03 (the fifth: no size without a deliberate entrance witness); corpus of 11 surveys: 8 measured, 3 declined for want of an entrance sign (cepavpic, krk_27, krk_37). Sopača's 13.6 × 17.5 still wants the user's eye. Next: phase 3 (fold into `nacrt_finish.py`)
+- **Status:** `closed` 2026-10-03 — phase 3 shipped: `production/tools/entrance_dims.py` inside KORAK 3a, `entrance_size` through `_dimenzije.json`, `osz prefill` fills Broj / Širina / Visina ulaza. §5 lists what was promoted; Sopača's station stays an optional look
 - **Owner:** both
-- **Opened:** 2026-10-02 · **Closed:** —
+- **Opened:** 2026-10-02 · **Closed:** 2026-10-03
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [0004-nacrt-finishing/brief.md](../0004-nacrt-finishing/brief.md) (the entrance-station decision this builds on), `production/tools/nacrt_finish.py` (`decide_entrance`, `wall`/`item_points` helpers)
 
 > This brief is self-contained: a fresh session can pick it up from cold and know exactly what to do
@@ -180,8 +180,17 @@ fixtures with the numbers above; a unit test per rule (B-split, bridge cap, draw
 
 ## 5. Outputs (fill in on close)
 
-- **Production:** —
-- **Reference:** — (candidate: the Borders sequence/fill-bridge rendering fact belongs in
-  `reference/` drawing docs)
-- **Decisions:** —
-- **Follow-ups:** `nacrt_finish.read_stations` `d=0` fix (phase 3)
+- **Production:** `production/tools/entrance_dims.py` (ported from `findings/entrance_dims_proto.py`),
+  `nacrt_finish.py` (calls it; `entrance_count`; the sign tie-break in `decide_entrance`;
+  `read_stations` reads `d` from `<tcon><p>`), `csurvey_driver.py` (`entrance_size` travels into
+  `_dimenzije.json`), `prod/build_csx_kit.py` (the kit ships the new module); 4O
+  `osz/prefill.py` (`entrance_values`, `entrance_kind_from_ticks`, `_apply_entrance_kind`,
+  `_same_measurement` at a tenth) + `osz/models.py`. Tests: `tests/test_entrance_dims.py`,
+  `test_nacrt_finish.py` (tie-break), `4O-osz/tests/test_osz_prefill.py` (entrance cells).
+- **Reference:** the Borders sequence / fill-join rendering fact (`cItemFreeHandArea.vb:193-195`)
+  is documented in `entrance_dims.py` and the decision record; a `reference/` page is still open
+  (backlog).
+- **Decisions:** `docs/design-decisions.md` → "3N entrance dimensions: splays first, walls as
+  fallback (2026-10-02)" with the phase 3 wiring appended.
+- **Follow-ups:** Sopača's station 5 (outside the drawn plan) — the user's eye, optional; a
+  `reference/` page on how cSurvey fills a Borders item.

@@ -761,3 +761,103 @@ def test_deliver_permission_error_restores_old_file(intake_settings, geo_stubs, 
     assert (leaf / "Zapisnik_stari.docx").exists()
     assert not list(leaf.glob("*_stari_*.docx"))
     assert any("zatvori ga i ponovi" in note for note in outcome.result.notes)
+
+# ── the entrance (project 0005, user 2026-10-03): Broj / Širina / Visina ulaza ──
+ENTRANCE_BLOCK = {
+    "station": "4", "witnessed": True, "count": 1,
+    "kind_geo": "horizontal", "kind_why": "vlak 48 stupnjeva",
+    "horizontal": {"width_m": 0.57, "height_m": 1.37,
+                   "width_source": "splays", "height_source": "splays"},
+    "pit": {"width_m": 1.47, "length_m": 3.95, "source": "splays"},
+    "warnings": [],
+}
+
+
+def test_entrance_values_horizontal_by_default_one_decimal_with_comma():
+    values, kind, notes = prefill.entrance_values(ENTRANCE_BLOCK)
+    assert values == {"broj_ulaza": "1", "sirina_ulaza": "0,6", "visina_duljina_ulaza": "1,4"}
+    assert kind == "horizontal" and notes == []
+
+
+def test_entrance_values_pit_reading_is_small_by_large():
+    values, kind, _ = prefill.entrance_values(ENTRANCE_BLOCK, "pit")
+    assert values["sirina_ulaza"] == "1,5" and values["visina_duljina_ulaza"] == "4,0"
+    assert kind == "pit"
+    swapped = dict(ENTRANCE_BLOCK, pit={"width_m": 4.0, "length_m": 1.5, "source": "walls"})
+    values, _, _ = prefill.entrance_values(swapped, "pit")
+    assert values["sirina_ulaza"] == "1,5" and values["visina_duljina_ulaza"] == "4,0"
+
+
+def test_entrance_values_unwitnessed_gives_only_the_count_and_a_note():
+    block = dict(ENTRANCE_BLOCK, witnessed=False, count=None, horizontal=None, pit=None)
+    values, kind, notes = prefill.entrance_values(block)
+    assert values == {} and kind is None
+    assert notes and "nacrtaj znak ulaza" in notes[0]
+    assert prefill.entrance_values(None) == ({}, None, [])
+
+
+def test_entrance_kind_from_the_vrsta_objekta_ticks():
+    assert prefill.entrance_kind_from_ticks(("špilja", "suh")) == "horizontal"
+    assert prefill.entrance_kind_from_ticks(("Jama",)) == "pit"
+    assert prefill.entrance_kind_from_ticks(("spilja s jamskim ulazom",)) == "pit"
+    assert prefill.entrance_kind_from_ticks(("jama sa špiljskim ulazom",)) == "horizontal"
+    assert prefill.entrance_kind_from_ticks(("jama", "špilja")) is None
+    assert prefill.entrance_kind_from_ticks(()) is None
+
+
+def test_same_measurement_understands_one_decimal():
+    assert prefill._same_measurement("0,6", "0,6")
+    assert prefill._same_measurement("0.55 m", "0,6")
+    assert not prefill._same_measurement("1", "0,6")
+    assert prefill._same_measurement("40,3", "40")      # whole-metre cells as before
+
+
+def test_prefill_fills_the_entrance_from_nacrt(intake_settings, geo_stubs, run_dir, no_karta):
+    _template_guard()
+    _write_dims(_leaf(intake_settings), entrance_size=ENTRANCE_BLOCK)
+
+    outcome = prefill.run_prefill(intake_settings, 1)
+    fields = outcome.result.fields
+    assert fields["sirina_ulaza"].value == "0,6"
+    assert fields["visina_duljina_ulaza"].value == "1,4"
+    assert fields["broj_ulaza"].value == "1"
+    assert all(fields[k].source == "nacrt" for k in prefill.ENTRANCE_FIELDS)
+    assert outcome.result.entrance_kind == "horizontal"
+
+    from cave_dossier.osz.reader import read_osz_content
+    content = read_osz_content(outcome.delivered_path)
+    assert content.fields["sirina_ulaza"] == "0,6"
+    assert content.fields["visina_duljina_ulaza"] == "1,4"
+    assert content.fields["broj_ulaza"] == "1"
+
+
+def test_prefill_unwitnessed_entrance_leaves_the_cells_empty(intake_settings, geo_stubs,
+                                                              run_dir, no_karta):
+    _template_guard()
+    block = dict(ENTRANCE_BLOCK, witnessed=False, horizontal=None, pit=None)
+    _write_dims(_leaf(intake_settings), entrance_size=block)
+    outcome = prefill.run_prefill(intake_settings, 1)
+    fields = outcome.result.fields
+    assert "sirina_ulaza" not in fields and "visina_duljina_ulaza" not in fields
+    assert fields["broj_ulaza"].value == "1"
+    assert any("nacrtaj znak ulaza" in note for note in outcome.result.notes)
+
+
+def test_the_old_osz_type_picks_the_pit_reading(intake_settings, geo_stubs, run_dir, no_karta):
+    """kilavčeva pljeskavica: geometry says horizontal, the zapisnik is ticked jama."""
+    _template_guard()
+    _write_dims(_leaf(intake_settings), entrance_size=ENTRANCE_BLOCK)
+    first = prefill.run_prefill(intake_settings, 1)          # delivers an OSZ ticked by nobody
+    from cave_dossier.osz.writer import OszDocument
+    doc = OszDocument(first.delivered_path)
+    assert doc.tick({"jama"}) == set()
+    ticked = first.delivered_path.with_name("ticked.docx")
+    doc.save(ticked)                      # never over the file being read
+    ticked.replace(first.delivered_path)
+
+    second = prefill.run_prefill(intake_settings, 1)
+    fields = second.result.fields
+    assert second.result.entrance_kind == "pit"
+    assert fields["sirina_ulaza"].value == "1,5"
+    assert fields["visina_duljina_ulaza"].value == "4,0"
+    assert any("Vrsta ulaza po OSZ-u (pit)" in note for note in second.result.notes)

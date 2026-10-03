@@ -232,6 +232,12 @@ cavedossier osz prefill 1234               # SB + finders -> prefilled DOCX + pr
 cavedossier osz prefill 1234 --force-karta # re-fetch the excerpt first (server-side save)
 cavedossier osz prefill 1234 --offline     # never touch the network; an already-collected
                                            #   excerpt is still embedded, georef.hr is skipped
+# After KORAK 3 the cave's <name>_dimenzije.json also fills Duljina / Horizontalna
+# duljina / Dubina / Visinska razlika AND Broj / Širina / Visina-duljina ulaza
+# (project 0005): re-run `osz prefill <broj>` once the nacrt exists; the old OSZ
+# is read first (its content and ticks carry over, it survives as _stari_<datum>)
+# and the zapisnik's Vrsta objekta decides whether the entrance is read as a pit
+# (two plan extents, small × large) or a horizontal opening (width × height).
 # Precedence: SB wins — computed values only fill EMPTY cells; disagreements
 # (e.g. kota vs the DMV grid beyond 10 m) are warnings, never overrides. On
 # such a kota disagreement the Izvor kote defaults to GPS (a hand-entered Z
@@ -344,11 +350,14 @@ cavedossier nacrt 1103 --force             # overwrite a delivered file this too
 # drawing, the run REFUSES and prints the millimetres; re-run nacrt_finish.py
 # with --layout N and pick another arrangement.
 # The title block is prefilled as by `sastavnica`, with one source added: the
-# dimensions JSON outranks the zapisnik and SB for Stvarna duljina, Tlocrtna
+# dimensions JSON (which, since project 0005, also carries `entrance_size`: the
+# OSZ's Broj / Širina / Visina ulaza, read by `osz prefill`) outranks the zapisnik and SB for Stvarna duljina, Tlocrtna
 # duljina and Dubina (measured off the very survey being composed) and fills
 # Mjerilo with the scale actually printed — "1:200/1:100", profile first (the
 # v2 label says "profil/tlocrt"), when the two designs differ. That supersedes the "1:" stub
 # on THIS route only; `cavedossier sastavnica` never reads the file.
+# A printed plan/profile that runs past its page edge (part of it clipped by
+# the paper) is named in a warning: redo KORAK 3 with the current kit.
 # Collision: the delivered nacrt carries its OWN metadata stamp, so a nacrt and
 # a sastavnica never overwrite each other, and an edited file is refused.
 

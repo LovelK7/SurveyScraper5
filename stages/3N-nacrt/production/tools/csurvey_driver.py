@@ -88,7 +88,9 @@ STEP_SUFFIXES = ("_fin", "_lt", "_pp")
 # entrance inflates — both travel so the two can be compared.
 LAYOUT_KEYS = ("mjerilo", "plan_scale", "profile_scale", "arrangement",
                "plan_mm", "profile_mm", "pad_m",
-               "pvr_m", "nvr_m", "vertical_from")
+               "pvr_m", "nvr_m", "vertical_from",
+               # project 0005: Broj / Sirina / Visina ulaza for the OSZ prefill
+               "entrance_size")
 
 
 class DriverError(RuntimeError):

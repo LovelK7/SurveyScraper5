@@ -31,7 +31,8 @@ Usage:
   python production/tools/nacrt_finish.py INPUT --yes           (accept the proposed layout)
   python production/tools/nacrt_finish.py INPUT --layout 2      (take alternative 2)
 
-Sidecar keys, for T3: `entrance`, `entrance_witnesses`, `warnings`,
+Sidecar keys, for T3: `entrance`, `entrance_witnesses`, `entrance_size`
+(project 0005: Broj/Sirina/Visina ulaza, see entrance_dims.py), `warnings`,
 `plan_bbox_m` / `profile_bbox_m` (`[minx, miny, maxx, maxy]` of the finished
 design), `plan_size_m` / `profile_size_m` (padded, what the chooser saw),
 `plan_scale`, `profile_scale`, `mjerilo`, `arrangement`, `plan_mm` /
@@ -53,6 +54,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # (it would sync to everyone and outlive these tools).
 sys.dont_write_bytecode = True
 import nacrt_layout                                            # noqa: E402
+import entrance_dims                                           # noqa: E402
 import sb_select                                               # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -519,7 +521,11 @@ def read_stations(root):
         name = t.get("n") or ""
         if not name or "(" in name:
             continue
-        p = t.find("p")
+        # The direct <p> always says d="0"; the <tcon><p> copies carry the
+        # profile distance (SB 1220: station 4 d=15.884). Found 2026-10-02.
+        p = t.find("tcons/tcon/p")
+        if p is None:
+            p = t.find("p")
         if p is None:
             continue
         try:
@@ -632,6 +638,32 @@ def witness_sign(root, stations, design_name, surface=None):
     return best
 
 
+def entrance_count(root, stations, witnesses):
+    """Broj ulaza: how many distinct stations the drawn entrance signs point at.
+
+    The plan's signs count (the authoritative map; the profile's sign repeats
+    the plan's and, on Tavnjak, sat on another station); a survey with signs
+    only in the profile counts those; with no sign at all, the surface legs;
+    else None - unknown, the cell stays empty (user, 2026-10-03).
+    """
+    if not stations:
+        return None
+    for design_name in ("plan", "profile"):
+        found = set()
+        for item in entrance_sign_items(root.find(design_name)):
+            pts = item_points(item)
+            if not pts:
+                continue
+            x, y, _flags = pts[0]
+            near = min(stations, key=lambda s: (s.design_xy(design_name)[0] - x) ** 2
+                       + (s.design_xy(design_name)[1] - y) ** 2)
+            found.add(near.name)
+        if found:
+            return len(found)
+    legs = witnesses.get("surface_leg") or []
+    return len(legs) or None
+
+
 def decide_entrance(root, stations, warn, outside=()):
     """Combine the witnesses into one entrance station.
 
@@ -656,8 +688,18 @@ def decide_entrance(root, stations, warn, outside=()):
 
     sign = plan or profile
     if plan and profile and plan["station"] != profile["station"]:
-        warn("znak ulaza pokazuje na razlicite stanice: tlocrt %s, profil %s "
-             "- uzimam tlocrt" % (plan["station"], profile["station"]))
+        # Tavnjak (Mune), 2026-10-03: the plan's sign was attached to a ledge
+        # 20 m down the shaft, the profile's sign and the highest station agreed
+        # on the rim. The sign that agrees with the highest station wins; when
+        # neither does, the plan (the authoritative map) keeps the last word.
+        if top is not None and profile["station"] == top and plan["station"] != top:
+            sign = profile
+            warn("znak ulaza pokazuje na razlicite stanice: tlocrt %s, profil %s "
+                 "- uzimam profil (slaze se s najvisom stanicom)"
+                 % (plan["station"], profile["station"]))
+        else:
+            warn("znak ulaza pokazuje na razlicite stanice: tlocrt %s, profil %s "
+                 "- uzimam tlocrt" % (plan["station"], profile["station"]))
     if sign and sign.get("segment_station") \
             and sign["segment_station"] != sign["station"]:
         warn("znak ulaza: najbliza stanica je %s, a vezani segment %s upucuje "
@@ -1340,6 +1382,15 @@ def finish(inp, out_path, args, report):
     if vertical:
         report("   visina/dubina:          +%.2f / -%.2f m od ulaza  (%s)"
                % (vertical["pvr_m"], vertical["nvr_m"], vertical["from"]))
+    # --- entrance size (project 0005): Broj / Sirina / Visina ulaza for the OSZ.
+    # Rule 5: the highest station alone is a guess - no sign, no surface leg,
+    # no number. Both the horizontal and the pit reading travel; the OSZ
+    # prefill picks by the zapisnik's Vrsta objekta.
+    witnessed = entrance is not None and not (witnesses.get("decision") or "").startswith("najvisa stanica")
+    count = entrance_count(root, stations, witnesses)
+    entrance_size = entrance_dims.measure(root, stations, entrance, witnessed, count, warn)
+    report("   broj ulaza:             %s" % ("-" if count is None else count))
+    report("   dimenzije ulaza:        %s" % entrance_dims.describe(entrance_size))
 
     # --- bboxes before the furniture, and a provisional scale ------------
     plan_before = design_bbox(root.find("plan"))
@@ -1455,6 +1506,7 @@ def finish(inp, out_path, args, report):
         "entrance_witnesses": {k: v for k, v in witnesses.items()
                                if k != "sign_detail"},
         "entrance_sign": sign,
+        "entrance_size": entrance_size,
         "dislivello": dislivello,
         # Ours, not cSurvey's: bounded by the boundary wall and the shots only.
         "pvr_m": None if vertical is None else vertical["pvr_m"],

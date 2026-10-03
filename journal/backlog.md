@@ -367,8 +367,6 @@ when an idea's time comes. Nothing here is a commitment.
   order with one confirm), and a per-cave history from `runs/gui/*.log`.
 - 2026-10-02 — dashboard: the cave list could carry each cave's workflow summary (done/stale
   counts) so the picker itself shows which caves need attention.
-- 2026-10-02 — 3N: `nacrt_finish.read_stations` reads the direct `<t><p>` whose `d` is always 0; take it from
-  `<tcon><p>` so the profile-side entrance-sign witness compares against the real profile x (project 0005).
 - 2026-10-02 — 3N: the Borders sequence/fill-join rendering fact (cItemFreeHandArea.vb:193-195) belongs in
   `stages/3N-nacrt/reference/` drawing docs once project 0005 closes.
 - 2026-10-02 — 3N: entrance dimensions could also run on the raw `_pp.csx` (walls are `name="wall" outline="1"`
@@ -399,10 +397,6 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-10-03 — 3N `decide_entrance`: when the plan and profile entrance signs disagree, prefer the one
   that agrees with the highest station (today the plan wins; Tavnjak's plan sign sits on a ledge 20 m
   down the shaft). Prototype in project 0005 already does it; **accepted by the user 2026-10-03** - do it in phase 3 with a test.
-- 2026-10-03 — 3N phase 3 of project 0005: fold the entrance measurement into `nacrt_finish.py` - sign
-  tie-break, registry type (SB jama/špilja), rule 5 (no size without a witnessed entrance), `read_stations`
-  d fix; sidecar + `_dimenzije.json` keys; 4O prefill
-  of `sirina_ulaza` / `visina_duljina_ulaza`; tests from the 11-survey corpus.
 - 2026-10-03 — 3N: walls merged by hand AFTER KORAK 2 (in the `_lt`) get no turn/order fix: KORAK 2's menu hides
   `_lt` files and a drag-drop writes `_lt_lt`. Rarer now that KORAK 2 merges; if it bites, call `wall_orient.fix`
   from `nacrt_finish.py` (KORAK 3) as a safety net.
@@ -411,3 +405,5 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-10-03 — 3N: possible cSurvey import bug (inferred from code, untested): TopoDroid writes reversed lines already
   flipped and cSurvey reverses when `reversed=0`, so the flag has no effect - pit/overhang ticks may land on the wrong
   side for strokes the surveyor reversed on the phone. Check on a real reversed pit line.
+- 2026-10-03 — 3N: the live `_lt_fin` files finished before today (SB 1103, 1256) carry no
+  `entrance_size`; re-run KORAK 3a + 3b for them before `osz prefill` is expected to fill the entrance cells.

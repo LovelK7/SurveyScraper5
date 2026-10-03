@@ -110,6 +110,8 @@ TOOLS = [
     # KORAK 3 launcher ImportErrors on an operator machine while working here.
     "nacrt_layout.py",
     "nacrt_finish.py",
+    # nacrt_finish.py imports it: the entrance size for the OSZ (project 0005).
+    "entrance_dims.py",
     "nacrt_finish_compass.xml",
     "csurvey_headless.ps1",
     "csurvey_driver.py",

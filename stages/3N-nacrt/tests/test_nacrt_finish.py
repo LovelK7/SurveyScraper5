@@ -289,9 +289,29 @@ def test_the_sign_wins_when_the_two_witnesses_disagree(tmp_path):
 
 
 def test_plan_beats_profile_when_the_signs_disagree(tmp_path):
+    """Plan sign on B (the highest), profile sign on C: the plan agrees with
+    the highest station and keeps the last word."""
     _out, sidecar = finish_to(tmp_path, plan_sign=(3.1, 0.1),
                               profile_sign=(6.1, 2.1, SEG_BC))
     assert sidecar["entrance"] == "B"
+    assert warned(sidecar, "uzimam tlocrt")
+
+
+def test_the_sign_on_the_highest_station_wins_when_the_signs_disagree(tmp_path):
+    """Tavnjak (Mune), 2026-10-03: the plan's sign sat on a ledge 20 m down the
+    shaft, the profile's sign and the highest station agreed on the rim."""
+    _out, sidecar = finish_to(tmp_path, plan_sign=(6.1, 0.1, SEG_BC),
+                              profile_sign=(3.1, -4.9))
+    assert sidecar["entrance"] == "B"
+    assert warned(sidecar, "uzimam profil")
+
+
+def test_neither_sign_on_the_highest_station_keeps_the_plan(tmp_path):
+    """Plan sign on C, profile sign on A, highest is B: no sign agrees with the
+    height, so the plan decides and the disagreement is only warned."""
+    _out, sidecar = finish_to(tmp_path, plan_sign=(6.1, 0.1, SEG_BC),
+                              profile_sign=(0.1, 0.1))
+    assert sidecar["entrance"] == "C"
     assert warned(sidecar, "uzimam tlocrt")
 
 
@@ -302,8 +322,11 @@ def test_origin_mismatch_warns_when_there_is_no_sign(tmp_path):
 
 
 def test_no_origin_warning_when_origin_agrees(tmp_path):
+    """No sign, origin agrees with the highest station: no origin warning -
+    only rule 5's (project 0005): a guessed entrance gets no size."""
     _out, sidecar = finish_to(tmp_path, origin="B")
-    assert sidecar["warnings"] == []
+    assert [w for w in sidecar["warnings"] if "nacrtaj znak ulaza" not in w] == []
+    assert sidecar["entrance_size"]["witnessed"] is False
 
 
 def test_tie_in_z_warns_when_there_is_no_sign(tmp_path):

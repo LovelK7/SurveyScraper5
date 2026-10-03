@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import re
 import shutil
 import zipfile
@@ -433,6 +434,71 @@ def _resolve_kota(settings: Settings, cave: CaveRow, result: PrefillResult,
 #: OSZ field → how to pull it out of ``<name>_dimenzije.json``.
 DIMENSION_FIELDS = ("duljina", "horizontalna_duljina", "dubina", "visinska_razlika")
 DIMENSION_SOURCE = "nacrt"
+#: The entrance cells the same file answers (project 0005, user 2026-10-03).
+ENTRANCE_FIELDS = ("sirina_ulaza", "visina_duljina_ulaza", "broj_ulaza")
+# Which *Vrsta objekta* ticks say what the ENTRANCE is: a hole in the ground
+# (the pit reading: the two plan extents, small × large) or an opening in a
+# slope (the horizontal reading: width in the plan × height in the profile).
+# "Jama sa špiljskim ulazom" is a pit entered through a cave-like opening,
+# "špilja s jamskim ulazom" a cave entered through a hole. SB has no type
+# column, so the zapisnik's own ticks decide; geometry only guesses.
+_PIT_ENTRANCE_TICKS = ("jama", "špilja s jamskim ulazom", "jamski sustav")
+_HORIZONTAL_ENTRANCE_TICKS = ("špilja", "jama sa špiljskim ulazom", "špiljski sustav")
+
+
+def entrance_kind_from_ticks(ticked) -> str | None:
+    """"pit" / "horizontal" from the OSZ's ticked *Vrsta objekta*, None when the
+    ticks say nothing or contradict each other."""
+    keys = {normalize_lookup_key(label) for label in ticked}
+    pit = any(normalize_lookup_key(t) in keys for t in _PIT_ENTRANCE_TICKS)
+    horizontal = any(normalize_lookup_key(t) in keys for t in _HORIZONTAL_ENTRANCE_TICKS)
+    if pit and not horizontal:
+        return "pit"
+    if horizontal and not pit:
+        return "horizontal"
+    return None
+
+
+def _tenths(value) -> str:
+    """One decimal with a comma (user, 2026-10-03): 0.57 → "0,6", 13.55 → "13,6"."""
+    return f"{math.floor(float(value) * 10 + 0.5) / 10:.1f}".replace(".", ",")
+
+
+def entrance_values(block, kind: str | None = None) -> tuple[dict[str, str], str | None, list[str]]:
+    """(cells, reading used, notes) from the finisher's ``entrance_size`` block.
+
+    ``broj_ulaza`` is the count of entrance signs the finisher saw. The two
+    size cells come from the ``pit`` or the ``horizontal`` reading - ``kind``
+    when the zapisnik's ticks say so, else the finisher's geometric guess
+    ``kind_geo``. An entrance nobody marked (``witnessed`` false, rule 5)
+    gives no size, only a note telling the operator to draw the sign.
+    """
+    notes: list[str] = []
+    if not isinstance(block, dict):
+        return {}, None, notes
+    out: dict[str, str] = {}
+    count = block.get("count")
+    if isinstance(count, int) and not isinstance(count, bool) and count > 0:
+        out["broj_ulaza"] = str(count)
+    if not block.get("witnessed"):
+        notes.append(
+            "Ulaz na nacrtu nije označen (nema znaka ulaza ni površinskog vlaka) – Širina i "
+            "Visina/duljina ulaza ostaju prazne; nacrtaj znak ulaza na ulaznoj stanici i ponovi KORAK 3."
+        )
+        return out, None, notes
+    used = kind if kind in ("pit", "horizontal") else block.get("kind_geo")
+    reading = block.get("pit") if used == "pit" else block.get("horizontal")
+    if not isinstance(reading, dict):
+        return out, used, notes
+    first = reading.get("width_m")
+    second = reading.get("length_m") if used == "pit" else reading.get("height_m")
+    if used == "pit" and first is not None and second is not None and first > second:
+        first, second = second, first          # Širina is the smaller number
+    if first is not None:
+        out["sirina_ulaza"] = _tenths(first)
+    if second is not None:
+        out["visina_duljina_ulaza"] = _tenths(second)
+    return out, used, notes
 
 
 def _resolve_dimensions(folder: Path | None, result: PrefillResult) -> None:
@@ -481,6 +547,22 @@ def _resolve_dimensions(folder: Path | None, result: PrefillResult) -> None:
     for key, value in values.items():
         result.fields[key] = FieldValue(value=value, source=DIMENSION_SOURCE,
                                         note=path.name)
+    block = data.get("entrance_size")
+    if isinstance(block, dict):
+        # Project 0005: Broj / Širina / Visina ulaza. The pit-vs-horizontal
+        # choice is redone in _migrate_old_osz once the zapisnik's ticks are known.
+        result.entrance_size = block
+        entrance, kind, enotes = entrance_values(block)
+        result.entrance_kind = kind
+        for key, value in entrance.items():
+            result.fields[key] = FieldValue(value=value, source=DIMENSION_SOURCE,
+                                            note=path.name)
+        result.notes.extend(enotes)
+        if entrance:
+            result.notes.append(
+                f"Ulaz iz nacrta ({path.name}, {kind or '?'}): "
+                + ", ".join(f"{key}={value}" for key, value in entrance.items())
+            )
     if values:
         result.notes.append(
             f"Duljine iz nacrta ({path.name}): "
@@ -539,9 +621,13 @@ def _same_measurement(recorded: str, measured: str) -> bool:
     text = recorded.strip().lower().removesuffix("m").strip().replace(",", ".")
     try:
         number = abs(float(text))
+        target = abs(float(measured.replace(",", ".")))
     except ValueError:
         return False
-    return round(number) == int(measured)
+    if "," in measured or "." in measured:
+        # the entrance cells carry one decimal (project 0005)
+        return round(number, 1) == round(target, 1)
+    return round(number) == round(target)
 
 
 # ── migration of an older OSZ found in the intake leaf ───────────────
@@ -622,6 +708,8 @@ def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
         encoding="utf-8",
     )
 
+    _apply_entrance_kind(result, content.ticked)
+
     carried = 0
     for key, value in content.fields.items():
         if not value:
@@ -675,6 +763,30 @@ def _migrate_old_osz(old_path: Path, result: PrefillResult, run_dir: Path):
         f"{len(content.ticked)} kućica."
     )
     return content
+
+
+def _apply_entrance_kind(result: PrefillResult, ticked) -> None:
+    """Redo Širina/Visina ulaza from the finisher's block when the zapisnik's
+    *Vrsta objekta* names a different kind of entrance than the geometry
+    guessed (kilavčeva pljeskavica: a pit whose rim reads as a slope)."""
+    block = result.entrance_size
+    if not block:
+        return
+    kind = entrance_kind_from_ticks(ticked)
+    if kind is None or kind == result.entrance_kind:
+        return
+    values, used, _notes = entrance_values(block, kind)
+    for key in ("sirina_ulaza", "visina_duljina_ulaza"):
+        if key in values:
+            result.fields[key] = FieldValue(value=values[key], source=DIMENSION_SOURCE,
+                                            note=f"vrsta ulaza po OSZ-u: {kind}")
+        else:
+            result.fields.pop(key, None)
+    result.notes.append(
+        f"Vrsta ulaza po OSZ-u ({kind}) ≠ geometrija nacrta ({block.get('kind_geo')}) – "
+        f"Širina/Visina ulaza po OSZ-u."
+    )
+    result.entrance_kind = used
 
 
 def merge_locality(sb_value: str, osz_value: str) -> str:

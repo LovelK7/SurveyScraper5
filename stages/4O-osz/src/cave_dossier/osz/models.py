@@ -41,6 +41,10 @@ class PrefillResult(BaseModel):
     # The 3N ``<name>_dimenzije.json`` the measured Duljina / Dubina /
     # Horizontalna duljina / Visinska razlika came from (user, 2026-10-02).
     dimensions_source: str | None = None
+    # The finisher's `entrance_size` block from that file (project 0005) and
+    # which reading filled Širina/Visina ulaza: "pit" | "horizontal" | None.
+    entrance_size: dict | None = None
+    entrance_kind: str | None = None
     mismatches: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     sb_updates: list[SBUpdate] = Field(default_factory=list)
