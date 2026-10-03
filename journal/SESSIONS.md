@@ -12,6 +12,33 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-03 — 3N: walls — which side is the cave; KORAK 2 merges, turns and orders them (agent) ✅
+
+- **Did:** project 0006 from problem to prod. Read how cSurvey imports, merges, reverses and fills wall
+  sequences (`../cSurvey`). Prototypes in `projects/0006-wall-orientation/findings/` (interior vote,
+  orient/reorder, fill renderer, two Merge emulations). Promoted to `production/tools/wall_orient.py`
+  (stdlib), called by `fix_imported_linetypes.py` (KORAK 2) behind `postimport.wall_merge` /
+  `wall_orientation` / `wall_reorder` (json + dashboard Mapiranje switches); 14 tests
+  (`tests/test_wall_orient.py`); guide, protocol, settings, decision record (two sections), STATUS,
+  kit file list. Published: csx kit v1.6 + prod v1.9 (`4fb2319`).
+- **Result:** Golobreška: the tool reverses exactly the hook the user reversed by hand (equal but for one
+  coordinate cSurvey re-rounded). Hrčava's corrupt profile 35.1 → 7.1 m of fill joins; the user's own
+  repair untouched. Rebuilding the user's hand merges from scattered strokes: 100 % (cSurvey's Merge
+  16-50 %), except 272's plan. Fresh imports (sp7, Sopača, Tavnjak, krk_27, bunker) come out as one
+  outline each; sp7's two surface lines stay out. cSurvey opens and re-saves every output with identical
+  points and pens; a second run is a no-op. Limit: the PDF print does not show the fill, so the visual
+  fill check is the user's first real cave.
+- **Learned:** the culprit is the merge, not the import — every cSurvey Merge runs `ReorderSequences`
+  (`cPoints.vb:1084-1145`), a greedy nearest-end walk that reverses strokes (a coin flip at an entrance
+  mouth); orienting strokes before a merge does not survive it. A global "cave on the right" rule is
+  wrong (TopoDroid strokes have no convention in practice; consistently-other-way items broke) - only
+  agreement inside one border matters. Profile splays are interior only up to the first wall they cross;
+  the entrance fan into the sky is not interior. Only cave-border areas may block sight (ledge lines
+  across a shaft hid a whole wall). A bare `S` point flag inherits the previous point's segment binding;
+  `<pointsjoins>` reference `layer,item,point` indices. Surveyors draw terrain with the wall pen - "no
+  survey in sight" is what keeps it out.
+- **Next:** the user runs KORAK 2 on the next real cave and checks the `_lt` fill (closes 0006).
+
 ### 2026-10-03 — 3N: entrance dimensions — corpus of 11 surveys (agent) ✅
 
 - **Did:** ran project 0005's prototype over `stages/3N-nacrt/example/csx_entrances/` (11 surveys: 2 raw
