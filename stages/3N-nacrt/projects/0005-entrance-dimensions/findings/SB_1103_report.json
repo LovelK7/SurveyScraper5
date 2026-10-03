@@ -36,8 +36,8 @@
   "note": "a pit has no entrance height; the drop below the rim is informative only"
  },
  "osz": {
-  "sirina_ulaza": 1,
-  "visina_duljina_ulaza": 2,
+  "sirina_ulaza": 1.1,
+  "visina_duljina_ulaza": 1.7,
   "sources": [
    "splays",
    "splays"

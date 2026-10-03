@@ -83,8 +83,8 @@
   }
  },
  "osz": {
-  "sirina_ulaza": 1,
-  "visina_duljina_ulaza": 1,
+  "sirina_ulaza": 0.6,
+  "visina_duljina_ulaza": 1.4,
   "sources": [
    "splay",
    "splay",

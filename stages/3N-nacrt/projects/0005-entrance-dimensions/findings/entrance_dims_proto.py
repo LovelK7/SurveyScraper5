@@ -11,7 +11,7 @@ Rules (user, 2026-10-02 - see brief.md section 3, phase 2):
   3. A pit's opening is estimated from the splay cloud (plan projection of
      every splay from the station, min/max Feret extents) with the walls as
      fallback; width = the smaller number, visina/duljina = the larger.
-  4. Both numbers round to whole metres, never below 1.
+  4. Both numbers round to one decimal (0.1 m).
 
 Walls = Borders-layer items split into sequences on the B (BeginSequence)
 point flag (cSurvey cPoints.vb:564). cSurvey strokes each sequence on its own
@@ -233,8 +233,8 @@ def feret(points, step_deg=5):
 
 
 def round_osz(m):
-    """Whole metres, never below 1 (user: we are not precise at 0.1 m)."""
-    return None if m is None else max(1, int(math.floor(m + 0.5)))
+    """One decimal (user, 2026-10-03: a tenth of a metre, not whole metres)."""
+    return None if m is None else math.floor(m * 10 + 0.5) / 10.0
 
 
 # ---------------------------------------------------------------------------
