@@ -71,6 +71,12 @@ def run_nacrt(settings: Settings, serial: int, *, offline: bool = False,
                          if note != prefill_mod.LOCAL_SKIP_NOTE]
 
     placements = compose_mod.placements(inputs.plan, inputs.profile, layout)
+    for item in placements:
+        if item.cut:
+            page_result.notes.append(
+                f"{item.source.name}: ispis prelazi {' i '.join(item.cut)} rub "
+                "stranice, pa je dio crteža odrezan (npr. broj na mjerilu). "
+                "Ponovi KORAK 3 s trenutnim paketom.")
     composed = compose_mod.compose_nacrt(
         sastavnica.pdf_path.read_bytes(), inputs.plan, inputs.profile, layout)
     composed = _stamp(composed, serial, page_result.cave_name)

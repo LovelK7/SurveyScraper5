@@ -44,7 +44,7 @@ AUTHORED = {
     "dubina": ("-60/+15 m", 9),
     "mjerilo": ("1:500/1:300", 8),
     "ekipa": ("T. Tepavac, S. Mikičić, T. Milićević, I. Prezime, I. Prezime", 8),
-    "istrazili": ("SU Estavela", 8),
+    "istrazili": ("SU Estavela", 9),
     "nacrt_uredio": ("T. Tepavac", 9),
     "datum": ("2023.-2024.", 9),
 }
@@ -131,9 +131,8 @@ def test_render_reproduces_the_authored_layout(font):
 
     for key, span in spans.items():
         cell = addresses.V2[key]
-        left, right = cell.text_span()
-        centre = (span["bbox"][0] + span["bbox"][2]) / 2
-        assert abs(centre - (left + right) / 2) < 0.6, f"{key} is not centred"
+        width = span["bbox"][2] - span["bbox"][0]
+        assert abs(span["bbox"][0] - cell.text_x(width)) < 0.6,             f"{key} is not where its alignment puts it"
         baseline = span["origin"][1]
         assert abs(baseline - cell.baseline) < 0.1, \
             f"{key} sits on the wrong baseline"

@@ -49,8 +49,8 @@ class Cell:
     ``size`` is the size the **drafter** set that cell's value at in the
     authored template, and it is where the renderer starts: shrink-to-fit only
     ever goes down from here. It is per cell because the drafter's own choice
-    is per cell — v2 sets row 1 at 10 pt, most of the rest at 9, Ekipa and
-    Istražili at 8 — and starting every cell at 10 instead made the output
+    is per cell — v2 sets row 1 at 10 pt, the rest at 9 but Ekipa (and the
+    two-scale Mjerilo) at 8 — and starting every cell at 10 instead made the output
     visibly bigger than the template it is meant to match (user, 2026-09-20).
     """
 
@@ -68,6 +68,9 @@ class Cell:
     # Baseline distance above the bottom rule, when the cell needs its own
     # rather than BASELINE_LIFT.
     lift: float | None = None
+    # "centre" (every cell but one) or "left": set from the start of the text
+    # span, the way the drafter sets a value that follows its label.
+    align: str = "centre"
 
     @property
     def width(self) -> float:
@@ -78,13 +81,20 @@ class Cell:
         return (self.x0 + self.x1) / 2
 
     def text_span(self) -> tuple[float, float]:
-        """(left, right) the value may occupy, padding already taken off;
-        it is centred between the two. A label on the value's own line is kept
-        clear of (user, 2026-10-03: Ekipa once printed over "Ekipa:")."""
+        """(left, right) the value may occupy, padding already taken off.
+        A label on the value's own line is kept clear of (user, 2026-10-03:
+        Ekipa once printed over "Ekipa:")."""
         left = self.x0 + SIDE_PADDING
         if self.label_x1 is not None:
             left = max(left, self.label_x1 + LABEL_GAP)
         return left, self.x1 - SIDE_PADDING
+
+    def text_x(self, width: float) -> float:
+        """Where a value ``width`` wide starts."""
+        left, right = self.text_span()
+        if self.align == "left":
+            return left
+        return (left + right) / 2 - width / 2
 
     @property
     def baseline(self) -> float:
@@ -113,12 +123,13 @@ V2: dict[str, Cell] = {
     # while shrink-to-fit lands the two-scale form near the drafter's 8 anyway.
     "mjerilo": Cell("Mjerilo (profil/tlocrt)", 244.28, 101.66, 291.43, 121.72, 9),
     # A full-width row 12.6 pt high: the label sits on the value's line, so the
-    # value starts right of it ("Ekipa:" ends at 55.82). The drafter's baseline
-    # is 3.3 above the rule, which centres 8 pt caps in the row; the uniform
-    # 4.3 would sit them a point high.
+    # value follows it, LEFT-aligned like the drafter's own example ("Ekipa:"
+    # ends at 55.82, the names start 2.1 pt later; user, 2026-10-03). The
+    # drafter's baseline is 3.3 above the rule, which centres 8 pt caps in the
+    # row; the uniform 4.3 would sit them a point high.
     "ekipa": Cell("Ekipa", 39.85, 121.72, 291.43, 134.31, 8,
-                  label_x1=55.82, lift=3.3),
-    "istrazili": Cell("Istražili", 39.85, 134.31, 120.18, 154.40, 8),
+                  label_x1=55.82, lift=3.3, align="left"),
+    "istrazili": Cell("Istražili", 39.85, 134.31, 120.18, 154.40, 9),
     "nacrt_uredio": Cell("Nacrt uredio", 120.18, 134.31, 198.74, 154.40, 9),
     "datum": Cell("Datum/razdoblje istraživanja", 198.81, 134.31, 291.43, 154.40, 9),
 }
@@ -131,7 +142,7 @@ BLOCK = (39.85, 41.46, 291.43, 154.40)
 # ── typesetting, measured off the authored values ────────────────────
 # Baseline sits a constant distance above the cell's bottom rule. In v1.0 the
 # authored baselines clustered at 4.11-4.59 below it (median 4.34); v2's spread
-# wider (3.1-4.6, Istražili 5.5), hand nudges the drafter made in Illustrator.
+# wider (3.1-4.8), hand nudges the drafter made in Illustrator.
 # One uniform rule reads better than sixteen copied numbers; the one cell with
 # a reason to differ (Ekipa, a shorter row) says so via Cell.lift. It was 4.6
 # under the Myriad template, which put every value a quarter-point high.

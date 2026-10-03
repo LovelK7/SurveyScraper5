@@ -5,7 +5,8 @@ Pure geometry — no SB, no config, no delivery: a blank PDF plus
 testable against the authored template without a workbook anywhere near.
 
 The rules come from measuring the drafter's own choices (see
-``addresses.py``): every value is **centred** in its cell, starts at the size
+``addresses.py``): every value is **centred** in its cell (Ekipa, which follows
+its label on one line, is left-aligned), starts at the size
 the drafter set that cell at — 10, 9 or 8 pt, per cell — sits on a baseline a
 constant lift above the cell's bottom rule, and is **shrunk until it fits**,
 which is exactly what the drafter does by hand. Every cell is one line: template
@@ -99,9 +100,8 @@ def render(blank_path: Path, values: dict[str, str], font_path: Path,
         if not text:
             continue
         size, width, overflowed = fit_size(font, text, cell)
-        left, right = cell.text_span()
         page.insert_text(
-            ((left + right) / 2 - width / 2, cell.baseline),
+            (cell.text_x(width), cell.baseline),
             text,
             fontname="sastavnica",
             fontsize=size,

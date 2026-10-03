@@ -115,7 +115,7 @@ points, origin top-left, as PyMuPDF reports them.
 | `dubina` | Dubina/vis. razlika | 198.81 | 101.66 | 244.28 | 121.72 | 9 |
 | `mjerilo` | Mjerilo (profil/tlocrt) | 244.28 | 101.66 | 291.43 | 121.72 | 9 (authored 8, see below) |
 | `ekipa` | Ekipa | 39.85 | 121.72 | 291.43 | 134.31 | 8 — label on the value's line |
-| `istrazili` | Istražili | 39.85 | 134.31 | 120.18 | 154.40 | 8 |
+| `istrazili` | Istražili | 39.85 | 134.31 | 120.18 | 154.40 | 9 |
 | `nacrt_uredio` | Nacrt uredio | 120.18 | 134.31 | 198.74 | 154.40 | 9 |
 | `datum` | Datum/razdoblje istraživanja | 198.81 | 134.31 | 291.43 | 154.40 | 9 |
 
@@ -126,8 +126,8 @@ not fit at 9, and shrink-to-fit lands it at 8 anyway while a single `1:200`
 keeps the row's size.
 
 The authored sizes vary because they are the drafter's own choice per row —
-10 pt in row 1, 9 for most of the rest, 8 for Ekipa and Istražili (v2,
-2026-10-03; most were 10 under the old Myriad template) — and because the drafter **shrinks a
+10 pt in row 1, 8 for Ekipa, 9 for the rest (v2, 2026-10-03, Istražili raised
+from 8 to 9 by the drafter the same evening; most were 10 under the old Myriad template) — and because the drafter **shrinks a
 value by hand until it fits** when a long one needs it. Both halves are
 reproduced: `Cell.size` is where the fitter starts, and it only ever goes down
 from there. Starting every cell at 10 pt instead made the output visibly bigger
@@ -178,10 +178,11 @@ filled, the tool prefills nine cells; run after it, fifteen.
 Derived by measuring the authored values, then confirmed by reproducing them:
 
 - **Centred** horizontally in the cell — in v2 every authored value but Ekipa
-  sits within 0.25 pt of its cell centre.
+  sits within 0.25 pt of its cell centre. Ekipa is **left-aligned** (`Cell.align`),
+  following its label like the drafter's example.
 - **Baseline = row bottom − 4.3 pt** (`BASELINE_LIFT`; it was 4.6 under the
   Myriad template, which set every value a quarter-point high). v2's authored
-  baselines spread −3.1 … −4.6 (Istražili −5.5), hand nudges the drafter made in
+  baselines spread −3.1 … −4.8, hand nudges the drafter made in
   Illustrator; one uniform rule reads better than sixteen copied numbers. The
   one exception has a reason: **Ekipa** (`Cell.lift` 3.3) — its row is 12.6 pt,
   and 3.3 is the drafter's own baseline there, which centres 8 pt caps in it.
@@ -196,10 +197,8 @@ Derived by measuring the authored values, then confirmed by reproducing them:
   floor size is set at the floor size and named in a printed warning.
 - **A label on the value's own line is kept clear of.** Every label sits above
   its value except v2's Ekipa, whose row is too low for that: `Ekipa:` sits at
-  the left of the value's line, so the value is centred in the span **right of
-  the label** (`Cell.label_x1` 55.82 + 2 pt, `Cell.text_span()`). The drafter's
-  example starts the names right after the label; centring is the house rule,
-  and it is the same thing once the team fills the row.
+  the left of the value's line, so the value starts **right after the label**
+  (`Cell.label_x1` 55.82 + 2 pt = 57.82, the drafter's names start at 57.94).
 - **The value is formatted the drafter's way before it is measured** — names
   abbreviated, kota rounded, depth signed, a zero dropped. That is what keeps a
   three-person Ekipa at 9.5 pt instead of 6.25; see

@@ -93,6 +93,7 @@ class Placement:
     ink: Rect              # the crop taken out of the source page
     reserved: Rect         # what the layout kept free for it
     target: Rect           # where the crop lands, same size as `ink`
+    cut: tuple[str, ...] = ()  # page edges the printed drawing runs past
 
     @property
     def ink_mm(self) -> tuple[float, float]:
@@ -232,19 +233,41 @@ def ink_bbox(page) -> Rect:
     as paths rather than text, which is why the text half is a safety net and
     not the main event.
     """
+    raw, page_rect = _drawn_extent(page), page.rect
+    x0, y0 = max(raw.x0, page_rect.x0), max(raw.y0, page_rect.y0)
+    x1, y1 = min(raw.x1, page_rect.x1), min(raw.y1, page_rect.y1)
+    if x1 <= x0 or y1 <= y0:
+        raise ComposeError("Nacrtani sadržaj nema upotrebljive dimenzije.")
+    return Rect(x0, y0, x1, y1)
+
+
+def _drawn_extent(page) -> Rect:
+    """The union of everything drawn, NOT clamped to the page."""
     boxes = [d["rect"] for d in page.get_drawings()]
     for block in page.get_text("dict")["blocks"]:
         boxes.append(block["bbox"])
     if not boxes:
         raise ComposeError("Stranica je prazna – nema što složiti.")
-    page_rect = page.rect
-    x0 = max(min(float(b[0]) for b in boxes), page_rect.x0)
-    y0 = max(min(float(b[1]) for b in boxes), page_rect.y0)
-    x1 = min(max(float(b[2]) for b in boxes), page_rect.x1)
-    y1 = min(max(float(b[3]) for b in boxes), page_rect.y1)
-    if x1 <= x0 or y1 <= y0:
-        raise ComposeError("Nacrtani sadržaj nema upotrebljive dimenzije.")
-    return Rect(x0, y0, x1, y1)
+    return Rect(min(float(b[0]) for b in boxes), min(float(b[1]) for b in boxes),
+                max(float(b[2]) for b in boxes), max(float(b[3]) for b in boxes))
+
+
+# Past this many points beyond the paper, a printed design counts as cut.
+CUT_TOLERANCE_PT = 0.5
+
+
+def cut_edges(page) -> tuple[str, ...]:
+    """The page edges the drawing runs past, in Croatian, or ().
+
+    cSurvey prints what it draws and the paper clips the rest, so a gadget that
+    sits past the edge comes out cut — SB 1220's 10 m scale bar printed its
+    "10" as "1" (user, 2026-10-03). Compose crops to the page and cannot get
+    the lost part back; it can only say so, and the fix is a fresh KORAK 3.
+    """
+    raw, rect = _drawn_extent(page), page.rect
+    edges = (("lijevi", rect.x0 - raw.x0), ("gornji", rect.y0 - raw.y0),
+             ("desni", raw.x1 - rect.x1), ("donji", raw.y1 - rect.y1))
+    return tuple(name for name, over in edges if over > CUT_TOLERANCE_PT)
 
 
 # ── placing ──────────────────────────────────────────────────────────
@@ -278,11 +301,12 @@ def placements(plan_pdf: Path, profile_pdf: Path, layout: Layout, *,
             if doc.page_count < 1:
                 raise ComposeError(f"{Path(source).name} nema nijednu stranicu.")
             ink = ink_bbox(doc[0])
+            cut = cut_edges(doc[0])
         reserved = layout.rect(design)
         target = Rect.centred(reserved.centre, ink.width, ink.height)
         placed.append(Placement(design=design, source=Path(source),
                                 scale=layout.scale(design), ink=ink,
-                                reserved=reserved, target=target))
+                                reserved=reserved, target=target, cut=cut))
 
     _check(placed, layout, gap_mm=gap_mm, page_pt=page_pt)
     return placed

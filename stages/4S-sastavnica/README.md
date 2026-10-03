@@ -69,6 +69,11 @@ Delivered as `SB_<padded broj>_nacrt.pdf` beside the OSZ, with its **own**
 metadata stamp: a delivered nacrt and a delivered sastavnica are different
 documents and neither may overwrite the other.
 
+**A cut print is named.** cSurvey prints what it draws and the paper clips the
+rest; when a printed plan or profile runs past its page edge (SB 1220's scale
+bar lost the "0" of "10"), the run warns and says to redo KORAK 3 — compose
+cannot recover what the paper cut off.
+
 ## Why route B gets served at all
 
 The Nacrt has two drafting routes. They diverge right after TopoDroid and
@@ -90,7 +95,7 @@ same gates. Route B needs no second dossier builder and gets none.
 Pure PDF geometry. `addresses.py` holds the measured cell rectangles in PDF
 points (origin top-left); `render.py` centres each value, shrinks it to fit, and
 never wraps — every v2 cell is one line. Ekipa has a full-width row whose label
-sits on the value's line, so its value is centred right of `Ekipa:`; it lists
+sits on the value's line, so its value follows `Ekipa:`, left-aligned; it lists
 only the people not already credited under Crtali or Mjerili. **Nacrt uredio**
 comes from the zapisnik's own cell, `?` when it is empty. The font is **not**
 bundled — **Microsoft Sans Serif**, the face the template is authored in, is found on

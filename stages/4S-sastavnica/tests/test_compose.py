@@ -360,9 +360,10 @@ def test_single_value_mjerilo_keeps_the_rows_size(font):
                                                   abs=0.01)
 
 
-def test_ekipa_sits_right_of_its_label(font):
-    """v2's Ekipa row puts the label on the value's line: the value is centred
-    in what is left of the row and never reaches the label."""
+def test_ekipa_follows_its_label_left_aligned(font):
+    """v2's Ekipa row puts the label on the value's line: the value starts
+    just right of it, left-aligned like the drafter's example (user,
+    2026-10-03)."""
     data, placed = render_mod.render(addresses.BLANK_TEMPLATE,
                                      {"ekipa": "A. Anić, I. Ivić"}, font.path)
     spans = _cell_spans(data, "ekipa")
@@ -371,7 +372,9 @@ def test_ekipa_sits_right_of_its_label(font):
     left, right = cell.text_span()
     assert left > cell.label_x1
     assert spans[0]["bbox"][0] > cell.label_x1
-    assert abs((spans[0]["bbox"][0] + spans[0]["bbox"][2]) / 2 - (left + right) / 2) < 0.5
+    assert spans[0]["bbox"][0] == pytest.approx(left, abs=0.6)
+    # the drafter's own names start at 57.94
+    assert left == pytest.approx(57.94, abs=0.2)
     assert spans[0]["size"] == pytest.approx(cell.size)
     assert spans[0]["origin"][1] == pytest.approx(cell.baseline, abs=0.01)
 
@@ -576,24 +579,25 @@ def test_the_dimensions_source_still_wins_over_a_stub(drive, wired):
 
 # ── every cell starts at the size the drafter set it at ──────────────
 
-AUTHORED_V1 = {
+AUTHORED_V2 = {
     "katastarski_broj": ("0000", 10), "ime_objekta": ("Neka jama", 10),
     "broj_plocice": ("051-580", 9), "htrs": ("339823 5037995", 9),
     "nadmorska_visina": ("1033 m", 9), "lokacija": ("Obruč, Jelenje", 9),
     "stvarna_duljina": ("75 m", 9), "tlocrtna_duljina": ("15 m", 9),
     "crtali": ("L. Kukuljan", 9), "mjerili": ("I. Dujmović", 9),
     "dubina": ("-60 m", 9), "mjerilo": ("1:500", 9),
-    "istrazili": ("SU Estavela", 8), "ekipa": ("A. Anić", 8),
-    "datum": ("10.12.2023.", 9),
+    "ekipa": ("A. Anić", 8), "istrazili": ("SU Estavela", 9),
+    "nacrt_uredio": ("T. Tepavac", 9), "datum": ("10.12.2023.", 9),
 }
 
 
 def test_a_value_is_set_at_its_cells_authored_size(font):
     """Starting every cell at 10 pt made the output visibly bigger than the
-    template it copies (user, 2026-09-20): v1.0 sets row 1 at 10, rows 2-4 at
-    9 and row 5 at 8, and short values never need to shrink from there."""
+    template it copies (user, 2026-09-20): v2 sets row 1 at 10, Ekipa at 8 and
+    the rest at 9 (Istražili raised from 8 by the drafter, 2026-10-03), and
+    short values never need to shrink from there."""
     face = pymupdf.Font(fontfile=str(font.path))
-    for key, (text, authored) in AUTHORED_V1.items():
+    for key, (text, authored) in AUTHORED_V2.items():
         assert addresses.V2[key].size == authored, key
         size, _width, overflowed = render_mod.fit_size(face, text,
                                                        addresses.V2[key])
@@ -808,3 +812,18 @@ def test_sb1103_composes_at_true_scale(sastavnica_page):
     # the title block is still readable text, not covered by a drawing
     block = pymupdf.Rect(*addresses.BLOCK)
     assert "Testna jama" in plain(page.get_text(clip=block))
+
+
+# ── a print that ran past the paper is named, not silently cropped ───
+
+def test_a_design_cut_at_the_page_edge_is_reported():
+    """SB 1220's plan (printed before the bar moved under it) ran its 10 m
+    scale bar past the right edge, and "10" came out as "1"."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=595.32, height=841.92)
+    page.draw_rect(pymupdf.Rect(100, 100, 300, 200))
+    assert compose_mod.cut_edges(page) == ()
+    page.draw_line((450, 500), (599.0, 500))          # 3.7 pt past the edge
+    assert compose_mod.cut_edges(page) == ("desni",)
+    # the crop itself still stops at the paper
+    assert compose_mod.ink_bbox(page).x1 == pytest.approx(595.32)
