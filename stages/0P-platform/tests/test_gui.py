@@ -370,6 +370,24 @@ def test_workflow_osz_waits_for_measured_lengths():
     assert _states(workflow.build(detail, None, "nečitljiv"))["osz-filled"] == "unknown"
 
 
+def test_workflow_osz_waits_for_the_entrance_cells_too():
+    """Project 0005 (2026-10-03): the second prefill pass also writes Broj / Širina /
+    Visina ulaza - but only when the finisher witnessed the entrance."""
+    files = [_f("osz", "SB_1220_OSZ.docx", 50), _f("dimenzije", "a_dimenzije.json", 60)]
+    detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
+    lengths = {"opis": "x", "duljina": "18", "dubina": "5"}
+    witnessed = {"l": 18, "entrance_size": {"witnessed": True, "count": 1}}
+    # lengths in, entrance cells empty -> run the prefill again
+    assert _states(workflow.build(detail, lengths, dims=witnessed))["osz-dims"] == "todo"
+    filled = dict(lengths, broj_ulaza="1", sirina_ulaza="0,6", visina_duljina_ulaza="1,4")
+    assert _states(workflow.build(detail, filled, dims=witnessed))["osz-dims"] == "done"
+    # an unmarked entrance never fills the size cells: lengths alone are done
+    unmarked = {"l": 18, "entrance_size": {"witnessed": False, "count": None}}
+    assert _states(workflow.build(detail, lengths, dims=unmarked))["osz-dims"] == "done"
+    # a dimensions file from before project 0005 (no block) behaves as before
+    assert _states(workflow.build(detail, lengths, dims={"l": 18}))["osz-dims"] == "done"
+
+
 # ── queue, karta, docs (2026-10-02, round 3) ────────────────────────
 
 

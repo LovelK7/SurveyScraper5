@@ -210,7 +210,7 @@ ACTIONS: tuple[Action, ...] = (
            "csurvey_driver.py", ("info", "{file}"), file_kind="survey",
            group="Dijagnostika"),
     Action("3n-dimensions", "3N", "cSurvey dimenzije",
-           "cSurvey bez dijaloga: duljina i dubina.",
+           "cSurvey bez dijaloga: duljina, dubina i dimenzije ulaza.",
            "csurvey_driver.py", ("dimensions", "{file}"), file_kind="survey",
            group="Dijagnostika"),
     # ── 4G — geo ─────────────────────────────────────────────────────
@@ -237,7 +237,7 @@ ACTIONS: tuple[Action, ...] = (
            writes="STVARA TOČKU NA georef.hr i sprema PNG u !!Isječci karte"),
     # ── 4O — OSZ ─────────────────────────────────────────────────────
     Action("osz-prefill", "4O", "Pripremi / osvježi OSZ",
-           "SB + tražilice + karta (+ duljina i dubina iz izmjere, kad postoje) → "
+           "SB + tražilice + karta (+ duljina, dubina i dimenzije ulaza iz izmjere, kad postoje) → "
            "SB_<broj>_OSZ.docx u mapi objekta, + dopune-sb.csv za ručni unos u SB. "
            "Ponovno pokretanje zadržava sve što je već upisano.",
            "cli", ("osz", "prefill", "{broj}"),

@@ -32,6 +32,10 @@ HUMAN_OSZ_FIELDS = ("opis", "datum_istrazivanja", "zapisnicar", "clanovi_ekipe",
 
 #: OSZ cells the 3N dimensions file answers (4O `osz prefill`, 2026-10-02).
 MEASURED_OSZ_FIELDS = ("duljina", "dubina")
+#: ...and the entrance cells it answers since 2026-10-03 (project 0005) - only
+#: expected when the finisher witnessed the entrance (a sign or a surface leg);
+#: an unmarked entrance never fills them, so it must not keep the step "todo".
+ENTRANCE_OSZ_FIELDS = ("sirina_ulaza", "visina_duljina_ulaza")
 
 PHASES = (
     ("priprema", "Priprema"),
@@ -186,27 +190,34 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
 
     # ── spajanje ────────────────────────────────────────────────────
     if osz is None or dimenzije is None:
-        add(Step("osz-dims", "spajanje", "OSZ ← duljina i dubina iz izmjere", "4O", "blocked",
+        add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "blocked",
                  "Treba OSZ i KORAK 3b (dimenzije).", action="osz-prefill"))
     elif osz_fields is None:
-        add(Step("osz-dims", "spajanje", "OSZ ← duljina i dubina iz izmjere", "4O", "unknown",
+        add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "unknown",
                  osz_note, action="osz-prefill"))
     else:
-        empty = [k for k in MEASURED_OSZ_FIELDS if not osz_fields.get(k)]
+        expected = list(MEASURED_OSZ_FIELDS)
+        entrance = dims.get("entrance_size") if isinstance(dims, dict) else None
+        if isinstance(entrance, dict):
+            if entrance.get("count"):
+                expected.append("broj_ulaza")
+            if entrance.get("witnessed"):
+                expected.extend(ENTRANCE_OSZ_FIELDS)
+        empty = [k for k in expected if not osz_fields.get(k)]
         measured = _number(str(dims.get("l"))) if dims and dims.get("l") is not None else None
         recorded = _number(osz_fields.get("duljina"))
         differs = (measured is not None and recorded is not None
                    and round(measured) != round(recorded))
         if empty:
-            add(Step("osz-dims", "spajanje", "OSZ ← duljina i dubina iz izmjere", "4O", "todo",
+            add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "todo",
                      "Ponovno pokreni Pripremi OSZ: upisuje izmjerene vrijednosti, "
                      "popunjeni sadržaj ostaje.", action="osz-prefill"))
         elif differs:
-            add(Step("osz-dims", "spajanje", "OSZ ← duljina i dubina iz izmjere", "4O", "stale",
+            add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "stale",
                      f"OSZ kaže {osz_fields.get('duljina')}, izmjera {dims.get('l')} m.",
                      action="osz-prefill"))
         else:
-            add(Step("osz-dims", "spajanje", "OSZ ← duljina i dubina iz izmjere", "4O", "done"))
+            add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "done"))
 
     nacrt = _newest(files, "nacrt")
     if not all(printed):
