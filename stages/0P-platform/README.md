@@ -50,7 +50,9 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   cave's folder or to georef.hr asks first (orange **Pokreni…**). Ticking
   `--dry-run` / `--local` makes it a plain run again.
 - **3N › Mapiranje simbola** draws the TopoDroid → cSurvey mapping for the
-  current cave. Each TopoDroid tool is shown in its own colours, and next to it
+  current cave (TopoDroid's speleo and "speleo 2" sets by default, every set on
+  request; a filter lists what would arrive without a proper cSurvey sign).
+  Each TopoDroid tool is shown in its own colours, and next to it
   the cSurvey glyph it becomes, picked from a list. Below that are the
   centerline (colour pickers, widths and styles, with a live preview), sign and
   label sizes, and the import switches. Every part says which KORAK it takes

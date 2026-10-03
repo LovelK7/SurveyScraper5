@@ -316,12 +316,28 @@ function targetFor(kind, entry) {
 function entryOf(row) { return (M.edit[SECTION[row.kind]] || {})[row.name]; }
 function defEntryOf(row) { return (M.data.default[SECTION[row.kind]] || {})[row.name]; }
 
-function symbolRows() {
-  const q = fold(M.q);
+// TopoDroid's symbol sets (symbols-git/symbols_<set>). "extra" is the set the
+// manual calls "Extra speleo symbols" and the palette lists as the second
+// speleo set, so the page calls it "speleo 2" and shows it by default.
+const SET_HR = {
+  speleo: "speleo", extra: "speleo 2", system: "sustavni", karst: "krš", geo: "geologija",
+  mine: "rudarstvo", archeo: "arheologija", anthro: "antropogeno", paleo: "paleontologija", bio: "biologija",
+};
+const SPELEO_SETS = new Set(["speleo", "extra", "system"]);
+
+// Would not arrive as itself: no mapping entry, and the natural import gives
+// an empty sign (points), a plain border instead of the line, or generic soil.
+function isBlank(r) {
+  return !entryOf(r) && (r.natural || {}).css !== "ok";
+}
+
+function symbolRows(filter) {
+  const q = fold(M.q), f = filter || M.filter;
   return M.cat.tdx.filter(r => r.kind === M.kind).filter(r => {
-    if (q && !fold(`${r.name} ${r.label} ${r.label_it}`).includes(q)) return false;
-    if (M.filter === "mapped") return !!entryOf(r) || !!defEntryOf(r);
-    if (M.filter === "speleo") return r.set === "speleo" || r.set === "system" || !!entryOf(r) || !!defEntryOf(r);
+    if (q && !fold(`${r.name} ${r.label} ${r.label_it} ${SET_HR[r.set] || r.set}`).includes(q)) return false;
+    if (f === "mapped") return !!entryOf(r) || !!defEntryOf(r);
+    if (f === "speleo") return SPELEO_SETS.has(r.set) || !!entryOf(r) || !!defEntryOf(r);
+    if (f === "blank") return SPELEO_SETS.has(r.set) && isBlank(r);
     return true;
   });
 }
@@ -335,7 +351,9 @@ function symbolsCard() {
       h("div", { class: "segs" }, ...["point", "line", "area"].map(k => seg(k, M.kind, `${KIND_HR[k]} (${counts(k)})`, v => (M.kind = v)))),
       h("div", { class: "spacer" }),
       h("div", { class: "segs" }, seg("mapped", M.filter, "Mapirani", v => (M.filter = v)),
-        seg("speleo", M.filter, "Speleo + mapirani", v => (M.filter = v)), seg("all", M.filter, "Svi", v => (M.filter = v))),
+        seg("speleo", M.filter, "Speleo 1 + 2", v => (M.filter = v)),
+        seg("blank", M.filter, `Bez pravog znaka (${symbolRows("blank").length})`, v => (M.filter = v)),
+        seg("all", M.filter, "Svi setovi", v => (M.filter = v))),
       h("input", { type: "search", placeholder: "traži…", value: M.q, style: "width:150px",
         oninput: e => { M.q = e.target.value; const l = $("#sym-list"); l.replaceChildren(...symbolRows().map(symbolRow)); autofitIn(l); } })),
     h("div", { class: "help" }, "Lijevo TopoDroidov alat, desno što postaje u cSurveyu. ",
@@ -376,7 +394,7 @@ function symbolRow(row) {
 
   return h("div", { class: "sym-row" + (own ? " own" : "") + (bad ? " bad" : ""), "data-key": kind + ":" + row.name },
     svgTile(row.svg),
-    h("div", { class: "sym-name" }, h("b", {}, row.name), " ", h("span", { class: "muted" }, row.set),
+    h("div", { class: "sym-name" }, h("b", {}, row.name), " ", h("span", { class: "tag" }, SET_HR[row.set] || row.set),
       h("div", { class: "muted small" }, [row.label !== row.name ? row.label : "", row.label_it].filter(Boolean).join(" · "))),
     h("div", { class: "sym-arrow" }, "→"),
     h("div", { class: "sym-target" + (dim ? " dim" : "") }, pic, h("div", { class: "small" }, caption)),
