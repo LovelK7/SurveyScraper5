@@ -1,7 +1,7 @@
 # Task brief: Wall orientation — know where the cave is, and fix the walls that run the wrong way
 
 - **ID:** 0006-wall-orientation
-- **Status:** `validation` — in KORAK 2 since 2026-10-03 (`production/tools/wall_orient.py`, called by `fix_imported_linetypes.py`): it **merges** a fresh import's wall strokes into one cave border per design and turns/orders the sequences of every merged border, the cave's side voted by the survey. Built, tested, cSurvey-verified, staged in the kit, **not yet published**; closes when the user has run it on a real cave through `/publish`.
+- **Status:** `validation` — in KORAK 2 since 2026-10-03 (`production/tools/wall_orient.py`, called by `fix_imported_linetypes.py`): it **merges** a fresh import's wall strokes into one cave border per design and turns/orders the sequences of every merged border, the cave's side voted by the survey. Built, tested, cSurvey-verified, **published in csx kit v1.6 (2026-10-03)**; closes when the user has run it on a real cave.
 - **Owner:** both
 - **Opened:** 2026-10-03 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [production/tdx-processing-protocol.md](../../production/tdx-processing-protocol.md) (KORAK 1–3), [0005-entrance-dimensions/brief.md](../0005-entrance-dimensions/brief.md) (§2: how a Borders item is stroked per sequence but filled as one polygon)
@@ -116,7 +116,8 @@ operators' machines; the prototype already is), wired per phase 2; tests on synt
 - [x] Corpus dry run: no change in any file except Golobreška `_backup` and Hrčava (both).
 - [x] The user's call on phase 2 (KORAK 2); the user's own repaired Hrčava (`_lt_fixed`) is left unchanged.
 - [x] Promoted with tests (`tests/test_wall_orient.py`); the installed cSurvey loads and re-saves the output with identical wall points, and a second run is a no-op.
-- [ ] Published (`/publish`) and run by the user on a real cave.
+- [x] Published: csx kit v1.6 (2026-10-03).
+- [ ] Run by the user on a real cave.
 
 ## 5. Outputs (fill in on close)
 
