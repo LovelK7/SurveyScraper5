@@ -91,6 +91,9 @@ UVOZ U cSURVEY (ručno)
   * Pokreni cSurvey.
   * Otvori  _pp  datoteku (onu iz KORAKA 1).   <-- otvaraš _pp!
   * cSurvey sam uveze i izračuna.
+  * Pregledaj uvoz i SPOJI ZIDOVE (Merge) - zidove jedne prostorije u
+    jedan obrub. Smjer pojedinih linija ne moraš popravljati
+    (Revert sequence): to radi KORAK 2.
   * Odaberi  File > Save As  i spremi svoju radnu datoteku. Naziv je
     svejedno. Svejedno je i spremaš li .csz ili .csx.
 
@@ -114,6 +117,12 @@ KORAK 2 - DOVRŠI UVOZ  (NAPRAVI PRIJE NEGO IŠTA NACRTAŠ)
   pokazuju svoje strelice i crtice. KORAK 2 ih prebaci u "Splines", pa
   se grafika vidi. Ako preskočiš KORAK 2 i počneš crtati u datoteci iz
   Save As, te linije ostaju gole - to je greška broj jedan.
+  Isti korak okrene zidove: kad cSurvey spaja zidove, neke linije
+  okrene naopako, pa ispuna presiječe kanal umjesto da zatvori ulaz.
+  KORAK 2 iz vlakova i vizura zna gdje je unutrašnjost špilje, okrene
+  linije koje gledaju na krivu stranu i složi ih redom. U crnom prozoru
+  piše "zidovi: okrenuto ..." za svaki popravljeni obrub; "provjeri
+  rucno" znači da popravak nije siguran i da tu liniju pogledaš sam.
   Isti korak ujedno smanji znak ulaza (marker) na veličinu 1 - cSurvey
   ga na tlocrtu uveze prevelikog, pa ga nakon ovoga i tlocrt i profil
   imaju jednako malog.

@@ -46,6 +46,7 @@ keeps the chronology.
 - [3N entrance dimensions: splays first, walls as fallback (2026-10-02)](#3n-entrance-dimensions-splays-first-walls-as-fallback-2026-10-02)
 - [3N predefined cSurvey settings: file vs app (2026-10-03)](#3n-predefined-csurvey-settings-file-vs-app-2026-10-03)
 - [3N mapping per cave, edited in the dashboard (2026-10-03)](#3n-mapping-per-cave-edited-in-the-dashboard-2026-10-03)
+- [3N wall orientation: merged walls, fixed in KORAK 2 (2026-10-03)](#3n-wall-orientation-merged-walls-fixed-in-korak-2-2026-10-03)
 
 ---
 
@@ -1295,3 +1296,39 @@ numbers red** (`PlotTextColor` = -65536, matching the red stations and shots)
 and sets the **notes text scale to 1.0** (cSurvey's default 0.5 read too
 small).
 
+## 3N wall orientation: merged walls, fixed in KORAK 2 (2026-10-03)
+
+After the import the operator merges each chamber's wall strokes into one cave
+border, and then had to hunt for the strokes whose fill join cut across the
+passage and press *Revert sequence* on each. Settled with the user
+([project 0006](../stages/3N-nacrt/projects/0006-wall-orientation/brief.md)):
+
+- **The merge is the culprit, so the fix runs on merged walls.** Every cSurvey
+  Merge runs `ReorderSequences` (`cPoints.vb:1084-1145`), which reverses a stroke
+  whenever its far end is nearer — a coin flip at an entrance mouth. Orienting
+  the separate strokes beforehand does not survive it (emulated on the user's
+  finished items: Golobreška 49 % right unoriented, 26 % pre-oriented).
+- **In KORAK 2.** The operator checks the `_pp` import and merges the walls
+  before Save As, so KORAK 2 receives merged items. It is on by default
+  (`postimport.wall_orientation`, `wall_reorder`), fail-soft, and prints what it
+  turned.
+- **The cave's side comes from the survey**: points along the in-cave legs, and
+  along splays up to the first drawn wall they cross, vote from the side the
+  wall can see; a splay ending in the open (the entrance fan) and steep shots
+  in the plan count less or not at all.
+- **Relative, not absolute.** The majority inside one item is the right way; a
+  global "cave on the right" rule (TopoDroid's documented CCW drawing) broke
+  items drawn consistently the other way. Only confident minority strokes are
+  reversed, and only when the fill's joins get no longer and cross nothing new;
+  otherwise the console says *provjeri rucno*. With directions settled, the
+  sequence order with the shortest joins is taken when it clearly beats the
+  drawn one.
+- **Only cave pens** (1, 8, 25, 26) are touched; pit, overhang and chimney lines
+  have one-sided decorations, their direction is meaning.
+
+Validated: on Golobreška the result equals the user's hand fix except one
+coordinate cSurvey re-rounded on save; Hrčava's profile (a far-end piece merged
+last) goes from 35.1 to 7.1 m of fill joins, and the user's own repaired file
+is left unchanged; no change in the other 18 files of `csx_entrances`. The
+installed cSurvey loads and re-saves the output with every wall point and flag
+identical, and a second run changes nothing.

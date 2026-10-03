@@ -49,6 +49,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.dont_write_bytecode = True
 import sb_select
 import tdx_mapping
+import wall_orient
 
 DEFAULT_MAP = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "tdx-mapping.json")
@@ -469,6 +470,17 @@ def main(argv=None):
                     item.set("textsize", str(label_sizes[item.get("text")]))
                     fixed_sizes += 1
 
+        # Walls merged before Save As: reverse the strokes that run against
+        # their item and put the sequences in chain order, so the fill closes
+        # mouths instead of cutting across passages (wall_orient.py, project 0006).
+        wall_lines = []
+        if rules.get("wall_orientation", True):
+            try:
+                wall_lines = wall_orient.describe(
+                    wall_orient.fix(root, reorder=rules.get("wall_reorder", True)))
+            except Exception as e:      # fail-soft: the other fixes still land
+                wall_lines = ["zidovi: provjera smjera preskocena (%s)" % e]
+
         centerline_set = (apply_centerline(root, rules.get("centerline"))
                           + apply_design_properties(root, rules.get("designproperties"))
                           + apply_view_options(root, rules.get("viewoptions")))
@@ -478,6 +490,8 @@ def main(argv=None):
               "non-standard brush, %d size(s) applied, %d design propert%s set"
               % (out, fixed_lines, fixed_water, fixed_sizes, centerline_set,
                  "y" if centerline_set == 1 else "ies"))
+        for line in wall_lines:
+            print("    " + line)
         if imported_seen == 0 and not args.all_lines:
             print("    NOTE: no TopoDroid-imported items found in this file. "
                   "If it wasn't a TopoDroid import, nothing here needed fixing.")

@@ -44,7 +44,7 @@ python $T\preprocess_tdx_csx.py $INTAKE --sb 1103 --force
 
 # [cSurvey] open <name>_pp.csx, then File > Save As
 
-# KORAK 2 — the saved file -> <name>_lt.csx (spline linetypes, water brush, sign sizes, the file settings in tdx-mapping.json postimport)
+# KORAK 2 — the saved file -> <name>_lt.csx (spline linetypes, water brush, sign sizes, merged walls turned and ordered (wall_orient.py), the file settings in tdx-mapping.json postimport)
 python $T\fix_imported_linetypes.py $INTAKE --sb 1103 --force
 #   or: python $T\fix_imported_linetypes.py "path\to\saved.csx" --force
 

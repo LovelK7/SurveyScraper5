@@ -302,6 +302,8 @@ function importCard() {
     h("h2", {}, "Uvozne postavke"),
     box(p, dp, "spline_linetypes", "Linije u splajnove (KORAK 2)", "Bez ovoga kosine, skokovi i sl. ne pokazuju strelice i crtice."),
     box(p, dp, "nonstandard_water", "Nestandardna četka za vodu (KORAK 2)", "Vodene površine dobiju cSurveyevu 'Not standard' vodu."),
+    box(p, dp, "wall_orientation", "Smjer zidova (KORAK 2)", "U spojenim obrubima okreće sekvencu koja gleda na krivu stranu; unutrašnjost se određuje iz vlakova i vizura."),
+    box(p, dp, "wall_reorder", "Redoslijed zidova (KORAK 2)", "Presloži sekvence spojenog obruba tako da ispuna zatvara ulaze, a ne presijeca kanale."),
     box(g, dg, "strip_line_subtypes", "Podvrste linija na osnovnu (KORAK 1)", "npr. wall:blocks → wall kad nema izričitog mapiranja."),
     box(g, dg, "strip_area_suffix", "Površine bez nastavka -area (KORAK 1)", "npr. clay-area → clay."));
 }

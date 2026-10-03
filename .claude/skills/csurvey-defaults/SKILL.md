@@ -30,7 +30,7 @@ All paths under `stages/3N-nacrt/production/tools/`.
 | any other survey-wide Properties value | file, KORAK 2 | `tdx-mapping.json` › `postimport.designproperties` | next KORAK 2 |
 | splays on/off and their style (Points / Points and rays / Rays) – any per-view option saved as an attribute on `<options><_design.plan>` etc. | file, KORAK 2 | `tdx-mapping.json` › `postimport.viewoptions` (`"design.plan": {"splaystyle": 2}`, no leading `_`; views in `VIEW_NAMES`) | next KORAK 2 |
 | size of a sign (entrance, stalactite…) or of a text label | file, KORAK 2 | `postimport.sign_sizes` / `label_sizes` | next KORAK 2 |
-| splines for imported lines, non-standard water brush; line-subtype / `-area` stripping | switch | `postimport.spline_linetypes` / `nonstandard_water`; `generic.*` | KORAK 2 / KORAK 1 |
+| splines for imported lines, non-standard water brush; line-subtype / `-area` stripping | switch | `postimport.spline_linetypes` / `nonstandard_water` / `wall_orientation` / `wall_reorder`; `generic.*` | KORAK 2 / KORAK 1 |
 | a cSurvey ribbon/options toggle (pen smoothing, rulers, grid, quality…) — anything cSurvey keeps per computer | app, KORAK 0 | `csurvey-app-settings.json` › `settings` | each computer re-runs KORAK 0 (KORAK 2 warns) |
 
 Prefer a file setting when cSurvey offers both: it reaches every computer with no priming.

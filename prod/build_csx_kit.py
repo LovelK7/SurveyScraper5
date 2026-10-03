@@ -94,6 +94,8 @@ TOOLS = [
     # KORAK 1 and 2 import it: the shared mapping + a cave's
     # tdx-mapping-objekt.json. Miss it and both launchers ImportError.
     "tdx_mapping.py",
+    # KORAK 2 imports it: wall direction + order of merged cave borders (project 0006).
+    "wall_orient.py",
     # pictures for the dashboard's 3N mapping page (make_signs_catalog.py)
     "tdx-mapping-catalog.json",
     # cSurvey app settings (registry): KORAK 0 applies them, KORAK 2 checks.
