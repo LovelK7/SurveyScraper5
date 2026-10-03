@@ -1265,3 +1265,8 @@ KORAK 2 on a cSurvey-saved file (blue polygon from the override, red stations
 from the default). The page was driven in Edge: edit, preview, dirty state,
 discard.
 
+Same day, on review of the page: the shared default now also colours **station
+numbers red** (`PlotTextColor` = -65536, matching the red stations and shots)
+and sets the **notes text scale to 1.0** (cSurvey's default 0.5 read too
+small).
+

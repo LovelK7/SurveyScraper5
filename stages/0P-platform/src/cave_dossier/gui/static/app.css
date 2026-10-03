@@ -466,9 +466,9 @@ a { color: var(--brand-text); }
 .cl-field input[type=color] { width: 44px; height: 26px; padding: 0; border: 1px solid var(--line-strong); border-radius: 6px; background: none; }
 .card .cl-field + .cl-field { margin-top: 4px; }
 
-table.kv { border-collapse: collapse; }
-table.kv td { padding: 2px 8px 2px 0; }
-table.kv tr.changed td:first-child { box-shadow: inset 3px 0 0 var(--brand); padding-left: 8px; }
+table.sizes { border-collapse: collapse; }
+table.sizes td { padding: 2px 8px 2px 0; }
+table.sizes tr.changed td:first-child { box-shadow: inset 3px 0 0 var(--brand); padding-left: 8px; }
 
 .segs { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
 .seg { border: 0; background: var(--panel); color: var(--ink); padding: 4px 10px; font: inherit; font-size: 12.5px; cursor: pointer; }
@@ -503,3 +503,4 @@ table.kv tr.changed td:first-child { box-shadow: inset 3px 0 0 var(--brand); pad
   .sym-edit { grid-column: 1 / -1; }
 }
 .cl-field input[type=color].unset { opacity: .35; }
+.nav-item.sub { padding-left: 30px; font-size: 13px; }

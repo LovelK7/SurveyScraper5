@@ -83,7 +83,7 @@ unintentionally.
 
 | Key | What it sets |
 |---|---|
-| `centerline` | Properties → Centerline: **red** stations and shots (`PlotPenColor`/`PlotPointColor` = -65536, `PlotCenterlineForceColor` = 1), pen widths, triangle stations, splay, LRUD, translation-line and surface-profile pens, `PlotTextScaleFactor` (station/shot-number text, 1.0) and `PlotNoteTextScaleFactor` (0.5). Both text scales are cSurvey's own defaults. To make shot numbers smaller, lower `PlotTextScaleFactor`. |
+| `centerline` | Properties → Centerline: **red** stations, shots and station numbers (`PlotPenColor`/`PlotPointColor`/`PlotTextColor` = -65536, `PlotCenterlineForceColor` = 1), pen widths, triangle stations, splay, LRUD, translation-line and surface-profile pens, `PlotTextScaleFactor` (station/shot-number text, 1.0, cSurvey's default) and `PlotNoteTextScaleFactor` (notes, **1.0**; cSurvey's default is 0.5, raised 2026-10-03). To make shot numbers smaller, lower `PlotTextScaleFactor`. |
 | `designproperties` | Any other survey-wide property, each with its type (empty so far) |
 | `sign_sizes` | Item sizes per sign: entrance default, air draught, stalactite, stalagmite medium |
 | `label_sizes` | Item sizes per label text: `"!"` large |

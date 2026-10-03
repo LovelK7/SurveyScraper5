@@ -92,7 +92,7 @@ ACTIONS: tuple[Action, ...] = (
     # ── 1T — intake ──────────────────────────────────────────────────
     Action(
         "intake-create", "1T", "Napravi mapu objekta",
-        "SB_<broj>_<Ime>[_<Sinonimi>][_<Autori>] pod !Za digitalizirat — isto ime "
+        "SB_<broj>_<Ime>[_<Sinonimi>][_<Autori>] pod !Za digitalizirat – isto ime "
         "koje bi dali Pripremi OSZ ili povlačenje fotografija. Postojeća mapa se "
         "samo pokaže. Javlja ako objekt ima fotografije u redu čekanja.",
         "cli", ("intake", "create", "{broj}"),
@@ -170,7 +170,7 @@ ACTIONS: tuple[Action, ...] = (
     Action(
         "3n-k3a", "3N", "Dovrši nacrt (_lt → _lt_fin)",
         "Ulaz, dubina, mjerilo, strelica sjevera, A4 postavke ispisa. Bez --yes "
-        "i --layout pokazuje izbornik rasporeda — odgovori u polju ispod ispisa.",
+        "i --layout pokazuje izbornik rasporeda – odgovori u polju ispod ispisa.",
         "nacrt_finish.py", ("{file}",),
         options=(
             FORCE,
@@ -249,7 +249,7 @@ ACTIONS: tuple[Action, ...] = (
            writes="isporučuje SB_<broj>_OSZ.docx u mapu objekta "
                   "(stari OSZ ostaje kao <ime>_stari_<datum>.docx)"),
     Action("osz-backfill", "4O", "Iz popunjenog OSZ-a u SB (prijedlog)",
-           "Čita popunjeni OSZ i predlaže dopune SB-a — CSV za ručni unos, "
+           "Čita popunjeni OSZ i predlaže dopune SB-a – CSV za ručni unos, "
            "SB se nikad ne mijenja.",
            "cli", ("osz", "backfill", "{broj}")),
     # ── 4F — fotografije ─────────────────────────────────────────────
@@ -286,7 +286,7 @@ ACTIONS: tuple[Action, ...] = (
            "Svaki autor odabranog objekta: je li u registru, ima li izjavu i "
            "pokriva li ona ovaj objekt.",
            "cli", ("people", "check", "--broj", "{broj}")),
-    Action("people-check", "5O", "Provjera izjava — cijeli registar",
+    Action("people-check", "5O", "Provjera izjava – cijeli registar",
            "Osobe bez izjave, izjave bez osobe, SB autori koje registar ne zna.",
            "cli", ("people", "check"), group="Cijeli registar"),
     # ── 5D — dosje ───────────────────────────────────────────────────
@@ -439,19 +439,19 @@ STAGES: tuple[Stage, ...] = (
     Stage("2B", "Speleo baza", "SB radna knjiga i satelitske tablice",
           "stages/2B-baza/README.md", "operational", group="Baza"),
     Stage("4G", "Geo", "Lokalitet i kota iz otvorenih DGU servisa",
-          "stages/4G-geo/README.md", "operational", group="Objekt — redom rada"),
+          "stages/4G-geo/README.md", "operational", group="Objekt – redom rada"),
     Stage("4I", "Isječak karte", "Isječak karte s georef.hr",
-          "stages/4I-isjecak/README.md", "operational", group="Objekt — redom rada"),
+          "stages/4I-isjecak/README.md", "operational", group="Objekt – redom rada"),
     Stage("4O", "OSZ", "Osnovni speleološki zapisnik (v10 predložak)",
-          "stages/4O-osz/README.md", "operational", group="Objekt — redom rada"),
+          "stages/4O-osz/README.md", "operational", group="Objekt – redom rada"),
     Stage("3N", "Nacrt", "TopoDroid .csx → SB_<broj>_nacrt.pdf preko cSurveya",
-          "stages/3N-nacrt/README.md", "operational", group="Objekt — redom rada"),
+          "stages/3N-nacrt/README.md", "operational", group="Objekt – redom rada"),
     Stage("4S", "Sastavnica", "Sastavnica Nacrta za Illustrator (ruta B)",
-          "stages/4S-sastavnica/README.md", "operational", group="Objekt — redom rada",
+          "stages/4S-sastavnica/README.md", "operational", group="Objekt – redom rada",
           notes=("Na cSurvey ruti sastavnica se slaže sama u KORAKU 3c (3N). "
                  "Ovaj korak treba samo kad se nacrt crta u Illustratoru.",)),
     Stage("4F", "Fotografije", "Fotografije ulaza",
-          "stages/4F-fotografije/README.md", "partial", group="Objekt — redom rada"),
+          "stages/4F-fotografije/README.md", "partial", group="Objekt – redom rada"),
     Stage("5O", "Osobe", "Registar osoba i izjave",
           "stages/5O-osobe/README.md", "operational", group="Provjera i predaja"),
     Stage("5D", "Dosje", "Dosje objekta i dva praga",

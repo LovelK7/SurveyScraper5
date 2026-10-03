@@ -35,9 +35,9 @@ MEASURED_OSZ_FIELDS = ("duljina", "dubina")
 
 PHASES = (
     ("priprema", "Priprema"),
-    ("auto", "Automatski — može odmah"),
-    ("rucno", "Ručni rad — paralelno"),
-    ("spajanje", "Spajanje — kad su oba gotova"),
+    ("auto", "Automatski – može odmah"),
+    ("rucno", "Ručni rad – paralelno"),
+    ("spajanje", "Spajanje – kad su oba gotova"),
     ("zavrsno", "Završno"),
 )
 
@@ -159,28 +159,28 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
         if out is not None:
             moved = _older(out, src)
             add(Step(step_id, "rucno", label, "3N", "stale" if moved else "done",
-                     f"{moved[0]['name']} je noviji — ponovi korak" if moved else "",
+                     f"{moved[0]['name']} je noviji – ponovi korak" if moved else "",
                      action=action, files=_names(out)))
         elif src is None:
             add(Step(step_id, "rucno", label, "3N", "blocked", missing_src, action=action))
         else:
             add(Step(step_id, "rucno", label, "3N", "todo", action=action, files=_names(src)))
 
-    chain("3n-k1", "KORAK 1 — pripremi sirovi .csx (_pp)", pp, raw, "3n-k1",
+    chain("3n-k1", "KORAK 1 – pripremi sirovi .csx (_pp)", pp, raw, "3n-k1",
           "Ubaci TopoDroid .csx izvoz u mapu objekta.")
-    chain("3n-k2", "KORAK 2 — dovrši uvoz (_lt)", lt, pp, "3n-k2",
+    chain("3n-k2", "KORAK 2 – dovrši uvoz (_lt)", lt, pp, "3n-k2",
           "Prvo KORAK 1, pa otvori _pp u cSurveyu i spremi.")
-    chain("3n-k3a", "KORAK 3a — ispravljena skica dovršena (_lt_fin)", fin, lt, "3n-k3a",
+    chain("3n-k3a", "KORAK 3a – ispravljena skica dovršena (_lt_fin)", fin, lt, "3n-k3a",
           "Prvo KORAK 2, pa ispravi skicu u cSurveyu.")
     printed = [plan, profile, dimenzije]
     if all(printed):
         moved = _older(min(printed, key=lambda f: f["modified"]), fin)
-        add(Step("3n-k3b", "rucno", "KORAK 3b — tlocrt, profil, dimenzije", "3N",
+        add(Step("3n-k3b", "rucno", "KORAK 3b – tlocrt, profil, dimenzije", "3N",
                  "stale" if moved else "done",
-                 f"{fin['name']} je noviji — ispiši ponovno" if moved else "",
+                 f"{fin['name']} je noviji – ispiši ponovno" if moved else "",
                  action="3n-k3b", files=_names(*printed)))
     else:
-        add(Step("3n-k3b", "rucno", "KORAK 3b — tlocrt, profil, dimenzije", "3N",
+        add(Step("3n-k3b", "rucno", "KORAK 3b – tlocrt, profil, dimenzije", "3N",
                  "todo" if fin else "blocked",
                  "" if fin else "Prvo KORAK 3a.", action="3n-k3b"))
 
@@ -210,17 +210,17 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
 
     nacrt = _newest(files, "nacrt")
     if not all(printed):
-        add(Step("3n-k3c", "spajanje", "KORAK 3c — Nacrt na sastavnici", "3N", "blocked",
+        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N", "blocked",
                  "Treba KORAK 3b.", action="3n-k3c", files=_names(nacrt)))
     elif nacrt is None:
-        add(Step("3n-k3c", "spajanje", "KORAK 3c — Nacrt na sastavnici", "3N", "todo",
-                 "" if osz else "Bez OSZ-a sastavnica ostaje djelomična — složi ponovno kad ga popuniš.",
+        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N", "todo",
+                 "" if osz else "Bez OSZ-a sastavnica ostaje djelomična – složi ponovno kad ga popuniš.",
                  action="3n-k3c"))
     else:
         moved = _older(nacrt, plan, profile, dimenzije, osz)
-        add(Step("3n-k3c", "spajanje", "KORAK 3c — Nacrt na sastavnici", "3N",
+        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N",
                  "stale" if moved else "done",
-                 ("Noviji: " + ", ".join(_names(*moved)) + " — složi ponovno") if moved else "",
+                 ("Noviji: " + ", ".join(_names(*moved)) + " – složi ponovno") if moved else "",
                  action="3n-k3c", files=_names(nacrt)))
 
     sastavnica = _newest(files, "sastavnica")
@@ -242,7 +242,7 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
         # Photos of this cave waiting in the shared queue nobody browses:
         # they come first, whatever else the folder holds (user, 2026-10-02).
         add(Step("foto", "zavrsno", "Fotografije ulaza obrađene", "4F", "todo",
-                 f"{len(queued)} fotografija čeka u redu čekanja (…za istražit) — "
+                 f"{len(queued)} fotografija čeka u redu čekanja (…za istražit) – "
                  "povuci ih u mapu objekta, pa obradi.",
                  action="photos-pull", preset={"--apply": True}))
     elif processed:
@@ -253,14 +253,14 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
         add(Step("foto", "zavrsno", "Fotografije ulaza obrađene", "4F",
                  "todo" if originals else "blocked",
                  f"{len(originals)} originala čeka obradu" if originals
-                 else "Nema fotografija u mapi — ubaci ih ili povuci iz reda čekanja.",
+                 else "Nema fotografija u mapi – ubaci ih ili povuci iz reda čekanja.",
                  action="photos-process" if originals else "photos-pull"))
     add(Step("izjave", "zavrsno", "Izjave autora", "5O", "unknown",
              "Provjeri za ovaj objekt.", action="people-check-cave"))
-    add(Step("dosje", "zavrsno", "Dosje — prag SUE i CroSpeleo", "5D", "unknown",
+    add(Step("dosje", "zavrsno", "Dosje – prag SUE i CroSpeleo", "5D", "unknown",
              "Otvori Dosje za oba praga.", action="report"))
     add(Step("predaja", "zavrsno", "Predaja u arhivu i upis u SB", "6P", "planned",
-             "M6 — još nije izgrađeno."))
+             "M6 – još nije izgrađeno."))
 
     for step in steps:
         if step.status in ("todo", "stale"):

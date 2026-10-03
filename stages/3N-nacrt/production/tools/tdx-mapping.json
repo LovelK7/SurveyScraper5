@@ -126,7 +126,8 @@
       "PlotSplayPenStyle": 2,
       "PlotSplayCrossScale": 1.0,
       "PlotTextScaleFactor": 1.0,
-      "PlotNoteTextScaleFactor": 0.5
+      "PlotNoteTextScaleFactor": 1.0,
+      "PlotTextColor": -65536
     },
     "designproperties": {
       "_readme": "Any other survey-wide FILE setting: \"Name\": {\"type\": \"single|integer|color|boolean|string|...\", \"value\": ...}. How to find name and type: production/csurvey-settings.md"

@@ -84,7 +84,7 @@ async function saveMapping() {
   try {
     const data = await api("mapping/" + M.broj, { effective: prune(M.edit) });
     Object.assign(M, { data, edit: clone(data.effective) });
-    toast(data.override_path ? "Spremljeno za ovaj objekt." : "Isto kao zadano — prilagodba objekta uklonjena.");
+    toast(data.override_path ? "Spremljeno za ovaj objekt." : "Isto kao zadano – prilagodba objekta uklonjena.");
   } catch (e) { toast(e.message, true); }
   render();
 }
@@ -108,16 +108,16 @@ function renderMapping() {
     h("div", { class: "spacer" }),
     h("button", { class: "btn ghost", onclick: () => setTab("doc:stages/3N-nacrt/production/csurvey-settings.md") }, icon("book"), "Postavke cSurveya"))];
   if (S.broj === null) {
-    out.push(h("div", { class: "card note" }, "Odaberi objekt gore desno — mapiranje se prilagođava po objektu."));
+    out.push(h("div", { class: "card note" }, "Odaberi objekt gore desno – mapiranje se prilagođava po objektu."));
     return out;
   }
   if (M.broj !== S.broj || (!M.data && !M.loading && !M.error)) queueMicrotask(() => loadMapping());
   if (M.loading || M.broj !== S.broj) { out.push(h("div", { class: "empty" }, "Učitavam mapiranje…")); return out; }
   if (M.error) { out.push(h("div", { class: "card note" }, M.error)); return out; }
   out.push(statusCard());
-  out.push(h("h3", { class: "group-title" }, "Poligon — KORAK 2"), centerlineCard());
-  out.push(h("h3", { class: "group-title" }, "Veličine i uvoz — KORAK 2"), h("div", { class: "grid" }, sizesCard(), importCard()));
-  out.push(h("h3", { class: "group-title" }, "Simboli, linije i površine — KORAK 1"), symbolsCard());
+  out.push(h("h3", { class: "group-title" }, "Poligon – KORAK 2"), centerlineCard());
+  out.push(h("h3", { class: "group-title" }, "Veličine i uvoz – KORAK 2"), h("div", { class: "grid" }, sizesCard(), importCard()));
+  out.push(h("h3", { class: "group-title" }, "Simboli, linije i površine – KORAK 1"), symbolsCard());
   requestAnimationFrame(() => autofitIn($("#main")));
   return out;
 }
@@ -137,7 +137,8 @@ function statusCard() {
       dirty ? h("button", { class: "btn", onclick: () => { M.edit = clone(d.effective); render(); } }, "Odbaci izmjene") : null,
       custom ? h("button", { class: "btn danger", onclick: resetMapping }, icon("refresh"), "Vrati na zadano") : null,
       h("button", { class: "btn primary", disabled: !dirty, onclick: saveMapping }, icon("check"), "Spremi za SB " + d.broj)),
-    dirty ? h("div", { class: "help" }, "Nespremljeno: " + pending.map(sectionHr).join(", ") + ".") : null,
+    // always one line, so editing below never shifts the page
+    h("div", { class: "help" }, dirty ? "Nespremljeno: " + pending.map(sectionHr).join(", ") + "." : "Nema nespremljenih izmjena."),
     d.error ? h("div", { class: "help", style: "color:var(--danger)" }, d.error) : null,
     h("div", { class: "help" },
       custom ? ["Prilagodba: ", h("a", { href: "#", onclick: e => { e.preventDefault(); openTarget({ what: "path", path: d.override_path, reveal: true }); } }, "tdx-mapping-objekt.json"), " u mapi objekta. "] : "Ovaj objekt koristi zajednički tdx-mapping.json. Promjena ovdje stvara tdx-mapping-objekt.json u mapi objekta. ",
@@ -278,13 +279,13 @@ function sizesCard() {
   return h("div", { class: "card" },
     h("h2", {}, "Veličine znakova i oznaka"),
     h("div", { class: "help" }, "KORAK 2 postavlja veličinu znaka na uvezenim stavkama koje je još nemaju."),
-    h("table", { class: "kv" }, ...Object.keys(signs).map(k => h("tr", { class: mark(def.sign_sizes, signs, k) },
+    h("table", { class: "sizes" }, ...Object.keys(signs).map(k => h("tr", { class: mark(def.sign_sizes, signs, k) },
       h("td", {}, k), h("td", {}, sizeSel(signs, k)), h("td", {}, del(signs, k))))),
     h("div", { class: "row", style: "margin-top:6px" },
       h("select", { id: "add-sign" }, ...unusedSigns.map(n => h("option", { value: n }, n))),
       h("button", { class: "btn small", onclick: () => { const v = $("#add-sign").value; if (v) { signs[v] = "medium"; render(); } } }, "+ znak")),
     h("div", { class: "help", style: "margin-top:12px" }, "Tekstualne oznake (npr. ! iz TopoDroida):"),
-    h("table", { class: "kv" }, ...Object.keys(labels).map(k => h("tr", { class: mark(def.label_sizes, labels, k) },
+    h("table", { class: "sizes" }, ...Object.keys(labels).map(k => h("tr", { class: mark(def.label_sizes, labels, k) },
       h("td", {}, h("code", {}, k)), h("td", {}, sizeSel(labels, k)), h("td", {}, del(labels, k))))),
     h("div", { class: "row", style: "margin-top:6px" },
       h("input", { id: "add-label", placeholder: "tekst", style: "width:80px" }),
@@ -352,7 +353,7 @@ function symbolRow(row) {
 
   let pic, caption, dim = false, bad = false;
   if (entry && entry.label !== undefined) { pic = h("div", { class: "label-pic" }, entry.label); caption = "tekstna oznaka"; }
-  else if (entry && entry.leave) { pic = h("div", { class: "label-pic muted" }, "—"); caption = "ostavi kako jest"; }
+  else if (entry && entry.leave) { pic = h("div", { class: "label-pic muted" }, "–"); caption = "ostavi kako jest"; }
   else if (tgt) { pic = svgTile(tgt.svg); caption = tgt.label; }
   else if (natTarget) { pic = svgTile(natTarget.svg); caption = natTarget.label; dim = true; }
   else { pic = h("div", { class: "label-pic", style: "color:var(--danger)" }, "✕"); caption = "nema znaka u cSurveyu"; bad = !entry; }
@@ -369,7 +370,7 @@ function symbolRow(row) {
   if (kind === "line" && entry && entry.to) extra.push(h("label", { class: "mini" }, h("input", { type: "checkbox", checked: !!entry.reverse,
     onchange: e => { if (e.target.checked) entry.reverse = true; else delete entry.reverse; refreshRow(row); } }), "obrni smjer"));
   if (kind === "point" && entry && entry.to) extra.push(h("label", { class: "mini" }, "kut",
-    h("input", { type: "number", step: "15", style: "width:62px", value: entry.orientation ?? "", placeholder: "—",
+    h("input", { type: "number", step: "15", style: "width:62px", value: entry.orientation ?? "", placeholder: "–",
       onchange: e => { if (e.target.value === "") delete entry.orientation; else entry.orientation = parseInt(e.target.value, 10); refreshRow(row); } })));
 
   return h("div", { class: "sym-row" + (own ? " own" : "") + (bad ? " bad" : ""), "data-key": kind + ":" + row.name },

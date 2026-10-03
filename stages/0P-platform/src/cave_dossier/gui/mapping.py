@@ -51,7 +51,7 @@ def catalog(tools: Path) -> dict:
     """tdx-mapping-catalog.json (pictures), cached until the file changes."""
     path = tools / "tdx-mapping-catalog.json"
     if not path.is_file():
-        raise MappingError("Nema tdx-mapping-catalog.json uz 3N alate — pokreni "
+        raise MappingError("Nema tdx-mapping-catalog.json uz 3N alate – pokreni "
                            "make_signs_catalog.py.")
     mtime = path.stat().st_mtime
     cached = _catalog.get(str(path))
@@ -78,7 +78,7 @@ def view(ws, broj: int, tools: Path) -> dict:
         try:
             override = tm.load_json(str(override_path))
         except (OSError, ValueError) as exc:
-            error = f"{override_path.name} se ne može pročitati ({exc}) — koristi se zadano."
+            error = f"{override_path.name} se ne može pročitati ({exc}) – koristi se zadano."
     effective = tm.merge(default, override) if override else default
     return {
         "broj": broj,
@@ -124,7 +124,7 @@ def save(ws, broj: int, tools: Path, effective) -> dict:
     _check(effective)
     leaf = _leaf(ws, broj)
     if leaf is None:
-        raise MappingError(f"SB {broj} nema mapu pod !Za digitalizirat — prilagodba "
+        raise MappingError(f"SB {broj} nema mapu pod !Za digitalizirat – prilagodba "
                            "se sprema u mapu objekta.")
     tm = _module(tools, "tdx_mapping.py")
     default_path = tools / "tdx-mapping.json"

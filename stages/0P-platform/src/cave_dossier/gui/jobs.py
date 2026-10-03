@@ -155,7 +155,7 @@ class JobManager:
         worst = 0
         for number, step in enumerate(steps, 1):
             if job._stopped:
-                job.append("\n[zaustavljeno — ostali koraci preskočeni]\n")
+                job.append("\n[zaustavljeno – ostali koraci preskočeni]\n")
                 worst = max(worst, 99)
                 break
             job.append(f"{'' if number == 1 else chr(10)}══ {number}/{len(steps)} · {step.title}\n> {step.display}\n\n")
@@ -174,7 +174,7 @@ class JobManager:
             if rc not in (0, 1):
                 worst = max(worst, rc)
                 if not step.keep_going:
-                    job.append("[greška — ostali koraci preskočeni]\n")
+                    job.append("[greška – ostali koraci preskočeni]\n")
                     break
         job.append(f"\n[gotovo, izlazni kod {worst}]\n")
         job.finished = time.time()

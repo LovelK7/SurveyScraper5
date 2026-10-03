@@ -231,13 +231,13 @@ function renderMenu() {
     items.push(el);
     return el;
   };
-  const kids = [h("div", { class: "opt-group" }, `U radu — imaju mapu (${folders.length})`),
+  const kids = [h("div", { class: "opt-group" }, `U radu – imaju mapu (${folders.length})`),
     ...folders.map(c => option(c.broj, c.name, [
       isDup(c.broj) ? h("span", { class: "chip dupchip", title: "Više SB redova nosi ovaj broj" }, "⚠ dvostruki broj") : null,
       S.queue[c.broj] ? h("span", { class: "chip" }, `📷 ${S.queue[c.broj]}`) : null,
       c.group ? h("span", { class: "opt-grp" }, c.group) : null]))];
   if (!folders.length) kids.push(h("div", { class: "opt-empty" }, "Nijedna mapa ne odgovara."));
-  kids.push(h("div", { class: "opt-group" }, "Ostali objekti u SB-u — nemaju mapu"));
+  kids.push(h("div", { class: "opt-group" }, "Ostali objekti u SB-u – nemaju mapu"));
   if (!S.sbIndex || S.sbIndex.loading) kids.push(h("div", { class: "opt-empty" }, "Učitavam SB…"));
   else if (S.sbIndex.error) kids.push(h("div", { class: "opt-empty" }, S.sbIndex.error));
   else if (!query.trim()) kids.push(h("div", { class: "opt-empty" }, `Upiši ime, sinonim, SUE ili Redni broj za pretragu ${S.sbIndex.rows.length} objekata u SB-u.`));
@@ -297,8 +297,8 @@ function renderTopbar() {
 }
 
 function renderNav() {
-  const item = (id, label, title, status) => h("button", {
-    class: "nav-item" + (S.tab === id ? " active" : ""), onclick: () => setTab(id), title: label ? `${label} · ${title}` : title,
+  const item = (id, label, title, status, sub) => h("button", {
+    class: "nav-item" + (S.tab === id ? " active" : "") + (sub ? " sub" : ""), onclick: () => setTab(id), title: label ? `${label} · ${title}` : title,
   }, icon(STAGE_ICON[id] || "dot"), title,
      label ? h("span", { class: "nav-label", style: status ? "" : "margin-left:auto" }, label) : null,
      status ? h("span", { class: "dot " + status, title: status, style: "margin-left:6px" }) : null);
@@ -307,14 +307,15 @@ function renderNav() {
   for (const s of (S.catalog ? S.catalog.stages : [])) {
     if (s.group !== group) { group = s.group; kids.push(h("div", { class: "nav-group" }, group)); }
     kids.push(item(s.label, s.label, s.title, s.status));
-    if (s.label === "3N") kids.push(item("map3n", "3N", "Mapiranje simbola"));
+    // the mapping page is a sub-page of 3N: listed only while 3N or it is open
+    if (s.label === "3N" && (S.tab === "3N" || S.tab === "map3n")) kids.push(item("map3n", "3N", "Mapiranje simbola", null, true));
   }
   kids.push(h("div", { class: "nav-group" }, "Dokumentacija"));
   const docItem = (path, title) => h("button", {
     class: "nav-item" + (S.tab === "doc:" + path ? " active" : ""), title: path, onclick: () => setTab("doc:" + path),
   }, icon("book"), title);
   const stage = currentStage();
-  if (stage) kids.push(docItem(stage.readme, `README — ${stage.label} ${stage.title}`));
+  if (stage) kids.push(docItem(stage.readme, `README – ${stage.label} ${stage.title}`));
   for (const [path, title] of DOCS) kids.push(docItem(path, title));
   $("#nav").replaceChildren(...kids);
 }
@@ -369,7 +370,7 @@ function renderHome() {
   const dups = S.sbIndex && S.sbIndex.duplicates ? Object.entries(S.sbIndex.duplicates) : [];
   if (dups.length) {
     out.push(h("div", { class: "card dup", style: "margin-bottom:14px" },
-      h("h2", {}, icon("baza", "lg"), `Redni broj nije jedinstven — ${dups.length}`),
+      h("h2", {}, icon("baza", "lg"), `Redni broj nije jedinstven – ${dups.length}`),
       h("p", { class: "help" }, "Ove brojeve nosi više SB redova. Broj je identitet objekta (mapa SB_<broj>_, datoteke, sve naredbe), pa se dva objekta stapaju u jedan. Ispravi u SB-u; dotad intake map i intake create odbijaju te brojeve."),
       h("table", { class: "files" }, ...dups.map(([b, names]) => h("tr", {},
         h("td", { class: "kind" }, b), h("td", { class: "name" }, names.join(" · "))))),
@@ -403,8 +404,8 @@ function renderHome() {
   grid.append(h("div", { class: "card" },
     h("h2", {}, icon("terminal", "lg"), "Ovo računalo"),
     h("dl", { class: "kv" },
-      h("dt", {}, "Radni prostor"), h("dd", { class: "mono" }, sum.workspace || "—"),
-      h("dt", {}, "Drive"), h("dd", { class: "mono" }, sum.drive_root || "—"),
+      h("dt", {}, "Radni prostor"), h("dd", { class: "mono" }, sum.workspace || "–"),
+      h("dt", {}, "Drive"), h("dd", { class: "mono" }, sum.drive_root || "–"),
       h("dt", {}, "3N alati"), h("dd", { class: "mono" }, sum.tools_dir || h("span", { class: "warnline" }, "nisu pronađeni")),
       h("dt", {}, "cSurvey"), h("dd", { class: "mono" }, sum.csurvey || h("span", { class: "warnline" }, "nije pronađen (CSURVEY_DIR, Drive, C:\\csurvey64)"))),
   ));
@@ -418,7 +419,7 @@ function renderHome() {
         const info = S.caves.find(c => c.broj === b);
         return h("tr", {},
           h("td", { class: "kind" }, String(b)),
-          h("td", { class: "name" }, info ? info.name : h("span", { class: "muted" }, "nema mape — povlačenje je napravi")),
+          h("td", { class: "name" }, info ? info.name : h("span", { class: "muted" }, "nema mape – povlačenje je napravi")),
           h("td", { class: "kind" }, `📷 ${n}`),
           h("td", { class: "act" }, h("button", { class: "btn small", onclick: () => { setCave(b); setTab("4F"); } }, "Otvori", icon("arrow"))));
       }))));
@@ -442,12 +443,12 @@ function sbCard() {
   return h("div", { class: "card hl" },
     h("h2", {}, icon("baza", "lg"), "Speleo baza"),
     h("dl", { class: "kv" },
-      h("dt", {}, "Živa"), h("dd", {}, sb.live ? fileName(sb.live) : "—"),
-      h("dt", {}, "Izmijenjena"), h("dd", {}, live ? fmtTime(live.modified) : "—"),
+      h("dt", {}, "Živa"), h("dd", {}, sb.live ? fileName(sb.live) : "–"),
+      h("dt", {}, "Izmijenjena"), h("dd", {}, live ? fmtTime(live.modified) : "–"),
       h("dt", {}, "Alati čitaju"), h("dd", {}, h("span", { class: "badge " + sb.mode.toLowerCase() }, sb.mode), " ", fileName(sb.reading))),
-    sb.reason ? h("div", { class: "warnline" }, "⚠ " + sb.reason + " — čita se zadnja dobra lokalna kopija.") : null,
+    sb.reason ? h("div", { class: "warnline" }, "⚠ " + sb.reason + " – čita se zadnja dobra lokalna kopija.") : null,
     sb.newer_than_live.length ? h("div", { class: "warnline" },
-      "⚠ Na Driveu postoji novija verzija nego što config.yaml koristi: " + sb.newer_than_live.join(", ") + " — ažuriraj sb.workbook_filename.") : null,
+      "⚠ Na Driveu postoji novija verzija nego što config.yaml koristi: " + sb.newer_than_live.join(", ") + " – ažuriraj sb.workbook_filename.") : null,
     h("div", { class: "row" },
       h("button", { class: "btn primary", disabled: !sb.live_exists, onclick: () => openTarget({ what: "sb" }) }, icon("sb"), "Otvori SB u Excelu"),
       h("button", { class: "btn", onclick: () => openTarget({ what: "sb", reveal: true }), disabled: !sb.live_exists }, icon("folder"), "Pokaži u mapi"),
@@ -464,7 +465,7 @@ function sbCard() {
 function renderCaveCard() {
   if (S.broj === null) {
     return h("div", { class: "card hl" }, h("h2", {}, icon("home", "lg"), "Trenutni objekt"),
-      h("p", { class: "help" }, "Odaberi objekt gore desno (Redni broj ili ime). Ovdje se tada vidi cijeli tijek rada za taj objekt — što je gotovo, što je zastarjelo i što je sljedeće — a sve naredbe na karticama koriste taj broj."),
+      h("p", { class: "help" }, "Odaberi objekt gore desno (Redni broj ili ime). Ovdje se tada vidi cijeli tijek rada za taj objekt – što je gotovo, što je zastarjelo i što je sljedeće – a sve naredbe na karticama koriste taj broj."),
       h("p", { class: "muted" }, `${S.caves.length} objekata ima mapu SB_<broj>_… pod !Za digitalizirat.`));
   }
   const d = S.cave;
@@ -481,12 +482,12 @@ function renderCaveCard() {
   if (!d.leaves.length) {
     card.append(h("p", { class: "warnline" }, "Ovaj objekt nema mapu SB_" + S.broj + "_… pod !Za digitalizirat. Naredbe koje trebaju samo broj i dalje rade."));
   }
-  if (d.leaves.length > 1) card.append(h("p", { class: "warnline" }, `⚠ ${d.leaves.length} mape nose isti broj — datoteke su spojene.`));
-  if (d.locks && d.locks.length) card.append(h("p", { class: "warnline" }, "⚠ Otvoreno u Wordu/Excelu: " + d.locks.join(", ") + " — zatvori prije pokretanja koraka koji pišu u tu datoteku."));
+  if (d.leaves.length > 1) card.append(h("p", { class: "warnline" }, `⚠ ${d.leaves.length} mape nose isti broj – datoteke su spojene.`));
+  if (d.locks && d.locks.length) card.append(h("p", { class: "warnline" }, "⚠ Otvoreno u Wordu/Excelu: " + d.locks.join(", ") + " – zatvori prije pokretanja koraka koji pišu u tu datoteku."));
   card.append(h("div", { class: "legend" },
     h("span", {}, h("i", { style: "background:var(--ok)" }), "gotovo"),
     h("span", {}, h("i", { style: "background:var(--brand)" }), "sljedeći korak"),
-    h("span", {}, h("i", { style: "background:var(--stale)" }), "zastarjelo — ulaz se promijenio, ponovi"),
+    h("span", {}, h("i", { style: "background:var(--stale)" }), "zastarjelo – ulaz se promijenio, ponovi"),
     h("span", {}, h("i", { style: "background:var(--neutral)" }), "čeka / po potrebi")));
   card.append(workflowView(d.workflow));
   return card;
@@ -546,14 +547,14 @@ function renderFast() {
   const out = [h("div", { class: "page-head" },
     h("span", { class: "stage-chip" }, icon("star", "xl")),
     h("div", {}, h("h1", {}, "Brze radnje"),
-      h("div", { class: "sub" }, "Više koraka za odabrani objekt u jednom potezu — jedan posao u Ispisu, jedna potvrda za sve što piše.")))];
+      h("div", { class: "sub" }, "Više koraka za odabrani objekt u jednom potezu – jedan posao u Ispisu, jedna potvrda za sve što piše.")))];
   if (S.broj === null) {
-    out.push(h("div", { class: "card note" }, "Odaberi objekt gore desno (Redni broj ili ime). Za novi objekt upiši njegov Redni broj iz SB-a — mapa još ne mora postojati."));
+    out.push(h("div", { class: "card note" }, "Odaberi objekt gore desno (Redni broj ili ime). Za novi objekt upiši njegov Redni broj iz SB-a – mapa još ne mora postojati."));
     return out;
   }
   const info = caveInfo();
   out.push(h("p", { class: "muted", style: "margin-top:-6px" }, `Objekt: SB ${S.broj} · ${caveName(S.broj) || "?"}` +
-    (info ? ` — mapa ${info.relative}` : " — još nema mapu pod !Za digitalizirat; Novi objekt je napravi.")));
+    (info ? ` – mapa ${info.relative}` : " – još nema mapu pod !Za digitalizirat; Novi objekt je napravi.")));
   out.push(h("div", { class: "grid" }, ...S.catalog.recipes.map(recipeCard)));
   return out;
 }
@@ -574,8 +575,8 @@ function recipeCard(r) {
           onchange: e => { e.target.checked ? skip.delete(index) : skip.add(index); } }),
         a ? a.title : step.action),
       writesFor(a, Object.fromEntries(Object.entries(step.options))) ? h("span", { class: "writes-tag" }, "piše") : null,
-      done ? h("span", { class: "chip on", title: "već postoji — korak će to prepoznati" }, "✓ postoji") : null,
-      inactive ? h("span", { class: "muted" }, "— nema fotografija u redu čekanja") : null,
+      done ? h("span", { class: "chip on", title: "već postoji – korak će to prepoznati" }, "✓ postoji") : null,
+      inactive ? h("span", { class: "muted" }, "– nema fotografija u redu čekanja") : null,
       step.when === "queued" && queued ? h("span", { class: "chip" }, `📷 ${queued}`) : null,
       step.keep_going ? h("span", { class: "muted", title: "Ako ovaj korak ne uspije, idući se ipak pokreću." }, " ↷") : null));
   });
@@ -597,7 +598,7 @@ async function runRecipe(r, skip) {
     return w ? `• ${a.title}: ${w}` : null;
   }).filter(Boolean);
   if (writes.length) {
-    const ok = await confirmDialog({ title: `${r.title} — SB ${S.broj}`, text: "Ovi koraci pišu:\n" + writes.join("\n"),
+    const ok = await confirmDialog({ title: `${r.title} – SB ${S.broj}`, text: "Ovi koraci pišu:\n" + writes.join("\n"),
       cmd: chosen.map(([st]) => st.action).join(" → "), okLabel: "Pokreni sve", remember: false });
     if (!ok) return;
   }
@@ -622,7 +623,7 @@ function renderStage(stage) {
   if (stage.label === "5O") out.push(...renderPeopleOfCave());
   if (stage.label === "3N") out.push(h("div", { class: "card note", style: "margin-bottom:14px" },
     h("div", { class: "row" }, icon("nacrt", "lg"),
-      h("span", { style: "flex:1" }, "Koji TopoDroid simbol postaje koji cSurvey znak, boja poligona, veličine znakova — zadano za sve objekte, a za ovaj objekt se može prilagoditi prije KORAKA 1 ili 2."),
+      h("span", { style: "flex:1" }, "Koji TopoDroid simbol postaje koji cSurvey znak, boja poligona, veličine znakova – zadano za sve objekte, a za ovaj objekt se može prilagoditi prije KORAKA 1 ili 2."),
       h("button", { class: "btn", onclick: () => setTab("map3n") }, "Mapiranje simbola →"))));
 
   const actions = S.catalog.actions.filter(a => a.stage === stage.label);
@@ -631,7 +632,7 @@ function renderStage(stage) {
   const groups = [...new Set(actions.filter(a => !a.step && a.group).map(a => a.group))];
 
   if (actions.some(a => a.needs_cave) && S.broj === null) {
-    out.push(h("div", { class: "card note", style: "margin-bottom:14px" }, "Neke naredbe ovdje rade na jednom objektu — odaberi ga gore desno."));
+    out.push(h("div", { class: "card note", style: "margin-bottom:14px" }, "Neke naredbe ovdje rade na jednom objektu – odaberi ga gore desno."));
   }
   if (steps.length) {
     out.push(h("div", { class: "steps" }, ...steps.map(a => {
@@ -651,7 +652,7 @@ function renderStage(stage) {
   if (stage.label === "4F" && S.cave) {
     if (S.cave.queued && S.cave.queued.length) {
       const pull = S.catalog.actions.find(x => x.id === "photos-pull");
-      out.push(h("h3", { class: "group-title" }, `U redu čekanja (…za istražit) — ${S.cave.queued.length}`),
+      out.push(h("h3", { class: "group-title" }, `U redu čekanja (…za istražit) – ${S.cave.queued.length}`),
         h("div", { class: "card note", style: "margin-bottom:12px" },
           h("div", { class: "row" }, icon("foto-red", "lg"),
             h("span", { style: "flex:1" }, "Ove fotografije još nisu u mapi objekta. Povlačenje ih premješta tamo (i stvara mapu ako je nema) i miče SB_ prefiks, da ih obrada vidi."),
@@ -677,7 +678,7 @@ function stepState(a) {
 }
 
 function kartaView(k) {
-  if (!k.exists) return h("div", { class: "empty" }, "Još nema isječka za ovaj objekt — pokreni Isječak karte (gore).");
+  if (!k.exists) return h("div", { class: "empty" }, "Još nema isječka za ovaj objekt – pokreni Isječak karte (gore).");
   const src = `/api/thumb?broj=${S.broj}&w=1600&t=${encodeURIComponent(TOKEN)}&path=${encodeURIComponent(k.path)}`;
   const rec = k.record || {};
   // Georef zapis = id;ime;X;Y;… as georef.hr stores the point.
@@ -686,12 +687,12 @@ function kartaView(k) {
     h("div", { class: "card karta-img", onclick: () => lightboxSrc(src, fileName(k.path)) }, h("img", { src, alt: "Isječak karte" })),
     h("div", { class: "card" }, h("h2", {}, icon("karta", "lg"), fileName(k.path)),
       k.record ? h("dl", { class: "kv" },
-        h("dt", {}, "Ime objekta"), h("dd", {}, rec["Ime objekta"] || "—"),
-        h("dt", {}, "Datum"), h("dd", {}, rec["Datum"] || "—"),
-        h("dt", {}, "georef.hr točka"), h("dd", { class: "mono" }, parts[0] || "—"),
-        h("dt", {}, "X / Y (HTRS96)"), h("dd", { class: "mono" }, parts.length > 3 ? `${Math.round(+parts[2])} / ${Math.round(+parts[3])}` : "—"),
-        h("dt", {}, "Georef zapis"), h("dd", { class: "mono" }, rec["Georef zapis"] || "—"))
-        : h("p", { class: "warnline" }, "Nema retka u !georef_zapisi.csv — idući Isječak karte ga popravlja sam."),
+        h("dt", {}, "Ime objekta"), h("dd", {}, rec["Ime objekta"] || "–"),
+        h("dt", {}, "Datum"), h("dd", {}, rec["Datum"] || "–"),
+        h("dt", {}, "georef.hr točka"), h("dd", { class: "mono" }, parts[0] || "–"),
+        h("dt", {}, "X / Y (HTRS96)"), h("dd", { class: "mono" }, parts.length > 3 ? `${Math.round(+parts[2])} / ${Math.round(+parts[3])}` : "–"),
+        h("dt", {}, "Georef zapis"), h("dd", { class: "mono" }, rec["Georef zapis"] || "–"))
+        : h("p", { class: "warnline" }, "Nema retka u !georef_zapisi.csv – idući Isječak karte ga popravlja sam."),
       h("div", { class: "row" },
         h("button", { class: "btn", onclick: () => openTarget({ what: "path", path: k.path }) }, icon("open"), "Otvori PNG"),
         h("button", { class: "btn ghost", onclick: () => openTarget({ what: "path", path: k.path, reveal: true }) }, icon("folder"), "Mapa"))));
@@ -723,12 +724,12 @@ function renderDossier() {
   const d = st.data;
   const out = [h("div", { class: "page-head", style: "margin-bottom:10px" },
     h("div", {}, h("h2", { style: "margin:0" }, d.name),
-      h("div", { class: "muted" }, `${d.lifecycle} — ${d.lifecycle_hint}` + (d.excel_row ? ` · Excel red ${d.excel_row}` : ""))),
+      h("div", { class: "muted" }, `${d.lifecycle} – ${d.lifecycle_hint}` + (d.excel_row ? ` · Excel red ${d.excel_row}` : ""))),
     h("div", { class: "spacer" }),
     h("button", { class: "btn", onclick: () => loadDossier(true) }, icon("refresh"), "Osvježi dosje"))];
   out.push(h("div", { class: "grid" }, ...d.gates.map(g => h("div", { class: "card gate " + (g.ready ? "ready" : "not") },
     h("div", { class: "verdict" }, h("span", { class: "big" }, icon(g.ready ? "check" : "lock", "lg")),
-      h("div", {}, `Prag ${g.ordinal} — ${g.label}`, h("div", { class: "muted", style: "font-weight:400;font-size:12.5px" },
+      h("div", {}, `Prag ${g.ordinal} – ${g.label}`, h("div", { class: "muted", style: "font-weight:400;font-size:12.5px" },
         g.ready ? "SPREMAN" : "NIJE SPREMAN" + (g.ordinal === 2 ? " (uz sve iz praga 1)" : "")))),
     h("ul", { class: "issues" },
       ...g.blockers.map(m => h("li", {}, h("span", { class: "sev blocker" }, "BLOKIRA"), m)),
@@ -739,13 +740,13 @@ function renderDossier() {
       `Još neprovjereno: ${g.unchecked.length} pravila (izvor nije prikupljen)`),
       h("ul", { class: "issues" }, ...g.unchecked.map(u => h("li", {},
         h("span", { class: "sev unchecked" }, u.severity === "blocker" ? "BLOKIRA AKO NEDOSTAJE" : "UPOZORENJE"),
-        `${u.label} — treba ${u.source_label}`)))) : null,
+        `${u.label} – treba ${u.source_label}`)))) : null,
     !g.blockers.length && !g.warnings.length && !g.unchecked.length ? h("p", { class: "muted" }, "Nema nalaza.") : null))));
   out.push(h("div", { class: "grid", style: "margin-top:14px" },
     h("div", { class: "card" }, h("h2", {}, icon("dosje", "lg"), "Izvori"),
       h("div", { class: "chips" }, ...d.sources.map(s => h("span", { class: "chip" + (s.gathered ? " on" : ""), title: s.gathered ? "prikupljeno" : "još nije prikupljeno" }, (s.gathered ? "✓ " : "· ") + s.label))),
       d.survey ? h("dl", { class: "kv", style: "margin-top:10px" },
-        h("dt", {}, "Duljina / dubina"), h("dd", {}, `${d.survey.length_m ?? "—"} / ${d.survey.depth_m ?? "—"} m`)) : null,
+        h("dt", {}, "Duljina / dubina"), h("dd", {}, `${d.survey.length_m ?? "–"} / ${d.survey.depth_m ?? "–"} m`)) : null,
       d.files.length ? h("ul", { class: "muted mono" }, ...d.files.map(f => h("li", {}, f))) : null),
     peopleCard(d),
     d.sb.length ? h("div", { class: "card" }, h("h2", {}, icon("baza", "lg"), "SB red"),
@@ -915,7 +916,7 @@ function photoCard(f) {
   const [cls, label] = PHOTO_BADGE[f.kind] || ["orig", f.kind];
   return h("div", { class: "card photo" },
     h("div", { class: "img", onclick: () => lightbox(f) },
-      /\.heic$/i.test(f.name) ? h("span", { class: "muted" }, "HEIC — nema pregleda")
+      /\.heic$/i.test(f.name) ? h("span", { class: "muted" }, "HEIC – nema pregleda")
         : h("img", { src: thumbUrl(f, 480), loading: "lazy", alt: f.name })),
     h("div", { class: "meta" },
       h("span", { class: "k " + cls }, label),
@@ -1034,7 +1035,7 @@ function actionCard(a, st) {
       onclick: () => ctx.file && openTarget({ what: "csurvey", path: ctx.file }) }, icon("nacrt"), "cSurvey");
     card.append(h("label", { class: "field" }, h("span", {}, "Datoteka"),
       files.length ? h("div", { class: "cmd-row" }, sel, openBtn)
-        : h("span", { class: "muted" }, S.broj === null ? "— odaberi objekt —" : "— nema datoteke za ovaj korak u mapi objekta —")));
+        : h("span", { class: "muted" }, S.broj === null ? "– odaberi objekt –" : "– nema datoteke za ovaj korak u mapi objekta –")));
   }
   if (a.args.some(t => t.includes("{query}"))) {
     card.append(h("label", { class: "field" }, h("span", {}, "Objekt (ime, SUE broj ili broj pločice)"),
