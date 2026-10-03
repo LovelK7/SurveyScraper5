@@ -203,8 +203,11 @@ def load_cs_points(signs_dir):
 # TDX symbols
 
 def parse_tdx_symbol(path):
-    meta = {"kind": None, "name": None, "name_it": None, "th_name": None}
+    meta = {"kind": None, "name": None, "name_it": None, "th_name": None,
+            "color": None, "alpha": None, "width": None, "dash": None,
+            "effect": []}
     elements, cur, inside = [], [], False
+    effect, in_effect = [], False
     for raw in open(path, encoding="utf-8", errors="replace").read().splitlines():
         t = raw.strip().split()
         if not t:
@@ -218,6 +221,29 @@ def parse_tdx_symbol(path):
             meta["name_it"] = " ".join(t[1:])
         elif key == "th_name":
             meta["th_name"] = " ".join(t[1:])
+        elif key == "color" and len(t) > 1:
+            meta["color"] = "#%06x" % (int(t[1], 16) & 0xffffff)
+            if len(t) > 2:
+                meta["alpha"] = int(t[2], 16) / 255.0
+        elif key == "width" and len(t) > 1:
+            meta["width"] = float(t[1])
+        elif key == "dash" and len(t) > 2:
+            meta["dash"] = [float(x) for x in t[1:]]
+        elif key == "effect":
+            in_effect = True
+        elif key == "endeffect":
+            in_effect = False
+            meta["effect"] = effect
+        elif in_effect:
+            try:
+                if key in ("moveTo", "moveT0"):
+                    effect.append("M %s %s" % (t[1], t[2]))
+                elif key == "lineTo":
+                    effect.append("L %s %s" % (t[1], t[2]))
+                elif key == "cubicTo":
+                    effect.append("C %s %s %s %s %s %s" % tuple(t[1:7]))
+            except IndexError:
+                pass
         elif key == "path":
             inside = True
         elif key == "endpath":
@@ -242,6 +268,39 @@ def parse_tdx_symbol(path):
     if cur:
         elements.append(("path", " ".join(cur)))
     return meta, elements
+
+
+def tdx_line_svg(meta):
+    """TopoDroid's own look for a line: its colour, width, dash and the
+    repeating `effect` tile, laid along a short stroke."""
+    color = meta.get("color") or "#000000"
+    w = max(1.0, min(3.0, (meta.get("width") or 1) * 0.35))
+    dash = meta.get("dash")
+    da = (' stroke-dasharray="%s"' % ",".join("%g" % (x * 0.5) for x in dash)
+          if dash else "")
+    parts = ['<path d="M 2 18 L 58 18" style="fill:none;stroke:%s;stroke-width:%g"%s/>'
+             % (color, w, da)]
+    if meta.get("effect"):
+        tile = " ".join(meta["effect"])
+        xs = [float(v) for v in re.findall(r"[ML] (-?[\d.]+) ", tile)] or [0, 15]
+        step = max(8.0, (max(xs) - min(xs)) * 0.55 + 4)
+        x = 4.0
+        while x < 52:
+            parts.append('<path d="%s" transform="translate(%g 18) scale(0.55)" '
+                         'style="fill:%s;stroke:none"/>' % (tile, x, color))
+            x += step
+    return ('<svg class="noscale" xmlns="http://www.w3.org/2000/svg" width="60" '
+            'height="30" viewBox="0 4 60 26">%s</svg>' % "".join(parts))
+
+
+def tdx_area_svg(meta, elements):
+    """TopoDroid's area: its colour at its own transparency (+ any pattern)."""
+    color = meta.get("color") or "#888888"
+    alpha = meta.get("alpha") if meta.get("alpha") is not None else 0.4
+    return ('<svg class="noscale" xmlns="http://www.w3.org/2000/svg" width="60" '
+            'height="30" viewBox="0 0 60 30"><rect x="3" y="3" width="54" height="24" '
+            'rx="3" style="fill:%s;fill-opacity:%.2f;stroke:%s;stroke-width:1"/></svg>'
+            % (color, max(alpha, 0.25), color))
 
 
 def tdx_svg(elements, kind):
@@ -358,6 +417,43 @@ function autofit(){
 }
 window.addEventListener('load', autofit);
 """
+
+
+def write_catalog_json(cs_points, tool_info, tdx_rows, sign_to_num, glyphs,
+                       line_to_num, area_to_num):
+    """tdx-mapping-catalog.json: the pictures and names behind the dashboard's
+    mapping page (3N > Mapiranje) - every cSurvey target and every TopoDroid
+    tool, each with its SVG and its NATURAL import outcome (no mapping entry).
+    Generated here because the sources (cSurvey's gallery, TopoDroid's symbol
+    files) exist only on a developer machine; the json ships with the kit."""
+    targets = {"point": [], "line": [], "area": []}
+    for n, sign, ename, app, svg in cs_points:
+        targets["point"].append({"num": n, "to": SIGN_NAMES[sign].lower(),
+                                 "label": ename, "app": app, "svg": svg})
+    for i, (name, desc, toolname) in enumerate(LINE_TARGETS):
+        svg, label = tool_info(toolname, LINE_PREVIEWS[name])
+        targets["line"].append({"num": 101 + i, "to": name, "label": name,
+                                "app": label, "desc": desc, "svg": svg})
+    for i, (name, desc, toolname) in enumerate(AREA_TARGETS):
+        svg, label = tool_info(toolname, AREA_PREVIEWS[name])
+        targets["area"].append({"num": 201 + i, "to": name, "label": name,
+                                "app": label, "desc": desc, "svg": svg})
+    # natural outcome = what the converter does with no mapping entry at all
+    PP.apply_mapping({"points": {}, "lines": {}, "areas": {}})
+    for row in tdx_rows:
+        if row["kind"] == "point":
+            verdict, css, num, _ = resolve_point(row["name"], sign_to_num, glyphs)
+        elif row["kind"] == "line":
+            verdict, css, num, _ = resolve_line(row["name"], line_to_num)
+        else:
+            verdict, css, num, _ = resolve_area(row["name"], area_to_num)
+        row["natural"] = {"verdict": verdict, "css": css, "num": num}
+    out = os.path.join(HERE, "tdx-mapping-catalog.json")
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"_readme": "Generated by make_signs_catalog.py - do not edit. "
+                              "Pictures for the dashboard's mapping page.",
+                   "targets": targets, "tdx": tdx_rows}, f, ensure_ascii=False)
+    return out
 
 
 def main(argv=None):
@@ -477,6 +573,7 @@ after import (a post-import re-typing tool is on the backlog).</p>%s
         js_names[201 + i] = name
 
     sections = []
+    tdx_rows = []  # the same rows, as data, for the dashboard catalog
     tnum = 0
     for symset in SET_ORDER:
         setdir = os.path.join(args.tdx_dir, symset)
@@ -502,6 +599,13 @@ after import (a post-import re-typing tool is on the backlog).</p>%s
                     verdict, css, tno, prefill = resolve_area(th, area_to_num)
                 tnum += 1
                 it = meta["name_it"] or ""
+                tdx_rows.append({"kind": kind, "name": th,
+                                 "label": meta["name"] or th, "label_it": it,
+                                 "set": symset.replace("symbols_", ""),
+                                 "svg": (tdx_line_svg(meta) if kind == "line"
+                                         else tdx_area_svg(meta, elements)
+                                         if kind == "area"
+                                         else tdx_svg(elements, kind))})
                 srows.append("""
 <div class="row" data-kind="%s" data-name="%s">
  <div class="num">T%d</div>
@@ -541,6 +645,8 @@ after import (a post-import re-typing tool is on the backlog).</p>%s
         note = ("non-standard water brush = postimport option in "
                 "tdx-mapping.json" if (kind, name) == ("area", "water") else
                 "TopoDroid system tool (no symbol file)")
+        tdx_rows.append({"kind": kind, "name": name, "label": name,
+                         "label_it": note, "set": "system", "svg": icon})
         sys_rows.append("""
 <div class="row" data-kind="%s" data-name="%s">
  <div class="num">T%d</div>
@@ -646,10 +752,13 @@ Post-import switches (spline linetypes, non-standard water brush) live in the fi
     with open(wb_out, "w", encoding="utf-8", newline="\n") as f:
         f.write(wb_page)
 
+    cat_out = write_catalog_json(cs_points, tool_info, tdx_rows,
+                                 sign_to_num, glyphs, line_to_num, area_to_num)
+
     old = os.path.join(HERE, "signs-catalog.html")
     if os.path.exists(old):
         os.remove(old)
-    print("wrote %s\nwrote %s" % (wb_out, cs_out))
+    print("wrote %s\nwrote %s\nwrote %s" % (wb_out, cs_out, cat_out))
 
 
 if __name__ == "__main__":

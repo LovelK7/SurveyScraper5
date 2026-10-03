@@ -36,7 +36,7 @@ const KIND_LABEL = {
 };
 
 const STAGE_ICON = {
-  home: "home", fast: "star", "1T": "teren", "2B": "baza", "3N": "nacrt", "4G": "geo", "4I": "karta",
+  home: "home", fast: "star", map3n: "nacrt", "1T": "teren", "2B": "baza", "3N": "nacrt", "4G": "geo", "4I": "karta",
   "4O": "osz", "4F": "foto", "4S": "sastavnica", "5O": "osobe", "5D": "dosje", "6P": "predaja",
 };
 const DIR_ICON = {
@@ -307,6 +307,7 @@ function renderNav() {
   for (const s of (S.catalog ? S.catalog.stages : [])) {
     if (s.group !== group) { group = s.group; kids.push(h("div", { class: "nav-group" }, group)); }
     kids.push(item(s.label, s.label, s.title, s.status));
+    if (s.label === "3N") kids.push(item("map3n", "3N", "Mapiranje simbola"));
   }
   kids.push(h("div", { class: "nav-group" }, "Dokumentacija"));
   const docItem = (path, title) => h("button", {
@@ -347,6 +348,7 @@ function render() {
   if (S.tab === "home") return main.replaceChildren(...renderHome());
   if (S.tab === "fast") return main.replaceChildren(...renderFast());
   if (S.tab.startsWith("doc:")) return main.replaceChildren(...renderDoc(S.tab.slice(4)));
+  if (S.tab === "map3n") return main.replaceChildren(...renderMapping());  // mapping.js
   const stage = S.catalog.stages.find(s => s.label === S.tab);
   if (!stage) return setTab("home");
   main.replaceChildren(...renderStage(stage));
@@ -618,6 +620,10 @@ function renderStage(stage) {
   if (stage.label === "2B") { const c = sbCard(); if (c) out.push(h("div", { class: "grid", style: "margin-bottom:14px" }, c)); }
   if (stage.label === "5D") out.push(...renderDossier());
   if (stage.label === "5O") out.push(...renderPeopleOfCave());
+  if (stage.label === "3N") out.push(h("div", { class: "card note", style: "margin-bottom:14px" },
+    h("div", { class: "row" }, icon("nacrt", "lg"),
+      h("span", { style: "flex:1" }, "Koji TopoDroid simbol postaje koji cSurvey znak, boja poligona, veličine znakova — zadano za sve objekte, a za ovaj objekt se može prilagoditi prije KORAKA 1 ili 2."),
+      h("button", { class: "btn", onclick: () => setTab("map3n") }, "Mapiranje simbola →"))));
 
   const actions = S.catalog.actions.filter(a => a.stage === stage.label);
   const steps = actions.filter(a => a.step);

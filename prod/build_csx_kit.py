@@ -91,6 +91,11 @@ TOOLS = [
     "parse_tdr.py",
     "sb_select.py",
     "tdx-mapping.json",
+    # KORAK 1 and 2 import it: the shared mapping + a cave's
+    # tdx-mapping-objekt.json. Miss it and both launchers ImportError.
+    "tdx_mapping.py",
+    # pictures for the dashboard's 3N mapping page (make_signs_catalog.py)
+    "tdx-mapping-catalog.json",
     # cSurvey app settings (registry): KORAK 0 applies them, KORAK 2 checks.
     "csurvey_app_settings.py",
     "csurvey-app-settings.json",

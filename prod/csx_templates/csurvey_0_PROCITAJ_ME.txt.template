@@ -46,7 +46,8 @@ KORAK 0 - POSTAVI cSURVEY (jednom po računalu, prije prvog objekta)
   * ZATVORI cSurvey.
   * Dvoklik na  csurvey_0_postavi_csurvey.bat  - ništa ne pita.
   * Upiše cSurveyu postavke programa koje ovaj postupak traži (npr.
-    faktor zaglađivanja linija 0,01).
+    isključeno zaglađivanje linija olovkom - crta ostaje točno kako
+    je nacrtana).
   * ZAŠTO cSurvey MORA BITI ZATVOREN: te postavke nisu u .csx datoteci
     nego u Windowsima, a cSurvey ih pročita kad se otvori i prepiše
     svojima kad se zatvori. Upisane dok je otvoren - izgube se.
@@ -55,6 +56,15 @@ KORAK 0 - POSTAVI cSURVEY (jednom po računalu, prije prvog objekta)
     ručno promijenio postavke, ili su dodane nove).
   * Boja poligona (crvena), veličine znakova i sl. NISU ovdje - njih
     KORAK 2 upiše u samu _lt datoteku.
+
+PRILAGODBA ZA JEDAN OBJEKT (po potrebi)
+  * Ako u mapi objekta postoji  tdx-mapping-objekt.json , KORAK 1 i
+    KORAK 2 za taj objekt koriste njegove izmjene (npr. drugu boju
+    poligona ili drugi znak za neki simbol). Piše je nadzorna ploča
+    (3N > Mapiranje simbola). Obriši je za povratak na zadano.
+  * Promjena simbola djeluje u KORAKU 1 - poslije nje ponovi KORAK 1,
+    uvoz i KORAK 2. Promjena boje poligona ili veličina djeluje u
+    KORAKU 2 - ponovi samo KORAK 2.
 
 NA MOBITELU (TopoDroid)
   * Nacrtaj skicu.

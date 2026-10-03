@@ -45,6 +45,7 @@ keeps the chronology.
 - [3N scale bar: beside or under the plan (2026-09-24)](#3n-scale-bar-beside-or-under-the-plan-2026-09-24)
 - [3N entrance dimensions: splays first, walls as fallback (2026-10-02)](#3n-entrance-dimensions-splays-first-walls-as-fallback-2026-10-02)
 - [3N predefined cSurvey settings: file vs app (2026-10-03)](#3n-predefined-csurvey-settings-file-vs-app-2026-10-03)
+- [3N mapping per cave, edited in the dashboard (2026-10-03)](#3n-mapping-per-cave-edited-in-the-dashboard-2026-10-03)
 
 ---
 
@@ -1219,10 +1220,48 @@ two channels. The explainer is
   while `cSurveyPC.exe` runs, since the value would be lost on exit. KORAK 2 only
   **checks** and warns, never writes. A warning instead of a stop, because the
   `_lt` is already made.
-- First entry: smoothing factor 0.01 for `pens.smooth` and `tools.smooth`
-  (cSurvey's floor). The list grows as the user names settings.
+- First entry: **pen smoothing switched off** (`pens.smooting` = `"0"`). The
+  first plan was to pin the smoothing factor (`pens.smooth`, `tools.smooth`) to
+  0.01, cSurvey's floor. The user chose the toggle instead, because it had been
+  switched on unintentionally. With it off the factor is never used
+  (frmMain2.vb:18970), so the factor isn't set. The list grows as the user
+  names settings.
 
 Validated: unit tests over a dict-backed registry; live `show`/`check` against
 this machine's registry; the live `apply` stopped with BLOCKED because cSurvey
 was open.
+
+## 3N mapping per cave, edited in the dashboard (2026-10-03)
+
+The user wanted the TDX → cSurvey mapping visible and changeable before a
+cave's KORAK runs, in the dashboard. Settled:
+
+- **Per cave, never the shared default.** A change made in the dashboard is
+  written as `tdx-mapping-objekt.json` into the cave's `SB_` folder, holding
+  only the difference from `tdx-mapping.json`. The shared file stays a
+  developer/`/publish` change. One person's tweak never changes every future
+  cave, and the Drive kit copy can't drift from the repo.
+- **The override lives beside the survey, not in the dashboard.** KORAK 1 and
+  2 find it themselves, walking up from each file to the `SB_` folder, per file
+  in a batch. So the `.bat` kit, the dashboard's buttons and a terminal run all
+  agree, and deleting the file is the reset.
+- **One merge, in 3N.** `tdx_mapping.py` (pure data, stdlib) is the only place
+  the merge and diff rules live. The dashboard loads it from the tools folder
+  by path instead of copying it. This is the one exception to "stages share
+  artifacts, not imports": a data helper, not an orchestrator.
+- **Everything on one page**: symbols, lines and areas (KORAK 1) and the
+  centerline, sizes and import switches (KORAK 2). Each part is labelled with
+  its KORAK, because a symbol change after import means redoing KORAK 1, the
+  import and KORAK 2.
+- Pictures are generated (`make_signs_catalog.py` → `tdx-mapping-catalog.json`)
+  because their sources exist only on a developer machine. TopoDroid's lines
+  and areas are drawn in their own colours, dash and effect.
+
+Validated: tests for merge/diff round trips, per-file isolation in KORAK 1's
+module tables and KORAK 2's rules, and the API's save, reset and refusals.
+Live: KORAK 1 on a real TopoDroid export with an override (`danger` →
+"OPASNO": 15 labels in that cave, 0 in a second cave in the same batch);
+KORAK 2 on a cSurvey-saved file (blue polygon from the override, red stations
+from the default). The page was driven in Edge: edit, preview, dirty state,
+discard.
 

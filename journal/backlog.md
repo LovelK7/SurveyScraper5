@@ -380,4 +380,12 @@ when an idea's time comes. Nothing here is a commitment.
   `postimport.designproperties` can't set them; add a font form when the user names a font to predefine.
 - 2026-10-03 — 3N: optional "open in cSurvey" launcher that checks the app settings, then starts the Drive copy
   of cSurvey with the `_lt` — only if priming once turns out not to stick in practice.
+- 2026-10-03 — dashboard in prod: `state.tools_dir()` finds 3N tools only in the repo or via `CSX_TOOLS`; fall back to
+  the Drive kit's `csurvey_alati/` so the 3N tab and the Mapiranje page work from an operator's bundle.
+- 2026-10-03 — 3N Mapiranje: the workflow graph could turn KORAK 1/2 amber itself when `tdx-mapping-objekt.json`
+  is newer than `_pp`/`_lt` (today only the mapping page says so).
+- 2026-10-03 — 3N Mapiranje: a "make this the default" path (cave override → shared `tdx-mapping.json`) for a
+  tweak that proves itself, via a reviewed repo change + `/publish`, never from the page.
+- 2026-10-03 — 3N: `preprocess_tdx_csx.py` crashes with `charmap` on the warning sign in its output when stdout is a
+  non-UTF-8 pipe (fine in a console and in the dashboard, which sets PYTHONIOENCODING); reconfigure stdout.
 

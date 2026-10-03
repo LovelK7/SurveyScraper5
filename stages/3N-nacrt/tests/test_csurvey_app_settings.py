@@ -39,12 +39,12 @@ def profile(tmp_path):
     return str(p)
 
 
-def test_shipped_profile_loads_and_sets_smoothing():
+def test_shipped_profile_loads_and_turns_pen_smoothing_off():
     key, settings = cas.load_profile(cas.DEFAULT_PROFILE)
     assert key == r"Software\Cepelabs\cSurvey"
     values = {n: v for n, v, _ in settings}
-    assert values["pens.smooth"] == "0.01"
-    assert values["tools.smooth"] == "0.01"
+    # cSurvey writes the toggle as REG_SZ "0"/"1" (frmMain2.vb:2904)
+    assert values["pens.smooting"] == "0"
 
 
 @pytest.mark.parametrize("current, wanted, expected", [

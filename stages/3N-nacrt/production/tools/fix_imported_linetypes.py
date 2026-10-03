@@ -48,6 +48,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # __pycache__ (it would sync to everyone and outlive these tools).
 sys.dont_write_bytecode = True
 import sb_select
+import tdx_mapping
 
 DEFAULT_MAP = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "tdx-mapping.json")
@@ -287,6 +288,33 @@ def pick_by_sb(inputs, sb):
                           root=intake, prompt="Koju datoteku dovrsiti? ")
 
 
+def load_rules(inp, map_file):
+    """(rules, sign_sizes, label_sizes, override) for one input file: the
+    `postimport` of the shared mapping plus that cave's tdx-mapping-objekt.json."""
+    cfg, override = tdx_mapping.effective_for(inp, map_file)
+    rules = {"spline_linetypes": True, "nonstandard_water": False}
+    rules.update(cfg.get("postimport", {}))
+
+    sign_sizes = {}
+    for name, size in rules.get("sign_sizes", {}).items():
+        v = SIGN_VALUES.get(name.lower())
+        s = SIZES.get(str(size).lower())
+        if v is None or s is None:
+            print("WARNING: sign_sizes entry %r: %r ignored (unknown name "
+                  "or size)" % (name, size), file=sys.stderr)
+        else:
+            sign_sizes[str(v)] = s
+    label_sizes = {}
+    for text, size in rules.get("label_sizes", {}).items():
+        s = SIZES.get(str(size).lower())
+        if s is None:
+            print("WARNING: label_sizes entry %r ignored" % text,
+                  file=sys.stderr)
+        else:
+            label_sizes[text] = s
+    return rules, sign_sizes, label_sizes, override
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("input", nargs="+",
@@ -316,29 +344,6 @@ def main(argv=None):
         print("ERROR: -o/--out works with a single input only", file=sys.stderr)
         return 1
 
-    rules = {"spline_linetypes": True, "nonstandard_water": False}
-    if os.path.exists(args.map_file):
-        with open(args.map_file, encoding="utf-8") as f:
-            rules.update(json.load(f).get("postimport", {}))
-
-    sign_sizes = {}
-    for name, size in rules.get("sign_sizes", {}).items():
-        v = SIGN_VALUES.get(name.lower())
-        s = SIZES.get(str(size).lower())
-        if v is None or s is None:
-            print("WARNING: sign_sizes entry %r: %r ignored (unknown name "
-                  "or size)" % (name, size), file=sys.stderr)
-        else:
-            sign_sizes[str(v)] = s
-    label_sizes = {}
-    for text, size in rules.get("label_sizes", {}).items():
-        s = SIZES.get(str(size).lower())
-        if s is None:
-            print("WARNING: label_sizes entry %r ignored" % text,
-                  file=sys.stderr)
-        else:
-            label_sizes[text] = s
-
     batch = len(args.input) > 1
     rc = 0
     for inp in args.input:
@@ -352,6 +357,10 @@ def main(argv=None):
             print("ERROR: %s does not exist" % inp, file=sys.stderr)
             rc = 1
             continue
+
+        rules, sign_sizes, label_sizes, override = load_rules(inp, args.map_file)
+        if override:
+            print("mapping: + prilagodba objekta %s" % override)
 
         try:
             root, is_csz = load_root(inp)

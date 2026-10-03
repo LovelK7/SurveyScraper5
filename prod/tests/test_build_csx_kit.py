@@ -130,3 +130,19 @@ def test_missing_tool_fails_the_build(tmp_path, monkeypatch):
                         build_csx_kit.TOOLS + ["nema_me.py"])
     with pytest.raises(SystemExit):
         build_csx_kit.build(tmp_path / "csx-kit")
+
+
+def test_every_sibling_import_of_a_shipped_tool_is_shipped(staged):
+    """A tool importing a sibling (`import tdx_mapping`) that the kit doesn't
+    carry works here and ImportErrors on every operator machine."""
+    import re
+    payload = staged / build_csx_kit.PAYLOAD_DIR
+    shipped = {p.stem for p in payload.glob("*.py")}
+    repo_tools = {p.stem for p in build_csx_kit.TOOLS_DIR.glob("*.py")}
+    missing = []
+    for tool in payload.glob("*.py"):
+        text = tool.read_text(encoding="utf-8")
+        for name in re.findall(r"^\s*(?:import|from)\s+(\w+)", text, re.M):
+            if name in repo_tools and name not in shipped:
+                missing.append(f"{tool.name} -> {name}.py")
+    assert not missing, missing

@@ -1,8 +1,8 @@
 @echo off
 rem ------------------------------------------------------------------
 rem  KORAK 0 - POSTAVI cSURVEY (jednom po racunalu)
-rem  Upise u cSurvey postavke programa koje 3N trazi (npr. faktor
-rem  zagladivanja linija 0,01). One se ne spremaju u .csx datoteku nego
+rem  Upise u cSurvey postavke programa koje 3N trazi (npr. iskljuceno
+rem  zagladivanje linija olovkom). One se ne spremaju u .csx datoteku nego
 rem  u Windows, za svakog korisnika na svakom racunalu posebno.
 rem
 rem  KADA: jednom, prije prvog rada s cSurveyem na ovom racunalu - i

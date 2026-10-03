@@ -25,7 +25,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from cave_dossier.core.paths import repo_root, workspace, workspace_root
-from cave_dossier.gui import catalog, media
+from cave_dossier.gui import catalog, mapping, media
 from cave_dossier.gui.jobs import JobManager, SequenceStep, cli_argv, script_argv
 from cave_dossier.gui.state import Workspace, csurvey_exe, tools_dir
 
@@ -156,6 +156,28 @@ class App:
         if not script.is_file():
             raise ApiError(f"Nema skripte {script}.")
         return script_argv(script, args), f"python $T\\{action.tool} " + _join(args)
+
+    # ── 3N mapping ──────────────────────────────────────────────────
+    def mapping_api(self, verb: str, parts: list[str], body: dict | None = None) -> dict:
+        """GET mapping-catalog · GET mapping/<broj> · POST mapping/<broj>
+        {effective} · POST mapping/<broj>/reset (gui/mapping.py)."""
+        tools = tools_dir()
+        if tools is None:
+            raise ApiError("3N alati nisu pronađeni (nema stages/3N-nacrt/production/"
+                           "tools, a CSX_TOOLS nije postavljen).")
+        try:
+            if parts[0] == "mapping-catalog":
+                return mapping.catalog(tools)
+            broj = _int(parts[1])
+            if verb == "GET":
+                return mapping.view(self.ws, broj, tools)
+            if len(parts) == 3 and parts[2] == "reset":
+                return mapping.reset(self.ws, broj, tools)
+            return mapping.save(self.ws, broj, tools, (body or {}).get("effective"))
+        except mapping.MappingError as exc:
+            raise ApiError(str(exc)) from exc
+        except OSError as exc:
+            raise ApiError(f"Mapiranje: {exc}") from exc
 
     # ── photos ──────────────────────────────────────────────────────
     PHOTO_KINDS = {"photo", "photo_processed", "queued"}
@@ -369,6 +391,8 @@ def make_handler(app: App):
                 if head == "files":
                     return {"files": app.ws.candidate_files(_int(query.get("broj")),
                                                             query.get("kind", ""))}
+                if head == "mapping-catalog" or (head == "mapping" and len(parts) == 2):
+                    return app.mapping_api("GET", parts)
                 if head == "jobs":
                     return {"jobs": [j.to_json(since=10**9) for j in app.jobs.list()]}
                 if head == "job" and len(parts) == 2:
@@ -387,6 +411,8 @@ def make_handler(app: App):
                         return app.delete(body)
                     except OSError as exc:
                         raise ApiError(str(exc)) from exc
+                if head == "mapping" and len(parts) in (2, 3):
+                    return app.mapping_api("POST", parts, body)
                 if head == "refresh":
                     app.ws.refresh()
                     return {"ok": True}

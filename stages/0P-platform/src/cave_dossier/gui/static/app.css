@@ -443,3 +443,63 @@ a { color: var(--brand-text); }
   .step { grid-template-columns: 1fr; }
   .step-tag { text-align: left; border-right: 0; padding: 0; align-items: flex-start; }
 }
+
+/* ── 3N › Mapiranje (mapping.js) ─────────────────────────────────────
+   Glyphs are black-on-paper drawings, so they always sit on a white
+   "paper" tile, in dark mode too. */
+.row .spacer { flex: 1; }
+.paper { background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+.small { font-size: 12px; }
+.tag { display: inline-block; font-size: 11px; font-weight: 650; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--muted); }
+.tag.own { background: var(--brand-soft); border-color: var(--brand-line); color: var(--brand-text); }
+.tag.def { background: var(--panel-2); }
+
+.cl-card { display: grid; grid-template-columns: minmax(260px, 380px) 1fr; gap: 18px; align-items: start; }
+.cl-preview { padding: 6px; position: sticky; top: 0; }
+.cl-svg { width: 100%; height: auto; display: block; }
+.cl-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 18px; }
+.cl-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
+.cl-field { display: flex; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 7px; border-left: 3px solid transparent; }
+.cl-field .cl-label { flex: 1; }
+.cl-field.changed { border-left-color: var(--brand); background: var(--brand-softer); }
+.cl-field input[type=number] { width: 78px; }
+.cl-field input[type=color] { width: 44px; height: 26px; padding: 0; border: 1px solid var(--line-strong); border-radius: 6px; background: none; }
+.card .cl-field + .cl-field { margin-top: 4px; }
+
+table.kv { border-collapse: collapse; }
+table.kv td { padding: 2px 8px 2px 0; }
+table.kv tr.changed td:first-child { box-shadow: inset 3px 0 0 var(--brand); padding-left: 8px; }
+
+.segs { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
+.seg { border: 0; background: var(--panel); color: var(--ink); padding: 4px 10px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.seg + .seg { border-left: 1px solid var(--line); }
+.seg.on { background: var(--brand-soft); color: var(--brand-text); font-weight: 650; }
+
+.sym-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.sym-row { display: grid; grid-template-columns: 56px minmax(140px, 1fr) 18px 120px minmax(260px, 1.4fr); gap: 10px; align-items: center;
+  padding: 5px 8px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 9px; background: var(--panel); }
+.sym-row.own { border-left-color: var(--brand); background: var(--brand-softer); }
+.sym-row.bad .sym-target .small { color: var(--danger); }
+.tile { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; overflow: hidden; color: #000; }
+.tile svg { max-width: 46px; max-height: 46px; overflow: hidden; }
+.tile svg * { vector-effect: non-scaling-stroke; }
+.sym-name b { font-family: var(--mono); font-size: 12.5px; }
+.sym-arrow { color: var(--muted); text-align: center; }
+.sym-target { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; line-height: 1.15; }
+.sym-target .tile { width: 64px; height: 46px; }
+.sym-target.dim .tile { opacity: .6; }
+.sym-target .small { color: var(--muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.label-pic { width: 64px; height: 46px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;
+  background: #fff; color: #000; border: 1px solid var(--line); border-radius: 8px; }
+.sym-edit { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sym-edit select { max-width: 260px; }
+.mini { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .cl-card { grid-template-columns: 1fr; }
+  .cl-preview { position: static; }
+  .sym-row { grid-template-columns: 56px 1fr 64px; }
+  .sym-arrow { display: none; }
+  .sym-edit { grid-column: 1 / -1; }
+}
+.cl-field input[type=color].unset { opacity: .35; }

@@ -50,6 +50,7 @@ which SB numbers to prepare; or drag .csx files onto it).
 """
 
 import argparse
+import copy
 import json
 import os
 import sys
@@ -60,6 +61,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # __pycache__ (it would sync to everyone and outlive these tools).
 sys.dont_write_bytecode = True
 import sb_select
+import tdx_mapping
 
 DEFAULT_MAP = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "tdx-mapping.json")
@@ -105,12 +107,21 @@ AREA_RENAMES = {
 
 GENERIC = {"strip_line_subtypes": True, "strip_area_suffix": True}
 
+# The built-ins as shipped, so reset_mapping() can return to them.
+_TABLES = (POINT_RENAMES, POINT_TO_LABEL, POINT_LEAVE, LINE_LEAVE, AREA_LEAVE,
+           EXTRAS, LINE_RENAMES, AREA_RENAMES)
+_BUILTINS = tuple(copy.deepcopy(t) for t in _TABLES)
+_BUILTIN_GENERIC = dict(GENERIC)
 
-def load_mapping(path):
-    """Populate the mapping tables from a tdx-mapping.json file."""
+
+def apply_mapping(cfg):
+    """Populate the mapping tables from a parsed tdx-mapping.json dict.
+
+    Starts from the built-ins every time, so one file's per-cave override
+    (tdx_mapping.py) never leaks into the next file of a batch.
+    """
     global GENERIC
-    with open(path, encoding="utf-8") as f:
-        cfg = json.load(f)
+    reset_mapping()
     for section, renames, labels, leaves in (
             ("points", POINT_RENAMES, POINT_TO_LABEL, POINT_LEAVE),
             ("lines", LINE_RENAMES, None, LINE_LEAVE),
@@ -121,6 +132,8 @@ def load_mapping(path):
         if labels is not None:
             labels.clear()
         for name, action in cfg[section].items():
+            if name.startswith("_") or not isinstance(action, dict):
+                continue
             name = name.lower()
             if "to" in action:
                 renames[name] = action["to"].lower()
@@ -133,6 +146,21 @@ def load_mapping(path):
             if extras:
                 EXTRAS[(section, name)] = extras
     GENERIC = {**GENERIC, **cfg.get("generic", {})}
+
+
+def load_mapping(path):
+    """Populate the mapping tables from a tdx-mapping.json file."""
+    with open(path, encoding="utf-8") as f:
+        apply_mapping(json.load(f))
+
+
+def reset_mapping():
+    """Put the built-in tables back (the state before any mapping file)."""
+    global GENERIC
+    for table, saved in zip(_TABLES, _BUILTINS):
+        table.clear()
+        table.update(copy.deepcopy(saved))
+    GENERIC = dict(_BUILTIN_GENERIC)
 
 
 def reverse_line_points(item, warnings):
@@ -360,7 +388,6 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     if os.path.exists(args.map_file):
-        load_mapping(args.map_file)
         print("mapping: %s" % args.map_file)
     else:
         print("mapping: built-in defaults (%s not found)" % args.map_file)
@@ -405,6 +432,11 @@ def main(argv=None):
     for p in files:
         if len(files) > 1:
             print("=" * 60)
+        # Default + this cave's tdx-mapping-objekt.json, if it has one.
+        cfg, override = tdx_mapping.effective_for(p, args.map_file)
+        apply_mapping(cfg)
+        if override:
+            print("mapping: + prilagodba objekta %s" % override)
         try:
             failures += 1 if process_file(p, args.out, args.force) else 0
         except Exception as e:

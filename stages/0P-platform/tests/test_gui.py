@@ -516,3 +516,46 @@ def test_duplicate_redni_broj_is_found_and_blocks_intake_create(settings, tmp_pa
     assert cli.cmd_intake_create(s, 1) == 99
     assert not any((root / "!!!Digitalizacija" / "!Za digitalizirat").iterdir())
     assert "nije jedinstven" in capsys.readouterr().err
+
+
+# ── 3N mapping page (gui/mapping.py) ────────────────────────────────
+
+
+def test_mapping_page_saves_only_the_difference_and_resets(server):
+    base, _, leaf = server
+    status, cat = _call(base, "/api/mapping-catalog")
+    assert status == 200 and cat["targets"]["point"] and cat["tdx"]
+    status, view = _call(base, "/api/mapping/1220")
+    assert status == 200 and view["override_path"] is None and view["changed"] == []
+    assert view["centerline_types"]["PlotPenColor"] == "color"
+
+    eff = view["effective"]
+    eff["postimport"]["centerline"]["PlotPenColor"] = -16776961   # blue
+    eff["points"]["air-draught"] = {"label": "Z"}
+    status, saved = _call(base, "/api/mapping/1220", {"effective": eff})
+    assert status == 200 and saved["changed"] == ["points", "postimport"]
+    written = json.loads((leaf / "tdx-mapping-objekt.json").read_text(encoding="utf-8"))
+    assert written["points"] == {"air-draught": {"label": "Z"}}
+    assert written["postimport"] == {"centerline": {"PlotPenColor": -16776961}}
+    assert "lines" not in written  # only the difference is stored
+
+    status, back = _call(base, "/api/mapping/1220/reset", {})
+    assert status == 200 and back["override_path"] is None
+    assert not (leaf / "tdx-mapping-objekt.json").exists()
+
+
+def test_mapping_page_refuses_bad_input_and_caves_without_a_folder(server):
+    base, _, leaf = server
+    _, view = _call(base, "/api/mapping/1220")
+    eff = view["effective"]
+    eff["points"]["clay"] = {"orientation": 90}            # no target
+    status, data = _call(base, "/api/mapping/1220", {"effective": eff})
+    assert status == 400 and "clay" in data["error"]
+    _, view = _call(base, "/api/mapping/1220")
+    eff = view["effective"]
+    eff["postimport"]["centerline"]["PlotPenWidth"] = "debelo"
+    status, data = _call(base, "/api/mapping/1220", {"effective": eff})
+    assert status == 400 and "PlotPenWidth" in data["error"]
+    status, data = _call(base, "/api/mapping/999", {"effective": {}})
+    assert status == 400 and "nema mapu" in data["error"]
+    assert not (leaf / "tdx-mapping-objekt.json").exists()

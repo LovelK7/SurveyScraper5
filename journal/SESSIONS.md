@@ -12,6 +12,36 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-03 — 3N: predefined cSurvey settings, and the mapping page in the dashboard (agent) ✅
+
+- **Did:** Traced where cSurvey keeps settings: file settings live in the `.csx` (`designproperties`), app settings
+  in `HKCU\Software\Cepelabs\cSurvey`, read once at window start and written back on close
+  (cEditTools.vb:154-201, frmMain2.vb:2678/2903). Built `csurvey_app_settings.py` + `csurvey-app-settings.json`
+  (`apply`/`check`/`show`) and a new KORAK 0 launcher `csurvey_0_postavi_csurvey.bat` that primes the registry
+  once per computer and refuses while `cSurveyPC.exe` runs; KORAK 2 now ends with `check` (warn only). First entry:
+  pen smoothing **off** (`pens.smooting` = "0"). The user first asked for factor 0.01, then chose the toggle, which
+  had been switched on by accident. `fix_imported_linetypes.py` gained `postimport.designproperties` (any scalar
+  property as name → {type, value}). Then, on request, the **per-cave mapping**: `tdx_mapping.py` (merge/diff of
+  the shared `tdx-mapping.json` and a cave's `tdx-mapping-objekt.json`), wired into KORAK 1 (tables reset per
+  file) and KORAK 2 (rules per file); `make_signs_catalog.py` now also writes `tdx-mapping-catalog.json` with every
+  glyph, and draws TopoDroid's lines and areas in their own colour, dash and effect; dashboard page *3N › Mapiranje
+  simbola* (`gui/mapping.py`, `static/mapping.js`, `/api/mapping/<broj>`, `/api/mapping-catalog`) with a live
+  centerline preview, colour pickers, sizes, import switches and a picture row per TopoDroid tool. Explainer
+  [csurvey-settings.md](../stages/3N-nacrt/production/csurvey-settings.md); two decisions recorded; kit test
+  that every sibling import of a shipped tool is shipped.
+- **Result:** 743 tests green, doctor 0 fail. Live: `show`/`check` against this machine's registry; `apply`
+  blocked correctly with cSurvey open (smoothing still on here). KORAK 1 on a real TopoDroid export with an
+  override: 15 "OPASNO" labels in that cave, 0 in a second cave in the same batch. KORAK 2 on a cSurvey-saved
+  file: blue polygon from the override, red stations from the default. The page was driven in Edge (edit, preview,
+  dirty state, discard); saving to a real Drive folder was tested only against a temp folder. Nothing published.
+- **Learned:** The workbench's export builds the json from scratch and silently drops `postimport` (red
+  centerline included), which is backlogged and documented as a pitfall. The shipped centerline text scales (1.0 / 0.5)
+  are cSurvey's own defaults, so smaller shot numbers had only ever been set by hand per file. In prod the
+  dashboard finds 3N tools only via `CSX_TOOLS` (backlogged). `preprocess_tdx_csx.py` crashes on its "⚠" when
+  stdout is a non-UTF-8 pipe (existing; backlogged).
+- **Next:** Close cSurvey → `csurvey_app_settings.py apply`; `/publish` the csx kit (v1.6); name further
+  settings to predefine as they come up.
+
 ### 2026-10-02 (evening) — 3N: entrance dimensions — feasibility on SB 1220 and SB 1103 (agent) ✅
 
 - **Did:** opened [project 0005](../stages/3N-nacrt/projects/0005-entrance-dimensions/brief.md) (`research`). Traced how `_lt_fin.csx` encodes the entrance station, the station coordinates and the Borders walls, then wrote `findings/entrance_dims_proto.py`: entrance station from the trigpoint flag (else `decide_entrance`), passage axis from the in-cave shot at that station, a ray cast perpendicular to it in the plan and vertically in the profile against the Borders split into `B` sequences, nearest drawn wall per side, short fill bridge as fallback, a scan along the axis, a pit branch (two plan extents + footprint Feret), and a splay LRUD cross-check. Plots + JSON reports under `findings/`; board row; brief with the open rules.

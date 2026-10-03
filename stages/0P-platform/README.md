@@ -49,6 +49,17 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
 - Runs that only read go on one click. Anything that writes to Drive, to the
   cave's folder or to georef.hr asks first (orange **Pokreni…**). Ticking
   `--dry-run` / `--local` makes it a plain run again.
+- **3N › Mapiranje simbola** draws the TopoDroid → cSurvey mapping for the
+  current cave. Each TopoDroid tool is shown in its own colours, and next to it
+  the cSurvey glyph it becomes, picked from a list. Below that are the
+  centerline (colour pickers, widths and styles, with a live preview), sign and
+  label sizes, and the import switches. Every part says which KORAK it takes
+  effect in. **Spremi** writes only the difference from the shared
+  `tdx-mapping.json` into the cave's folder as `tdx-mapping-objekt.json`, so
+  KORAK 1 and 2 apply it to that cave alone. **Vrati na zadano** deletes that
+  file. When `_pp`/`_lt` are older than the saved override, the page says
+  which KORAK to redo. See
+  [csurvey-settings.md](../3N-nacrt/production/csurvey-settings.md#per-cave-mapping-the-dashboards-mapiranje-page).
 - **4F** shows the cave's photos as a gallery (Pillow thumbnails cached in
   `runs/gui/thumbs`; without Pillow the originals are served). **Obriši**
   sends a photo to the bin. On the Drive that means the Google Drive trash
@@ -94,10 +105,11 @@ How it is built, for whoever turns it into the real GUI:
 | `gui/catalog.py` | **The table of every action**: stage, Croatian label, argv template (`{broj}`, `{file}`, `{query}`), options, what it writes. The page draws its buttons from this, and the server builds argv only from this. A new button is one `Action` entry. Also the stage list with its nav groups, and the ★ `RECIPES` (fast actions: ordered `RecipeStep`s over catalog actions). |
 | `gui/workflow.py` | **The per-cave dependency graph**: each step's output files, input files and status (done / stale / todo / blocked …), and the catalog action that (re)makes it. Reads file names, mtimes, the OSZ's v10 cells and the dimensions JSON; writes nothing. |
 | `gui/state.py` | Read-only view of the machine: settings, SB versions, Drive dirs, caves in work, a cave's files classified by name, open-document locks. Fail-soft: a missing Drive is a note on the page. |
+| `gui/mapping.py` | The 3N mapping page: the shared mapping, a cave's override, the pictures (`tdx-mapping-catalog.json`). Loads 3N's pure-data `tdx_mapping.py` from the tools folder by path, so the page and KORAK 1/2 merge the same way; validates and writes the override. Runs no tool. |
 | `gui/media.py` | Photo thumbnails and the recoverable delete (shell "allow undo"). |
 | `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. `start_sequence` runs a recipe's steps one after another as a single job (stop on exit 2+ unless `keep_going`; 0/1 are the CLI's "done / not ready"). |
-| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
-| `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`. Plain JS, no build step. |
+| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, `/mapping/<broj>` (GET, POST, POST `…/reset`), `/mapping-catalog`, and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
+| `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`, `mapping.js` (the 3N mapping page). Plain JS, no build step. |
 
 Only standard library in the base install; Pillow (the `photos` extra) makes
 the gallery faster, and lxml (the `osz` extra) lets the workflow read the OSZ.
