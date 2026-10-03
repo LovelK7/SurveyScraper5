@@ -335,9 +335,10 @@ class Recipe:
 RECIPES: tuple[Recipe, ...] = (
     Recipe(
         "novi-objekt", "Novi objekt u jednom potezu",
-        "Mapa objekta → isječak karte → OSZ → fotografije iz reda čekanja → "
-        "obrada fotografija. Svaki korak preskače ono što već postoji, pa se "
-        "smije ponoviti.",
+        "Mapa objekta → isječak karte → OSZ (uključuje 4G: lokalitet, najbliže "
+        "mjesto i kotu ulaza iz koordinata, usporedno sa SB-om) → fotografije iz "
+        "reda čekanja → obrada fotografija. Svaki korak preskače ono što već "
+        "postoji, pa se smije ponoviti.",
         (
             RecipeStep("intake-create"),
             RecipeStep("karta", keep_going=True),
