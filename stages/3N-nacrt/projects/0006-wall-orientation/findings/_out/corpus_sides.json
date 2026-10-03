@@ -1,0 +1,9326 @@
+[
+ {
+  "file": "272-2p_pp_lt.csx",
+  "designs": {
+   "plan": {
+    "legs": 6,
+    "splays": 122,
+    "splays_dropped": 14,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 78,
+      "length": 7.8,
+      "start": [
+       1.38,
+       -3.72
+      ],
+      "end": [
+       1.36,
+       -5.11
+      ],
+      "score": -0.845,
+      "coverage": 1.0,
+      "median_dist": 0.11,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 21,
+      "length": 2.45,
+      "start": [
+       2.12,
+       -5.99
+      ],
+      "end": [
+       1.38,
+       -3.68
+      ],
+      "score": -0.285,
+      "coverage": 0.65,
+      "median_dist": 0.06,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 7,
+      "length": 0.86,
+      "start": [
+       1.27,
+       -6.13
+      ],
+      "end": [
+       1.8,
+       -5.47
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.23,
+      "cave_side": "right"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 17,
+      "length": 2.01,
+      "start": [
+       1.94,
+       -6.29
+      ],
+      "end": [
+       1.27,
+       -4.41
+      ],
+      "score": 0.036,
+      "coverage": 0.62,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 1,
+      "type": "4",
+      "pen": "8",
+      "n": 60,
+      "length": 5.39,
+      "start": [
+       1.3,
+       -4.45
+      ],
+      "end": [
+       -0.79,
+       -0.61
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.17,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 2,
+      "type": "4",
+      "pen": "8",
+      "n": 44,
+      "length": 3.61,
+      "start": [
+       -0.79,
+       -0.72
+      ],
+      "end": [
+       0.06,
+       1.2
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.29,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 3,
+      "type": "4",
+      "pen": "8",
+      "n": 39,
+      "length": 4.27,
+      "start": [
+       0.11,
+       1.16
+      ],
+      "end": [
+       1.25,
+       4.9
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.14,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 4,
+      "type": "4",
+      "pen": "8",
+      "n": 9,
+      "length": 1.24,
+      "start": [
+       1.21,
+       4.93
+      ],
+      "end": [
+       1.53,
+       6.12
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.33,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 5,
+      "type": "4",
+      "pen": "8",
+      "n": 7,
+      "length": 1.03,
+      "start": [
+       1.98,
+       6.24
+      ],
+      "end": [
+       1.93,
+       5.22
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.19,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 6,
+      "type": "4",
+      "pen": "8",
+      "n": 63,
+      "length": 7.68,
+      "start": [
+       1.86,
+       5.15
+      ],
+      "end": [
+       3.83,
+       0.87
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.17,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 7,
+      "type": "4",
+      "pen": "8",
+      "n": 73,
+      "length": 7.54,
+      "start": [
+       4.24,
+       0.69
+      ],
+      "end": [
+       1.76,
+       -5.44
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.14,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 8,
+      "type": "4",
+      "pen": "8",
+      "n": 9,
+      "length": 0.95,
+      "start": [
+       1.36,
+       -5.11
+      ],
+      "end": [
+       1.02,
+       -5.98
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.18,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 6,
+    "splays": 122,
+    "splays_dropped": 45,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 36,
+      "length": 6.21,
+      "start": [
+       4.9,
+       6.84
+      ],
+      "end": [
+       6.19,
+       12.29
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.07,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 15,
+      "length": 2.49,
+      "start": [
+       6.07,
+       12.14
+      ],
+      "end": [
+       8.14,
+       13.38
+      ],
+      "score": -1.0,
+      "coverage": 0.94,
+      "median_dist": 0.24,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 12,
+      "length": 1.89,
+      "start": [
+       7.9,
+       13.65
+      ],
+      "end": [
+       6.04,
+       13.45
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 3,
+      "type": "4",
+      "pen": "1",
+      "n": 53,
+      "length": 10.64,
+      "start": [
+       5.89,
+       13.4
+      ],
+      "end": [
+       -3.75,
+       12.2
+      ],
+      "score": -1.0,
+      "coverage": 0.97,
+      "median_dist": 0.49,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 4,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 2.6,
+      "start": [
+       -3.37,
+       12.0
+      ],
+      "end": [
+       -5.93,
+       12.33
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.39,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 5,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 3.33,
+      "start": [
+       -5.87,
+       11.34
+      ],
+      "end": [
+       -4.22,
+       8.64
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 1.82,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 6,
+      "type": "4",
+      "pen": "1",
+      "n": 39,
+      "length": 9.99,
+      "start": [
+       -4.39,
+       8.77
+      ],
+      "end": [
+       -1.58,
+       -0.03
+      ],
+      "score": -1.0,
+      "coverage": 0.97,
+      "median_dist": 2.86,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 7,
+      "type": "4",
+      "pen": "1",
+      "n": 48,
+      "length": 10.06,
+      "start": [
+       2.09,
+       0.22
+      ],
+      "end": [
+       2.46,
+       5.46
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.69,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 8,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 1.31,
+      "start": [
+       2.41,
+       5.58
+      ],
+      "end": [
+       2.39,
+       4.28
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 0,
+      "seq": 9,
+      "type": "4",
+      "pen": "1",
+      "n": 13,
+      "length": 2.57,
+      "start": [
+       2.95,
+       4.58
+      ],
+      "end": [
+       3.29,
+       7.11
+      ],
+      "score": -1.0,
+      "coverage": 0.94,
+      "median_dist": 1.0,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 10,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 2.95,
+      "start": [
+       3.24,
+       7.14
+      ],
+      "end": [
+       3.69,
+       6.93
+      ],
+      "score": -0.906,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 11,
+      "type": "4",
+      "pen": "1",
+      "n": 13,
+      "length": 2.84,
+      "start": [
+       3.86,
+       7.05
+      ],
+      "end": [
+       3.42,
+       4.26
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 1.56,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 12,
+      "type": "4",
+      "pen": "1",
+      "n": 13,
+      "length": 2.72,
+      "start": [
+       4.91,
+       4.23
+      ],
+      "end": [
+       5.09,
+       6.86
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 1.26,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "Golobreška_nanoekspedicija-1p-lk_pp_lt_fin.csx",
+  "designs": {
+   "plan": {
+    "legs": 2,
+    "splays": 55,
+    "splays_dropped": 0,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 213,
+      "length": 11.25,
+      "start": [
+       -0.91,
+       -0.02
+      ],
+      "end": [
+       -0.17,
+       0.54
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.11,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 0.91,
+      "start": [
+       -0.12,
+       0.52
+      ],
+      "end": [
+       -0.85,
+       0.73
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.15,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 22,
+      "length": 0.92,
+      "start": [
+       -0.87,
+       0.66
+      ],
+      "end": [
+       -0.8,
+       -0.09
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.16,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 2,
+    "splays": 55,
+    "splays_dropped": 10,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 63,
+      "length": 8.67,
+      "start": [
+       3.54,
+       -1.63
+      ],
+      "end": [
+       -0.55,
+       0.28
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.49,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 51,
+      "length": 7.62,
+      "start": [
+       -0.55,
+       0.31
+      ],
+      "end": [
+       -1.1,
+       -6.84
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 0.37,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 1.26,
+      "start": [
+       0.67,
+       -6.94
+      ],
+      "end": [
+       0.5,
+       -6.14
+      ],
+      "score": -1.0,
+      "coverage": 0.8,
+      "median_dist": 0.14,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 3,
+      "type": "4",
+      "pen": "1",
+      "n": 31,
+      "length": 6.31,
+      "start": [
+       0.66,
+       -6.02
+      ],
+      "end": [
+       3.73,
+       -1.6
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.62,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "Golobreška_nanoekspedicija-1p-lk_pp_lt_fin_backup.csx",
+  "designs": {
+   "plan": {
+    "legs": 2,
+    "splays": 55,
+    "splays_dropped": 0,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 213,
+      "length": 11.25,
+      "start": [
+       -0.91,
+       -0.02
+      ],
+      "end": [
+       -0.17,
+       0.54
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.11,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 0.91,
+      "start": [
+       -0.12,
+       0.52
+      ],
+      "end": [
+       -0.85,
+       0.73
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.15,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 22,
+      "length": 0.92,
+      "start": [
+       -0.87,
+       0.66
+      ],
+      "end": [
+       -0.8,
+       -0.09
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.16,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 2,
+    "splays": 55,
+    "splays_dropped": 10,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 63,
+      "length": 8.67,
+      "start": [
+       3.54,
+       -1.63
+      ],
+      "end": [
+       -0.55,
+       0.28
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.49,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 51,
+      "length": 7.62,
+      "start": [
+       -0.55,
+       0.31
+      ],
+      "end": [
+       -1.1,
+       -6.84
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 0.37,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 1.27,
+      "start": [
+       0.51,
+       -6.14
+      ],
+      "end": [
+       0.67,
+       -6.94
+      ],
+      "score": 1.0,
+      "coverage": 0.8,
+      "median_dist": 0.14,
+      "cave_side": "left"
+     },
+     {
+      "item": 0,
+      "seq": 3,
+      "type": "4",
+      "pen": "1",
+      "n": 31,
+      "length": 6.31,
+      "start": [
+       0.66,
+       -6.02
+      ],
+      "end": [
+       3.73,
+       -1.6
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.62,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "Hrđava_špilja-1s_pp_lt.csx",
+  "designs": {
+   "plan": {
+    "legs": 4,
+    "splays": 91,
+    "splays_dropped": 27,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 134,
+      "length": 21.93,
+      "start": [
+       1.38,
+       0.47
+      ],
+      "end": [
+       19.46,
+       -2.33
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.22,
+      "cave_side": "left"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 2.45,
+      "start": [
+       16.69,
+       -6.17
+      ],
+      "end": [
+       14.9,
+       -4.98
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.76,
+      "cave_side": "left"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 147,
+      "length": 25.59,
+      "start": [
+       14.94,
+       -4.81
+      ],
+      "end": [
+       1.22,
+       0.36
+      ],
+      "score": 1.0,
+      "coverage": 0.99,
+      "median_dist": 0.29,
+      "cave_side": "left"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 4,
+    "splays": 91,
+    "splays_dropped": 43,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 4.53,
+      "start": [
+       3.16,
+       2.94
+      ],
+      "end": [
+       -0.36,
+       0.39
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 0.58,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 6,
+      "length": 1.39,
+      "start": [
+       -0.22,
+       0.6
+      ],
+      "end": [
+       -0.26,
+       -0.76
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.52,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 36,
+      "length": 10.3,
+      "start": [
+       -0.29,
+       -0.71
+      ],
+      "end": [
+       4.05,
+       -1.9
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 1.21,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 3,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 6.12,
+      "start": [
+       4.26,
+       -1.61
+      ],
+      "end": [
+       8.41,
+       -1.4
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.59,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 4,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 7.03,
+      "start": [
+       8.34,
+       -1.5
+      ],
+      "end": [
+       14.2,
+       -2.49
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 0.6,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 5,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 1.98,
+      "start": [
+       16.56,
+       0.1
+      ],
+      "end": [
+       15.21,
+       1.45
+      ],
+      "score": -0.433,
+      "coverage": 1.0,
+      "median_dist": 0.27,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 6,
+      "type": "4",
+      "pen": "1",
+      "n": 10,
+      "length": 4.75,
+      "start": [
+       15.8,
+       1.41
+      ],
+      "end": [
+       12.13,
+       3.89
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.16,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 7,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 8.72,
+      "start": [
+       12.4,
+       3.77
+      ],
+      "end": [
+       4.33,
+       3.82
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 8,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 2.24,
+      "start": [
+       4.75,
+       4.09
+      ],
+      "end": [
+       2.84,
+       2.97
+      ],
+      "score": -1.0,
+      "coverage": 0.88,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 9,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 1.48,
+      "start": [
+       16.68,
+       0.07
+      ],
+      "end": [
+       18.09,
+       -0.37
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.05,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 0.8,
+      "start": [
+       8.85,
+       -1.3
+      ],
+      "end": [
+       8.15,
+       -1.69
+      ],
+      "score": 1.0,
+      "coverage": 0.17,
+      "median_dist": 0.49,
+      "cave_side": "left"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.25,
+      "start": [
+       15.63,
+       -1.43
+      ],
+      "end": [
+       15.51,
+       -1.65
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.52,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 10,
+      "length": 3.05,
+      "start": [
+       15.25,
+       -2.57
+      ],
+      "end": [
+       13.86,
+       -5.17
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 3,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 2.15,
+      "start": [
+       13.52,
+       -2.4
+      ],
+      "end": [
+       15.1,
+       -2.51
+      ],
+      "score": -1.0,
+      "coverage": 0.71,
+      "median_dist": 0.32,
+      "cave_side": "right"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 1.02,
+      "start": [
+       19.05,
+       -0.65
+      ],
+      "end": [
+       18.1,
+       -0.39
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.09,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "Hrđava_špilja-1s_pp_lt_backup.csx",
+  "designs": {
+   "plan": {
+    "legs": 4,
+    "splays": 91,
+    "splays_dropped": 27,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 134,
+      "length": 21.93,
+      "start": [
+       1.38,
+       0.47
+      ],
+      "end": [
+       19.46,
+       -2.33
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.22,
+      "cave_side": "left"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 2.45,
+      "start": [
+       16.69,
+       -6.17
+      ],
+      "end": [
+       14.9,
+       -4.98
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.76,
+      "cave_side": "left"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 147,
+      "length": 25.59,
+      "start": [
+       14.94,
+       -4.81
+      ],
+      "end": [
+       1.22,
+       0.36
+      ],
+      "score": 1.0,
+      "coverage": 0.99,
+      "median_dist": 0.29,
+      "cave_side": "left"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 4,
+    "splays": 91,
+    "splays_dropped": 43,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 4.53,
+      "start": [
+       3.16,
+       2.94
+      ],
+      "end": [
+       -0.36,
+       0.39
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 0.58,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 6,
+      "length": 1.39,
+      "start": [
+       -0.22,
+       0.6
+      ],
+      "end": [
+       -0.26,
+       -0.76
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.52,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 36,
+      "length": 10.3,
+      "start": [
+       -0.29,
+       -0.71
+      ],
+      "end": [
+       4.05,
+       -1.9
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 1.21,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 3,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 6.12,
+      "start": [
+       4.26,
+       -1.61
+      ],
+      "end": [
+       8.41,
+       -1.4
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.59,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 4,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 7.03,
+      "start": [
+       8.34,
+       -1.5
+      ],
+      "end": [
+       14.2,
+       -2.49
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 0.6,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 5,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 1.98,
+      "start": [
+       16.56,
+       0.1
+      ],
+      "end": [
+       15.21,
+       1.45
+      ],
+      "score": -0.433,
+      "coverage": 1.0,
+      "median_dist": 0.27,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 6,
+      "type": "4",
+      "pen": "1",
+      "n": 10,
+      "length": 4.75,
+      "start": [
+       15.8,
+       1.41
+      ],
+      "end": [
+       12.13,
+       3.89
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.16,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 7,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 8.72,
+      "start": [
+       12.4,
+       3.77
+      ],
+      "end": [
+       4.33,
+       3.82
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 8,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 2.24,
+      "start": [
+       4.75,
+       4.09
+      ],
+      "end": [
+       2.84,
+       2.97
+      ],
+      "score": -1.0,
+      "coverage": 0.88,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 9,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 1.48,
+      "start": [
+       16.68,
+       0.07
+      ],
+      "end": [
+       18.09,
+       -0.37
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.05,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 0.8,
+      "start": [
+       8.85,
+       -1.3
+      ],
+      "end": [
+       8.15,
+       -1.69
+      ],
+      "score": 1.0,
+      "coverage": 0.17,
+      "median_dist": 0.49,
+      "cave_side": "left"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.25,
+      "start": [
+       15.63,
+       -1.43
+      ],
+      "end": [
+       15.51,
+       -1.65
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.52,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 10,
+      "length": 3.05,
+      "start": [
+       15.25,
+       -2.57
+      ],
+      "end": [
+       13.86,
+       -5.17
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 3,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 2.15,
+      "start": [
+       13.52,
+       -2.4
+      ],
+      "end": [
+       15.1,
+       -2.51
+      ],
+      "score": -1.0,
+      "coverage": 0.71,
+      "median_dist": 0.32,
+      "cave_side": "right"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 1.02,
+      "start": [
+       19.05,
+       -0.65
+      ],
+      "end": [
+       18.1,
+       -0.39
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.09,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "Sopača-1p.csx",
+  "designs": {
+   "plan": {
+    "legs": 5,
+    "splays": 62,
+    "splays_dropped": 20,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.07,
+      "start": [
+       -3.0,
+       -2.07
+      ],
+      "end": [
+       -2.99,
+       -2.14
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.14,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 81,
+      "length": 7.23,
+      "start": [
+       3.47,
+       -0.06
+      ],
+      "end": [
+       -0.38,
+       -3.52
+      ],
+      "score": -0.886,
+      "coverage": 0.97,
+      "median_dist": 0.69,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 0.58,
+      "start": [
+       -0.38,
+       -3.52
+      ],
+      "end": [
+       -0.73,
+       -3.3
+      ],
+      "score": 1.0,
+      "coverage": 0.17,
+      "median_dist": 1.55,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 34,
+      "length": 2.99,
+      "start": [
+       -0.73,
+       -3.3
+      ],
+      "end": [
+       -3.15,
+       -1.98
+      ],
+      "score": 0.109,
+      "coverage": 0.97,
+      "median_dist": 0.33,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 3,
+      "type": "4",
+      "pen": "1",
+      "n": 20,
+      "length": 4.26,
+      "start": [
+       -3.15,
+       -1.98
+      ],
+      "end": [
+       0.05,
+       -0.06
+      ],
+      "score": -0.154,
+      "coverage": 0.63,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 4,
+      "type": "4",
+      "pen": "1",
+      "n": 82,
+      "length": 4.87,
+      "start": [
+       0.05,
+       -0.06
+      ],
+      "end": [
+       3.84,
+       1.68
+      ],
+      "score": 0.418,
+      "coverage": 0.37,
+      "median_dist": 1.66,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 5,
+      "type": "4",
+      "pen": "1",
+      "n": 36,
+      "length": 2.97,
+      "start": [
+       3.84,
+       1.68
+      ],
+      "end": [
+       3.47,
+       -0.06
+      ],
+      "score": -1.0,
+      "coverage": 0.71,
+      "median_dist": 0.45,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 92,
+      "length": 19.1,
+      "start": [
+       -3.17,
+       -2.0
+      ],
+      "end": [
+       -2.27,
+       -2.8
+      ],
+      "score": -0.803,
+      "coverage": 0.93,
+      "median_dist": 0.87,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 13,
+      "length": 2.87,
+      "start": [
+       -2.27,
+       -2.8
+      ],
+      "end": [
+       -0.16,
+       -0.96
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.37,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 32,
+      "length": 2.7,
+      "start": [
+       -1.27,
+       -0.84
+      ],
+      "end": [
+       -3.0,
+       -2.07
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.65,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 5,
+    "splays": 62,
+    "splays_dropped": 1,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 2.12,
+      "start": [
+       -2.07,
+       1.26
+      ],
+      "end": [
+       -3.88,
+       1.97
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.85,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 1.35,
+      "start": [
+       -1.74,
+       0.33
+      ],
+      "end": [
+       -2.07,
+       1.26
+      ],
+      "score": 1.0,
+      "coverage": 0.91,
+      "median_dist": 0.61,
+      "cave_side": "left"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 35,
+      "length": 3.85,
+      "start": [
+       -5.75,
+       4.87
+      ],
+      "end": [
+       -3.88,
+       1.97
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 1.88,
+      "cave_side": "right"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 84,
+      "length": 12.2,
+      "start": [
+       -7.75,
+       6.3
+      ],
+      "end": [
+       -5.75,
+       4.87
+      ],
+      "score": -1.0,
+      "coverage": 0.37,
+      "median_dist": 3.95,
+      "cave_side": "right"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 53,
+      "length": 6.21,
+      "start": [
+       -9.22,
+       11.15
+      ],
+      "end": [
+       -7.75,
+       6.3
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 2.55,
+      "cave_side": "right"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 34,
+      "length": 5.2,
+      "start": [
+       -7.6,
+       11.65
+      ],
+      "end": [
+       -9.22,
+       11.15
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.74,
+      "cave_side": "right"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 0.38,
+      "start": [
+       -3.92,
+       5.59
+      ],
+      "end": [
+       -3.6,
+       5.39
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.03,
+      "cave_side": "left"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 49,
+      "length": 6.96,
+      "start": [
+       -7.6,
+       11.65
+      ],
+      "end": [
+       -4.33,
+       6.11
+      ],
+      "score": 0.714,
+      "coverage": 1.0,
+      "median_dist": 0.65,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 46,
+      "length": 6.49,
+      "start": [
+       -0.13,
+       1.3
+      ],
+      "end": [
+       -4.02,
+       5.75
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.34,
+      "cave_side": "right"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 33,
+      "length": 3.35,
+      "start": [
+       3.16,
+       1.37
+      ],
+      "end": [
+       -0.13,
+       1.3
+      ],
+      "score": -1.0,
+      "coverage": 0.24,
+      "median_dist": 1.29,
+      "cave_side": "right"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 81,
+      "length": 10.01,
+      "start": [
+       3.76,
+       -6.91
+      ],
+      "end": [
+       3.16,
+       1.37
+      ],
+      "score": -1.0,
+      "coverage": 0.15,
+      "median_dist": 0.49,
+      "cave_side": "right"
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 32,
+      "length": 15.08,
+      "start": [
+       3.15,
+       -2.67
+      ],
+      "end": [
+       3.13,
+       -3.59
+      ],
+      "score": 1.0,
+      "coverage": 0.13,
+      "median_dist": 0.77,
+      "cave_side": "left"
+     },
+     {
+      "item": 12,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 23,
+      "length": 12.68,
+      "start": [
+       2.5,
+       -1.71
+      ],
+      "end": [
+       2.85,
+       -3.28
+      ],
+      "score": 1.0,
+      "coverage": 0.25,
+      "median_dist": 1.23,
+      "cave_side": "left"
+     },
+     {
+      "item": 13,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 23,
+      "length": 10.89,
+      "start": [
+       -0.43,
+       -0.09
+      ],
+      "end": [
+       -1.23,
+       -0.07
+      ],
+      "score": 0.275,
+      "coverage": 0.76,
+      "median_dist": 0.3,
+      "cave_side": "left"
+     },
+     {
+      "item": 14,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 103,
+      "length": 17.42,
+      "start": [
+       -1.74,
+       0.33
+      ],
+      "end": [
+       -0.05,
+       -15.95
+      ],
+      "score": -1.0,
+      "coverage": 0.51,
+      "median_dist": 5.05,
+      "cave_side": "right"
+     },
+     {
+      "item": 15,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 44,
+      "length": 8.0,
+      "start": [
+       -0.05,
+       -15.95
+      ],
+      "end": [
+       -1.21,
+       -23.74
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 16,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 30,
+      "length": 5.71,
+      "start": [
+       -0.13,
+       -30.37
+      ],
+      "end": [
+       -0.41,
+       -35.62
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 17,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 10,
+      "length": 4.32,
+      "start": [
+       6.57,
+       -9.44
+      ],
+      "end": [
+       3.76,
+       -6.91
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 1.63,
+      "cave_side": "right"
+     },
+     {
+      "item": 18,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 3.16,
+      "start": [
+       0.15,
+       -27.79
+      ],
+      "end": [
+       -0.13,
+       -30.37
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 19,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 10,
+      "length": 1.88,
+      "start": [
+       -0.42,
+       -26.04
+      ],
+      "end": [
+       0.15,
+       -27.79
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 20,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 2.06,
+      "start": [
+       -2.33,
+       -25.75
+      ],
+      "end": [
+       -0.42,
+       -26.04
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 21,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 1.3,
+      "start": [
+       -2.22,
+       -24.28
+      ],
+      "end": [
+       -1.21,
+       -23.74
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 22,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 6.52,
+      "start": [
+       -1.23,
+       -6.22
+      ],
+      "end": [
+       4.46,
+       -6.19
+      ],
+      "score": -0.361,
+      "coverage": 0.84,
+      "median_dist": 2.46,
+      "cave_side": "right"
+     },
+     {
+      "item": 23,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 6.86,
+      "start": [
+       -0.98,
+       -1.99
+      ],
+      "end": [
+       4.81,
+       -2.59
+      ],
+      "score": -0.671,
+      "coverage": 0.67,
+      "median_dist": 1.09,
+      "cave_side": "right"
+     },
+     {
+      "item": 24,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 20,
+      "length": 8.21,
+      "start": [
+       6.57,
+       -9.44
+      ],
+      "end": [
+       9.2,
+       -15.71
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.91,
+      "cave_side": "left"
+     },
+     {
+      "item": 25,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 5.45,
+      "start": [
+       10.88,
+       -19.03
+      ],
+      "end": [
+       9.2,
+       -15.71
+      ],
+      "score": -1.0,
+      "coverage": 0.86,
+      "median_dist": 0.19,
+      "cave_side": "right"
+     },
+     {
+      "item": 26,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 16,
+      "length": 12.39,
+      "start": [
+       10.24,
+       -18.49
+      ],
+      "end": [
+       -1.17,
+       -18.7
+      ],
+      "score": 0.448,
+      "coverage": 0.62,
+      "median_dist": 2.65,
+      "cave_side": "left"
+     },
+     {
+      "item": 27,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 12,
+      "length": 12.69,
+      "start": [
+       9.95,
+       -22.3
+      ],
+      "end": [
+       -1.73,
+       -23.3
+      ],
+      "score": -0.379,
+      "coverage": 0.5,
+      "median_dist": 3.48,
+      "cave_side": "right"
+     },
+     {
+      "item": 28,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 11,
+      "length": 9.84,
+      "start": [
+       7.97,
+       -14.37
+      ],
+      "end": [
+       -0.94,
+       -12.84
+      ],
+      "score": 0.34,
+      "coverage": 0.89,
+      "median_dist": 3.39,
+      "cave_side": "left"
+     },
+     {
+      "item": 29,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 17,
+      "length": 3.86,
+      "start": [
+       7.85,
+       -31.47
+      ],
+      "end": [
+       7.74,
+       -31.42
+      ],
+      "score": 1.0,
+      "coverage": 0.5,
+      "median_dist": 5.04,
+      "cave_side": "left"
+     },
+     {
+      "item": 30,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 22,
+      "length": 4.51,
+      "start": [
+       3.18,
+       -29.96
+      ],
+      "end": [
+       3.29,
+       -30.2
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 31,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 25,
+      "length": 5.12,
+      "start": [
+       4.22,
+       -22.83
+      ],
+      "end": [
+       4.16,
+       -22.83
+      ],
+      "score": 1.0,
+      "coverage": 0.45,
+      "median_dist": 5.21,
+      "cave_side": "left"
+     },
+     {
+      "item": 32,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 29,
+      "length": 13.05,
+      "start": [
+       -10.17,
+       -42.67
+      ],
+      "end": [
+       -0.41,
+       -35.62
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 33,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 23,
+      "length": 19.76,
+      "start": [
+       -3.41,
+       -38.24
+      ],
+      "end": [
+       -3.94,
+       -37.89
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 34,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 24,
+      "length": 17.43,
+      "start": [
+       -6.17,
+       -38.88
+      ],
+      "end": [
+       -7.09,
+       -39.89
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 35,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 19,
+      "length": 19.67,
+      "start": [
+       -0.93,
+       -35.48
+      ],
+      "end": [
+       -1.08,
+       -36.28
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 36,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 33,
+      "length": 8.88,
+      "start": [
+       10.78,
+       -18.92
+      ],
+      "end": [
+       13.71,
+       -25.57
+      ],
+      "score": 1.0,
+      "coverage": 0.9,
+      "median_dist": 1.94,
+      "cave_side": "left"
+     },
+     {
+      "item": 37,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 6,
+      "length": 3.24,
+      "start": [
+       12.46,
+       -20.59
+      ],
+      "end": [
+       9.94,
+       -22.36
+      ],
+      "score": 0.399,
+      "coverage": 0.81,
+      "median_dist": 0.85,
+      "cave_side": "left"
+     },
+     {
+      "item": 38,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 18,
+      "length": 20.32,
+      "start": [
+       15.15,
+       -23.82
+      ],
+      "end": [
+       -1.05,
+       -30.65
+      ],
+      "score": 0.1,
+      "coverage": 0.52,
+      "median_dist": 2.83,
+      "cave_side": "left"
+     },
+     {
+      "item": 39,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 15,
+      "length": 17.0,
+      "start": [
+       14.88,
+       -33.19
+      ],
+      "end": [
+       -0.51,
+       -35.62
+      ],
+      "score": 1.0,
+      "coverage": 0.02,
+      "median_dist": 0.49,
+      "cave_side": "left"
+     },
+     {
+      "item": 40,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 3.05,
+      "start": [
+       19.48,
+       -36.35
+      ],
+      "end": [
+       16.84,
+       -35.01
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 41,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 4.73,
+      "start": [
+       23.84,
+       -35.64
+      ],
+      "end": [
+       19.48,
+       -36.35
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 42,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 27,
+      "length": 18.77,
+      "start": [
+       15.38,
+       -33.6
+      ],
+      "end": [
+       14.58,
+       -33.3
+      ],
+      "score": -1.0,
+      "coverage": 0.01,
+      "median_dist": 0.19,
+      "cave_side": "right"
+     },
+     {
+      "item": 43,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 16,
+      "length": 14.47,
+      "start": [
+       20.36,
+       -37.13
+      ],
+      "end": [
+       19.71,
+       -36.57
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 44,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 11.44,
+      "start": [
+       23.97,
+       -34.55
+      ],
+      "end": [
+       22.5,
+       -36.73
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 45,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.39,
+      "start": [
+       16.57,
+       -34.73
+      ],
+      "end": [
+       16.84,
+       -35.01
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 46,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 12,
+      "length": 2.29,
+      "start": [
+       16.94,
+       -32.51
+      ],
+      "end": [
+       16.57,
+       -34.73
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 47,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 10,
+      "length": 1.99,
+      "start": [
+       16.04,
+       -32.19
+      ],
+      "end": [
+       15.63,
+       -34.05
+      ],
+      "score": 1.0,
+      "coverage": 0.31,
+      "median_dist": 1.99,
+      "cave_side": "left"
+     },
+     {
+      "item": 48,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 33,
+      "length": 6.52,
+      "start": [
+       15.45,
+       -27.07
+      ],
+      "end": [
+       16.94,
+       -32.51
+      ],
+      "score": 1.0,
+      "coverage": 0.16,
+      "median_dist": 3.65,
+      "cave_side": "left"
+     },
+     {
+      "item": 49,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 25,
+      "length": 4.7,
+      "start": [
+       15.93,
+       -27.92
+      ],
+      "end": [
+       16.04,
+       -32.19
+      ],
+      "score": 1.0,
+      "coverage": 0.04,
+      "median_dist": 2.07,
+      "cave_side": "left"
+     },
+     {
+      "item": 50,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 31,
+      "length": 8.46,
+      "start": [
+       14.9,
+       -27.8
+      ],
+      "end": [
+       15.63,
+       -34.05
+      ],
+      "score": 0.639,
+      "coverage": 0.85,
+      "median_dist": 1.19,
+      "cave_side": "left"
+     },
+     {
+      "item": 51,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 2.26,
+      "start": [
+       13.74,
+       -25.67
+      ],
+      "end": [
+       15.19,
+       -26.76
+      ],
+      "score": 1.0,
+      "coverage": 0.94,
+      "median_dist": 2.65,
+      "cave_side": "left"
+     },
+     {
+      "item": 52,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 6,
+      "length": 1.08,
+      "start": [
+       14.9,
+       -27.8
+      ],
+      "end": [
+       15.93,
+       -27.92
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 53,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 5,
+      "length": 0.44,
+      "start": [
+       15.19,
+       -26.76
+      ],
+      "end": [
+       15.45,
+       -27.07
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 3.04,
+      "cave_side": "left"
+     },
+     {
+      "item": 54,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 25,
+      "length": 23.12,
+      "start": [
+       16.06,
+       -35.58
+      ],
+      "end": [
+       -0.26,
+       -36.1
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "bezdanka_iznad_Lalica.csx",
+  "designs": {
+   "plan": {
+    "legs": 5,
+    "splays": 86,
+    "splays_dropped": 43,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 19,
+      "length": 53.88,
+      "start": [
+       -10.17,
+       -6.71
+      ],
+      "end": [
+       -10.21,
+       -6.85
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.57,
+      "cave_side": "left"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 5,
+    "splays": 86,
+    "splays_dropped": 26,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 52,
+      "length": 49.14,
+      "start": [
+       -6.13,
+       -12.25
+      ],
+      "end": [
+       -15.85,
+       -11.38
+      ],
+      "score": -0.718,
+      "coverage": 0.93,
+      "median_dist": 0.41,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "kilavcev_cepavpic-1p_pp.csx",
+  "designs": {
+   "plan": {
+    "legs": 4,
+    "splays": 25,
+    "splays_dropped": 0,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 34,
+      "length": 8.51,
+      "start": [
+       -1.24,
+       0.93
+      ],
+      "end": [
+       -1.37,
+       0.92
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.12,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 4,
+    "splays": 25,
+    "splays_dropped": 9,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 26,
+      "length": 7.13,
+      "start": [
+       2.45,
+       -3.99
+      ],
+      "end": [
+       -1.27,
+       0.05
+      ],
+      "score": -1.0,
+      "coverage": 0.82,
+      "median_dist": 0.13,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 3.66,
+      "start": [
+       -1.21,
+       0.07
+      ],
+      "end": [
+       -1.36,
+       -0.47
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.25,
+      "cave_side": "right"
+     },
+     {
+      "item": 0,
+      "seq": 2,
+      "type": "4",
+      "pen": "1",
+      "n": 18,
+      "length": 4.74,
+      "start": [
+       -1.45,
+       -0.4
+      ],
+      "end": [
+       -2.15,
+       -3.96
+      ],
+      "score": -1.0,
+      "coverage": 0.85,
+      "median_dist": 0.51,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "kilavceva_pljeskavica-1p_pp.csx",
+  "designs": {
+   "plan": {
+    "legs": 3,
+    "splays": 43,
+    "splays_dropped": 10,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "1",
+      "pen": "32",
+      "n": 5,
+      "length": 1.69,
+      "start": [
+       3.35,
+       7.87
+      ],
+      "end": [
+       4.37,
+       9.19
+      ],
+      "score": 1.0,
+      "coverage": 0.83,
+      "median_dist": 0.13,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 406,
+      "length": 26.29,
+      "start": [
+       5.32,
+       9.37
+      ],
+      "end": [
+       6.03,
+       8.94
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 0.4,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "1",
+      "pen": "32",
+      "n": 9,
+      "length": 3.45,
+      "start": [
+       -0.76,
+       0.53
+      ],
+      "end": [
+       1.03,
+       3.46
+      ],
+      "score": 1.0,
+      "coverage": 0.26,
+      "median_dist": 0.53,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "1",
+      "pen": "32",
+      "n": 6,
+      "length": 2.86,
+      "start": [
+       5.69,
+       11.17
+      ],
+      "end": [
+       3.96,
+       8.96
+      ],
+      "score": -1.0,
+      "coverage": 0.21,
+      "median_dist": 1.8,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 3,
+    "splays": 43,
+    "splays_dropped": 13,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 57,
+      "length": 22.4,
+      "start": [
+       0.96,
+       -4.58
+      ],
+      "end": [
+       11.97,
+       -2.77
+      ],
+      "score": 0.966,
+      "coverage": 0.89,
+      "median_dist": 0.26,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 16,
+      "length": 9.22,
+      "start": [
+       10.48,
+       -2.82
+      ],
+      "end": [
+       1.46,
+       -3.5
+      ],
+      "score": 0.518,
+      "coverage": 0.95,
+      "median_dist": 0.68,
+      "cave_side": "left"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "kilavceva_pljeskavica-1p_pp_backup.csx",
+  "designs": {
+   "plan": {
+    "legs": 3,
+    "splays": 43,
+    "splays_dropped": 10,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "1",
+      "pen": "32",
+      "n": 5,
+      "length": 1.69,
+      "start": [
+       3.35,
+       7.87
+      ],
+      "end": [
+       4.37,
+       9.19
+      ],
+      "score": 1.0,
+      "coverage": 0.83,
+      "median_dist": 0.13,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 406,
+      "length": 26.29,
+      "start": [
+       5.32,
+       9.37
+      ],
+      "end": [
+       6.03,
+       8.94
+      ],
+      "score": -1.0,
+      "coverage": 0.96,
+      "median_dist": 0.4,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "1",
+      "pen": "32",
+      "n": 9,
+      "length": 3.45,
+      "start": [
+       -0.76,
+       0.53
+      ],
+      "end": [
+       1.03,
+       3.46
+      ],
+      "score": 1.0,
+      "coverage": 0.26,
+      "median_dist": 0.53,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "1",
+      "pen": "32",
+      "n": 6,
+      "length": 2.86,
+      "start": [
+       5.69,
+       11.17
+      ],
+      "end": [
+       3.96,
+       8.96
+      ],
+      "score": -1.0,
+      "coverage": 0.21,
+      "median_dist": 1.8,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 3,
+    "splays": 43,
+    "splays_dropped": 13,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 57,
+      "length": 22.4,
+      "start": [
+       0.96,
+       -4.58
+      ],
+      "end": [
+       11.97,
+       -2.77
+      ],
+      "score": 0.966,
+      "coverage": 0.89,
+      "median_dist": 0.26,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 16,
+      "length": 9.22,
+      "start": [
+       10.48,
+       -2.82
+      ],
+      "end": [
+       1.46,
+       -3.5
+      ],
+      "score": 0.518,
+      "coverage": 0.95,
+      "median_dist": 0.68,
+      "cave_side": "left"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "krk_27-1p.csx",
+  "designs": {
+   "plan": {
+    "legs": 3,
+    "splays": 49,
+    "splays_dropped": 0,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 1.72,
+      "start": [
+       1.13,
+       0.49
+      ],
+      "end": [
+       0.43,
+       -1.05
+      ],
+      "score": 0.338,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 10,
+      "length": 1.76,
+      "start": [
+       1.89,
+       -0.05
+      ],
+      "end": [
+       1.02,
+       -1.5
+      ],
+      "score": -0.321,
+      "coverage": 1.0,
+      "median_dist": 0.52,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 2.22,
+      "start": [
+       6.74,
+       -6.25
+      ],
+      "end": [
+       4.71,
+       -5.5
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 22,
+      "length": 8.54,
+      "start": [
+       7.33,
+       -5.33
+      ],
+      "end": [
+       2.86,
+       0.57
+      ],
+      "score": 0.887,
+      "coverage": 1.0,
+      "median_dist": 0.21,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 1.43,
+      "start": [
+       8.13,
+       0.51
+      ],
+      "end": [
+       8.84,
+       -0.61
+      ],
+      "score": 0.009,
+      "coverage": 1.0,
+      "median_dist": 0.06,
+      "cave_side": "left"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 13,
+      "length": 2.54,
+      "start": [
+       7.46,
+       0.58
+      ],
+      "end": [
+       8.46,
+       -1.6
+      ],
+      "score": -0.182,
+      "coverage": 1.0,
+      "median_dist": 0.24,
+      "cave_side": "right"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 23,
+      "length": 7.44,
+      "start": [
+       7.58,
+       -4.45
+      ],
+      "end": [
+       4.15,
+       1.22
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.63,
+      "cave_side": "right"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 22,
+      "length": 7.42,
+      "start": [
+       8.08,
+       -3.96
+      ],
+      "end": [
+       5.64,
+       2.23
+      ],
+      "score": 0.246,
+      "coverage": 0.59,
+      "median_dist": 1.03,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 18,
+      "length": 5.87,
+      "start": [
+       8.47,
+       -3.46
+      ],
+      "end": [
+       6.68,
+       1.66
+      ],
+      "score": 0.452,
+      "coverage": 0.95,
+      "median_dist": 1.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 40,
+      "length": 12.8,
+      "start": [
+       8.3,
+       -3.79
+      ],
+      "end": [
+       1.95,
+       -0.05
+      ],
+      "score": -1.0,
+      "coverage": 0.69,
+      "median_dist": 0.95,
+      "cave_side": "right"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 90,
+      "length": 16.76,
+      "start": [
+       1.84,
+       0.06
+      ],
+      "end": [
+       8.36,
+       -3.63
+      ],
+      "score": -1.0,
+      "coverage": 0.44,
+      "median_dist": 0.98,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 3,
+    "splays": 49,
+    "splays_dropped": 8,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 26,
+      "length": 3.3,
+      "start": [
+       1.58,
+       -0.21
+      ],
+      "end": [
+       -0.01,
+       -0.04
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.6,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 78,
+      "length": 32.87,
+      "start": [
+       12.07,
+       -25.96
+      ],
+      "end": [
+       1.48,
+       -0.15
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 74,
+      "length": 31.83,
+      "start": [
+       3.84,
+       -26.2
+      ],
+      "end": [
+       -0.04,
+       0.03
+      ],
+      "score": 1.0,
+      "coverage": 0.85,
+      "median_dist": 2.75,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 5,
+      "length": 1.08,
+      "start": [
+       7.37,
+       -24.47
+      ],
+      "end": [
+       7.51,
+       -25.53
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 6,
+      "length": 0.91,
+      "start": [
+       7.8,
+       -24.05
+      ],
+      "end": [
+       7.34,
+       -24.54
+      ],
+      "score": 1.0,
+      "coverage": 0.2,
+      "median_dist": 1.18,
+      "cave_side": "left"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 6,
+      "length": 1.17,
+      "start": [
+       8.73,
+       -24.54
+      ],
+      "end": [
+       7.76,
+       -23.99
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.49,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 1.49,
+      "start": [
+       8.76,
+       -25.65
+      ],
+      "end": [
+       8.4,
+       -24.32
+      ],
+      "score": 1.0,
+      "coverage": 0.78,
+      "median_dist": 0.67,
+      "cave_side": "left"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 1.83,
+      "start": [
+       7.54,
+       -25.76
+      ],
+      "end": [
+       8.74,
+       -25.53
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "krk_27-1p_backup.csx",
+  "designs": {
+   "plan": {
+    "legs": 3,
+    "splays": 49,
+    "splays_dropped": 0,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 1.72,
+      "start": [
+       1.13,
+       0.49
+      ],
+      "end": [
+       0.43,
+       -1.05
+      ],
+      "score": 0.338,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 10,
+      "length": 1.76,
+      "start": [
+       1.89,
+       -0.05
+      ],
+      "end": [
+       1.02,
+       -1.5
+      ],
+      "score": -0.321,
+      "coverage": 1.0,
+      "median_dist": 0.52,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 2.22,
+      "start": [
+       6.74,
+       -6.25
+      ],
+      "end": [
+       4.71,
+       -5.5
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 22,
+      "length": 8.54,
+      "start": [
+       7.33,
+       -5.33
+      ],
+      "end": [
+       2.86,
+       0.57
+      ],
+      "score": 0.887,
+      "coverage": 1.0,
+      "median_dist": 0.21,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 1.43,
+      "start": [
+       8.13,
+       0.51
+      ],
+      "end": [
+       8.84,
+       -0.61
+      ],
+      "score": 0.009,
+      "coverage": 1.0,
+      "median_dist": 0.06,
+      "cave_side": "left"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 13,
+      "length": 2.54,
+      "start": [
+       7.46,
+       0.58
+      ],
+      "end": [
+       8.46,
+       -1.6
+      ],
+      "score": -0.182,
+      "coverage": 1.0,
+      "median_dist": 0.24,
+      "cave_side": "right"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 23,
+      "length": 7.44,
+      "start": [
+       7.58,
+       -4.45
+      ],
+      "end": [
+       4.15,
+       1.22
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.63,
+      "cave_side": "right"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 22,
+      "length": 7.42,
+      "start": [
+       8.08,
+       -3.96
+      ],
+      "end": [
+       5.64,
+       2.23
+      ],
+      "score": 0.246,
+      "coverage": 0.59,
+      "median_dist": 1.03,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 18,
+      "length": 5.87,
+      "start": [
+       8.47,
+       -3.46
+      ],
+      "end": [
+       6.68,
+       1.66
+      ],
+      "score": 0.452,
+      "coverage": 0.95,
+      "median_dist": 1.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 40,
+      "length": 12.8,
+      "start": [
+       8.3,
+       -3.79
+      ],
+      "end": [
+       1.95,
+       -0.05
+      ],
+      "score": -1.0,
+      "coverage": 0.69,
+      "median_dist": 0.95,
+      "cave_side": "right"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 90,
+      "length": 16.76,
+      "start": [
+       1.84,
+       0.06
+      ],
+      "end": [
+       8.36,
+       -3.63
+      ],
+      "score": -1.0,
+      "coverage": 0.44,
+      "median_dist": 0.98,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 3,
+    "splays": 49,
+    "splays_dropped": 8,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 26,
+      "length": 3.3,
+      "start": [
+       1.58,
+       -0.21
+      ],
+      "end": [
+       -0.01,
+       -0.04
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.6,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 78,
+      "length": 32.87,
+      "start": [
+       12.07,
+       -25.96
+      ],
+      "end": [
+       1.48,
+       -0.15
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 74,
+      "length": 31.83,
+      "start": [
+       3.84,
+       -26.2
+      ],
+      "end": [
+       -0.04,
+       0.03
+      ],
+      "score": 1.0,
+      "coverage": 0.85,
+      "median_dist": 2.75,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 5,
+      "length": 1.08,
+      "start": [
+       7.37,
+       -24.47
+      ],
+      "end": [
+       7.51,
+       -25.53
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 6,
+      "length": 0.91,
+      "start": [
+       7.8,
+       -24.05
+      ],
+      "end": [
+       7.34,
+       -24.54
+      ],
+      "score": 1.0,
+      "coverage": 0.2,
+      "median_dist": 1.18,
+      "cave_side": "left"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 6,
+      "length": 1.17,
+      "start": [
+       8.73,
+       -24.54
+      ],
+      "end": [
+       7.76,
+       -23.99
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.49,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 1.49,
+      "start": [
+       8.76,
+       -25.65
+      ],
+      "end": [
+       8.4,
+       -24.32
+      ],
+      "score": 1.0,
+      "coverage": 0.78,
+      "median_dist": 0.67,
+      "cave_side": "left"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 1.83,
+      "start": [
+       7.54,
+       -25.76
+      ],
+      "end": [
+       8.74,
+       -25.53
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "krk_37-1s.csx",
+  "designs": {},
+  "error": "not imported into cSurvey (no layers)"
+ },
+ {
+  "file": "krk_37-1s_backup.csx",
+  "designs": {
+   "plan": {
+    "legs": 5,
+    "splays": 45,
+    "splays_dropped": 0,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.96,
+      "start": [
+       -0.95,
+       -1.73
+      ],
+      "end": [
+       -0.05,
+       -2.06
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 1.19,
+      "start": [
+       -0.92,
+       -1.0
+      ],
+      "end": [
+       0.09,
+       -1.47
+      ],
+      "score": -0.583,
+      "coverage": 0.88,
+      "median_dist": 0.06,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 1.13,
+      "start": [
+       -0.28,
+       0.53
+      ],
+      "end": [
+       0.58,
+       -0.12
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 1.31,
+      "start": [
+       0.12,
+       1.75
+      ],
+      "end": [
+       1.12,
+       1.01
+      ],
+      "score": 0.25,
+      "coverage": 1.0,
+      "median_dist": 0.31,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 5,
+      "length": 0.4,
+      "start": [
+       2.3,
+       5.8
+      ],
+      "end": [
+       2.54,
+       5.52
+      ],
+      "score": -0.125,
+      "coverage": 1.0,
+      "median_dist": 0.14,
+      "cave_side": "right"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 6,
+      "length": 0.39,
+      "start": [
+       2.39,
+       5.85
+      ],
+      "end": [
+       2.59,
+       5.53
+      ],
+      "score": 0.241,
+      "coverage": 1.0,
+      "median_dist": 0.11,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.4,
+      "start": [
+       2.43,
+       5.94
+      ],
+      "end": [
+       2.66,
+       5.62
+      ],
+      "score": 1.0,
+      "coverage": 0.83,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 6,
+      "length": 0.41,
+      "start": [
+       2.46,
+       6.01
+      ],
+      "end": [
+       2.72,
+       5.71
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.09,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.46,
+      "start": [
+       2.85,
+       6.6
+      ],
+      "end": [
+       3.09,
+       6.25
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.11,
+      "cave_side": "left"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.36,
+      "start": [
+       2.62,
+       6.15
+      ],
+      "end": [
+       2.78,
+       5.86
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 6,
+      "length": 0.3,
+      "start": [
+       2.71,
+       6.24
+      ],
+      "end": [
+       2.89,
+       6.01
+      ],
+      "score": -0.142,
+      "coverage": 1.0,
+      "median_dist": 0.1,
+      "cave_side": "right"
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 6,
+      "length": 0.34,
+      "start": [
+       2.79,
+       6.39
+      ],
+      "end": [
+       2.99,
+       6.13
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 12,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 0.5,
+      "start": [
+       3.01,
+       6.93
+      ],
+      "end": [
+       3.31,
+       6.58
+      ],
+      "score": -0.409,
+      "coverage": 0.86,
+      "median_dist": 0.13,
+      "cave_side": "right"
+     },
+     {
+      "item": 13,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.41,
+      "start": [
+       3.36,
+       7.25
+      ],
+      "end": [
+       3.64,
+       6.97
+      ],
+      "score": 0.314,
+      "coverage": 1.0,
+      "median_dist": 0.05,
+      "cave_side": "left"
+     },
+     {
+      "item": 14,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 105,
+      "length": 13.31,
+      "start": [
+       4.68,
+       8.41
+      ],
+      "end": [
+       -0.06,
+       -2.03
+      ],
+      "score": 1.0,
+      "coverage": 0.94,
+      "median_dist": 0.23,
+      "cave_side": "left"
+     },
+     {
+      "item": 15,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 28,
+      "length": 3.59,
+      "start": [
+       3.4,
+       7.3
+      ],
+      "end": [
+       4.72,
+       8.9
+      ],
+      "score": 1.0,
+      "coverage": 0.48,
+      "median_dist": 0.33,
+      "cave_side": "left"
+     },
+     {
+      "item": 16,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 5,
+      "length": 0.44,
+      "start": [
+       5.04,
+       8.78
+      ],
+      "end": [
+       4.69,
+       8.99
+      ],
+      "score": -1.0,
+      "coverage": 0.75,
+      "median_dist": 0.14,
+      "cave_side": "right"
+     },
+     {
+      "item": 17,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 6,
+      "length": 0.47,
+      "start": [
+       5.03,
+       8.58
+      ],
+      "end": [
+       4.61,
+       8.38
+      ],
+      "score": 0.578,
+      "coverage": 0.6,
+      "median_dist": 0.19,
+      "cave_side": "left"
+     },
+     {
+      "item": 18,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 5,
+      "length": 0.33,
+      "start": [
+       4.77,
+       8.78
+      ],
+      "end": [
+       4.73,
+       8.46
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.16,
+      "cave_side": "left"
+     },
+     {
+      "item": 19,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 4,
+      "length": 0.25,
+      "start": [
+       4.91,
+       8.75
+      ],
+      "end": [
+       4.87,
+       8.51
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.25,
+      "cave_side": "left"
+     },
+     {
+      "item": 20,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 0.74,
+      "start": [
+       4.72,
+       8.94
+      ],
+      "end": [
+       4.01,
+       8.87
+      ],
+      "score": -1.0,
+      "coverage": 0.88,
+      "median_dist": 0.29,
+      "cave_side": "right"
+     },
+     {
+      "item": 21,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 6,
+      "length": 0.55,
+      "start": [
+       3.82,
+       7.99
+      ],
+      "end": [
+       4.17,
+       7.61
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.05,
+      "cave_side": "left"
+     },
+     {
+      "item": 22,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 1.2,
+      "start": [
+       0.53,
+       2.75
+      ],
+      "end": [
+       1.42,
+       2.02
+      ],
+      "score": 0.21,
+      "coverage": 0.88,
+      "median_dist": 0.24,
+      "cave_side": "left"
+     },
+     {
+      "item": 23,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.55,
+      "start": [
+       1.54,
+       3.54
+      ],
+      "end": [
+       1.07,
+       3.78
+      ],
+      "score": -0.271,
+      "coverage": 1.0,
+      "median_dist": 0.13,
+      "cave_side": "right"
+     },
+     {
+      "item": 24,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 6,
+      "length": 0.64,
+      "start": [
+       1.49,
+       4.87
+      ],
+      "end": [
+       1.98,
+       4.49
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.19,
+      "cave_side": "left"
+     },
+     {
+      "item": 25,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 5,
+      "length": 0.55,
+      "start": [
+       1.71,
+       5.11
+      ],
+      "end": [
+       2.16,
+       4.81
+      ],
+      "score": 0.823,
+      "coverage": 1.0,
+      "median_dist": 0.17,
+      "cave_side": "left"
+     },
+     {
+      "item": 26,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 5,
+      "length": 0.51,
+      "start": [
+       1.84,
+       5.38
+      ],
+      "end": [
+       2.25,
+       5.09
+      ],
+      "score": -0.577,
+      "coverage": 1.0,
+      "median_dist": 0.13,
+      "cave_side": "right"
+     },
+     {
+      "item": 27,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 4,
+      "length": 0.39,
+      "start": [
+       2.06,
+       5.51
+      ],
+      "end": [
+       2.39,
+       5.32
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.12,
+      "cave_side": "left"
+     },
+     {
+      "item": 28,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 5,
+      "length": 0.37,
+      "start": [
+       2.22,
+       5.68
+      ],
+      "end": [
+       2.46,
+       5.41
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.13,
+      "cave_side": "left"
+     },
+     {
+      "item": 29,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 52,
+      "length": 6.34,
+      "start": [
+       1.25,
+       4.21
+      ],
+      "end": [
+       -0.86,
+       -1.67
+      ],
+      "score": -1.0,
+      "coverage": 0.98,
+      "median_dist": 0.41,
+      "cave_side": "right"
+     },
+     {
+      "item": 30,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 27,
+      "length": 3.89,
+      "start": [
+       3.43,
+       7.38
+      ],
+      "end": [
+       1.25,
+       4.22
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "right"
+     },
+     {
+      "item": 31,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 0.64,
+      "start": [
+       1.48,
+       3.3
+      ],
+      "end": [
+       0.93,
+       3.55
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.15,
+      "cave_side": "left"
+     },
+     {
+      "item": 32,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 0.63,
+      "start": [
+       1.62,
+       3.72
+      ],
+      "end": [
+       1.09,
+       4.0
+      ],
+      "score": 1.0,
+      "coverage": 0.86,
+      "median_dist": 0.15,
+      "cave_side": "left"
+     },
+     {
+      "item": 33,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.69,
+      "start": [
+       1.23,
+       4.3
+      ],
+      "end": [
+       1.67,
+       3.81
+      ],
+      "score": -0.005,
+      "coverage": 1.0,
+      "median_dist": 0.16,
+      "cave_side": "right"
+     },
+     {
+      "item": 34,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.63,
+      "start": [
+       1.4,
+       4.46
+      ],
+      "end": [
+       1.72,
+       3.96
+      ],
+      "score": 0.199,
+      "coverage": 1.0,
+      "median_dist": 0.17,
+      "cave_side": "left"
+     },
+     {
+      "item": 35,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 0.63,
+      "start": [
+       1.41,
+       4.67
+      ],
+      "end": [
+       1.85,
+       4.26
+      ],
+      "score": -0.227,
+      "coverage": 1.0,
+      "median_dist": 0.17,
+      "cave_side": "right"
+     },
+     {
+      "item": 36,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 11,
+      "length": 1.49,
+      "start": [
+       -0.04,
+       -2.14
+      ],
+      "end": [
+       -1.04,
+       -2.1
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 37,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 11,
+      "length": 0.87,
+      "start": [
+       -0.97,
+       -2.01
+      ],
+      "end": [
+       -0.18,
+       -2.32
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 38,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 13,
+      "length": 1.05,
+      "start": [
+       -1.1,
+       -2.32
+      ],
+      "end": [
+       -0.14,
+       -2.64
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 39,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 8,
+      "length": 0.99,
+      "start": [
+       -1.1,
+       -2.82
+      ],
+      "end": [
+       -0.18,
+       -3.09
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     }
+    ]
+   },
+   "profile": {
+    "legs": 5,
+    "splays": 45,
+    "splays_dropped": 3,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 38,
+      "length": 4.14,
+      "start": [
+       3.04,
+       -1.81
+      ],
+      "end": [
+       -0.06,
+       0.03
+      ],
+      "score": -1.0,
+      "coverage": 0.92,
+      "median_dist": 0.15,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 12,
+      "length": 3.19,
+      "start": [
+       -4.72,
+       -4.01
+      ],
+      "end": [
+       -1.62,
+       -4.32
+      ],
+      "score": -1.0,
+      "coverage": 0.95,
+      "median_dist": 4.07,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 29,
+      "length": 5.39,
+      "start": [
+       -6.21,
+       1.41
+      ],
+      "end": [
+       -10.38,
+       3.72
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.21,
+      "cave_side": "right"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 28,
+      "length": 3.75,
+      "start": [
+       -10.47,
+       3.48
+      ],
+      "end": [
+       -8.07,
+       1.05
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.45,
+      "cave_side": "right"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 6,
+      "length": 0.37,
+      "start": [
+       -6.1,
+       0.87
+      ],
+      "end": [
+       -6.33,
+       0.77
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.32,
+      "cave_side": "left"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 16,
+      "length": 3.56,
+      "start": [
+       -3.54,
+       0.71
+      ],
+      "end": [
+       -0.07,
+       0.02
+      ],
+      "score": 0.914,
+      "coverage": 1.0,
+      "median_dist": 0.2,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 1.31,
+      "start": [
+       -4.63,
+       0.51
+      ],
+      "end": [
+       -3.44,
+       0.71
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.3,
+      "cave_side": "left"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 1.91,
+      "start": [
+       -6.16,
+       1.39
+      ],
+      "end": [
+       -4.51,
+       0.56
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.14,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 21,
+      "length": 5.82,
+      "start": [
+       -5.42,
+       -0.22
+      ],
+      "end": [
+       -4.5,
+       -4.03
+      ],
+      "score": -1.0,
+      "coverage": 0.66,
+      "median_dist": 4.14,
+      "cave_side": "right"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 11,
+      "length": 2.55,
+      "start": [
+       -6.28,
+       0.86
+      ],
+      "end": [
+       -8.13,
+       1.13
+      ],
+      "score": 1.0,
+      "coverage": 0.95,
+      "median_dist": 0.82,
+      "cave_side": "left"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 1.59,
+      "start": [
+       -5.48,
+       -0.27
+      ],
+      "end": [
+       -6.16,
+       0.89
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "left"
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 54,
+      "length": 10.99,
+      "start": [
+       -0.57,
+       -5.8
+      ],
+      "end": [
+       -1.64,
+       -4.14
+      ],
+      "score": 1.0,
+      "coverage": 0.62,
+      "median_dist": 1.3,
+      "cave_side": "left"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "mockup_test1.CSZ",
+  "designs": {
+   "plan": {
+    "legs": 3,
+    "splays": 0,
+    "splays_dropped": 0,
+    "walls": []
+   },
+   "profile": {
+    "legs": 3,
+    "splays": 0,
+    "splays_dropped": 0,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 178,
+      "length": 18.08,
+      "start": [
+       -0.57,
+       0.35
+      ],
+      "end": [
+       7.77,
+       -2.52
+      ],
+      "score": 1.0,
+      "coverage": 0.97,
+      "median_dist": 0.55,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 68,
+      "length": 5.25,
+      "start": [
+       6.92,
+       -2.8
+      ],
+      "end": [
+       3.0,
+       -1.03
+      ],
+      "score": 1.0,
+      "coverage": 0.97,
+      "median_dist": 2.59,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 58,
+      "length": 3.89,
+      "start": [
+       3.01,
+       -0.99
+      ],
+      "end": [
+       -0.02,
+       -2.03
+      ],
+      "score": 1.0,
+      "coverage": 0.93,
+      "median_dist": 1.87,
+      "cave_side": "left"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "mockup_test1_backup.CSZ",
+  "designs": {
+   "plan": {
+    "legs": 3,
+    "splays": 0,
+    "splays_dropped": 0,
+    "walls": []
+   },
+   "profile": {
+    "legs": 3,
+    "splays": 0,
+    "splays_dropped": 0,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 178,
+      "length": 18.08,
+      "start": [
+       -0.57,
+       0.35
+      ],
+      "end": [
+       7.77,
+       -2.52
+      ],
+      "score": 1.0,
+      "coverage": 0.97,
+      "median_dist": 0.55,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 68,
+      "length": 5.25,
+      "start": [
+       6.92,
+       -2.8
+      ],
+      "end": [
+       3.0,
+       -1.03
+      ],
+      "score": 1.0,
+      "coverage": 0.97,
+      "median_dist": 2.59,
+      "cave_side": "left"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 58,
+      "length": 3.89,
+      "start": [
+       3.01,
+       -0.99
+      ],
+      "end": [
+       -0.02,
+       -2.03
+      ],
+      "score": 1.0,
+      "coverage": 0.93,
+      "median_dist": 1.87,
+      "cave_side": "left"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "sp7_brad_kosa_plazibat_spilja-tlobcrtp.csx",
+  "designs": {
+   "plan": {
+    "legs": 9,
+    "splays": 131,
+    "splays_dropped": 43,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 1.8,
+      "start": [
+       0.18,
+       -0.74
+      ],
+      "end": [
+       -1.43,
+       -1.23
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.31,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 12,
+      "length": 3.48,
+      "start": [
+       -0.49,
+       1.31
+      ],
+      "end": [
+       -2.98,
+       -0.53
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.41,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 0.86,
+      "start": [
+       -1.43,
+       -1.23
+      ],
+      "end": [
+       -1.96,
+       -1.91
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.32,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 1.41,
+      "start": [
+       -2.39,
+       -1.73
+      ],
+      "end": [
+       -2.98,
+       -0.53
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.41,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.18,
+      "start": [
+       -2.43,
+       -2.83
+      ],
+      "end": [
+       -2.47,
+       -2.65
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.36,
+      "cave_side": "left"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.22,
+      "start": [
+       -2.1,
+       -2.8
+      ],
+      "end": [
+       -2.02,
+       -2.6
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.44,
+      "cave_side": "right"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.41,
+      "start": [
+       -1.91,
+       -2.32
+      ],
+      "end": [
+       -1.96,
+       -1.91
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.32,
+      "cave_side": "right"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.22,
+      "start": [
+       -2.42,
+       -2.31
+      ],
+      "end": [
+       -2.39,
+       -2.09
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.48,
+      "start": [
+       -2.04,
+       -3.28
+      ],
+      "end": [
+       -2.1,
+       -2.8
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.72,
+      "cave_side": "right"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.36,
+      "start": [
+       -2.3,
+       -3.59
+      ],
+      "end": [
+       -2.34,
+       -3.23
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 1.11,
+      "cave_side": "left"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 1.18,
+      "start": [
+       -2.38,
+       -4.24
+      ],
+      "end": [
+       -2.03,
+       -3.86
+      ],
+      "score": -0.188,
+      "coverage": 0.78,
+      "median_dist": 2.04,
+      "cave_side": "right"
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 0.15,
+      "start": [
+       -1.74,
+       -3.52
+      ],
+      "end": [
+       -1.73,
+       -3.59
+      ],
+      "score": -1.0,
+      "coverage": 0.5,
+      "median_dist": 1.72,
+      "cave_side": "right"
+     },
+     {
+      "item": 12,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 2.44,
+      "start": [
+       -0.49,
+       1.31
+      ],
+      "end": [
+       1.89,
+       1.6
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.34,
+      "cave_side": "left"
+     },
+     {
+      "item": 13,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 2.83,
+      "start": [
+       2.84,
+       0.17
+      ],
+      "end": [
+       0.18,
+       -0.74
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.25,
+      "cave_side": "left"
+     },
+     {
+      "item": 14,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 2.16,
+      "start": [
+       2.84,
+       0.17
+      ],
+      "end": [
+       4.66,
+       0.48
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.25,
+      "cave_side": "right"
+     },
+     {
+      "item": 15,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 12,
+      "length": 2.55,
+      "start": [
+       4.66,
+       0.48
+      ],
+      "end": [
+       6.36,
+       2.21
+      ],
+      "score": -0.993,
+      "coverage": 1.0,
+      "median_dist": 0.47,
+      "cave_side": "right"
+     },
+     {
+      "item": 16,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 3.32,
+      "start": [
+       1.89,
+       1.6
+      ],
+      "end": [
+       2.72,
+       3.79
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.24,
+      "cave_side": "left"
+     },
+     {
+      "item": 17,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.88,
+      "start": [
+       2.72,
+       3.79
+      ],
+      "end": [
+       3.58,
+       3.96
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.29,
+      "cave_side": "left"
+     },
+     {
+      "item": 18,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 1.96,
+      "start": [
+       6.38,
+       2.14
+      ],
+      "end": [
+       7.02,
+       3.97
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.46,
+      "cave_side": "right"
+     },
+     {
+      "item": 19,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 2.06,
+      "start": [
+       5.17,
+       5.26
+      ],
+      "end": [
+       3.58,
+       3.96
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.36,
+      "cave_side": "right"
+     },
+     {
+      "item": 20,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 1.17,
+      "start": [
+       7.02,
+       3.97
+      ],
+      "end": [
+       7.04,
+       5.1
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.42,
+      "cave_side": "right"
+     },
+     {
+      "item": 21,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 27,
+      "length": 9.0,
+      "start": [
+       6.14,
+       8.24
+      ],
+      "end": [
+       5.17,
+       5.26
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.26,
+      "cave_side": "right"
+     },
+     {
+      "item": 22,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 1.22,
+      "start": [
+       6.14,
+       8.24
+      ],
+      "end": [
+       7.29,
+       7.89
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.55,
+      "cave_side": "left"
+     },
+     {
+      "item": 23,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 2.1,
+      "start": [
+       7.29,
+       7.89
+      ],
+      "end": [
+       8.82,
+       9.27
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.72,
+      "cave_side": "left"
+     },
+     {
+      "item": 24,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 1.38,
+      "start": [
+       9.45,
+       10.5
+      ],
+      "end": [
+       8.82,
+       9.27
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.61,
+      "cave_side": "right"
+     },
+     {
+      "item": 25,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 2.57,
+      "start": [
+       11.59,
+       11.85
+      ],
+      "end": [
+       9.45,
+       10.5
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.68,
+      "cave_side": "right"
+     },
+     {
+      "item": 26,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 5.18,
+      "start": [
+       11.59,
+       11.85
+      ],
+      "end": [
+       16.45,
+       13.2
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.53,
+      "cave_side": "left"
+     },
+     {
+      "item": 27,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 6.91,
+      "start": [
+       7.04,
+       5.1
+      ],
+      "end": [
+       12.83,
+       8.06
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.29,
+      "cave_side": "right"
+     },
+     {
+      "item": 28,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 3.15,
+      "start": [
+       12.83,
+       8.06
+      ],
+      "end": [
+       15.51,
+       8.87
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.25,
+      "cave_side": "right"
+     },
+     {
+      "item": 29,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 2.88,
+      "start": [
+       15.51,
+       8.87
+      ],
+      "end": [
+       17.89,
+       10.41
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.15,
+      "cave_side": "right"
+     },
+     {
+      "item": 30,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 0.96,
+      "start": [
+       18.75,
+       10.82
+      ],
+      "end": [
+       17.89,
+       10.41
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.25,
+      "cave_side": "left"
+     },
+     {
+      "item": 31,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 0.4,
+      "start": [
+       16.85,
+       13.24
+      ],
+      "end": [
+       16.45,
+       13.2
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.19,
+      "cave_side": "right"
+     },
+     {
+      "item": 32,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 12,
+      "length": 3.39,
+      "start": [
+       18.12,
+       12.48
+      ],
+      "end": [
+       16.85,
+       13.24
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.86,
+      "cave_side": "right"
+     },
+     {
+      "item": 33,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 2.01,
+      "start": [
+       19.58,
+       13.71
+      ],
+      "end": [
+       18.12,
+       12.48
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.32,
+      "cave_side": "right"
+     },
+     {
+      "item": 34,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.93,
+      "start": [
+       19.58,
+       13.71
+      ],
+      "end": [
+       18.82,
+       14.25
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.46,
+      "cave_side": "left"
+     },
+     {
+      "item": 35,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.54,
+      "start": [
+       18.82,
+       14.25
+      ],
+      "end": [
+       18.38,
+       14.57
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.34,
+      "cave_side": "left"
+     },
+     {
+      "item": 36,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.16,
+      "start": [
+       18.15,
+       14.75
+      ],
+      "end": [
+       18.05,
+       14.88
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.61,
+      "cave_side": "left"
+     },
+     {
+      "item": 37,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.22,
+      "start": [
+       17.9,
+       15.28
+      ],
+      "end": [
+       17.89,
+       15.5
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 1.05,
+      "cave_side": "left"
+     },
+     {
+      "item": 38,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.16,
+      "start": [
+       18.31,
+       15.7
+      ],
+      "end": [
+       18.45,
+       15.77
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 1.06,
+      "cave_side": "left"
+     },
+     {
+      "item": 39,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.24,
+      "start": [
+       18.81,
+       15.62
+      ],
+      "end": [
+       18.98,
+       15.45
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.87,
+      "cave_side": "left"
+     },
+     {
+      "item": 40,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.21,
+      "start": [
+       19.27,
+       15.1
+      ],
+      "end": [
+       19.35,
+       14.91
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.53,
+      "cave_side": "left"
+     },
+     {
+      "item": 41,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.76,
+      "start": [
+       19.68,
+       14.7
+      ],
+      "end": [
+       20.41,
+       14.5
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.42,
+      "cave_side": "left"
+     },
+     {
+      "item": 42,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 3.41,
+      "start": [
+       23.46,
+       15.66
+      ],
+      "end": [
+       20.41,
+       14.5
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.3,
+      "cave_side": "right"
+     },
+     {
+      "item": 43,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 3.66,
+      "start": [
+       22.21,
+       11.66
+      ],
+      "end": [
+       18.75,
+       10.82
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.27,
+      "cave_side": "left"
+     },
+     {
+      "item": 44,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 3.98,
+      "start": [
+       25.94,
+       13.02
+      ],
+      "end": [
+       22.21,
+       11.66
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.26,
+      "cave_side": "left"
+     },
+     {
+      "item": 45,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 4.07,
+      "start": [
+       25.94,
+       13.02
+      ],
+      "end": [
+       29.41,
+       11.59
+      ],
+      "score": -1.0,
+      "coverage": 0.14,
+      "median_dist": 0.79,
+      "cave_side": "right"
+     },
+     {
+      "item": 46,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 4.21,
+      "start": [
+       23.46,
+       15.66
+      ],
+      "end": [
+       20.29,
+       17.11
+      ],
+      "score": -1.0,
+      "coverage": 0.1,
+      "median_dist": 2.9,
+      "cave_side": "right"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 9,
+    "splays": 131,
+    "splays_dropped": 19,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 1.01,
+      "start": [
+       -1.61,
+       -0.24
+      ],
+      "end": [
+       -0.62,
+       -0.42
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.36,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.64,
+      "start": [
+       -0.62,
+       -0.42
+      ],
+      "end": [
+       0.02,
+       -0.42
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.4,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 5,
+      "length": 1.9,
+      "start": [
+       -0.01,
+       0.15
+      ],
+      "end": [
+       -1.91,
+       0.15
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.14,
+      "cave_side": "right"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.31,
+      "start": [
+       -1.61,
+       -0.24
+      ],
+      "end": [
+       -1.85,
+       -0.04
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.23,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 1.36,
+      "start": [
+       -1.91,
+       0.15
+      ],
+      "end": [
+       -2.94,
+       0.81
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.37,
+      "cave_side": "right"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 1.1,
+      "start": [
+       -1.85,
+       -0.04
+      ],
+      "end": [
+       -2.88,
+       0.35
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.07,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.28,
+      "start": [
+       -2.94,
+       0.81
+      ],
+      "end": [
+       -3.19,
+       0.94
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "right"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.2,
+      "start": [
+       -3.36,
+       1.02
+      ],
+      "end": [
+       -3.56,
+       1.05
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.24,
+      "cave_side": "right"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.22,
+      "start": [
+       -2.88,
+       0.35
+      ],
+      "end": [
+       -3.09,
+       0.43
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.12,
+      "cave_side": "left"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.12,
+      "start": [
+       -3.31,
+       0.54
+      ],
+      "end": [
+       -3.42,
+       0.58
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.14,
+      "cave_side": "left"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.19,
+      "start": [
+       -3.56,
+       0.64
+      ],
+      "end": [
+       -3.72,
+       0.74
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.15,
+      "cave_side": "left"
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 0.5,
+      "start": [
+       -3.95,
+       0.87
+      ],
+      "end": [
+       -3.91,
+       1.24
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.4,
+      "cave_side": "left"
+     },
+     {
+      "item": 12,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.08,
+      "start": [
+       -3.78,
+       1.51
+      ],
+      "end": [
+       -3.86,
+       1.52
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.67,
+      "cave_side": "right"
+     },
+     {
+      "item": 13,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 2.8,
+      "start": [
+       -0.55,
+       -2.45
+      ],
+      "end": [
+       1.9,
+       -1.79
+      ],
+      "score": -1.0,
+      "coverage": 0.95,
+      "median_dist": 0.38,
+      "cave_side": "right"
+     },
+     {
+      "item": 14,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 19,
+      "length": 3.76,
+      "start": [
+       -0.55,
+       -2.45
+      ],
+      "end": [
+       0.02,
+       -0.42
+      ],
+      "score": 0.996,
+      "coverage": 0.97,
+      "median_dist": 1.3,
+      "cave_side": "left"
+     },
+     {
+      "item": 15,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 25,
+      "length": 6.3,
+      "start": [
+       4.86,
+       -5.95
+      ],
+      "end": [
+       1.9,
+       -1.79
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "left"
+     },
+     {
+      "item": 16,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 14,
+      "length": 4.7,
+      "start": [
+       4.86,
+       -5.95
+      ],
+      "end": [
+       7.48,
+       -2.32
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.68,
+      "cave_side": "right"
+     },
+     {
+      "item": 17,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 10,
+      "length": 4.57,
+      "start": [
+       -0.01,
+       0.15
+      ],
+      "end": [
+       4.47,
+       0.0
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.21,
+      "cave_side": "left"
+     },
+     {
+      "item": 18,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 2.96,
+      "start": [
+       4.47,
+       0.0
+      ],
+      "end": [
+       7.3,
+       -0.57
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.19,
+      "cave_side": "left"
+     },
+     {
+      "item": 19,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 6,
+      "length": 1.91,
+      "start": [
+       7.3,
+       -0.57
+      ],
+      "end": [
+       9.15,
+       -0.89
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.25,
+      "cave_side": "left"
+     },
+     {
+      "item": 20,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 4,
+      "length": 2.04,
+      "start": [
+       9.07,
+       -2.04
+      ],
+      "end": [
+       7.48,
+       -2.32
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.3,
+      "cave_side": "left"
+     },
+     {
+      "item": 21,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 16,
+      "length": 8.21,
+      "start": [
+       9.35,
+       -0.88
+      ],
+      "end": [
+       16.69,
+       -3.5
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.6,
+      "cave_side": "left"
+     },
+     {
+      "item": 22,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 12,
+      "length": 7.47,
+      "start": [
+       16.57,
+       -5.95
+      ],
+      "end": [
+       9.58,
+       -4.79
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 2.44,
+      "cave_side": "left"
+     },
+     {
+      "item": 23,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 3.64,
+      "start": [
+       9.58,
+       -4.79
+      ],
+      "end": [
+       9.07,
+       -2.04
+      ],
+      "score": 1.0,
+      "coverage": 0.58,
+      "median_dist": 0.98,
+      "cave_side": "left"
+     },
+     {
+      "item": 24,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 6,
+      "length": 4.63,
+      "start": [
+       16.57,
+       -5.95
+      ],
+      "end": [
+       21.02,
+       -6.98
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 25,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 5.49,
+      "start": [
+       16.69,
+       -3.5
+      ],
+      "end": [
+       21.6,
+       -5.78
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.32,
+      "cave_side": "left"
+     },
+     {
+      "item": 26,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 2.63,
+      "start": [
+       21.6,
+       -5.78
+      ],
+      "end": [
+       23.77,
+       -7.27
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.27,
+      "cave_side": "left"
+     },
+     {
+      "item": 27,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 5.4,
+      "start": [
+       26.55,
+       -11.13
+      ],
+      "end": [
+       22.69,
+       -7.71
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.78,
+      "cave_side": "left"
+     },
+     {
+      "item": 28,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 1.84,
+      "start": [
+       22.69,
+       -7.71
+      ],
+      "end": [
+       21.02,
+       -6.98
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.32,
+      "cave_side": "left"
+     },
+     {
+      "item": 29,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 3.2,
+      "start": [
+       23.77,
+       -7.27
+      ],
+      "end": [
+       26.58,
+       -8.74
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.34,
+      "cave_side": "left"
+     },
+     {
+      "item": 30,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 4.48,
+      "start": [
+       26.58,
+       -8.74
+      ],
+      "end": [
+       30.6,
+       -10.48
+      ],
+      "score": 1.0,
+      "coverage": 0.9,
+      "median_dist": 0.07,
+      "cave_side": "left"
+     },
+     {
+      "item": 31,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 15,
+      "length": 4.75,
+      "start": [
+       26.55,
+       -11.13
+      ],
+      "end": [
+       22.4,
+       -11.55
+      ],
+      "score": -1.0,
+      "coverage": 0.06,
+      "median_dist": 0.42,
+      "cave_side": "right"
+     },
+     {
+      "item": 32,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 3,
+      "length": 2.04,
+      "start": [
+       22.4,
+       -11.55
+      ],
+      "end": [
+       20.39,
+       -11.75
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "spilja_bunker_studena_recovered_pp.csx",
+  "designs": {
+   "plan": {
+    "legs": 5,
+    "splays": 63,
+    "splays_dropped": 24,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 110,
+      "length": 33.78,
+      "start": [
+       -5.19,
+       -3.61
+      ],
+      "end": [
+       -6.93,
+       -8.48
+      ],
+      "score": 1.0,
+      "coverage": 0.99,
+      "median_dist": 0.24,
+      "cave_side": "left"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 5,
+    "splays": 63,
+    "splays_dropped": 11,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 60,
+      "length": 17.19,
+      "start": [
+       -5.56,
+       0.72
+      ],
+      "end": [
+       -6.66,
+       2.45
+      ],
+      "score": -0.884,
+      "coverage": 0.97,
+      "median_dist": 0.21,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 27,
+      "length": 9.48,
+      "start": [
+       -11.5,
+       -0.95
+      ],
+      "end": [
+       -5.43,
+       0.81
+      ],
+      "score": -1.0,
+      "coverage": 0.95,
+      "median_dist": 0.69,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 2.38,
+      "start": [
+       -4.33,
+       1.82
+      ],
+      "end": [
+       -5.45,
+       2.78
+      ],
+      "score": -1.0,
+      "coverage": 0.94,
+      "median_dist": 0.27,
+      "cave_side": "right"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 1.98,
+      "start": [
+       -5.82,
+       0.82
+      ],
+      "end": [
+       -4.32,
+       1.92
+      ],
+      "score": -0.212,
+      "coverage": 0.92,
+      "median_dist": 0.12,
+      "cave_side": "right"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 18,
+      "length": 7.24,
+      "start": [
+       -13.69,
+       1.77
+      ],
+      "end": [
+       -6.79,
+       2.59
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.54,
+      "cave_side": "left"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "tavnjak_mune-1p_novo.csx",
+  "designs": {
+   "plan": {
+    "legs": 7,
+    "splays": 126,
+    "splays_dropped": 7,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 21,
+      "length": 2.34,
+      "start": [
+       -3.56,
+       -2.49
+      ],
+      "end": [
+       -2.2,
+       -0.71
+      ],
+      "score": 0.827,
+      "coverage": 0.68,
+      "median_dist": 1.13,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 10,
+      "length": 3.13,
+      "start": [
+       0.77,
+       -1.94
+      ],
+      "end": [
+       -0.32,
+       0.54
+      ],
+      "score": 0.718,
+      "coverage": 1.0,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 12,
+      "length": 4.7,
+      "start": [
+       0.44,
+       -4.27
+      ],
+      "end": [
+       -1.14,
+       -0.09
+      ],
+      "score": -0.061,
+      "coverage": 1.0,
+      "median_dist": 0.82,
+      "cave_side": "right"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 14,
+      "length": 4.51,
+      "start": [
+       -0.98,
+       -5.15
+      ],
+      "end": [
+       -2.32,
+       -0.94
+      ],
+      "score": 0.14,
+      "coverage": 0.61,
+      "median_dist": 0.57,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 11,
+      "length": 4.3,
+      "start": [
+       -1.67,
+       -6.21
+      ],
+      "end": [
+       -2.81,
+       -2.26
+      ],
+      "score": -0.581,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "right"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 2.79,
+      "start": [
+       -0.77,
+       -2.45
+      ],
+      "end": [
+       -2.7,
+       -4.47
+      ],
+      "score": 1.0,
+      "coverage": 0.95,
+      "median_dist": 0.85,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 6,
+      "length": 1.66,
+      "start": [
+       2.5,
+       -2.99
+      ],
+      "end": [
+       3.44,
+       -4.06
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 0.17,
+      "start": [
+       1.73,
+       -3.31
+      ],
+      "end": [
+       1.73,
+       -3.48
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.33,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 17,
+      "length": 1.74,
+      "start": [
+       2.2,
+       -2.98
+      ],
+      "end": [
+       1.85,
+       -4.64
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 0.34,
+      "start": [
+       2.72,
+       -3.28
+      ],
+      "end": [
+       2.75,
+       -3.62
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 0.96,
+      "start": [
+       1.89,
+       -3.47
+      ],
+      "end": [
+       2.85,
+       -3.44
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 1.87,
+      "start": [
+       2.21,
+       -4.47
+      ],
+      "end": [
+       0.56,
+       -5.23
+      ],
+      "score": 1.0,
+      "coverage": 0.54,
+      "median_dist": 1.39,
+      "cave_side": "left"
+     },
+     {
+      "item": 12,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 8,
+      "length": 2.52,
+      "start": [
+       3.46,
+       -4.13
+      ],
+      "end": [
+       2.26,
+       -4.41
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 13,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 2.77,
+      "start": [
+       -5.66,
+       -5.26
+      ],
+      "end": [
+       -5.51,
+       -2.98
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.61,
+      "cave_side": "left"
+     },
+     {
+      "item": 14,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 2.19,
+      "start": [
+       -3.92,
+       -7.36
+      ],
+      "end": [
+       -5.6,
+       -5.97
+      ],
+      "score": 0.179,
+      "coverage": 0.86,
+      "median_dist": 0.17,
+      "cave_side": "left"
+     },
+     {
+      "item": 15,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 116,
+      "length": 11.78,
+      "start": [
+       -6.15,
+       -7.58
+      ],
+      "end": [
+       -1.15,
+       -6.44
+      ],
+      "score": -0.384,
+      "coverage": 0.72,
+      "median_dist": 0.2,
+      "cave_side": "right"
+     },
+     {
+      "item": 16,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 2.66,
+      "start": [
+       -1.57,
+       -6.67
+      ],
+      "end": [
+       0.66,
+       -5.24
+      ],
+      "score": 0.33,
+      "coverage": 0.81,
+      "median_dist": 2.04,
+      "cave_side": "left"
+     },
+     {
+      "item": 17,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 41,
+      "length": 8.91,
+      "start": [
+       -6.15,
+       -7.74
+      ],
+      "end": [
+       -3.31,
+       -2.31
+      ],
+      "score": 1.0,
+      "coverage": 0.75,
+      "median_dist": 0.78,
+      "cave_side": "left"
+     },
+     {
+      "item": 18,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 27,
+      "length": 8.38,
+      "start": [
+       2.33,
+       -3.08
+      ],
+      "end": [
+       -2.16,
+       -0.68
+      ],
+      "score": -1.0,
+      "coverage": 0.71,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 19,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 15,
+      "length": 1.74,
+      "start": [
+       2.51,
+       -4.63
+      ],
+      "end": [
+       2.87,
+       -2.97
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 20,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 15,
+      "length": 1.83,
+      "start": [
+       1.35,
+       -4.72
+      ],
+      "end": [
+       1.81,
+       -2.97
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 21,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 14,
+      "length": 1.64,
+      "start": [
+       2.67,
+       -4.97
+      ],
+      "end": [
+       3.37,
+       -3.55
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 22,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 16,
+      "length": 1.47,
+      "start": [
+       -6.2,
+       -7.92
+      ],
+      "end": [
+       -4.78,
+       -7.76
+      ],
+      "score": -0.421,
+      "coverage": 0.87,
+      "median_dist": 0.06,
+      "cave_side": "right"
+     },
+     {
+      "item": 23,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 17,
+      "length": 1.7,
+      "start": [
+       -4.65,
+       -8.19
+      ],
+      "end": [
+       -6.29,
+       -8.46
+      ],
+      "score": 0.042,
+      "coverage": 0.5,
+      "median_dist": 0.16,
+      "cave_side": "left"
+     },
+     {
+      "item": 24,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 18,
+      "length": 1.81,
+      "start": [
+       -4.59,
+       -8.95
+      ],
+      "end": [
+       -6.31,
+       -8.65
+      ],
+      "score": 0.265,
+      "coverage": 0.59,
+      "median_dist": 0.26,
+      "cave_side": "left"
+     },
+     {
+      "item": 25,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 16,
+      "length": 1.64,
+      "start": [
+       -4.99,
+       -9.63
+      ],
+      "end": [
+       -6.47,
+       -9.03
+      ],
+      "score": -0.494,
+      "coverage": 0.73,
+      "median_dist": 0.05,
+      "cave_side": "right"
+     },
+     {
+      "item": 26,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 13,
+      "length": 1.4,
+      "start": [
+       -5.38,
+       -9.99
+      ],
+      "end": [
+       -6.55,
+       -9.33
+      ],
+      "score": 1.0,
+      "coverage": 0.67,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 27,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 1.01,
+      "start": [
+       -5.39,
+       -7.81
+      ],
+      "end": [
+       -5.44,
+       -8.82
+      ],
+      "score": -0.847,
+      "coverage": 0.86,
+      "median_dist": 0.21,
+      "cave_side": "right"
+     },
+     {
+      "item": 28,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 68,
+      "length": 16.16,
+      "start": [
+       -2.31,
+       -7.5
+      ],
+      "end": [
+       -4.09,
+       -7.68
+      ],
+      "score": 0.642,
+      "coverage": 1.0,
+      "median_dist": 0.27,
+      "cave_side": "left"
+     },
+     {
+      "item": 28,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.02,
+      "start": [
+       -4.12,
+       -7.68
+      ],
+      "end": [
+       -4.1,
+       -7.68
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.39,
+      "cave_side": "left"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 7,
+    "splays": 126,
+    "splays_dropped": 31,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 19,
+      "length": 10.58,
+      "start": [
+       0.54,
+       0.37
+      ],
+      "end": [
+       -8.52,
+       -4.06
+      ],
+      "score": -1.0,
+      "coverage": 0.99,
+      "median_dist": 1.04,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 30,
+      "length": 17.51,
+      "start": [
+       0.19,
+       -16.75
+      ],
+      "end": [
+       0.89,
+       0.48
+      ],
+      "score": -1.0,
+      "coverage": 0.95,
+      "median_dist": 0.23,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 14,
+      "length": 7.89,
+      "start": [
+       -0.46,
+       -19.6
+      ],
+      "end": [
+       -6.24,
+       -17.77
+      ],
+      "score": 1.0,
+      "coverage": 0.44,
+      "median_dist": 1.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 5,
+      "length": 2.46,
+      "start": [
+       0.16,
+       -17.02
+      ],
+      "end": [
+       0.4,
+       -19.44
+      ],
+      "score": 1.0,
+      "coverage": 0.31,
+      "median_dist": 5.45,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 21,
+      "length": 9.31,
+      "start": [
+       -10.37,
+       -12.27
+      ],
+      "end": [
+       -8.13,
+       -4.09
+      ],
+      "score": 1.0,
+      "coverage": 0.85,
+      "median_dist": 1.54,
+      "cave_side": "left"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 33,
+      "length": 14.7,
+      "start": [
+       -13.04,
+       -24.37
+      ],
+      "end": [
+       -9.34,
+       -10.64
+      ],
+      "score": 1.0,
+      "coverage": 0.99,
+      "median_dist": 2.08,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 4.69,
+      "start": [
+       -6.57,
+       -20.44
+      ],
+      "end": [
+       -5.14,
+       -17.05
+      ],
+      "score": -1.0,
+      "coverage": 0.66,
+      "median_dist": 0.56,
+      "cave_side": "right"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 31,
+      "length": 19.37,
+      "start": [
+       -14.68,
+       -42.76
+      ],
+      "end": [
+       -12.64,
+       -24.2
+      ],
+      "score": 1.0,
+      "coverage": 0.99,
+      "median_dist": 3.84,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 32,
+      "length": 19.12,
+      "start": [
+       -8.11,
+       -37.14
+      ],
+      "end": [
+       -6.56,
+       -19.83
+      ],
+      "score": -1.0,
+      "coverage": 0.91,
+      "median_dist": 0.35,
+      "cave_side": "right"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 30,
+      "length": 18.58,
+      "start": [
+       -6.08,
+       -55.23
+      ],
+      "end": [
+       -8.08,
+       -37.63
+      ],
+      "score": -1.0,
+      "coverage": 0.94,
+      "median_dist": 0.38,
+      "cave_side": "right"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 10.62,
+      "start": [
+       -6.14,
+       -65.4
+      ],
+      "end": [
+       -5.72,
+       -54.9
+      ],
+      "score": -1.0,
+      "coverage": 0.97,
+      "median_dist": 1.44,
+      "cave_side": "right"
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 24,
+      "length": 14.75,
+      "start": [
+       -13.62,
+       -56.7
+      ],
+      "end": [
+       -14.4,
+       -42.5
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 5.04,
+      "cave_side": "left"
+     },
+     {
+      "item": 12,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 4,
+      "length": 1.89,
+      "start": [
+       -13.54,
+       -58.75
+      ],
+      "end": [
+       -13.46,
+       -56.89
+      ],
+      "score": 1.0,
+      "coverage": 0.42,
+      "median_dist": 2.47,
+      "cave_side": "left"
+     },
+     {
+      "item": 13,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 4,
+      "length": 1.93,
+      "start": [
+       -11.33,
+       -57.61
+      ],
+      "end": [
+       -12.57,
+       -58.77
+      ],
+      "score": -1.0,
+      "coverage": 0.62,
+      "median_dist": 1.0,
+      "cave_side": "right"
+     },
+     {
+      "item": 14,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 16,
+      "length": 9.09,
+      "start": [
+       -12.67,
+       -66.03
+      ],
+      "end": [
+       -11.9,
+       -58.27
+      ],
+      "score": 1.0,
+      "coverage": 0.93,
+      "median_dist": 0.39,
+      "cave_side": "left"
+     },
+     {
+      "item": 15,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 10.29,
+      "start": [
+       -7.46,
+       -74.79
+      ],
+      "end": [
+       -6.15,
+       -64.75
+      ],
+      "score": -1.0,
+      "coverage": 0.97,
+      "median_dist": 0.85,
+      "cave_side": "right"
+     },
+     {
+      "item": 16,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 5.89,
+      "start": [
+       -8.58,
+       -77.88
+      ],
+      "end": [
+       -9.87,
+       -77.08
+      ],
+      "score": 1.0,
+      "coverage": 0.47,
+      "median_dist": 0.22,
+      "cave_side": "left"
+     },
+     {
+      "item": 17,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 7,
+      "length": 3.55,
+      "start": [
+       -7.61,
+       -78.29
+      ],
+      "end": [
+       -7.06,
+       -74.81
+      ],
+      "score": -1.0,
+      "coverage": 0.58,
+      "median_dist": 2.1,
+      "cave_side": "right"
+     },
+     {
+      "item": 18,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 15,
+      "length": 8.84,
+      "start": [
+       -11.64,
+       -85.23
+      ],
+      "end": [
+       -9.93,
+       -76.91
+      ],
+      "score": -0.988,
+      "coverage": 0.89,
+      "median_dist": 0.22,
+      "cave_side": "right"
+     },
+     {
+      "item": 19,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 13,
+      "length": 7.51,
+      "start": [
+       -10.83,
+       -92.14
+      ],
+      "end": [
+       -11.41,
+       -84.76
+      ],
+      "score": -1.0,
+      "coverage": 0.82,
+      "median_dist": 0.36,
+      "cave_side": "right"
+     },
+     {
+      "item": 20,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 3.73,
+      "start": [
+       -13.4,
+       -69.45
+      ],
+      "end": [
+       -12.1,
+       -66.0
+      ],
+      "score": 1.0,
+      "coverage": 0.58,
+      "median_dist": 0.82,
+      "cave_side": "left"
+     },
+     {
+      "item": 21,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 43,
+      "length": 27.27,
+      "start": [
+       -17.34,
+       -91.89
+      ],
+      "end": [
+       -12.59,
+       -66.34
+      ],
+      "score": 1.0,
+      "coverage": 0.92,
+      "median_dist": 3.36,
+      "cave_side": "left"
+     },
+     {
+      "item": 22,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 13,
+      "length": 7.72,
+      "start": [
+       -19.77,
+       -96.81
+      ],
+      "end": [
+       -16.79,
+       -91.31
+      ],
+      "score": 1.0,
+      "coverage": 0.71,
+      "median_dist": 4.07,
+      "cave_side": "left"
+     },
+     {
+      "item": 23,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 4.52,
+      "start": [
+       -8.0,
+       -91.55
+      ],
+      "end": [
+       -10.8,
+       -90.29
+      ],
+      "score": -1.0,
+      "coverage": 0.3,
+      "median_dist": 0.55,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "file": "tavnjak_mune-1p_novo_backup.csx",
+  "designs": {
+   "plan": {
+    "legs": 7,
+    "splays": 126,
+    "splays_dropped": 7,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 21,
+      "length": 2.34,
+      "start": [
+       -3.56,
+       -2.49
+      ],
+      "end": [
+       -2.2,
+       -0.71
+      ],
+      "score": 0.827,
+      "coverage": 0.68,
+      "median_dist": 1.13,
+      "cave_side": "left"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 10,
+      "length": 3.13,
+      "start": [
+       0.77,
+       -1.94
+      ],
+      "end": [
+       -0.32,
+       0.54
+      ],
+      "score": 0.718,
+      "coverage": 1.0,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 12,
+      "length": 4.7,
+      "start": [
+       0.44,
+       -4.27
+      ],
+      "end": [
+       -1.14,
+       -0.09
+      ],
+      "score": -0.061,
+      "coverage": 1.0,
+      "median_dist": 0.82,
+      "cave_side": "right"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 14,
+      "length": 4.51,
+      "start": [
+       -0.98,
+       -5.15
+      ],
+      "end": [
+       -2.32,
+       -0.94
+      ],
+      "score": 0.14,
+      "coverage": 0.61,
+      "median_dist": 0.57,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 11,
+      "length": 4.3,
+      "start": [
+       -1.67,
+       -6.21
+      ],
+      "end": [
+       -2.81,
+       -2.26
+      ],
+      "score": -0.581,
+      "coverage": 1.0,
+      "median_dist": 0.28,
+      "cave_side": "right"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 2.79,
+      "start": [
+       -0.77,
+       -2.45
+      ],
+      "end": [
+       -2.7,
+       -4.47
+      ],
+      "score": 1.0,
+      "coverage": 0.95,
+      "median_dist": 0.85,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 6,
+      "length": 1.66,
+      "start": [
+       2.5,
+       -2.99
+      ],
+      "end": [
+       3.44,
+       -4.06
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 0.17,
+      "start": [
+       1.73,
+       -3.31
+      ],
+      "end": [
+       1.73,
+       -3.48
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.33,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 17,
+      "length": 1.74,
+      "start": [
+       2.2,
+       -2.98
+      ],
+      "end": [
+       1.85,
+       -4.64
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 0.34,
+      "start": [
+       2.72,
+       -3.28
+      ],
+      "end": [
+       2.75,
+       -3.62
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 0.96,
+      "start": [
+       1.89,
+       -3.47
+      ],
+      "end": [
+       2.85,
+       -3.44
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 1.87,
+      "start": [
+       2.21,
+       -4.47
+      ],
+      "end": [
+       0.56,
+       -5.23
+      ],
+      "score": 1.0,
+      "coverage": 0.54,
+      "median_dist": 1.39,
+      "cave_side": "left"
+     },
+     {
+      "item": 12,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 8,
+      "length": 2.52,
+      "start": [
+       3.46,
+       -4.13
+      ],
+      "end": [
+       2.26,
+       -4.41
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 13,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 9,
+      "length": 2.77,
+      "start": [
+       -5.66,
+       -5.26
+      ],
+      "end": [
+       -5.51,
+       -2.98
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.61,
+      "cave_side": "left"
+     },
+     {
+      "item": 14,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 7,
+      "length": 2.19,
+      "start": [
+       -3.92,
+       -7.36
+      ],
+      "end": [
+       -5.6,
+       -5.97
+      ],
+      "score": 0.179,
+      "coverage": 0.86,
+      "median_dist": 0.17,
+      "cave_side": "left"
+     },
+     {
+      "item": 15,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 116,
+      "length": 11.78,
+      "start": [
+       -6.15,
+       -7.58
+      ],
+      "end": [
+       -1.15,
+       -6.44
+      ],
+      "score": -0.384,
+      "coverage": 0.72,
+      "median_dist": 0.2,
+      "cave_side": "right"
+     },
+     {
+      "item": 16,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 9,
+      "length": 2.66,
+      "start": [
+       -1.57,
+       -6.67
+      ],
+      "end": [
+       0.66,
+       -5.24
+      ],
+      "score": 0.33,
+      "coverage": 0.81,
+      "median_dist": 2.04,
+      "cave_side": "left"
+     },
+     {
+      "item": 17,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 41,
+      "length": 8.91,
+      "start": [
+       -6.15,
+       -7.74
+      ],
+      "end": [
+       -3.31,
+       -2.31
+      ],
+      "score": 1.0,
+      "coverage": 0.75,
+      "median_dist": 0.78,
+      "cave_side": "left"
+     },
+     {
+      "item": 18,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 27,
+      "length": 8.38,
+      "start": [
+       2.33,
+       -3.08
+      ],
+      "end": [
+       -2.16,
+       -0.68
+      ],
+      "score": -1.0,
+      "coverage": 0.71,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 19,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 15,
+      "length": 1.74,
+      "start": [
+       2.51,
+       -4.63
+      ],
+      "end": [
+       2.87,
+       -2.97
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 20,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 15,
+      "length": 1.83,
+      "start": [
+       1.35,
+       -4.72
+      ],
+      "end": [
+       1.81,
+       -2.97
+      ],
+      "score": -1.0,
+      "coverage": 1.0,
+      "median_dist": 0.43,
+      "cave_side": "right"
+     },
+     {
+      "item": 21,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 14,
+      "length": 1.64,
+      "start": [
+       2.67,
+       -4.97
+      ],
+      "end": [
+       3.37,
+       -3.55
+      ],
+      "score": null,
+      "coverage": 0.0,
+      "median_dist": null,
+      "cave_side": null
+     },
+     {
+      "item": 22,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 16,
+      "length": 1.47,
+      "start": [
+       -6.2,
+       -7.92
+      ],
+      "end": [
+       -4.78,
+       -7.76
+      ],
+      "score": -0.421,
+      "coverage": 0.87,
+      "median_dist": 0.06,
+      "cave_side": "right"
+     },
+     {
+      "item": 23,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 17,
+      "length": 1.7,
+      "start": [
+       -4.65,
+       -8.19
+      ],
+      "end": [
+       -6.29,
+       -8.46
+      ],
+      "score": 0.042,
+      "coverage": 0.5,
+      "median_dist": 0.16,
+      "cave_side": "left"
+     },
+     {
+      "item": 24,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 18,
+      "length": 1.81,
+      "start": [
+       -4.59,
+       -8.95
+      ],
+      "end": [
+       -6.31,
+       -8.65
+      ],
+      "score": 0.265,
+      "coverage": 0.59,
+      "median_dist": 0.26,
+      "cave_side": "left"
+     },
+     {
+      "item": 25,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 16,
+      "length": 1.64,
+      "start": [
+       -4.99,
+       -9.63
+      ],
+      "end": [
+       -6.47,
+       -9.03
+      ],
+      "score": -0.494,
+      "coverage": 0.73,
+      "median_dist": 0.05,
+      "cave_side": "right"
+     },
+     {
+      "item": 26,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 13,
+      "length": 1.4,
+      "start": [
+       -5.38,
+       -9.99
+      ],
+      "end": [
+       -6.55,
+       -9.33
+      ],
+      "score": 1.0,
+      "coverage": 0.67,
+      "median_dist": 0.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 27,
+      "seq": 0,
+      "type": "1",
+      "pen": "2",
+      "n": 2,
+      "length": 1.01,
+      "start": [
+       -5.39,
+       -7.81
+      ],
+      "end": [
+       -5.44,
+       -8.82
+      ],
+      "score": -0.847,
+      "coverage": 0.86,
+      "median_dist": 0.21,
+      "cave_side": "right"
+     },
+     {
+      "item": 28,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 68,
+      "length": 16.16,
+      "start": [
+       -2.31,
+       -7.5
+      ],
+      "end": [
+       -4.09,
+       -7.68
+      ],
+      "score": 0.642,
+      "coverage": 1.0,
+      "median_dist": 0.27,
+      "cave_side": "left"
+     },
+     {
+      "item": 28,
+      "seq": 1,
+      "type": "4",
+      "pen": "1",
+      "n": 2,
+      "length": 0.02,
+      "start": [
+       -4.12,
+       -7.68
+      ],
+      "end": [
+       -4.1,
+       -7.68
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 0.39,
+      "cave_side": "left"
+     }
+    ]
+   },
+   "profile": {
+    "legs": 7,
+    "splays": 126,
+    "splays_dropped": 31,
+    "walls": [
+     {
+      "item": 0,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 19,
+      "length": 10.58,
+      "start": [
+       0.54,
+       0.37
+      ],
+      "end": [
+       -8.52,
+       -4.06
+      ],
+      "score": -1.0,
+      "coverage": 0.99,
+      "median_dist": 1.04,
+      "cave_side": "right"
+     },
+     {
+      "item": 1,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 30,
+      "length": 17.51,
+      "start": [
+       0.19,
+       -16.75
+      ],
+      "end": [
+       0.89,
+       0.48
+      ],
+      "score": -1.0,
+      "coverage": 0.95,
+      "median_dist": 0.23,
+      "cave_side": "right"
+     },
+     {
+      "item": 2,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 14,
+      "length": 7.89,
+      "start": [
+       -0.46,
+       -19.6
+      ],
+      "end": [
+       -6.24,
+       -17.77
+      ],
+      "score": 1.0,
+      "coverage": 0.44,
+      "median_dist": 1.1,
+      "cave_side": "left"
+     },
+     {
+      "item": 3,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 5,
+      "length": 2.46,
+      "start": [
+       0.16,
+       -17.02
+      ],
+      "end": [
+       0.4,
+       -19.44
+      ],
+      "score": 1.0,
+      "coverage": 0.31,
+      "median_dist": 5.45,
+      "cave_side": "left"
+     },
+     {
+      "item": 4,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 21,
+      "length": 9.31,
+      "start": [
+       -10.37,
+       -12.27
+      ],
+      "end": [
+       -8.13,
+       -4.09
+      ],
+      "score": 1.0,
+      "coverage": 0.85,
+      "median_dist": 1.54,
+      "cave_side": "left"
+     },
+     {
+      "item": 5,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 33,
+      "length": 14.7,
+      "start": [
+       -13.04,
+       -24.37
+      ],
+      "end": [
+       -9.34,
+       -10.64
+      ],
+      "score": 1.0,
+      "coverage": 0.99,
+      "median_dist": 2.08,
+      "cave_side": "left"
+     },
+     {
+      "item": 6,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 4.69,
+      "start": [
+       -6.57,
+       -20.44
+      ],
+      "end": [
+       -5.14,
+       -17.05
+      ],
+      "score": -1.0,
+      "coverage": 0.66,
+      "median_dist": 0.56,
+      "cave_side": "right"
+     },
+     {
+      "item": 7,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 31,
+      "length": 19.37,
+      "start": [
+       -14.68,
+       -42.76
+      ],
+      "end": [
+       -12.64,
+       -24.2
+      ],
+      "score": 1.0,
+      "coverage": 0.99,
+      "median_dist": 3.84,
+      "cave_side": "left"
+     },
+     {
+      "item": 8,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 32,
+      "length": 19.12,
+      "start": [
+       -8.11,
+       -37.14
+      ],
+      "end": [
+       -6.56,
+       -19.83
+      ],
+      "score": -1.0,
+      "coverage": 0.91,
+      "median_dist": 0.35,
+      "cave_side": "right"
+     },
+     {
+      "item": 9,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 30,
+      "length": 18.58,
+      "start": [
+       -6.08,
+       -55.23
+      ],
+      "end": [
+       -8.08,
+       -37.63
+      ],
+      "score": -1.0,
+      "coverage": 0.94,
+      "median_dist": 0.38,
+      "cave_side": "right"
+     },
+     {
+      "item": 10,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 10.62,
+      "start": [
+       -6.14,
+       -65.4
+      ],
+      "end": [
+       -5.72,
+       -54.9
+      ],
+      "score": -1.0,
+      "coverage": 0.97,
+      "median_dist": 1.44,
+      "cave_side": "right"
+     },
+     {
+      "item": 11,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 24,
+      "length": 14.75,
+      "start": [
+       -13.62,
+       -56.7
+      ],
+      "end": [
+       -14.4,
+       -42.5
+      ],
+      "score": 1.0,
+      "coverage": 1.0,
+      "median_dist": 5.04,
+      "cave_side": "left"
+     },
+     {
+      "item": 12,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 4,
+      "length": 1.89,
+      "start": [
+       -13.54,
+       -58.75
+      ],
+      "end": [
+       -13.46,
+       -56.89
+      ],
+      "score": 1.0,
+      "coverage": 0.42,
+      "median_dist": 2.47,
+      "cave_side": "left"
+     },
+     {
+      "item": 13,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 4,
+      "length": 1.93,
+      "start": [
+       -11.33,
+       -57.61
+      ],
+      "end": [
+       -12.57,
+       -58.77
+      ],
+      "score": -1.0,
+      "coverage": 0.62,
+      "median_dist": 1.0,
+      "cave_side": "right"
+     },
+     {
+      "item": 14,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 16,
+      "length": 9.09,
+      "start": [
+       -12.67,
+       -66.03
+      ],
+      "end": [
+       -11.9,
+       -58.27
+      ],
+      "score": 1.0,
+      "coverage": 0.93,
+      "median_dist": 0.39,
+      "cave_side": "left"
+     },
+     {
+      "item": 15,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 17,
+      "length": 10.29,
+      "start": [
+       -7.46,
+       -74.79
+      ],
+      "end": [
+       -6.15,
+       -64.75
+      ],
+      "score": -1.0,
+      "coverage": 0.97,
+      "median_dist": 0.85,
+      "cave_side": "right"
+     },
+     {
+      "item": 16,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 11,
+      "length": 5.89,
+      "start": [
+       -8.58,
+       -77.88
+      ],
+      "end": [
+       -9.87,
+       -77.08
+      ],
+      "score": 1.0,
+      "coverage": 0.47,
+      "median_dist": 0.22,
+      "cave_side": "left"
+     },
+     {
+      "item": 17,
+      "seq": 0,
+      "type": "4",
+      "pen": "8",
+      "n": 7,
+      "length": 3.55,
+      "start": [
+       -7.61,
+       -78.29
+      ],
+      "end": [
+       -7.06,
+       -74.81
+      ],
+      "score": -1.0,
+      "coverage": 0.58,
+      "median_dist": 2.1,
+      "cave_side": "right"
+     },
+     {
+      "item": 18,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 15,
+      "length": 8.84,
+      "start": [
+       -11.64,
+       -85.23
+      ],
+      "end": [
+       -9.93,
+       -76.91
+      ],
+      "score": -0.988,
+      "coverage": 0.89,
+      "median_dist": 0.22,
+      "cave_side": "right"
+     },
+     {
+      "item": 19,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 13,
+      "length": 7.51,
+      "start": [
+       -10.83,
+       -92.14
+      ],
+      "end": [
+       -11.41,
+       -84.76
+      ],
+      "score": -1.0,
+      "coverage": 0.82,
+      "median_dist": 0.36,
+      "cave_side": "right"
+     },
+     {
+      "item": 20,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 7,
+      "length": 3.73,
+      "start": [
+       -13.4,
+       -69.45
+      ],
+      "end": [
+       -12.1,
+       -66.0
+      ],
+      "score": 1.0,
+      "coverage": 0.58,
+      "median_dist": 0.82,
+      "cave_side": "left"
+     },
+     {
+      "item": 21,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 43,
+      "length": 27.27,
+      "start": [
+       -17.34,
+       -91.89
+      ],
+      "end": [
+       -12.59,
+       -66.34
+      ],
+      "score": 1.0,
+      "coverage": 0.92,
+      "median_dist": 3.36,
+      "cave_side": "left"
+     },
+     {
+      "item": 22,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 13,
+      "length": 7.72,
+      "start": [
+       -19.77,
+       -96.81
+      ],
+      "end": [
+       -16.79,
+       -91.31
+      ],
+      "score": 1.0,
+      "coverage": 0.71,
+      "median_dist": 4.07,
+      "cave_side": "left"
+     },
+     {
+      "item": 23,
+      "seq": 0,
+      "type": "4",
+      "pen": "1",
+      "n": 8,
+      "length": 4.52,
+      "start": [
+       -8.0,
+       -91.55
+      ],
+      "end": [
+       -10.8,
+       -90.29
+      ],
+      "score": -1.0,
+      "coverage": 0.3,
+      "median_dist": 0.55,
+      "cave_side": "right"
+     }
+    ]
+   }
+  }
+ }
+]
