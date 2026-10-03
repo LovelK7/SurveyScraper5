@@ -67,3 +67,19 @@ Brief: [brief.md](brief.md)
   The sign tie-break toward the highest station is accepted for `decide_entrance` (phase 3).
 - **Evidence:** `findings/corpus/kilavceva_pljeskavica-1p_pp.json`, `findings/corpus/kinds.json`.
 - **Next:** Sopača's verdict; phase 3.
+
+### 2026-10-03 (later) — krk_27: the highest station was a blind aven (user + agent) ◐
+
+- **Did:** the user: krk_27's entrance is station 0, not 3. Traced why 3 was chosen: no sign, no surface
+  leg, so the highest station won — and the data really does put 3 at the top: the 2→3 leg is +86.6°,
+  every splay at 2 points up (51–86°), the profile walls reach 26 m above station 1. cSurvey's
+  `direction` attribute is the profile extend side (Right 0 / Left 1 / Vertical 2, cSurvey.vb:71), not a
+  reversed shot. The drawing closes the aven 0.2 m above 3 (`wall:presumed`). Added the blind-dome guard
+  (a drawn roof within 1 m above a highest-station-only choice → the survey's first station, warn) and the
+  `--entrance` / `entrances.json` override.
+- **Result:** krk_27 now lands on 0 with warnings, but the numbers at 0 (7.2 × 9.3 as horizontal, 8.6 × 12.9
+  as pit) are the chamber: a drawn ceiling 9.5 m above 0 and 33 splays to the chamber walls, nothing that
+  describes the opening. Honest output here is "entrance at 0, size unknown" — needs the user's word on
+  what the entrance at 0 looks like (skylight above? passage in?) before a rule can be written.
+- **Evidence:** `findings/corpus/krk_27-1p.json`, `example/csx_entrances/_out/krk_27_items.png` (plan + profile with every symbol).
+- **Next:** the user describes krk_27's entrance; Sopača's verdict; phase 3.

@@ -132,7 +132,7 @@ copied to `findings/corpus/` because `example/` is gitignored. Numbers in metres
 | bezdanka iznad Lalica | imported | pit (6 of 16 splays dive > 45°) | 5 (highest + sign) | **4.7 × 8.4** | splays (walls 6.8 × 11.2) | plausible; was `horizontal` before the splay-based pit test |
 | kilavčev cepavpic | `_pp` | pit (80°) | 4 (highest) | **1.1 × 2.4** | splays (walls 1.6 × 3.2) | plausible |
 | kilavčeva pljeskavica | `_pp` | **pit (registry; geometry said horizontal: shot 35°, 7 flat splays)** | 3 (flag) | **4.7 × 8.5** | splays (walls 3.7 × 10.8) | the user: it is a pit; the rim station's flat splays span the hole, like 272 — the type must come from SB / OSZ, not from geometry |
-| krk_27 | **raw** | pit (87°) | 3 (highest) | **3.5 × 4.8** | splays (walls 7.2 × 8.8) | raw TopoDroid, stations traversed from the shots |
+| krk_27 | **raw** | horizontal by geometry (20°), type unknown | **0** (first station of the survey; the highest, 3, has a drawn roof 0.2 m above it — a blind 20 m aven) | **7.2 × 9.3** as horizontal, 8.6 × 12.9 as pit | splays | **check** — the user: the entrance is 0, which the data cannot show (no sign, no surface leg; the first run took 3). The numbers at 0 are the chamber, not the opening: a drawn ceiling 9.5 m above 0, 33 splays to the chamber walls, nothing describing the entrance itself |
 | krk_37 | **raw** | horizontal (40°) | 0 (highest) | **0.9 × 1.4** | walls (no splays at 0) | raw; the `wall` lines are tight around station 0 |
 | sp7 Brad/Kosa/Plazibat špilja | imported | horizontal (22°) | 9 (highest-ties + sign) | **2.7 × 2.2** | splays (walls 3.1 × 2.3) | plausible; station 10 is 3.3 m higher — a side entrance or surface point? |
 | špilja Bunker (Studena) | `_pp` | horizontal (11°) | 5 (sign; highest is 1) | **2.6 × 1.5** | splays (walls 2.4 × 1.4) | plausible, sources agree |
@@ -152,6 +152,11 @@ What the corpus changed in the prototype:
   entrance lands on a ledge. Also surfaced: the prototype had passed station *names* instead of
   `Station` objects to `decide_entrance` (sp7 crashed) — the finisher itself does it right.
 - A warning when the entrance lies more than 2 m below the highest station.
+- **Blind-dome guard on the weakest witness:** when only the highest station chose the entrance
+  (no sign, no surface leg) and a profile wall is drawn within 1 m straight above it, that station is
+  the top of a closed aven, not an entrance; the survey's first station is taken instead, with a
+  warning to draw the entrance sign (krk_27). `--entrance <station>` / `entrances.json` let the
+  operator state the entrance outright.
 - **The cave's type comes from the registry.** `analyse(path, kind=...)` / `--kind pit|horizontal`; the
   corpus runner reads `<folder>/kinds.json` as a stand-in for SB's type / the OSZ's *Vrsta objekta*. Geometry
   (steep first shot, diving splays) is only the fallback and the report says when the two disagree.

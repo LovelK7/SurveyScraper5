@@ -144,8 +144,25 @@ def splay_vectors(root, name, E):
     return [sp for sp in out if sp["length"] > 1e-6]
 
 
-def entrance_station(root, st, warn):
-    """(station name, how). The finisher's flag, else nacrt_finish's witnesses."""
+BLIND_TOP_M = 1.0   # a drawn profile wall this close straight above a station = a closed dome, not sky
+
+
+def first_station(root):
+    """The station the survey started from: the `from` of the first non-splay shot."""
+    for seg in root.find("segments").findall("segment"):
+        if seg.get("splay") != "1" and seg.get("from"):
+            return seg.get("from")
+    return None
+
+
+def entrance_station(root, st, warn, forced=None):
+    """(station name, how). Forced (the operator / registry knows), else the finisher's
+    flag, else nacrt_finish's witnesses - with one guard on the weakest witness: the
+    highest station is no entrance when a wall is drawn right above it (krk_27: a
+    blind 20 m aven, its dome drawn 0.2 m over station 3; the entrance is station 0,
+    where the survey started)."""
+    if forced is not None:
+        return forced, "forced (registry / operator)"
     tps = root.find("trigpoints")
     if tps is not None:
         for tp in tps.findall("trigpoint"):
@@ -168,6 +185,16 @@ def entrance_station(root, st, warn):
                 warn("znak ulaza u %su pokazuje na najvisu stanicu %s, drugi znak na %s - uzimam %s"
                      % ("tlocrt" if design == "plan" else "profil", w["station"], chosen, w["station"]))
                 return w["station"], "%s sign agrees with the highest station (other sign overruled)" % design
+    # the highest station alone chose: is there sky above it?
+    if witnesses.get("decision", "").startswith("najvisa stanica") and chosen in st:
+        paths, _bridges = wall_paths(root, "profile")
+        roof = ray_hit((st[chosen]["d"], st[chosen]["z"]), (0.0, -1.0), paths, reach=BLIND_TOP_M)
+        if roof is not None:
+            start = first_station(root)
+            warn("najvisa stanica %s ima nacrtan strop %.1f m iznad sebe (slijepi dimnjak) - uzimam prvu stanicu "
+                 "vlaka %s; nacrtaj znak ulaza" % (chosen, roof[0], start))
+            if start in st:
+                return start, "first station of the survey (highest station %s has a drawn roof %.1f m above it)" % (chosen, roof[0])
     return chosen, how
 
 
@@ -339,17 +366,18 @@ def opening_pair(label, splay_a, splay_b, wall_pair, warn):
     return splay_a, splay_b, "partial"
 
 
-def analyse(path, kind=None):
+def analyse(path, kind=None, entrance=None):
     """`kind` = "pit" | "horizontal" when the registry knows the cave's type (SB / OSZ
     *Vrsta objekta*: jama vs špilja); the geometric test is only the fallback -
     kilavčeva pljeskavica is a pit whose rim station has flat splays and a 35° first
-    shot, indistinguishable from SB 1220's entrance slope by geometry alone."""
+    shot, indistinguishable from SB 1220's entrance slope by geometry alone.
+    `entrance` = the station name when the operator knows it (krk_27: station 0)."""
     root = load(path)
     st = stations(root)
     sh = shots(root)
     report = dict(file=os.path.basename(path), raw=is_raw(root), warnings=[])
     warn = report["warnings"].append
-    ent, how = entrance_station(root, st, warn)
+    ent, how = entrance_station(root, st, warn, entrance)
     report.update(entrance=ent, entrance_how=how)
     if ent not in st:
         warn("entrance station %r has no coordinates" % ent)
@@ -498,13 +526,17 @@ def draw(report, ctx, out_png, half_width=5.0):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    kind = None
+    kind = entrance = None
     if "--kind" in args:                      # --kind pit|horizontal : the registry's type
         i = args.index("--kind")
         kind = args[i + 1]
         del args[i:i + 2]
+    if "--entrance" in args:                  # --entrance <station> : the operator knows
+        i = args.index("--entrance")
+        entrance = args[i + 1]
+        del args[i:i + 2]
     for path in args:
-        report, ctx = analyse(path, kind)
+        report, ctx = analyse(path, kind, entrance)
         if ctx is not None:
             try:
                 draw(report, ctx, os.path.join(HERE, os.path.splitext(os.path.basename(path))[0] + "_entrance.png"))

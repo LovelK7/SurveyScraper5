@@ -2,46 +2,100 @@
  "file": "krk_27-1p.csx",
  "raw": true,
  "warnings": [
-  "najvisa stanica je 3, a properties@origin je 1 - provjeri je li ulaz na pravoj stanici"
+  "najvisa stanica je 3, a properties@origin je 1 - provjeri je li ulaz na pravoj stanici",
+  "najvisa stanica 3 ima nacrtan strop 0.2 m iznad sebe (slijepi dimnjak) - uzimam prvu stanicu vlaka 0; nacrtaj znak ulaza",
+  "entrance 0 lies 22.5 m below the highest station 3 - check the entrance",
+  "entrance station has 2 in-cave shots, using the first"
  ],
- "entrance": "3",
- "entrance_how": "decide_entrance: najvisa stanica (nema nacrtanog znaka ulaza)",
- "splays_at_station": 9,
- "axis_shot": "2->3 inc=86.6",
- "kind_why": "shot 87 deg",
- "kind": "pit",
+ "entrance": "0",
+ "entrance_how": "first station of the survey (highest station 3 has a drawn roof 0.2 m above it)",
+ "splays_at_station": 33,
+ "axis_shot": "0->1 inc=-20.2",
+ "kind_why": "shot 20 deg, 1 of 33 splays dive",
+ "kind": "horizontal",
  "plan": {
   "axis_into_cave": [
-   0.991,
-   -0.136
+   -0.9,
+   0.435
   ],
-  "splay_cloud": {
-   "min_m": 3.47,
-   "min_deg": 80,
-   "max_m": 4.82,
-   "max_deg": 155,
-   "splays": 9
+  "side_a": {
+   "m": 2.55,
+   "source": "splay",
+   "splay": "0(16)",
+   "inc": -18.7
   },
-  "wall_footprint": {
-   "min_m": 7.18,
-   "min_deg": 135,
-   "max_m": 8.75,
-   "max_deg": 90,
-   "rays_hit": 24
+  "side_b": {
+   "m": 4.68,
+   "source": "splay",
+   "splay": "0(25)",
+   "inc": 19.0
   },
-  "chosen": "splays"
+  "width_m": 7.23,
+  "width_source": "splays",
+  "wall_narrowest": {
+   "at_s": 0.5,
+   "width_m": 6.98,
+   "plus": {
+    "m": 2.52,
+    "at": [
+     2.73,
+     -4.12
+    ],
+    "source": "wall"
+   },
+   "minus": {
+    "m": 4.46,
+    "at": [
+     5.77,
+     2.17
+    ],
+    "source": "wall"
+   }
+  }
  },
  "profile": {
   "station_at": [
-   8.68,
-   -24.25
+   4.75,
+   -1.75
   ],
-  "first_drop_m": null,
-  "note": "a pit has no entrance height; the drop below the rim is informative only"
+  "up": {
+   "m": 8.83,
+   "source": "splay",
+   "splay": "0(8)",
+   "inc": 84.6
+  },
+  "down": {
+   "m": 0.46,
+   "source": "splay",
+   "splay": "0(1)",
+   "inc": -63.8
+  },
+  "height_m": 9.29,
+  "height_source": "splays",
+  "wall_narrowest": {
+   "at_s": 0.5,
+   "height_m": 9.31,
+   "up": {
+    "m": 8.73,
+    "at": [
+     4.25,
+     -10.48
+    ],
+    "source": "wall"
+   },
+   "down": {
+    "m": 0.58,
+    "at": [
+     4.25,
+     -1.16
+    ],
+    "source": "wall"
+   }
+  }
  },
  "osz": {
-  "sirina_ulaza": 3.5,
-  "visina_duljina_ulaza": 4.8,
+  "sirina_ulaza": 7.2,
+  "visina_duljina_ulaza": 9.3,
   "sources": [
    "splays",
    "splays"

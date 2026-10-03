@@ -35,7 +35,12 @@ numbers through the mapping in
   sign tie-break toward the highest station is accepted; pljeskavica is a pit - its type cannot be read from the
   geometry (35° first shot, flat rim splays), so the cave's type comes from the registry (SB / OSZ) with geometry
   as fallback. Pljeskavica → 4.7 × 8.5 from its splays.
-- **Next:** Sopača's verdict; phase 3.
+- **krk_27 (user):** the entrance is station 0, not 3. The data genuinely puts 3 on top (2→3 at +86.6°, up-splays
+  at 2, profile walls 26 m up) - it is a blind aven whose dome is drawn 0.2 m above 3. New guard: a highest-station-only
+  choice with a drawn roof within 1 m above it falls back to the survey's first station, with a warning to draw the
+  entrance sign; `--entrance` / `entrances.json` for when the operator knows. The numbers at 0 are the chamber, not the
+  opening - nothing in the survey describes krk_27's entrance.
+- **Next:** krk_27's entrance described by the user; Sopača's verdict; phase 3.
 
 ### 2026-10-03 (later) — 3N Mapiranje review round, en dash everywhere, speleo 2 set (agent) ✅
 
