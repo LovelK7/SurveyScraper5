@@ -339,7 +339,11 @@ def opening_pair(label, splay_a, splay_b, wall_pair, warn):
     return splay_a, splay_b, "partial"
 
 
-def analyse(path):
+def analyse(path, kind=None):
+    """`kind` = "pit" | "horizontal" when the registry knows the cave's type (SB / OSZ
+    *Vrsta objekta*: jama vs špilja); the geometric test is only the fallback -
+    kilavčeva pljeskavica is a pit whose rim station has flat splays and a 35° first
+    shot, indistinguishable from SB 1220's entrance slope by geometry alone."""
     root = load(path)
     st = stations(root)
     sh = shots(root)
@@ -370,11 +374,19 @@ def analyse(path):
     steep_up = sum(1 for sp in sps if sp["inc"] >= UD_INC_DEG)
     pit_by_shot = abs(shot["inc"]) >= STEEP_DEG
     pit_by_splays = len(sps) >= 4 and steep_down >= PIT_SPLAY_SHARE * len(sps) and steep_up == 0
-    pit = pit_by_shot or pit_by_splays
+    geo_kind = "pit" if (pit_by_shot or pit_by_splays) else "horizontal"
+    geo_why = ("shot %.0f deg" % abs(shot["inc"]) if pit_by_shot else
+               "%d of %d splays dive >%.0f deg" % (steep_down, len(sps), UD_INC_DEG) if pit_by_splays else
+               "shot %.0f deg, %d of %d splays dive" % (abs(shot["inc"]), steep_down, len(sps)))
+    if kind in ("pit", "horizontal"):
+        pit = kind == "pit"
+        report["kind_why"] = "registry says %s (geometry: %s, %s)" % (kind, geo_kind, geo_why)
+        if kind != geo_kind:
+            warn("registry type %s, geometry suggests %s - following the registry" % (kind, geo_kind))
+    else:
+        pit = geo_kind == "pit"
+        report["kind_why"] = geo_why
     report["kind"] = "pit" if pit else "horizontal"
-    report["kind_why"] = ("shot %.0f deg" % abs(shot["inc"]) if pit_by_shot else
-                          "%d of %d splays dive >%.0f deg" % (steep_down, len(sps), UD_INC_DEG) if pit_by_splays else
-                          "shot %.0f deg, %d of %d splays dive" % (abs(shot["inc"]), steep_down, len(sps)))
 
     plan_walls = wall_paths(root, "plan")
     prof_walls = wall_paths(root, "profile")
@@ -485,8 +497,14 @@ def draw(report, ctx, out_png, half_width=5.0):
 
 
 if __name__ == "__main__":
-    for path in sys.argv[1:]:
-        report, ctx = analyse(path)
+    args = sys.argv[1:]
+    kind = None
+    if "--kind" in args:                      # --kind pit|horizontal : the registry's type
+        i = args.index("--kind")
+        kind = args[i + 1]
+        del args[i:i + 2]
+    for path in args:
+        report, ctx = analyse(path, kind)
         if ctx is not None:
             try:
                 draw(report, ctx, os.path.join(HERE, os.path.splitext(os.path.basename(path))[0] + "_entrance.png"))

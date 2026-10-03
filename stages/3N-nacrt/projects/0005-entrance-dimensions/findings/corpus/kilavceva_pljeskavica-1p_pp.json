@@ -2,76 +2,49 @@
  "file": "kilavceva_pljeskavica-1p_pp.csx",
  "raw": false,
  "warnings": [
-  "plan width: only one side has a splay - took the drawn walls for both",
-  "profile height: no splays and no walls - unknown"
+  "registry type pit, geometry suggests horizontal - following the registry"
  ],
  "entrance": "3",
  "entrance_how": "trigpoint entrance=2",
  "splays_at_station": 7,
  "axis_shot": "2->3 inc=35.4",
- "kind": "horizontal",
- "kind_why": "shot 35 deg, 0 of 7 splays dive",
+ "kind_why": "registry says pit (geometry: horizontal, shot 35 deg, 0 of 7 splays dive)",
+ "kind": "pit",
  "plan": {
   "axis_into_cave": [
    -0.547,
    -0.837
   ],
-  "side_a": {
-   "m": 0.82,
-   "at": [
-    5.98,
-    8.81
-   ],
-   "source": "wall"
+  "splay_cloud": {
+   "min_m": 4.65,
+   "min_deg": 165,
+   "max_m": 8.49,
+   "max_deg": 55,
+   "splays": 7
   },
-  "side_b": {
-   "m": 0.11,
-   "at": [
-    5.21,
-    9.31
-   ],
-   "source": "wall"
+  "wall_footprint": {
+   "min_m": 3.65,
+   "min_deg": 155,
+   "max_m": 10.84,
+   "max_deg": 60,
+   "rays_hit": 24
   },
-  "width_m": 0.93,
-  "width_source": "walls",
-  "wall_narrowest": {
-   "at_s": 0.0,
-   "width_m": 0.92,
-   "plus": {
-    "m": 0.82,
-    "at": [
-     5.98,
-     8.81
-    ],
-    "source": "wall"
-   },
-   "minus": {
-    "m": 0.11,
-    "at": [
-     5.21,
-     9.31
-    ],
-    "source": "wall"
-   }
-  }
+  "chosen": "splays"
  },
  "profile": {
   "station_at": [
    10.74,
    -3.27
   ],
-  "up": null,
-  "down": null,
-  "height_m": null,
-  "height_source": "partial",
-  "wall_narrowest": null
+  "first_drop_m": null,
+  "note": "a pit has no entrance height; the drop below the rim is informative only"
  },
  "osz": {
-  "sirina_ulaza": 0.9,
-  "visina_duljina_ulaza": null,
+  "sirina_ulaza": 4.7,
+  "visina_duljina_ulaza": 8.5,
   "sources": [
-   "walls",
-   "partial"
+   "splays",
+   "splays"
   ]
  }
 }

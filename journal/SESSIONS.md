@@ -31,7 +31,11 @@ numbers through the mapping in
   the shaft while the profile's sign and the highest station agreed on the rim; `decide_entrance` takes
   the plan on disagreement, so that rule needs the user's call. The sp7 crash was my own call passing
   station names where `decide_entrance` wants `Station` objects, not a finisher bug.
-- **Next:** per-cave verdicts; the tie-break decision; phase 3.
+- **Settled the same day (user):** Tavnjak's entrance is 8 (the plan sign was on the wrong station) - the
+  sign tie-break toward the highest station is accepted; pljeskavica is a pit - its type cannot be read from the
+  geometry (35° first shot, flat rim splays), so the cave's type comes from the registry (SB / OSZ) with geometry
+  as fallback. Pljeskavica → 4.7 × 8.5 from its splays.
+- **Next:** Sopača's verdict; phase 3.
 
 ### 2026-10-03 (later) — 3N Mapiranje review round, en dash everywhere, speleo 2 set (agent) ✅
 

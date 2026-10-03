@@ -398,4 +398,4 @@ when an idea's time comes. Nothing here is a commitment.
   new pages with "Nepoznat zahtjev.").
 - 2026-10-03 — 3N `decide_entrance`: when the plan and profile entrance signs disagree, prefer the one
   that agrees with the highest station (today the plan wins; Tavnjak's plan sign sits on a ledge 20 m
-  down the shaft). Prototype in project 0005 already does it; needs the user's yes + a test.
+  down the shaft). Prototype in project 0005 already does it; **accepted by the user 2026-10-03** - do it in phase 3 with a test.

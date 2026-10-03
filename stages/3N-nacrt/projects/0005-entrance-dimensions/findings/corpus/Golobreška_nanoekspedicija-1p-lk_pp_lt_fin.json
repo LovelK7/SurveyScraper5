@@ -6,8 +6,8 @@
  "entrance_how": "trigpoint entrance=2",
  "splays_at_station": 12,
  "axis_shot": "1->2 inc=87.8",
- "kind": "pit",
  "kind_why": "shot 88 deg",
+ "kind": "pit",
  "plan": {
   "axis_into_cave": [
    0.969,

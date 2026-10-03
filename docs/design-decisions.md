@@ -1195,6 +1195,17 @@ Measured: SB 1220 (horizontal, station 4) 0.57 × 1.37 m from splays 4(71),
 1.08 × 1.71 m from twelve splays, walls 1.39 × 4.42 (the footprint, too wide) →
 **1,1 × 1,7**.
 
+- **The cave's type comes from the registry, not from geometry (2026-10-03).** Kilavčeva
+  pljeskavica is a pit whose rim station has a 35° first shot and seven flat splays
+  across the hole - by geometry alone it reads as a horizontal entrance (SB 1220's
+  entrance slope is steeper). So *jama* vs *špilja* is taken from SB / the OSZ's
+  *Vrsta objekta*; the geometric test (first shot ≥ 60°, or a third of the splays
+  diving) is only the fallback, and a disagreement is reported.
+- **Two entrance signs that disagree: the one on the highest station wins
+  (2026-10-03).** Tavnjak (Mune): the plan's sign was attached to a ledge station
+  20 m down the shaft, the profile's sign and the highest station agreed on the rim;
+  the user confirmed the rim. `decide_entrance` still takes the plan on disagreement -
+  to change in phase 3 (backlog).
 Code: `findings/entrance_dims_proto.py` in the project folder; to be folded
 into `nacrt_finish.py` and carried by `_dimenzije.json` to 4O's prefill.
 

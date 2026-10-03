@@ -56,3 +56,14 @@ Brief: [brief.md](brief.md)
   Pits consistently read smaller from splays than from the walls (walls = the chamber below the mouth).
 - **Evidence:** `findings/corpus/*.json`, `findings/corpus/_overview.png` and four entrance plots.
 - **Next:** the user vouches/corrects per cave; decide the sign tie-break for `nacrt_finish`; phase 3.
+
+### 2026-10-03 (later) — Tavnjak confirmed, pljeskavica is a pit (user + agent) ✅
+
+- **Did:** the user confirmed Tavnjak's entrance is 8 (the plan sign was attached to the wrong station) and that
+  pljeskavica is a pit. Added the registry-type override (`--kind`, `kinds.json` in the corpus runner); the runner
+  skips cSurvey's `*_backup.csx` copies.
+- **Result:** pljeskavica → **4.7 × 8.5** from its seven flat rim splays (walls 3.7 × 10.8). Geometry alone
+  called it horizontal (35° first shot, no diving splays), so the type has to come from SB / OSZ.
+  The sign tie-break toward the highest station is accepted for `decide_entrance` (phase 3).
+- **Evidence:** `findings/corpus/kilavceva_pljeskavica-1p_pp.json`, `findings/corpus/kinds.json`.
+- **Next:** Sopača's verdict; phase 3.

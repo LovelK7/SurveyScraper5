@@ -6,8 +6,8 @@
  "entrance_how": "decide_entrance: oba svjedoka slozna (najvisa stanica i znak ulaza)",
  "splays_at_station": 16,
  "axis_shot": "4->5 inc=56.1",
- "kind": "pit",
  "kind_why": "6 of 16 splays dive >45 deg",
+ "kind": "pit",
  "plan": {
   "axis_into_cave": [
    0.317,

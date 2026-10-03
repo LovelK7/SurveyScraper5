@@ -8,8 +8,8 @@
  "entrance_how": "decide_entrance: najvisa stanica (nema nacrtanog znaka ulaza)",
  "splays_at_station": 0,
  "axis_shot": "0->1 inc=-39.5",
- "kind": "horizontal",
  "kind_why": "shot 40 deg, 0 of 0 splays dive",
+ "kind": "horizontal",
  "plan": {
   "axis_into_cave": [
    0.11,

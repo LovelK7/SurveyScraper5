@@ -8,8 +8,8 @@
  "entrance_how": "decide_entrance: znak ulaza (ne slaze se s najvisom stanicom)",
  "splays_at_station": 11,
  "axis_shot": "3->5 inc=11.0",
- "kind": "horizontal",
  "kind_why": "shot 11 deg, 0 of 11 splays dive",
+ "kind": "horizontal",
  "plan": {
   "axis_into_cave": [
    1.0,
