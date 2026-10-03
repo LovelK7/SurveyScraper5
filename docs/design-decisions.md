@@ -48,6 +48,7 @@ keeps the chronology.
 - [3N mapping per cave, edited in the dashboard (2026-10-03)](#3n-mapping-per-cave-edited-in-the-dashboard-2026-10-03)
 - [3N wall orientation: merged walls, fixed in KORAK 2 (2026-10-03)](#3n-wall-orientation-merged-walls-fixed-in-korak-2-2026-10-03)
 - [3N wall merge: KORAK 2 merges the walls itself (2026-10-03)](#3n-wall-merge-korak-2-merges-the-walls-itself-2026-10-03)
+- [Sastavnica Ekipa: the rest of the team, clear of the label (2026-10-03)](#sastavnica-ekipa-the-rest-of-the-team-clear-of-the-label-2026-10-03)
 
 ---
 
@@ -1373,3 +1374,23 @@ reversed); cSurvey's own Merge manages 16-50 % on the hard ones. Fresh imports
 single outlines, sp7's two surface lines left out. The installed cSurvey opens
 and re-saves the merged files with every point and pen identical, a second run
 changes nothing, and the PDF print shows no stray lines. Up to 1.7 s per cave.
+
+## Sastavnica Ekipa: the rest of the team, clear of the label (2026-10-03)
+
+**Ekipa credits only the people not already under Crtali or Mjerili.** The
+zapisnik's *članovi ekipe* lists the whole trip, so a four-person survey printed
+all four in Ekipa — the drafter and the surveyor a second time — and the cell
+wrapped. Each person is now credited once on the nacrt (user, 2026-10-03). The
+match is on the abbreviated form and diacritic-insensitive, so "Lovel Kukuljan"
+in the team drops against "L. Kukuljan" under Mjerili. A team made only of
+credited people gets the `/` stub as a known answer, not a "Bez podatka" gap.
+Applies to both routes, `cavedossier sastavnica` and 3N KORAK 3c.
+
+**A wrapped Ekipa sits right of its printed label.** One line stands on the
+bottom rule, below `Ekipa:`; a two-line block is centred vertically and so
+reaches the top rule, where its first line printed over the label (SB 1256's
+four-person team). A wrapped block is now centred in the span right of the
+label (`Cell.label_x1`, measured 111.83 pt in the blank, plus 1.5 pt). The four
+names still fit at the authored 8 pt. Mjerilo's two-scale block keeps the
+whole cell: right of its label only 25 pt would be left, too narrow for
+`profil 1:200`.

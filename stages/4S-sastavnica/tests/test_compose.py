@@ -423,12 +423,35 @@ def test_a_long_team_wraps_instead_of_shrinking(font):
     # one size for the whole cell, and bigger than the single line would be
     assert spans[0]["size"] == spans[1]["size"] > one_line
     cell = addresses.V1["ekipa"]
+    left, right = cell.text_span(2)
     for span in spans:
         assert cell.y0 < span["bbox"][1] and span["bbox"][3] < cell.y1
-        assert abs((span["bbox"][0] + span["bbox"][2]) / 2 - cell.centre_x) < 0.5
+        # centred in the part of the cell right of the "Ekipa:" label
+        assert abs((span["bbox"][0] + span["bbox"][2]) / 2 - (left + right) / 2) < 0.5
+        assert span["bbox"][0] >= cell.label_x1
     assert spans[0]["bbox"][3] <= spans[1]["bbox"][1] + 0.1
     record = next(p for p in placed if p.key == "ekipa")
     assert record.text == team and not record.overflowed
+
+
+def test_a_four_person_team_clears_the_label(font):
+    """SB 1256-style trip: four names wrapped, and the first line used to
+    print over the template's "Ekipa:" label (user, 2026-10-03)."""
+    team = "F. Karabaić, L. Kukuljan, I. Dujmović, T. Tepavac"
+    data, placed = render_mod.render(addresses.BLANK_TEMPLATE,
+                                     {"ekipa": team}, font.path)
+    spans = _cell_spans(data, "ekipa")
+    assert len(spans) == 2
+    label_x1 = addresses.V1["ekipa"].label_x1
+    assert all(span["bbox"][0] > label_x1 for span in spans)
+    assert not next(p for p in placed if p.key == "ekipa").overflowed
+
+
+def test_one_line_ekipa_keeps_the_whole_cell(font):
+    """A single line sits on the bottom rule, below the label: unchanged."""
+    cell = addresses.V1["ekipa"]
+    assert cell.text_span(1) == (cell.x0 + addresses.SIDE_PADDING,
+                                 cell.x1 - addresses.SIDE_PADDING)
 
 
 def test_the_wrap_splits_the_two_halves_evenly(font):

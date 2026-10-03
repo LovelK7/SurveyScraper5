@@ -89,7 +89,9 @@ same gates. Route B needs no second dossier builder and gets none.
 Pure PDF geometry. `addresses.py` holds the measured cell rectangles in PDF
 points (origin top-left); `render.py` centres each value, shrinks it to fit, and
 never wraps except in two named cells — Mjerilo in its two-scale form, and
-Ekipa when a team would otherwise be set below the drafter's own 8 pt. The font is **not** bundled —
+Ekipa when a team would otherwise be set below the drafter's own 8 pt (then
+right of its `Ekipa:` label). Ekipa lists only the people not already credited
+under Crtali or Mjerili. The font is **not** bundled —
 **Microsoft Sans Serif**, the face template v1.0 is authored in, is found on
 the machine, with system fallbacks after it. A `STAMP` in the PDF metadata
 marks files this tool produced, so an edited one is refused rather than

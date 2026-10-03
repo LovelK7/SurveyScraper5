@@ -33,7 +33,7 @@ from pathlib import Path
 from cave_dossier import georef
 from cave_dossier.core.config import Settings
 from cave_dossier.core.paths import workspace
-from cave_dossier.core.normalization import parse_optional_float
+from cave_dossier.core.normalization import normalize_lookup_key, parse_optional_float
 from cave_dossier.core.people import society_shorthand, split_authors
 from cave_dossier.core.person_aliases import to_sb_shorthand
 from cave_dossier.geo import elevation as elevation_mod
@@ -240,10 +240,20 @@ def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
     _set_first(fields, "mjerili", [
         (_people(_join(osz.get("mjerili"), osz.get("mjerili_2"))), "osz"),
     ])
-    _set_first(fields, "ekipa", [
-        (_people(_join(osz.get("clanovi_ekipe"), osz.get("clanovi_ekipe_2"),
-                       osz.get("clanovi_ekipe_3"))), "osz"),
-    ])
+    # Ekipa is the REST of the team: whoever is already credited under Crtali
+    # or Mjerili is not printed a second time (user, 2026-10-03). The zapisnik's
+    # članovi ekipe lists everyone, so without this a four-person trip printed
+    # all four in Ekipa and wrapped it over its own label. When nobody is left
+    # the cell gets its "/" stub, like a solo trip — but as a known answer, not
+    # a gap, so it stays out of the "Bez podatka" note.
+    credited = [fields[key].value for key in ("crtali", "mjerili") if key in fields]
+    team = _join(osz.get("clanovi_ekipe"), osz.get("clanovi_ekipe_2"),
+                 osz.get("clanovi_ekipe_3"))
+    rest = _people(team, exclude=credited)
+    if rest:
+        fields["ekipa"] = FieldValue(value=rest, source="osz")
+    elif _people(team):
+        fields["ekipa"] = FieldValue(value=addresses.stub_for("ekipa"), source="osz")
     # Istražili: whatever the OSZ names, else this society (user, 2026-09-19).
     _set_first(fields, "istrazili", [
         (_societies(_join(osz.get("istrazile_udruge"),
@@ -700,7 +710,7 @@ def _societies(raw: str | None) -> str | None:
     return ", ".join(short or part for short, part in zip(shorthands, parts))
 
 
-def _people(raw: str | None) -> str | None:
+def _people(raw: str | None, exclude: list[str] | None = None) -> str | None:
     """An author cell in the drafter's own form: ``D. Maršanić, M. Vrkić``.
 
     The sastavnica is a printed map and the authored template abbreviates
@@ -709,14 +719,26 @@ def _people(raw: str | None) -> str | None:
     is not a plain "First Last" passes through unchanged (``to_sb_shorthand``
     is an honest passthrough), and an outside-society bracket survives: the
     nacrt credit is exactly where that matters.
+
+    ``exclude`` holds other people cells; anyone named in them is dropped.
+    Compared on the abbreviated form, diacritic-insensitively, so "Lovel
+    Kukuljan" in the team matches "L. Kukuljan" under Mjerili.
     """
+    skip = {_person_key(name)
+            for cell in (exclude or []) for name in split_authors(cell)[0]}
     names, societies = split_authors(raw)
     out: list[str] = []
     for name in names:
+        if _person_key(name) in skip:
+            continue
         short = _SHORTHAND_SPACING.sub(" ", to_sb_shorthand(name))
         society = societies.get(name)
         out.append(f"{short} ({society})" if society else short)
     return ", ".join(out) or None
+
+
+def _person_key(name: str) -> str:
+    return normalize_lookup_key(to_sb_shorthand(name))
 
 
 def _field_column(settings: Settings, key: str) -> str | None:

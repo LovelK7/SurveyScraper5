@@ -59,6 +59,10 @@ class Cell:
     x1: float
     y1: float
     size: float = 10.0
+    # Right edge of the template's own printed label ("Ekipa:"), for a cell
+    # whose two-line block would otherwise set its first line on top of it.
+    # None means the block may use the whole cell.
+    label_x1: float | None = None
 
     @property
     def width(self) -> float:
@@ -67,6 +71,19 @@ class Cell:
     @property
     def centre_x(self) -> float:
         return (self.x0 + self.x1) / 2
+
+    def text_span(self, lines: int = 1) -> tuple[float, float]:
+        """(left, right) the value may occupy, padding already taken off.
+
+        One line sits on the bottom rule, below the label, and gets the whole
+        cell. A block of two or more reaches up to the top rule, level with the
+        label, so it starts right of it (user, 2026-10-03: a four-person Ekipa
+        printed its first name over "Ekipa:").
+        """
+        left = self.x0 + SIDE_PADDING
+        if lines > 1 and self.label_x1 is not None:
+            left = max(left, self.label_x1 + LABEL_GAP)
+        return left, self.x1 - SIDE_PADDING
 
 
 # Field key -> cell. Keys are the sastavnica's own; where a key names the same
@@ -85,7 +102,10 @@ V1: dict[str, Cell] = {
     "dubina": Cell("Dubina/vis. razlika", 204.82, 109.82, 248.12, 129.88, 9),
     "mjerilo": Cell("Mjerilo", 248.12, 109.82, 291.43, 129.88, 9),
     "istrazili": Cell("Istražili", 39.85, 129.88, 95.03, 149.94, 8),
-    "ekipa": Cell("Ekipa", 95.03, 129.88, 204.82, 149.94, 8),
+    # label_x1: the "Ekipa:" word ends at 111.83 in the blank (measured
+    # 2026-10-03). Mjerilo's label would leave its two-scale block 25 pt — too
+    # narrow for "profil 1:200" — so it keeps the whole cell.
+    "ekipa": Cell("Ekipa", 95.03, 129.88, 204.82, 149.94, 8, label_x1=111.83),
     "datum": Cell("Datum/razdoblje istraživanja", 204.82, 129.88, 291.43, 149.94, 9),
 }
 
@@ -105,6 +125,8 @@ BASELINE_LIFT = 4.3
 # Side padding inside a cell before shrinking starts. 2 pt is what the drafter's
 # own 8 pt choice for the Ekipa cell implies.
 SIDE_PADDING = 2.0
+# Clearance between a printed label and a value block set beside it.
+LABEL_GAP = 1.5
 # A cell that may carry TWO lines (only Mjerilo does, and only on the cSurvey
 # route, where plan and profile can be printed at different scales — see
 # render.MULTILINE). The lines are set as a block centred in the cell, their

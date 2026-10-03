@@ -274,6 +274,30 @@ def test_zapisnik_wins_for_survey_facts(settings, run, monkeypatch):
                ("stvarna_duljina", "tlocrtna_duljina", "mjerili", "ekipa", "datum"))
 
 
+def test_ekipa_leaves_out_crtali_and_mjerili(settings, run, monkeypatch):
+    """The zapisnik's team lists everyone; the nacrt credits each person once
+    (user, 2026-10-03). Matched on the short form, diacritics aside."""
+    monkeypatch.setattr(prefill, "_read_osz", lambda folder, result: {
+        "crtali": "Filip Karabaić", "mjerili": "L. Kukuljan",
+        "clanovi_ekipe": "F. Karabaic, Lovel Kukuljan, Ivan Dujmović",
+        "clanovi_ekipe_2": "T. Tepavac",
+    })
+    fields = prefill.run_prefill(settings, 1).result.fields
+    assert fields["ekipa"].value == "I. Dujmović, T. Tepavac"
+
+
+def test_ekipa_of_only_credited_people_is_not_applicable(settings, run, monkeypatch):
+    monkeypatch.setattr(prefill, "_read_osz", lambda folder, result: {
+        "crtali": "L. Kukuljan", "mjerili": "F. Karabaić",
+        "clanovi_ekipe": "F. Karabaić, L. Kukuljan",
+    })
+    outcome = prefill.run_prefill(settings, 1)
+    assert outcome.result.fields["ekipa"].value == addresses.STUB_NOT_APPLICABLE
+    assert outcome.result.fields["ekipa"].source == "osz"
+    assert not any("Ekipa" in note for note in outcome.result.notes
+                   if note.startswith("Bez podatka"))
+
+
 def test_row_without_coordinates_still_renders(settings, run):
     outcome = prefill.run_prefill(settings, 4)             # Đulin ponor mali: no X/Y
     fields = outcome.result.fields

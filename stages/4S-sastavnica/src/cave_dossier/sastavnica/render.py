@@ -26,7 +26,6 @@ from cave_dossier.sastavnica.addresses import (
     MIN_FONT_SIZE,
     MULTILINE_PADDING,
     WRAP_BELOW_SIZE,
-    SIDE_PADDING,
     V1,
     VALUE_COLOR,
     Cell,
@@ -48,14 +47,17 @@ class RenderError(RuntimeError):
     """The blank template could not be filled; message is CLI-ready."""
 
 
-def fit_size(font, text: str, cell: Cell,
-             max_size: float | None = None) -> tuple[float, float, bool]:
+def fit_size(font, text: str, cell: Cell, max_size: float | None = None,
+             lines: int = 1) -> tuple[float, float, bool]:
     """(font size, drawn width, overflowed) for one value in one cell.
 
     Starts at the cell's **authored** size — what the drafter set that cell at —
-    and shrinks from there; never grows past it.
+    and shrinks from there; never grows past it. ``lines`` is how many lines the
+    cell is being set in, which decides how much of its width is free
+    (``Cell.text_span``).
     """
-    available = cell.width - 2 * SIDE_PADDING
+    left, right = cell.text_span(lines)
+    available = right - left
     size = cell.size if max_size is None else min(max_size, cell.size)
     while size > MIN_FONT_SIZE and font.text_length(text, size) > available:
         size -= FONT_STEP
@@ -199,17 +201,19 @@ def render(blank_path: Path, values: dict[str, str], font_path: Path,
         _baselines, cap = _multiline(font, cell, len(lines))
         # One size for the whole cell — the tightest line sets it. Two lines of
         # a name list at different sizes read as a mistake, not as typesetting.
-        size = min(fit_size(font, line, cell, max_size=cap)[0] for line in lines)
+        size = min(fit_size(font, line, cell, max_size=cap, lines=len(lines))[0]
+                   for line in lines)
         # Re-centre the block on the size the lines actually landed at, so a
         # pair that had to shrink does not sit high in its cell.
         baselines, _cap = _multiline(font, cell, len(lines), size=size)
-        available = cell.width - 2 * SIDE_PADDING
+        left, right = cell.text_span(len(lines))
+        available, centre_x = right - left, (left + right) / 2
         fitted = [(size, font.text_length(line, size),
                    font.text_length(line, size) > available) for line in lines]
         sizes, widths, overflows = [], [], []
         for line, baseline, (size, width, overflowed) in zip(lines, baselines, fitted):
             page.insert_text(
-                (cell.centre_x - width / 2, baseline),
+                (centre_x - width / 2, baseline),
                 line,
                 fontname="sastavnica",
                 fontsize=size,

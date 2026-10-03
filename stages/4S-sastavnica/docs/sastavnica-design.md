@@ -148,7 +148,7 @@ out as a `dopune-sb.csv` review row for a person to paste.
 | Crtali | OSZ `crtali` → SB `Autori nacrta ili izvor` | the SB cell holds the *source* for queued caves, so the OSZ wins; **abbreviated** |
 | Mjerili | OSZ `mjerili` (+ `mjerili_2`) | not in SB; **abbreviated** |
 | Istražili | OSZ `istrazile_udruge` (+ `_2`) → `sastavnica.society` | one society written out; **two or more abbreviated** — `SU Estavela, SO Velebit` → `SUE, SOV` — because the cell is 55 pt wide and that is the form a caver writes anyway (user, 2026-09-20). `core.people.society_shorthand`; a name outside the four caving-org patterns is never abbreviated |
-| Ekipa | OSZ `clanovi_ekipe` (+ `_2`, `_3`) | joined with `, `; **abbreviated** |
+| Ekipa | OSZ `clanovi_ekipe` (+ `_2`, `_3`) | joined with `, `; **abbreviated**; anyone already under Crtali or Mjerili is **left out** (diacritic-insensitive, on the short form), and a team of only those gets `/` (user, 2026-10-03) |
 | Datum/razdoblje istraživanja | OSZ `datum_istrazivanja` → SB `Godina ili period istraživanja` | |
 
 Five of the fifteen cells cannot be filled from SB at all — they are survey
@@ -188,6 +188,10 @@ Derived by measuring the authored values, then confirmed by reproducing them:
     at all, which is why the v1.0 example itself sets that cell over two. The
     break goes at a comma, the comma stays on the first line, and the two
     halves are chosen by **measured** width so one long name pulls the break.
+    A wrapped block reaches the top rule, level with the printed `Ekipa:`
+    label, so it is centred in the part of the cell **right of the label**
+    (`Cell.label_x1`, 111.83 pt; user, 2026-10-03). One line keeps the whole
+    cell — it sits on the bottom rule, below the label.
   - Both lines of a wrapped cell take **one size** — the tighter line's. The
     block is centred in the cell and its size capped so it fits between the
     rules, derived from the face's own ascent and descent
