@@ -92,6 +92,7 @@
   "postimport": {
     "spline_linetypes": true,
     "nonstandard_water": true,
+    "wall_merge": true,
     "wall_orientation": true,
     "wall_reorder": true,
     "sign_sizes": {

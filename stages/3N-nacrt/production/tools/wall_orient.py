@@ -31,11 +31,18 @@ A change is kept only when the fill's joins get no longer and no more of them
 cross a wall. Then, with directions settled, the sequence order with the
 shortest joins is taken when it clearly beats the drawn one.
 
+On a FRESH import (no wall merged yet in that design) it also does the merge
+the operator used to do by hand: every open cave-pen stroke the survey can see
+goes into one border, turned cave-on-right and chained for the shortest joins
+(user, 2026-10-03). Closed strokes, decorated lines and strokes with no survey
+in sight (a surface line drawn with the wall pen - sp7's profile) stay as drawn.
+
 Only cave-border areas (type 4, cave pens) are touched: pit, overhang and
 chimney lines carry one-sided decorations and their direction is meaning.
 Stdlib only - the kit runs on operators' machines.
 """
 
+import copy
 import math
 
 LAYER_BORDERS = "5"
@@ -49,7 +56,7 @@ SPLAY_KEEP = 0.85       # an uncut splay is used up to here: its tip lies ON the
 TIP_TOL = 0.5           # m; an uncut splay counts only if its tip lands this close to a wall
 # voting
 WALL_STEP = 0.15        # m between voting points along a wall
-MAX_SIGHT = 8.0         # m; a wall further than this from any survey has no vote
+MAX_SIGHT = 15.0        # m; a wall further than this from any survey has no vote (Sopača's shaft is 15 m wide)
 CANDIDATES = 12         # nearest interior samples tried per wall point
 REF = 0.3               # m; vote weight = length / (REF + distance)
 LEG_WEIGHT = 3.0        # a leg is never outside, a splay can be
@@ -59,6 +66,8 @@ MIN_SCORE = 0.6         # |signed vote share| a sequence needs to be judged
 MIN_COVERAGE = 0.3      # share of its length that must have seen the survey
 MIN_MAJORITY = 0.6      # length share the item's majority side needs
 REORDER_GAIN = 0.8      # a new order is kept only if its joins are < 80 % of the old
+CLOSED_TOL = 0.05       # m; a stroke whose ends meet is a closed outline (pillar, island)
+HAND_MERGE_MIN = 0.5    # m; a border with two sequences this long was merged by the operator
 
 
 # ---------------------------------------------------------------------------
@@ -132,6 +141,10 @@ def reverse_range(pts, s, e):
     seg[-1].update(B=False, P=False, T=None)
     seg[0].update(head)
     pts[s:e + 1] = seg
+
+
+def _length(poly):
+    return sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(poly, poly[1:]))
 
 
 def _xy(p):
@@ -292,6 +305,27 @@ def _resample(poly, step):
     return out
 
 
+def _grids(root, design, items):
+    """(walls, interior samples). Only cave-border AREAS are walls here: they
+    block sight and cut splays. Lines in the Borders layer (ledges, steps drawn
+    across a shaft - Sopača's profile) lie inside the cave; letting them block
+    hid a whole shaft wall from the survey."""
+    wgrid = _Grid()
+    for _ii, item in items:
+        pts_el = item.find("points")
+        if item.get("type") != AREA_TYPE or pts_el is None:
+            continue
+        _m, pts = parse_points(pts_el.get("data") or "")
+        for a, b in (sequence_ranges(pts) if pts else []):
+            poly = [_xy(p) for p in pts[a:b + 1]]
+            for k, (p, q) in enumerate(zip(poly, poly[1:])):
+                wgrid.add_segment(p, q, (k, p, q))
+    sgrid = _Grid()
+    for smp in _interior_samples(survey_lines(root, design), wgrid):
+        sgrid.add_point(smp[:2], smp)
+    return wgrid, sgrid
+
+
 def wall_side(poly, sgrid, wgrid):
     """(score, coverage): score in [-1, +1], +1 = cave on the LEFT of the drawing
     direction as seen on screen (y grows down), None when no survey was in sight."""
@@ -299,10 +333,12 @@ def wall_side(poly, sgrid, wgrid):
     seen = total = 0
     for (px, py), (tx, ty), wt in _resample(poly, WALL_STEP):
         total += 1
-        cands, r = [], GRID
-        while r <= MAX_SIGHT and len(cands) < CANDIDATES:
+        r = GRID
+        while True:          # widen the search until enough samples, the last step exactly MAX_SIGHT
             cands = [s for s in sgrid.near((px, py), r) if math.hypot(s[0] - px, s[1] - py) <= r]
-            r *= 2
+            if len(cands) >= CANDIDATES or r >= MAX_SIGHT:
+                break
+            r = min(r * 2, MAX_SIGHT)
         cands.sort(key=lambda s: math.hypot(s[0] - px, s[1] - py))
         for s in cands[:CANDIDATES]:
             dist = math.hypot(s[0] - px, s[1] - py)
@@ -412,21 +448,7 @@ def fix_design(root, design, reorder=True):
         work.append((ii, item, pts_el, meta, pts, sequence_ranges(pts)))
     if not any(len(w[5]) > 1 for w in work):
         return []
-    # every drawn Borders polyline blocks sight, whatever its type or pen
-    wgrid = _Grid()
-    for ii, item in borders_items(D):
-        seqs, cur = [], None
-        for p in parse_points((item.find("points").get("data") if item.find("points") is not None else "") or "")[1]:
-            if cur is None or p["B"]:
-                cur = []
-                seqs.append(cur)
-            cur.append(_xy(p))
-        for s in seqs:
-            for k, (a, b) in enumerate(zip(s, s[1:])):
-                wgrid.add_segment(a, b, (k, a, b))
-    sgrid = _Grid()
-    for s in _interior_samples(survey_lines(root, design), wgrid):
-        sgrid.add_point(s[:2], s)
+    wgrid, sgrid = _grids(root, design, borders_items(D))
 
     report = []
     for ii, item, pts_el, meta, pts, ranges in work:
@@ -504,9 +526,184 @@ def fix_design(root, design, reorder=True):
     return report
 
 
-def fix(root, reorder=True):
-    """Both designs. Returns the report rows (see fix_design)."""
-    return fix_design(root, "plan", reorder) + fix_design(root, "profile", reorder)
+def _best_cycle(ends, free):
+    """Order + flips of strokes with the shortest closing joins.
+
+    ends[i] = (first point, last point) in the stroke's settled direction;
+    `free` strokes may also run reversed. For every start stroke: a greedy
+    end->start walk, then relocation (each stroke out and back in where it adds
+    least, flipped if free) until nothing improves; the shortest cycle wins.
+    Returns [(index, flipped)].
+    """
+    n = len(ends)
+
+    def gap(a, b):
+        (i, fi), (j, fj) = a, b
+        p = ends[i][0] if fi else ends[i][1]
+        q = ends[j][1] if fj else ends[j][0]
+        return math.hypot(q[0] - p[0], q[1] - p[1])
+
+    def flips(i):
+        return (False, True) if i in free else (False,)
+
+    best, best_cost = None, None
+    for s0 in range(n):
+        o, left = [(s0, False)], set(range(n)) - {s0}
+        while left:
+            nxt = min(((i, f) for i in left for f in flips(i)), key=lambda c: gap(o[-1], c))
+            o.append(nxt)
+            left.discard(nxt[0])
+        c_o = sum(gap(a, b) for a, b in zip(o, o[1:] + o[:1]))
+        improved = True
+        while improved and n > 2:
+            improved = False
+            for k in range(n):
+                pos = [x[0] for x in o].index(k)
+                cur, prv, nxt = o[pos], o[pos - 1], o[(pos + 1) % n]
+                rest = o[:pos] + o[pos + 1:]
+                c_rest = c_o - gap(prv, cur) - gap(cur, nxt) + gap(prv, nxt)
+                cand = None
+                for j in range(len(rest)):
+                    a, b = rest[j], rest[(j + 1) % len(rest)]
+                    for f in flips(k):
+                        c = c_rest - gap(a, b) + gap(a, (k, f)) + gap((k, f), b)
+                        if cand is None or c < cand[0]:
+                            cand = (c, j, f)
+                if cand[0] < c_o - 1e-9:
+                    o = rest[:cand[1] + 1] + [(k, cand[2])] + rest[cand[1] + 1:]
+                    c_o, improved = cand[0], True
+        if best is None or c_o < best_cost - 1e-9:
+            best, best_cost = o, c_o
+    return best
+
+
+def _parent_of(design_el, item):
+    for layer in design_el.find("layers").findall("layer"):
+        for parent in (layer.find("items"), layer):
+            if parent is not None and any(c is item for c in parent):
+                return parent
+    return None
+
+
+def automerge_design(root, design):
+    """Merge a fresh import's loose wall strokes into one cave border.
+
+    Returns a report dict, or None when there was nothing to merge - or when
+    the operator already merged walls in this design (their work is not
+    redone; fix_design orients and orders it instead).
+    """
+    D = root.find(design)
+    if D is None or D.find("layers") is None:
+        return None
+    items = borders_items(D)
+    loose = []
+    for ii, item in items:
+        pts_el, pen = item.find("points"), item.find("pen")
+        if item.get("type") != AREA_TYPE or pts_el is None or pen is None or pen.get("type") not in SAFE_PENS:
+            continue
+        meta, pts = parse_points(pts_el.get("data") or "")
+        ranges = sequence_ranges(pts)
+        if len(ranges) > 1:
+            real = [r for r in ranges if _length([_xy(p) for p in pts[r[0]:r[1] + 1]]) >= HAND_MERGE_MIN]
+            if len(real) > 1:
+                return None                   # merged by hand: the operator owns this design's merge
+            continue                          # a stray extra point (Tavnjak's 0.0 m sequence): left as is
+        if len(pts) < 2 or pts_el.findall("pen"):
+            continue
+        poly = [_xy(p) for p in pts]
+        if math.hypot(poly[-1][0] - poly[0][0], poly[-1][1] - poly[0][1]) < CLOSED_TOL:
+            continue                          # a closed outline is its own border
+        loose.append((ii, item, meta, pts, poly))
+    if len(loose) < 2:
+        return None
+    wgrid, sgrid = _grids(root, design, items)
+
+    members, free, left_out = [], set(), []   # member: (item index, item, meta, pts, old point indices)
+    for ii, item, meta, pts, poly in loose:
+        score, cov = wall_side(poly, sgrid, wgrid)
+        if score is None or cov < MIN_COVERAGE:
+            left_out.append(ii)               # no survey in sight (sp7's surface line): stays as drawn
+            continue
+        idx = list(range(len(pts)))
+        if abs(score) >= MIN_SCORE:
+            if score > 0:                     # cave on the left: turn it cave-on-right
+                pts = [dict(p) for p in pts]
+                reverse_range(pts, 0, len(pts) - 1)
+                idx = idx[::-1]
+        else:
+            free.add(len(members))            # the survey cannot tell: the chain decides
+        members.append((ii, item, meta, pts, idx))
+    if len(members) < 2:
+        return None
+    order = _best_cycle([(_xy(m[3][0]), _xy(m[3][-1])) for m in members], free)
+
+    # The merged item is the first member's element (attributes, pen, brush,
+    # datarow); like cItem.Combine (cItem.vb:1002-1053) every appended sequence
+    # carries B + P and its own <pen> inside <points>.
+    first = members[order[0][0]][1]
+    first_ii = members[order[0][0]][0]
+    linetypes = {m[1].get("linetype") for m in members}
+    new_pts, pens, origin = [], [], []
+    for pos, (i, f) in enumerate(order):
+        ii, item, _meta, pts, idx = members[i]
+        seq = [dict(p) for p in pts]
+        if f:
+            reverse_range(seq, 0, len(seq) - 1)
+            idx = idx[::-1]
+        seq[0]["B"] = True
+        if len(linetypes) > 1 and seq[0]["T"] is None and item.get("linetype") is not None:
+            seq[0]["T"] = item.get("linetype")
+        if pos > 0:
+            seq[0]["P"] = True
+            pens.append(copy.deepcopy(item.find("pen")))
+        new_pts.extend(seq)
+        origin.extend((ii, k) for k in idx)
+    pts_el = first.find("points")
+    pts_el.set("data", serialize_points(members[order[0][0]][2], new_pts))
+    for pen in pens:
+        pts_el.append(pen)
+    gone = {m[0] for m in members} - {first_ii}
+    for ii, item, _m, _p, _i in members:
+        if ii in gone:
+            parent = _parent_of(D, item)
+            if parent is not None:
+                parent.remove(item)
+    # point joins: merged points follow their new place, later items shift down
+    new_index, k = {}, 0
+    for ii, _item in items:
+        if ii not in gone:
+            new_index[ii] = k
+            k += 1
+    moved = {o: n for n, o in enumerate(origin)}
+    pj = D.find("pointsjoins")
+    for j in (pj.findall("pointsjoin") if pj is not None else []):
+        parts = []
+        for ref in (j.get("data") or "").split():
+            bits = ref.split(",")
+            if len(bits) == 3 and bits[0] == LAYER_BORDERS and bits[1].isdigit() and bits[2].isdigit():
+                key = (int(bits[1]), int(bits[2]))
+                if key in moved:
+                    bits[1], bits[2] = str(new_index[first_ii]), str(moved[key])
+                elif int(bits[1]) in new_index:
+                    bits[1] = str(new_index[int(bits[1])])
+            parts.append(",".join(bits))
+        j.set("data", " ".join(parts) + " ")
+    seqs = [[_xy(p) for p in new_pts[a:b + 1]] for a, b in sequence_ranges(new_pts)]
+    return dict(design=design, merged=len(members), left_out=left_out, unjudged=len(free),
+                joins=fill_joins(seqs))
+
+
+def fix(root, reorder=True, merge=True):
+    """Both designs: merge a fresh import's loose wall strokes (when `merge`),
+    then orient/reorder every merged item. Returns the report rows."""
+    rows = []
+    for design in ("plan", "profile"):
+        if merge:
+            m = automerge_design(root, design)
+            if m is not None:
+                rows.append(m)
+        rows.extend(fix_design(root, design, reorder))
+    return rows
 
 
 def describe(report):
@@ -514,6 +711,12 @@ def describe(report):
     lines = []
     name = {"plan": "tlocrt", "profile": "profil"}
     for r in report:
+        if "merged" in r:
+            lines.append("zidovi (%s): spojeno %d linija u jedan obrub, spojnice %.1f m%s"
+                         % (name[r["design"]], r["merged"], r["joins"][0],
+                            "; %d bez snimka u blizini ostavljeno kako je nacrtano" % len(r["left_out"])
+                            if r["left_out"] else ""))
+            continue
         jb, ja = r["joins_before"][0], r["joins_after"][0]
         if r["flipped"] or r["moved"]:
             what = []

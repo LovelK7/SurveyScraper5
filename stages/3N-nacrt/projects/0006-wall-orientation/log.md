@@ -44,3 +44,39 @@ Brief: [brief.md](brief.md)
   cSurvey (`csurvey_driver.py recalc`) loads and re-saves the Golobreška and Hrčava outputs with
   every wall point and flag identical; running the fix on the re-saved files changes nothing.
 - **Next:** `/publish`, then the user runs it on the next real cave.
+
+### 2026-10-03 (later still) — can KORAK 2 do the merge itself? (agent) ✅ feasibility
+
+- **Did:** `findings/automerge_sim.py`: each of the user's finished merged items scattered back into
+  import-like strokes (random order and direction, 300 trials) and rebuilt by an automatic merge -
+  judged strokes turned cave-on-right, then for every start stroke a greedy end->start walk plus
+  relocation (unjudged strokes may flip), shortest joins win. `findings/automerge_fresh.py`: every
+  open cave-pen stroke of a FRESH import into one border, rendered.
+- **Result:** rebuilds the user's hand merge in 100 % of trials on Golobreška, Hrčava (plan and
+  profile, 11 strokes), 272 profile (13 strokes), Kilavčev, Sopača, mockup; cSurvey's own Merge
+  manages 16-50 % where it matters. Exception: 272 plan, whose hand version keeps one 0.9 m stroke
+  the survey reads as reversed (auto 3.5 m of joins vs 2.8 m). Fresh imports (tavnjak, sp7 47 strokes,
+  krk_27) come out as plausible single outlines; sp7 plan has one long closing join to check.
+  sp7 plan takes 17.8 s (unoptimised cost recomputation).
+- **Evidence:** `findings/_out/*_automerge.png`.
+- **Next:** the user's go-ahead on the defaults (one border per design from all open cave-pen strokes;
+  closed strokes and strokes with no survey in sight stay separate; already-merged items keep the
+  orient/reorder fix), then into `wall_orient.py`.
+
+### 2026-10-03 (night) — KORAK 2 merges the walls (user + agent) ✅
+
+- **Did:** the user accepted the defaults (one border per design; closed strokes, decorated lines and
+  unseen strokes left as drawn; hand merges respected) and named sp7's two profile surface lines as
+  strokes that must stay out. `automerge_design` + `_best_cycle` in `wall_orient.py` (multi-start greedy
+  + O(1)-delta relocation), `wall_merge` switch (json, dashboard), 5 more tests (14), guide/protocol/docs.
+- **Found and fixed on the way:** (1) the sight search doubled its radius past the limit and stopped at
+  8 m; (2) ledge lines across Sopača's shaft blocked sight - only cave-border areas block now, sight
+  15 m; (3) merging the loose rest beside a hand merge fused 272's inner contour with presumed walls -
+  a design with a real hand merge (two sequences of at least 0.5 m) is not merged; Tavnjak's 0.0 m
+  stray sequence is not a hand merge.
+- **Result:** sp7 plan 45 / profile 31 strokes merged, its 2 surface lines left out; Sopača profile 26
+  merged, the shaft filled to the rim, the terrain lines left out; Tavnjak 7 + 24; krk_27; bunker;
+  every hand-merged file unchanged except the earlier turn/order fixes. cSurvey opens and re-saves the
+  merged files with identical points and pens; second run no-op; prints clean. At most 1.7 s per cave.
+- **Evidence:** `findings/_out/*_k2.png` (`findings/render_k2.py`), `findings/automerge_sim.py`.
+- **Next:** `/publish`, then the user checks a real cave's `_lt`.

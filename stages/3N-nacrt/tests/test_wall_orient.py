@@ -125,3 +125,87 @@ def test_golobreska_reproduces_the_hand_fix():
     # cSurvey re-rounded one coordinate of its own on save (0.505 -> 0.50)
     assert [(a, b) for a, b in zip(got, want) if a != b] == [("0.51", "0.50")]
     assert wo.fix(hand) == [] or all(not r["flipped"] and not r["moved"] for r in wo.fix(hand))
+
+
+# --- the automatic merge of a fresh import (one stroke per item) -------------
+
+
+def _fresh(strokes, pens=None, joins=""):
+    """Each stroke its own Borders item, as the TopoDroid import leaves them."""
+    pens = pens or ["1"] * len(strokes)
+    items = "".join('<item layer="5" type="4" category="1" linetype="0"><pen type="%s" />'
+                    '<points data="%s" /><datarow>TopoDroid|x</datarow></item>' % (pen, _data([s]))
+                    for s, pen in zip(strokes, pens))
+    return ET.fromstring(
+        '<csurvey><segments><segment from="A" to="B" distance="10" /></segments>'
+        '<calculate><ts>'
+        '<t n="A"><tcons><tcon n="B"><p x="0" y="0" z="0" d="0" /></tcon></tcons></t>'
+        '<t n="B"><tcons><tcon n="A"><p x="10" y="0" z="0" d="10" /></tcon></tcons></t>'
+        '</ts></calculate>'
+        '<plan><layers><layer name="Borders" type="5"><items>%s</items></layer></layers>%s</plan>'
+        '<profile /></csurvey>' % (items, joins))
+
+
+def _items(root):
+    return root.find("plan/layers/layer/items").findall("item")
+
+
+def test_a_fresh_import_is_merged_into_one_border_the_right_way_round():
+    # phone order and directions scrambled
+    root = _fresh([LOWER, UPPER[::-1], LEFT, RIGHT[::-1]])
+    rep = wo.fix(root)
+    assert rep[0]["merged"] == 4
+    items = _items(root)
+    assert len(items) == 1
+    seqs = _seqs(root)
+    assert sorted(map(tuple, seqs)) == sorted(map(tuple, [UPPER, RIGHT, LOWER, LEFT]))
+    assert wo.fill_joins(seqs) == (0.0, 0)
+
+
+def test_merged_sequences_carry_their_own_pen_like_csurvey_combine():
+    root = _fresh([UPPER, RIGHT, LOWER, LEFT], pens=["1", "8", "1", "1"])
+    wo.fix(root)
+    item = _items(root)[0]
+    _m, pts = wo.parse_points(item.find("points").get("data"))
+    starts = [s for s, _e in wo.sequence_ranges(pts)]
+    assert not pts[starts[0]]["P"] and all(pts[s]["P"] for s in starts[1:])
+    own = [p.get("type") for p in item.find("points").findall("pen")]
+    assert sorted(own + [item.find("pen").get("type")]) == ["1", "1", "1", "8"]
+    # the presumed wall's pen rides with the presumed wall
+    seqs = _seqs(root)
+    k = seqs.index(RIGHT)
+    pen_of = [item.find("pen").get("type")] + own
+    assert pen_of[k] == "8"
+
+
+def test_a_stroke_the_survey_cannot_see_stays_as_drawn():
+    # a surface line far above the passage (sp7's terrain drawn with the wall pen)
+    surface = [(-5, -30), (15, -30)]
+    root = _fresh([UPPER, RIGHT, LOWER, LEFT, surface])
+    rep = wo.fix(root)
+    assert rep[0]["merged"] == 4 and rep[0]["left_out"] == [4]
+    assert len(_items(root)) == 2
+
+
+def test_a_design_merged_by_hand_is_not_merged_again():
+    # one hand-merged border (two real sequences) + a loose stroke beside it
+    root = _csx([UPPER, RIGHT])
+    loose = ET.fromstring('<item layer="5" type="4" category="1"><pen type="1" /><points data="%s" /></item>'
+                          % _data([LOWER]))
+    root.find("plan/layers/layer/items").append(loose)
+    rep = wo.fix(root)
+    assert not any("merged" in r for r in rep)
+    assert len(_items(root)) == 2
+
+
+def test_point_joins_follow_merged_points_and_shifted_items():
+    # join: last point of stroke 1 (item 1, point 3) with a point of an unrelated later item (item 4)
+    other = [(50, 50), (51, 51), (52, 50), (50, 50)]          # closed: never merged
+    joins = '<pointsjoins><pointsjoin id="j" data="5,1,3 5,4,1 " /></pointsjoins>'
+    root = _fresh([UPPER, RIGHT, LOWER, LEFT, other], joins=joins)
+    wo.fix(root)
+    a, b = root.find("plan/pointsjoins/pointsjoin").get("data").split()
+    item_a, pt_a = map(int, a.split(",")[1:])
+    assert (item_a, b) == (0, "5,1,1")                        # the closed item moved from 4 to 1
+    _m, pts = wo.parse_points(_items(root)[0].find("points").get("data"))
+    assert wo._xy(pts[pt_a]) == RIGHT[3]

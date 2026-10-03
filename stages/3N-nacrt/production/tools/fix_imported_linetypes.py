@@ -470,14 +470,16 @@ def main(argv=None):
                     item.set("textsize", str(label_sizes[item.get("text")]))
                     fixed_sizes += 1
 
-        # Walls merged before Save As: reverse the strokes that run against
-        # their item and put the sequences in chain order, so the fill closes
-        # mouths instead of cutting across passages (wall_orient.py, project 0006).
+        # Walls: merge a fresh import's wall strokes into one cave border, and
+        # in every merged border reverse the strokes that run against the rest
+        # and put the sequences in chain order, so the fill closes mouths
+        # instead of cutting across passages (wall_orient.py, project 0006).
         wall_lines = []
         if rules.get("wall_orientation", True):
             try:
                 wall_lines = wall_orient.describe(
-                    wall_orient.fix(root, reorder=rules.get("wall_reorder", True)))
+                    wall_orient.fix(root, reorder=rules.get("wall_reorder", True),
+                                    merge=rules.get("wall_merge", True)))
             except Exception as e:      # fail-soft: the other fixes still land
                 wall_lines = ["zidovi: provjera smjera preskocena (%s)" % e]
 

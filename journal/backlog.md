@@ -403,11 +403,11 @@ when an idea's time comes. Nothing here is a commitment.
   tie-break, registry type (SB jama/špilja), rule 5 (no size without a witnessed entrance), `read_stations`
   d fix; sidecar + `_dimenzije.json` keys; 4O prefill
   of `sirina_ulaza` / `visina_duljina_ulaza`; tests from the 11-survey corpus.
-- 2026-10-03 — 3N: walls merged AFTER KORAK 2 (in the `_lt`) get no wall fix: KORAK 2's menu hides `_lt` files and a
-  drag-drop writes `_lt_lt`. Either an in-place re-run mode on `_lt`, or call `wall_orient.fix` from `nacrt_finish.py`
-  (KORAK 3) as a safety net - ask the user.
-- 2026-10-03 — 3N: auto-merge a chamber's imported wall strokes into one cave-border item (interior-aware order and
-  direction) - the step after project 0006, would remove the manual Merge too.
+- 2026-10-03 — 3N: walls merged by hand AFTER KORAK 2 (in the `_lt`) get no turn/order fix: KORAK 2's menu hides
+  `_lt` files and a drag-drop writes `_lt_lt`. Rarer now that KORAK 2 merges; if it bites, call `wall_orient.fix`
+  from `nacrt_finish.py` (KORAK 3) as a safety net.
+- 2026-10-03 — 3N wall merge: wall strokes sketched beyond the last station (sp7 plan's far end) are left out as
+  unseen; a rule for strokes that continue a merged wall end to end could take them in.
 - 2026-10-03 — 3N: possible cSurvey import bug (inferred from code, untested): TopoDroid writes reversed lines already
   flipped and cSurvey reverses when `reversed=0`, so the flag has no effect - pit/overhang ticks may land on the wrong
   side for strokes the surveyor reversed on the phone. Check on a real reversed pit line.

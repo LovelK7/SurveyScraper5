@@ -37,42 +37,47 @@ def consistent(merged, side):
 def joins(merged):
     return sum(math.dist(a[2][-1], b[2][0]) for a, b in zip(merged, merged[1:] + merged[:1]))
 
-random.seed(1)
-N = 500
-for f in CASES:
-    root, _ = o.load(os.path.join(C, f))
-    for design in ("plan", "profile"):
-        D = root.find(design)
-        if D is None or D.find("layers") is None: continue
-        res = {(r["item"], r["seq"]): r for r in ws.analyse_design(root, design)["results"]}
-        for ii, item in o.borders_items(D):
-            if item.get("type") != "4": continue
-            _m, pts = o.parse_points(item.find("points").get("data"))
-            rng = o.sequence_ranges(pts)
-            if len(rng) < 2: continue
-            strokes = [[(float(p["x"]), float(p["y"])) for p in pts[s:e + 1]] for s, e in rng]
-            side = []
-            for k in range(len(rng)):
-                r = res[(ii, k)]
-                ok = r["score"] is not None and abs(r["score"]) >= o.MIN_SCORE and r["coverage"] >= o.MIN_COVERAGE
-                side.append((1 if r["score"] > 0 else -1) if ok else None)
-            gt = joins([[k, False, s] for k, s in enumerate(strokes)])
-            okA = okB = 0; jA = jB = 0.0
-            for _ in range(N):
-                order = list(range(len(strokes))); random.shuffle(order)
-                flips = {k: random.random() < 0.5 for k in order}
-                raw = [[k, flips[k], strokes[k][::-1] if flips[k] else strokes[k]] for k in order]
-                mA = cs_reorder(raw)
-                # KORAK 2: turn each judged stroke cave-on-right (-1); unjudged keep the phone's direction
-                pre = []
-                for k, rev, p in raw:
-                    if side[k] is not None and side[k] * (-1 if rev else 1) > 0:
-                        rev, p = not rev, p[::-1]
-                    pre.append([k, rev, p])
-                mB = cs_reorder(pre)
-                okA += consistent(mA, side); okB += consistent(mB, side)
-                jA += joins(mA); jB += joins(mB)
-            print("%-34s %-7s item %d strokes=%-2d judged=%-2d | merge as-is: %5.1f%% right, joins %.1f m | "
-                  "KORAK-2-oriented: %5.1f%% right, joins %.1f m | finished file joins %.1f m"
-                  % (f[:34], design, ii, len(strokes), sum(s is not None for s in side),
-                     100.0 * okA / N, jA / N, 100.0 * okB / N, jB / N, gt))
+def _main():
+    random.seed(1)
+    N = 500
+    for f in CASES:
+        root, _ = o.load(os.path.join(C, f))
+        for design in ("plan", "profile"):
+            D = root.find(design)
+            if D is None or D.find("layers") is None: continue
+            res = {(r["item"], r["seq"]): r for r in ws.analyse_design(root, design)["results"]}
+            for ii, item in o.borders_items(D):
+                if item.get("type") != "4": continue
+                _m, pts = o.parse_points(item.find("points").get("data"))
+                rng = o.sequence_ranges(pts)
+                if len(rng) < 2: continue
+                strokes = [[(float(p["x"]), float(p["y"])) for p in pts[s:e + 1]] for s, e in rng]
+                side = []
+                for k in range(len(rng)):
+                    r = res[(ii, k)]
+                    ok = r["score"] is not None and abs(r["score"]) >= o.MIN_SCORE and r["coverage"] >= o.MIN_COVERAGE
+                    side.append((1 if r["score"] > 0 else -1) if ok else None)
+                gt = joins([[k, False, s] for k, s in enumerate(strokes)])
+                okA = okB = 0; jA = jB = 0.0
+                for _ in range(N):
+                    order = list(range(len(strokes))); random.shuffle(order)
+                    flips = {k: random.random() < 0.5 for k in order}
+                    raw = [[k, flips[k], strokes[k][::-1] if flips[k] else strokes[k]] for k in order]
+                    mA = cs_reorder(raw)
+                    # KORAK 2: turn each judged stroke cave-on-right (-1); unjudged keep the phone's direction
+                    pre = []
+                    for k, rev, p in raw:
+                        if side[k] is not None and side[k] * (-1 if rev else 1) > 0:
+                            rev, p = not rev, p[::-1]
+                        pre.append([k, rev, p])
+                    mB = cs_reorder(pre)
+                    okA += consistent(mA, side); okB += consistent(mB, side)
+                    jA += joins(mA); jB += joins(mB)
+                print("%-34s %-7s item %d strokes=%-2d judged=%-2d | merge as-is: %5.1f%% right, joins %.1f m | "
+                      "KORAK-2-oriented: %5.1f%% right, joins %.1f m | finished file joins %.1f m"
+                      % (f[:34], design, ii, len(strokes), sum(s is not None for s in side),
+                         100.0 * okA / N, jA / N, 100.0 * okB / N, jB / N, gt))
+
+
+if __name__ == "__main__":
+    _main()

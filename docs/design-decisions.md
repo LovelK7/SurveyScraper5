@@ -47,6 +47,7 @@ keeps the chronology.
 - [3N predefined cSurvey settings: file vs app (2026-10-03)](#3n-predefined-csurvey-settings-file-vs-app-2026-10-03)
 - [3N mapping per cave, edited in the dashboard (2026-10-03)](#3n-mapping-per-cave-edited-in-the-dashboard-2026-10-03)
 - [3N wall orientation: merged walls, fixed in KORAK 2 (2026-10-03)](#3n-wall-orientation-merged-walls-fixed-in-korak-2-2026-10-03)
+- [3N wall merge: KORAK 2 merges the walls itself (2026-10-03)](#3n-wall-merge-korak-2-merges-the-walls-itself-2026-10-03)
 
 ---
 
@@ -1336,3 +1337,39 @@ last) goes from 35.1 to 7.1 m of fill joins, and the user's own repaired file
 is left unchanged; no change in the other 18 files of `csx_entrances`. The
 installed cSurvey loads and re-saves the output with every wall point and flag
 identical, and a second run changes nothing.
+
+## 3N wall merge: KORAK 2 merges the walls itself (2026-10-03)
+
+Same evening, a step further: the operator should only *check* the walls in the
+`_lt`, not merge them ([project 0006](../stages/3N-nacrt/projects/0006-wall-orientation/brief.md)).
+Settled with the user:
+
+- **One border per design.** On a fresh import, every open cave-wall stroke
+  (cave pens 1, 8, 25, 26, presumed walls included) goes into one cave border;
+  each appended sequence keeps its own pen, as cSurvey's own Combine stores it.
+  Strokes the survey can judge are turned cave-on-right; the order and the
+  direction of the rest are chosen for the shortest fill joins (a greedy walk
+  from every start stroke, then relocation; the shortest cycle wins).
+- **Left as drawn:** closed strokes (pillars, islands), decorated lines (pit,
+  overhang, chimney), and strokes the survey cannot see along at least 30 % of
+  their length. The last is how surveyors' deviations stay out: sp7's profile has
+  the terrain surface drawn with the wall pen, and the user wants those lines kept
+  out of the cave border (surveyors do not always abide by cSurvey's rules).
+- **The operator's merge wins.** A design with a border of two or more real
+  sequences (each at least 0.5 m) was merged by hand: KORAK 2 does not merge
+  there, it only turns and orders (the previous decision). A stray 0.0 m
+  sequence (Tavnjak's plan) is not a hand merge. Merging the loose rest beside a
+  hand merge was tried and rejected: in 272's plan it fused a separate inner
+  contour with presumed walls the user had kept apart.
+- Only cave-border **areas** block the survey's line of sight; lines in the
+  Borders layer (ledges drawn across a shaft) are inside the cave - letting them
+  block hid a whole wall of Sopača's 15 m wide shaft. Sight reaches 15 m.
+
+Validated: rebuilding the user's hand-merged borders from scattered strokes
+(random order and direction, 300 trials each) gives the user's result in every
+trial except 272's plan (whose hand version keeps a stroke the survey reads as
+reversed); cSurvey's own Merge manages 16-50 % on the hard ones. Fresh imports
+(sp7 45 + 31 strokes, Sopača 26, Tavnjak 7 + 24, krk_27, bunker) come out as
+single outlines, sp7's two surface lines left out. The installed cSurvey opens
+and re-saves the merged files with every point and pen identical, a second run
+changes nothing, and the PDF print shows no stray lines. Up to 1.7 s per cave.

@@ -89,7 +89,7 @@ unintentionally.
 | `sign_sizes` | Item sizes per sign: entrance default, air draught, stalactite, stalagmite medium |
 | `label_sizes` | Item sizes per label text: `"!"` large |
 | `spline_linetypes`, `nonstandard_water` | Import fixes (splines so decorations render; the water brush) |
-| `wall_orientation`, `wall_reorder` | Merged cave borders: reverse the strokes that run against their item, put the sequences in chain order (`wall_orient.py`, project 0006). Both on. |
+| `wall_merge`, `wall_orientation`, `wall_reorder` | Walls (`wall_orient.py`, project 0006): merge a fresh import's open wall strokes into one cave border per design; in every merged border reverse the strokes that run against the rest and put the sequences in chain order. All on. |
 
 ## Per-cave mapping: the dashboard's Mapiranje page
 

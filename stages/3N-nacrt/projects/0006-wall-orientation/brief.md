@@ -1,7 +1,7 @@
 # Task brief: Wall orientation — know where the cave is, and fix the walls that run the wrong way
 
 - **ID:** 0006-wall-orientation
-- **Status:** `validation` — promoted into KORAK 2 on 2026-10-03 (`production/tools/wall_orient.py`, called by `fix_imported_linetypes.py`), after the user settled that the merge is the culprit and the fix belongs in KORAK 2 on merged walls. Built, tested, staged in the kit, **not yet published**; closes when the user has run it on a real cave through `/publish`.
+- **Status:** `validation` — in KORAK 2 since 2026-10-03 (`production/tools/wall_orient.py`, called by `fix_imported_linetypes.py`): it **merges** a fresh import's wall strokes into one cave border per design and turns/orders the sequences of every merged border, the cave's side voted by the survey. Built, tested, cSurvey-verified, staged in the kit, **not yet published**; closes when the user has run it on a real cave through `/publish`.
 - **Owner:** both
 - **Opened:** 2026-10-03 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [production/tdx-processing-protocol.md](../../production/tdx-processing-protocol.md) (KORAK 1–3), [0005-entrance-dimensions/brief.md](../0005-entrance-dimensions/brief.md) (§2: how a Borders item is stroked per sequence but filled as one polygon)
@@ -120,6 +120,6 @@ operators' machines; the prototype already is), wired per phase 2; tests on synt
 
 ## 5. Outputs (fill in on close)
 
-- **Production:** `production/tools/wall_orient.py`, wired into KORAK 2 (`postimport.wall_orientation` / `wall_reorder`), the kit file list, the operator guide, the dashboard's Mapiranje switches.
-- **Decisions:** `docs/design-decisions.md` § 3N wall orientation (2026-10-03).
-- **Follow-ups:** auto-merge of a chamber's wall strokes into one item (the step after this).
+- **Production:** `production/tools/wall_orient.py`, wired into KORAK 2 (`postimport.wall_merge` / `wall_orientation` / `wall_reorder`), the kit file list, the operator guide, the dashboard's Mapiranje switches.
+- **Decisions:** `docs/design-decisions.md` § 3N wall orientation and § 3N wall merge (2026-10-03).
+- **Follow-ups:** the automatic merge was built the same day (log; decision record § 3N wall merge).
