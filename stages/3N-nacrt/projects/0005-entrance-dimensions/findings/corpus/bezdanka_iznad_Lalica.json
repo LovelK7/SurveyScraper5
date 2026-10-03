@@ -1,0 +1,48 @@
+{
+ "file": "bezdanka_iznad_Lalica.csx",
+ "raw": false,
+ "warnings": [],
+ "entrance": "5",
+ "entrance_how": "decide_entrance: oba svjedoka slozna (najvisa stanica i znak ulaza)",
+ "splays_at_station": 16,
+ "axis_shot": "4->5 inc=56.1",
+ "kind": "pit",
+ "kind_why": "6 of 16 splays dive >45 deg",
+ "plan": {
+  "axis_into_cave": [
+   0.317,
+   -0.948
+  ],
+  "splay_cloud": {
+   "min_m": 4.74,
+   "min_deg": 170,
+   "max_m": 8.38,
+   "max_deg": 60,
+   "splays": 16
+  },
+  "wall_footprint": {
+   "min_m": 6.78,
+   "min_deg": 30,
+   "max_m": 11.15,
+   "max_deg": 125,
+   "rays_hit": 24
+  },
+  "chosen": "splays"
+ },
+ "profile": {
+  "station_at": [
+   -6.87,
+   -11.57
+  ],
+  "first_drop_m": 7.13,
+  "note": "a pit has no entrance height; the drop below the rim is informative only"
+ },
+ "osz": {
+  "sirina_ulaza": 4.7,
+  "visina_duljina_ulaza": 8.4,
+  "sources": [
+   "splays",
+   "splays"
+  ]
+ }
+}

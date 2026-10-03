@@ -1,0 +1,48 @@
+{
+ "file": "Golobreška_nanoekspedicija-1p-lk_pp_lt_fin.csx",
+ "raw": false,
+ "warnings": [],
+ "entrance": "2",
+ "entrance_how": "trigpoint entrance=2",
+ "splays_at_station": 12,
+ "axis_shot": "1->2 inc=87.8",
+ "kind": "pit",
+ "kind_why": "shot 88 deg",
+ "plan": {
+  "axis_into_cave": [
+   0.969,
+   0.245
+  ],
+  "splay_cloud": {
+   "min_m": 1.08,
+   "min_deg": 50,
+   "max_m": 1.71,
+   "max_deg": 105,
+   "splays": 12
+  },
+  "wall_footprint": {
+   "min_m": 1.39,
+   "min_deg": 35,
+   "max_m": 4.42,
+   "max_deg": 120,
+   "rays_hit": 24
+  },
+  "chosen": "splays"
+ },
+ "profile": {
+  "station_at": [
+   -0.26,
+   -6.77
+  ],
+  "first_drop_m": 3.94,
+  "note": "a pit has no entrance height; the drop below the rim is informative only"
+ },
+ "osz": {
+  "sirina_ulaza": 1.1,
+  "visina_duljina_ulaza": 1.7,
+  "sources": [
+   "splays",
+   "splays"
+  ]
+ }
+}

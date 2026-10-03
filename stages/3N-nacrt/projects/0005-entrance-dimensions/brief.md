@@ -1,7 +1,7 @@
 # Task brief: Entrance dimensions — read the entrance width and height off the finished survey
 
 - **ID:** 0005-entrance-dimensions
-- **Status:** `validation` — feasibility shown 2026-10-02 on SB 1220 (horizontal) and SB 1103 (pit); the user settled the four rules the same evening (§3 phase 2, recorded in `docs/design-decisions.md`); prototype applies them: SB 1220 → 0,6 × 1,4 m, SB 1103 → 1,1 × 1,7 m (one decimal, 2026-10-03). Next: a corpus of caves with vouched entrance sizes, then fold into `nacrt_finish.py` (phase 3)
+- **Status:** `validation` — rules settled 2026-10-02/03; **corpus of 11 surveys run 2026-10-03** (§3, "Corpus run"): 9 plausible, 2 to check (Sopača's rim station outside the drawing, pljeskavica's profile not drawn to the entrance). Raw TopoDroid exports now work too. Next: the user vouches for the numbers; then phase 3 (fold into `nacrt_finish.py`, with the sign tie-break rule change)
 - **Owner:** both
 - **Opened:** 2026-10-02 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [0004-nacrt-finishing/brief.md](../0004-nacrt-finishing/brief.md) (the entrance-station decision this builds on), `production/tools/nacrt_finish.py` (`decide_entrance`, `wall`/`item_points` helpers)
@@ -118,6 +118,40 @@ Applied (prototype rerun, `findings/SB_*_report.json`):
 
 Still open: multiple entrances (only the main one is measured) and splines vs the control polygon
 (centimetres, below the rounding).
+
+### Corpus run — `example/csx_entrances/` (11 surveys, 2026-10-03)
+
+`findings/run_corpus.py <folder>` runs every `.csx`/`.csz` in a folder; the reports and key plots are
+copied to `findings/corpus/` because `example/` is gitignored. Numbers in metres, OSZ = one decimal.
+
+| Survey | State | Kind (why) | Entrance (how) | OSZ Š × V/D | Source | Read it as |
+|---|---|---|---|---|---|---|
+| 272 | `_lt` | pit (shot 85°) | 4 (highest + sign) | **1.6 × 3.3** | splays (walls: 4.1 × 7.2 = whole chamber) | plausible — the rim station's splays span the mouth |
+| Golobreška (SB 1103) | `_lt_fin` | pit (88°) | 2 (flag) | **1.1 × 1.7** | splays | as before |
+| Sopača | `-1p` imported | pit (70°) | 5 (highest + sign) | **13.6 × 17.5** | splays; walls absent around 5 | **check** — station 5 sits outside the drawn plan, 11 flat splays up to 17 m: a doline rim, or a surface station? |
+| bezdanka iznad Lalica | imported | pit (6 of 16 splays dive > 45°) | 5 (highest + sign) | **4.7 × 8.4** | splays (walls 6.8 × 11.2) | plausible; was `horizontal` before the splay-based pit test |
+| kilavčev cepavpic | `_pp` | pit (80°) | 4 (highest) | **1.1 × 2.4** | splays (walls 1.6 × 3.2) | plausible |
+| kilavčeva pljeskavica | `_pp` | horizontal (35°) | 3 (flag) | **0.9 × —** | walls (only one lateral splay); no profile walls at 3 | **check** — the profile is not drawn out to station 3; height unknown |
+| krk_27 | **raw** | pit (87°) | 3 (highest) | **3.5 × 4.8** | splays (walls 7.2 × 8.8) | raw TopoDroid, stations traversed from the shots |
+| krk_37 | **raw** | horizontal (40°) | 0 (highest) | **0.9 × 1.4** | walls (no splays at 0) | raw; the `wall` lines are tight around station 0 |
+| sp7 Brad/Kosa/Plazibat špilja | imported | horizontal (22°) | 9 (highest-ties + sign) | **2.7 × 2.2** | splays (walls 3.1 × 2.3) | plausible; station 10 is 3.3 m higher — a side entrance or surface point? |
+| špilja Bunker (Studena) | `_pp` | horizontal (11°) | 5 (sign; highest is 1) | **2.6 × 1.5** | splays (walls 2.4 × 1.4) | plausible, sources agree |
+| Tavnjak (Mune) | imported | pit (86°) | **8** (profile sign + highest; plan sign at 7 overruled) | **2.0 × 6.2** | splays (walls 3.2 × 6.0) | plausible once the entrance is 8; station 7 is a ledge 20 m down the shaft |
+
+What the corpus changed in the prototype:
+
+- **Pit test by splays too:** a station whose splays mostly dive (at least a third steeper than 45°, none
+  steeper up) is a pit rim even when the first shot is flatter than 60° (bezdanka).
+- **One source per opening:** both sides from splays, else both from walls — never one of each
+  (pljeskavica had splay 0.49 + wall 0.11 = 0.6; the walls alone say 0.9).
+- **Raw TopoDroid exports** work: stations traversed from the shots (`direction="1"` = extend left,
+  as the SB 1220 CSV confirms), splays from the splay segments, walls from the `wall` /
+  `wall:presumed` lines (no sequences, no fill bridges).
+- **Sign tie-break (proposed for `nacrt_finish.decide_entrance`):** when the plan and profile signs
+  disagree, the one that agrees with the highest station wins; today the plan wins and Tavnjak's
+  entrance lands on a ledge. Also surfaced: the prototype had passed station *names* instead of
+  `Station` objects to `decide_entrance` (sp7 crashed) — the finisher itself does it right.
+- A warning when the entrance lies more than 2 m below the highest station.
 
 **Phase 3 — productionize (validation).** Move the measurement into `nacrt_finish.py` (it already
 holds the station, the walls and the item helpers; fix `read_stations` to take `d` from `tcon/p` on

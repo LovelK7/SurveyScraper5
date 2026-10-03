@@ -1,0 +1,100 @@
+{
+ "file": "spilja_bunker_studena_recovered_pp.csx",
+ "raw": false,
+ "warnings": [
+  "znak ulaza je na stanici 5, a najvisa stanica je 1 - uzimam znak ulaza (ponor ili horizontalna spilja nema ulaz na vrhu)"
+ ],
+ "entrance": "5",
+ "entrance_how": "decide_entrance: znak ulaza (ne slaze se s najvisom stanicom)",
+ "splays_at_station": 11,
+ "axis_shot": "3->5 inc=11.0",
+ "kind": "horizontal",
+ "kind_why": "shot 11 deg, 0 of 11 splays dive",
+ "plan": {
+  "axis_into_cave": [
+   1.0,
+   -0.017
+  ],
+  "side_a": {
+   "m": 1.75,
+   "source": "splay",
+   "splay": "5(54)",
+   "inc": 18.0
+  },
+  "side_b": {
+   "m": 0.82,
+   "source": "splay",
+   "splay": "5(56)",
+   "inc": 7.2
+  },
+  "width_m": 2.57,
+  "width_source": "splays",
+  "wall_narrowest": {
+   "at_s": 0.5,
+   "width_m": 2.36,
+   "plus": {
+    "m": 1.42,
+    "at": [
+     -5.26,
+     -5.07
+    ],
+    "source": "wall"
+   },
+   "minus": {
+    "m": 0.94,
+    "at": [
+     -5.3,
+     -7.42
+    ],
+    "source": "wall"
+   }
+  }
+ },
+ "profile": {
+  "station_at": [
+   -12.27,
+   1.32
+  ],
+  "up": {
+   "m": 1.45,
+   "source": "splay",
+   "splay": "5(62)",
+   "inc": 81.5
+  },
+  "down": {
+   "m": 0.0,
+   "source": "floor",
+   "note": "up splay, no down splay: station on the floor"
+  },
+  "height_m": 1.45,
+  "height_source": "splays",
+  "wall_narrowest": {
+   "at_s": 0.5,
+   "height_m": 1.44,
+   "up": {
+    "m": 1.11,
+    "at": [
+     -11.77,
+     0.21
+    ],
+    "source": "wall"
+   },
+   "down": {
+    "m": 0.33,
+    "at": [
+     -11.77,
+     1.65
+    ],
+    "source": "wall"
+   }
+  }
+ },
+ "osz": {
+  "sirina_ulaza": 2.6,
+  "visina_duljina_ulaza": 1.5,
+  "sources": [
+   "splays",
+   "splays"
+  ]
+ }
+}

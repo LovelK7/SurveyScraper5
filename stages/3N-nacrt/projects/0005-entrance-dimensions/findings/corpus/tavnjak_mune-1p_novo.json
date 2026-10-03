@@ -1,0 +1,52 @@
+{
+ "file": "tavnjak_mune-1p_novo.csx",
+ "raw": false,
+ "warnings": [
+  "znak ulaza pokazuje na razlicite stanice: tlocrt 7, profil 8 - uzimam tlocrt",
+  "znak ulaza je na stanici 7, a najvisa stanica je 8 - uzimam znak ulaza (ponor ili horizontalna spilja nema ulaz na vrhu)",
+  "znak ulaza u profilu pokazuje na najvisu stanicu 8, drugi znak na 7 - uzimam 8"
+ ],
+ "entrance": "8",
+ "entrance_how": "profile sign agrees with the highest station (other sign overruled)",
+ "splays_at_station": 14,
+ "axis_shot": "7->8 inc=85.6",
+ "kind": "pit",
+ "kind_why": "shot 86 deg",
+ "plan": {
+  "axis_into_cave": [
+   0.763,
+   0.647
+  ],
+  "splay_cloud": {
+   "min_m": 2.03,
+   "min_deg": 145,
+   "max_m": 6.24,
+   "max_deg": 50,
+   "splays": 14
+  },
+  "wall_footprint": {
+   "min_m": 2.58,
+   "min_deg": 165,
+   "max_m": 5.64,
+   "max_deg": 70,
+   "rays_hit": 24
+  },
+  "chosen": "splays"
+ },
+ "profile": {
+  "station_at": [
+   -13.68,
+   -91.94
+  ],
+  "first_drop_m": 18.82,
+  "note": "a pit has no entrance height; the drop below the rim is informative only"
+ },
+ "osz": {
+  "sirina_ulaza": 2.0,
+  "visina_duljina_ulaza": 6.2,
+  "sources": [
+   "splays",
+   "splays"
+  ]
+ }
+}

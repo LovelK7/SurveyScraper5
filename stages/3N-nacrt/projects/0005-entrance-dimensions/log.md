@@ -44,3 +44,15 @@ Brief: [brief.md](brief.md)
 - **Did:** `round_osz` now rounds to 0.1 m instead of whole metres; reports, decision record and brief updated.
 - **Result:** SB 1220 → **0,6 × 1,4**, SB 1103 → **1,1 × 1,7**.
 - **Next:** unchanged — a vouched corpus, then phase 3.
+
+### 2026-10-03 — corpus of 11 surveys (agent) ✅
+
+- **Did:** ran the prototype over `example/csx_entrances/` (raw TopoDroid → `_pp` → `_lt` → `_lt_fin`);
+  added `findings/run_corpus.py`; fixed what the corpus broke: raw exports (stations traversed from the
+  shots, `wall` lines as walls), the pit test by diving splays, one source per opening, the sign tie-break
+  toward the highest station, the `Station`-objects bug in my own `decide_entrance` call (sp7).
+- **Result:** table in brief §3 "Corpus run": 9 of 11 plausible, 2 flagged (Sopača 13.6 × 17.5 from a
+  station outside the drawn plan; pljeskavica height unknown — profile not drawn to the entrance).
+  Pits consistently read smaller from splays than from the walls (walls = the chamber below the mouth).
+- **Evidence:** `findings/corpus/*.json`, `findings/corpus/_overview.png` and four entrance plots.
+- **Next:** the user vouches/corrects per cave; decide the sign tie-break for `nacrt_finish`; phase 3.

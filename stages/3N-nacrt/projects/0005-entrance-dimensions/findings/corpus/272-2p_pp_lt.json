@@ -1,0 +1,48 @@
+{
+ "file": "272-2p_pp_lt.csx",
+ "raw": false,
+ "warnings": [],
+ "entrance": "4",
+ "entrance_how": "decide_entrance: oba svjedoka slozna (najvisa stanica i znak ulaza)",
+ "splays_at_station": 12,
+ "axis_shot": "2->4 inc=85.1",
+ "kind": "pit",
+ "kind_why": "shot 85 deg",
+ "plan": {
+  "axis_into_cave": [
+   0.802,
+   -0.598
+  ],
+  "splay_cloud": {
+   "min_m": 1.62,
+   "min_deg": 25,
+   "max_m": 3.34,
+   "max_deg": 95,
+   "splays": 12
+  },
+  "wall_footprint": {
+   "min_m": 4.11,
+   "min_deg": 25,
+   "max_m": 7.19,
+   "max_deg": 85,
+   "rays_hit": 24
+  },
+  "chosen": "splays"
+ },
+ "profile": {
+  "station_at": [
+   0.0,
+   0.0
+  ],
+  "first_drop_m": null,
+  "note": "a pit has no entrance height; the drop below the rim is informative only"
+ },
+ "osz": {
+  "sirina_ulaza": 1.6,
+  "visina_duljina_ulaza": 3.3,
+  "sources": [
+   "splays",
+   "splays"
+  ]
+ }
+}

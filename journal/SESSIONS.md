@@ -12,6 +12,27 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-03 — 3N: entrance dimensions — corpus of 11 surveys (agent) ✅
+
+- **Did:** ran project 0005's prototype over `stages/3N-nacrt/example/csx_entrances/` (11 surveys: 2 raw
+  TopoDroid exports, `_pp`, `_lt`, `_lt_fin`). Added raw-export support (stations traversed from the shots,
+  `direction="1"` = extend left; `wall` lines as walls), a pit test by diving splays, one source per opening,
+  a sign tie-break toward the highest station, and `findings/run_corpus.py`. Reports + plots in
+  `findings/corpus/`; table in the brief.
+- **Result:** 9 of 11 plausible (272 1.6 × 3.3, bezdanka 4.7 × 8.4, cepavpic 1.1 × 2.4, krk_27 3.5 × 4.8,
+  krk_37 0.9 × 1.4, sp7 2.7 × 2.2, Bunker 2.6 × 1.5, Tavnjak 2.0 × 6.2, Golobreška 1.1 × 1.7); two flagged
+  (Sopača 13.6 × 17.5 from a station outside the drawn plan; pljeskavica 0.9 × — with no profile at the
+  entrance). Awaiting the user's per-cave verdict.
+- **Learned:** for pits the splay cloud is consistently smaller than the wall footprint, because the walls
+  around a rim station draw the chamber below the mouth — the user's instinct to prefer splays for pits
+  holds on every pit. A splay-based pit test is needed: bezdanka's first shot is flatter than 60° yet six
+  of sixteen splays dive. Mixing a splay on one side with a wall on the other gave pljeskavica 0.6 where
+  the walls say 0.9 — one source per opening. Tavnjak: the plan's entrance sign sat on a ledge 20 m down
+  the shaft while the profile's sign and the highest station agreed on the rim; `decide_entrance` takes
+  the plan on disagreement, so that rule needs the user's call. The sp7 crash was my own call passing
+  station names where `decide_entrance` wants `Station` objects, not a finisher bug.
+- **Next:** per-cave verdicts; the tie-break decision; phase 3.
+
 ### 2026-10-03 (later) — 3N Mapiranje review round, en dash everywhere, speleo 2 set (agent) ✅
 
 - **Did:** On the user's review of the new page: the Mapiranje nav row now appears only while 3N is open

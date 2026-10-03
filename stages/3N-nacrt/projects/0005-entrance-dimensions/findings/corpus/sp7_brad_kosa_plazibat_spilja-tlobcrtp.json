@@ -1,0 +1,100 @@
+{
+ "file": "sp7_brad_kosa_plazibat_spilja-tlobcrtp.csx",
+ "raw": false,
+ "warnings": [
+  "entrance 9 lies 3.3 m below the highest station 10 - check the entrance"
+ ],
+ "entrance": "9",
+ "entrance_how": "decide_entrance: oba svjedoka slozna (najvisa stanica i znak ulaza)",
+ "splays_at_station": 22,
+ "axis_shot": "8->9 inc=22.1",
+ "kind": "horizontal",
+ "kind_why": "shot 22 deg, 0 of 22 splays dive",
+ "plan": {
+  "axis_into_cave": [
+   -0.9,
+   -0.437
+  ],
+  "side_a": {
+   "m": 1.75,
+   "source": "splay",
+   "splay": "9(121)",
+   "inc": 6.8
+  },
+  "side_b": {
+   "m": 0.99,
+   "source": "splay",
+   "splay": "9(115)",
+   "inc": 9.7
+  },
+  "width_m": 2.74,
+  "width_source": "splays",
+  "wall_narrowest": {
+   "at_s": 0.0,
+   "width_m": 3.13,
+   "plus": {
+    "m": 1.87,
+    "at": [
+     22.26,
+     11.68
+    ],
+    "source": "wall"
+   },
+   "minus": {
+    "m": 1.26,
+    "at": [
+     20.89,
+     14.49
+    ],
+    "source": "wall"
+   }
+  }
+ },
+ "profile": {
+  "station_at": [
+   26.59,
+   -8.98
+  ],
+  "up": {
+   "m": 2.21,
+   "source": "splay",
+   "splay": "9(125)",
+   "inc": 84.3
+  },
+  "down": {
+   "m": 0.0,
+   "source": "floor",
+   "note": "up splay, no down splay: station on the floor"
+  },
+  "height_m": 2.21,
+  "height_source": "splays",
+  "wall_narrowest": {
+   "at_s": 0.5,
+   "height_m": 2.26,
+   "up": {
+    "m": 1.68,
+    "at": [
+     26.09,
+     -10.66
+    ],
+    "source": "wall"
+   },
+   "down": {
+    "m": 0.58,
+    "at": [
+     26.09,
+     -8.4
+    ],
+    "source": "wall"
+   }
+  }
+ },
+ "osz": {
+  "sirina_ulaza": 2.7,
+  "visina_duljina_ulaza": 2.2,
+  "sources": [
+   "splays",
+   "splays"
+  ]
+ }
+}
