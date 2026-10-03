@@ -1,0 +1,18 @@
+{
+  "_readme": "cSurvey APP settings (per Windows user, per computer) that the 3N kit primes into HKCU\\Software\\Cepelabs\\cSurvey. FILE settings (centerline colour, sign sizes...) live in tdx-mapping.json `postimport` instead. Which kind a setting is, and how to add one: stages/3N-nacrt/production/csurvey-settings.md. Value type decides the registry type: a JSON string -> REG_SZ (decimals with a dot, as cSurvey writes them), a JSON integer -> REG_DWORD.",
+  "registry_key": "Software\\Cepelabs\\cSurvey",
+  "settings": {
+    "pens.smooth": {
+      "value": "0.01",
+      "ui": "Pen ribbon > Smoothing factor (m)",
+      "why": "Freehand pen strokes keep their detail; cSurvey's floor is 0.01 (user decision 2026-10-03).",
+      "source": "cSurvey/cSurveyPC/frmMain2.vb:2678-2681"
+    },
+    "tools.smooth": {
+      "value": "0.01",
+      "ui": "Current item > Smoothing factor (m) (reduce points)",
+      "why": "Same factor for the reduce-points action on a selected item (user decision 2026-10-03).",
+      "source": "cSurvey/cSurveyPC/frmMain2.vb:2683-2685"
+    }
+  }
+}

@@ -373,3 +373,11 @@ when an idea's time comes. Nothing here is a commitment.
   `stages/3N-nacrt/reference/` drawing docs once project 0005 closes.
 - 2026-10-02 — 3N: entrance dimensions could also run on the raw `_pp.csx` (walls are `name="wall" outline="1"`
   lines) if the OSZ ever needs them before the Nacrt is finished.
+- 2026-10-03 — 3N: `tdx-mapping-workbench.html` export builds the json from scratch (points/lines/areas/generic
+  only) and silently drops `postimport` — the red centerline and every predefined file setting. Make it carry the
+  loaded `postimport` through, or warn on export.
+- 2026-10-03 — 3N: fonts (`citemfont`/`cfont` design properties) are nested `<font>` elements, so
+  `postimport.designproperties` can't set them; add a font form when the user names a font to predefine.
+- 2026-10-03 — 3N: optional "open in cSurvey" launcher that checks the app settings, then starts the Drive copy
+  of cSurvey with the `_lt` — only if priming once turns out not to stick in practice.
+

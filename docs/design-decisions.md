@@ -44,6 +44,7 @@ keeps the chronology.
 - [3N entrance: surface legs (2026-09-24)](#3n-entrance-surface-legs-2026-09-24)
 - [3N scale bar: beside or under the plan (2026-09-24)](#3n-scale-bar-beside-or-under-the-plan-2026-09-24)
 - [3N entrance dimensions: splays first, walls as fallback (2026-10-02)](#3n-entrance-dimensions-splays-first-walls-as-fallback-2026-10-02)
+- [3N predefined cSurvey settings: file vs app (2026-10-03)](#3n-predefined-csurvey-settings-file-vs-app-2026-10-03)
 
 ---
 
@@ -1195,3 +1196,33 @@ Measured: SB 1220 (horizontal, station 4) 0.57 × 1.37 m from splays 4(71),
 
 Code: `findings/entrance_dims_proto.py` in the project folder; to be folded
 into `nacrt_finish.py` and carried by `_dimenzije.json` to 4O's prefill.
+
+## 3N predefined cSurvey settings: file vs app (2026-10-03)
+
+Whoever opens a survey in cSurvey during 3N should get the same settings
+without touching anything. cSurvey keeps settings in two places, so there are
+two channels. The explainer is
+[csurvey-settings.md](../stages/3N-nacrt/production/csurvey-settings.md).
+
+- **File settings** (design properties inside the `.csx`) stay where the red
+  centerline already was: `tdx-mapping.json` → `postimport`, written by KORAK 2
+  into every `_lt`. A new open-ended `postimport.designproperties` (name →
+  `{type, value}`) makes any further scalar property a JSON edit instead of a
+  code change. They are preferred wherever cSurvey offers a choice, because a
+  file property overrides the app setting and reaches every computer.
+- **App settings** (registry, `HKCU\Software\Cepelabs\cSurvey`) get their own
+  profile, `csurvey-app-settings.json`, and are **primed once per computer** by a
+  new KORAK 0 launcher (`csurvey_0_postavi_csurvey.bat`). The user chose priming
+  over re-applying on every open: cSurvey reads the key once at start and writes
+  its in-memory copy back on exit (cEditTools.vb:154-201, frmMain2.vb:2678/2903),
+  so a value written while cSurvey is closed persists by itself. KORAK 0 refuses
+  while `cSurveyPC.exe` runs, since the value would be lost on exit. KORAK 2 only
+  **checks** and warns, never writes. A warning instead of a stop, because the
+  `_lt` is already made.
+- First entry: smoothing factor 0.01 for `pens.smooth` and `tools.smooth`
+  (cSurvey's floor). The list grows as the user names settings.
+
+Validated: unit tests over a dict-backed registry; live `show`/`check` against
+this machine's registry; the live `apply` stopped with BLOCKED because cSurvey
+was open.
+

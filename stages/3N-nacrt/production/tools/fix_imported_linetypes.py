@@ -77,6 +77,37 @@ CENTERLINE_TYPES = {
 }
 
 
+# Scalar <item type=...> kinds cPropertiesCollection writes as plain text
+# (cPropertiesCollection.vb:184-198). Fonts (citemfont/cfont) are nested
+# elements, not text, and are not settable this way.
+DESIGN_PROPERTY_TYPES = {"single", "double", "decimal", "integer", "long",
+                         "int32", "color", "boolean", "string"}
+
+
+def _design_properties(root, what):
+    props = root.find("properties")
+    if props is None:
+        print("WARNING: no <properties> element - %s not set" % what, file=sys.stderr)
+        return None
+    dp = props.find("designproperties")
+    if dp is None:
+        dp = ET.SubElement(props, "designproperties")
+    return dp
+
+
+def _set_design_property(dp, name, vtype, value):
+    item = None
+    for cand in dp.findall("item"):
+        if cand.get("name") == name:
+            item = cand
+            break
+    if item is None:
+        item = ET.SubElement(dp, "item")
+        item.set("name", name)
+    item.set("type", vtype)
+    item.text = str(value)
+
+
 def apply_centerline(root, spec):
     """Write the Centerline design properties from `spec` (name -> value).
 
@@ -86,29 +117,47 @@ def apply_centerline(root, spec):
     """
     if not spec:
         return 0
-    props = root.find("properties")
-    if props is None:
-        print("WARNING: no <properties> element - centerline not set", file=sys.stderr)
-        return 0
-    dp = props.find("designproperties")
+    dp = _design_properties(root, "centerline")
     if dp is None:
-        dp = ET.SubElement(props, "designproperties")
+        return 0
     n = 0
     for name, value in spec.items():
         vtype = CENTERLINE_TYPES.get(name)
         if vtype is None:
             print("WARNING: centerline key %r unknown - skipped" % name, file=sys.stderr)
             continue
-        item = None
-        for cand in dp.findall("item"):
-            if cand.get("name") == name:
-                item = cand
-                break
-        if item is None:
-            item = ET.SubElement(dp, "item")
-            item.set("name", name)
-        item.set("type", vtype)
-        item.text = str(value)
+        _set_design_property(dp, name, vtype, value)
+        n += 1
+    return n
+
+
+def apply_design_properties(root, spec):
+    """Write any survey-wide design property: `spec` is name -> {type, value}.
+
+    The open-ended twin of apply_centerline, so a new FILE setting is one json
+    entry, not a code change (production/csurvey-settings.md). The type is the
+    one cSurvey itself writes for that key - read it off a csx saved after
+    changing the setting in Properties.
+    """
+    if not spec:
+        return 0
+    dp = _design_properties(root, "designproperties")
+    if dp is None:
+        return 0
+    n = 0
+    for name, entry in spec.items():
+        if name.startswith("_"):
+            continue
+        vtype = entry.get("type") if isinstance(entry, dict) else None
+        if vtype not in DESIGN_PROPERTY_TYPES or "value" not in entry:
+            print("WARNING: designproperties %r needs {\"type\": one of %s, "
+                  "\"value\": ...} - skipped"
+                  % (name, "/".join(sorted(DESIGN_PROPERTY_TYPES))), file=sys.stderr)
+            continue
+        value = entry["value"]
+        if vtype == "boolean" and isinstance(value, bool):
+            value = "True" if value else "False"
+        _set_design_property(dp, name, vtype, value)
         n += 1
     return n
 
@@ -375,11 +424,12 @@ def main(argv=None):
                     item.set("textsize", str(label_sizes[item.get("text")]))
                     fixed_sizes += 1
 
-        centerline_set = apply_centerline(root, rules.get("centerline"))
+        centerline_set = (apply_centerline(root, rules.get("centerline"))
+                          + apply_design_properties(root, rules.get("designproperties")))
 
         write_root(root, inp, out, is_csz)
         print("OK  %s\n    %d line(s) -> splines, %d water area(s) -> "
-              "non-standard brush, %d size(s) applied, %d centerline propert%s set"
+              "non-standard brush, %d size(s) applied, %d design propert%s set"
               % (out, fixed_lines, fixed_water, fixed_sizes, centerline_set,
                  "y" if centerline_set == 1 else "ies"))
         if imported_seen == 0 and not args.all_lines:

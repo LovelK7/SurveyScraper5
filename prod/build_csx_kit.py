@@ -75,6 +75,8 @@ KIT_VERSION = "1.5"
 PAYLOAD_DIR = "csurvey_alati"
 
 LAUNCHERS = [
+    # KORAK 0, once per computer: primes cSurvey's registry app settings.
+    "csurvey_0_postavi_csurvey.bat",
     "csurvey_1_pripremi_csx.bat",
     "csurvey_2_dovrsi_uvoz.bat",
     "csurvey_3_dovrsi_nacrt.bat",
@@ -89,6 +91,9 @@ TOOLS = [
     "parse_tdr.py",
     "sb_select.py",
     "tdx-mapping.json",
+    # cSurvey app settings (registry): KORAK 0 applies them, KORAK 2 checks.
+    "csurvey_app_settings.py",
+    "csurvey-app-settings.json",
     # KORAK 3, the Nacrt finishing chain (project 0004). nacrt_finish.py imports
     # nacrt_layout.py and reads nacrt_finish_compass.xml from beside itself;
     # csurvey_driver.py runs csurvey_headless.ps1 the same way. Miss one and the

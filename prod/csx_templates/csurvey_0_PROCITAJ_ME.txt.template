@@ -8,12 +8,14 @@ Koristiš ".bat" datoteke koje stoje u ovoj istoj mapi
 (!!!Digitalizacija\SurveyScraper5, uz cavedossier naredbe). Brojevi u
 nazivu su redoslijed kojim se koriste:
 
+   csurvey_0_postavi_csurvey.bat   KORAK 0 - jednom po računalu
    csurvey_1_pripremi_csx.bat      KORAK 1
    csurvey_2_dovrsi_uvoz.bat       KORAK 2
    csurvey_3_dovrsi_nacrt.bat      KORAK 3
    csurvey_9_oporavi_iz_zipa.bat   KORAK 9 - popravak, nije korak
 
-Koraci su 1, 2 i 3 - tim redom, za svaki objekt. Devetka nije korak nego
+KORAK 0 radiš samo jednom na svakom računalu. Koraci 1, 2 i 3 idu tim
+redom, za svaki objekt. Devetka nije korak nego
 popravak: koristi se samo kad je .csx s mobitela pokvaren, i zato stoji
 na dnu popisa i na dnu ovih uputa.
 
@@ -39,6 +41,20 @@ Možeš prvo označiti više datoteka pa ih povući sve zajedno.
 ------------------------------------------------------------------
  KORACI
 ------------------------------------------------------------------
+
+KORAK 0 - POSTAVI cSURVEY (jednom po računalu, prije prvog objekta)
+  * ZATVORI cSurvey.
+  * Dvoklik na  csurvey_0_postavi_csurvey.bat  - ništa ne pita.
+  * Upiše cSurveyu postavke programa koje ovaj postupak traži (npr.
+    faktor zaglađivanja linija 0,01).
+  * ZAŠTO cSurvey MORA BITI ZATVOREN: te postavke nisu u .csx datoteci
+    nego u Windowsima, a cSurvey ih pročita kad se otvori i prepiše
+    svojima kad se zatvori. Upisane dok je otvoren - izgube se.
+  * Poslije toga to više ne radiš na tom računalu. Ponovi samo ako ti
+    KORAK 2 javi da cSurvey "nije postavljen" (novo računalo, netko je
+    ručno promijenio postavke, ili su dodane nove).
+  * Boja poligona (crvena), veličine znakova i sl. NISU ovdje - njih
+    KORAK 2 upiše u samu _lt datoteku.
 
 NA MOBITELU (TopoDroid)
   * Nacrtaj skicu.
@@ -150,6 +166,15 @@ Pravilo u jednoj rečenici:  UVEZI _pp datoteku  ->  CRTAJ U _lt datoteci
                     još nije uvezena u cSurvey (npr. _pp). Prvo je
                     uvezi i spremi (Save As), pa tu spremljenu
                     datoteku odaberi (ili povuci na ikonu).
+
+ "UPOZORENJE: cSurvey na ovom racunalu nije postavljen"
+                    (KORAK 2) Zatvori cSurvey i dvoklikni
+                    csurvey_0_postavi_csurvey.bat. _lt datoteka je
+                    svejedno napravljena.
+
+ "BLOCKED: cSurvey je otvoren"
+                    (KORAK 0) Spremi rad, zatvori cSurvey i pokreni
+                    KORAK 0 ponovo.
 
  "WARNING"          Nije kobno. Obično znači "ovaj nacrtani simbol
                     neće prijeći". Korak je svejedno završio.

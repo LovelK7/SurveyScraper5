@@ -76,3 +76,29 @@ def test_a_sign_size_the_operator_set_is_left_alone(tmp_path):
     root = ET.parse(str(tmp_path / "cave_lt.csx")).getroot()
     sizes = [i.get("signsize") for i in root.iter("item") if i.get("sign") == "263"]
     assert sizes == ["4", "2"]           # the hand-set one kept, the bare one sized
+
+
+def test_designproperties_write_any_typed_key_and_skip_bad_ones():
+    root = ET.fromstring("<csurvey><properties><designproperties>"
+                         "<item name='PlotTextScaleFactor' type='single'>1</item>"
+                         "</designproperties></properties></csurvey>")
+    n = fixer.apply_design_properties(root, {
+        "_readme": "ignored",
+        "PlotTextScaleFactor": {"type": "single", "value": 0.5},
+        "SomeFlag": {"type": "boolean", "value": True},
+        "NoType": {"value": 1},
+        "Font": {"type": "citemfont", "value": "Arial"},
+    })
+    assert n == 2
+    items = {i.get("name"): i for i in root.find("properties/designproperties")}
+    assert (items["PlotTextScaleFactor"].get("type"), items["PlotTextScaleFactor"].text) == ("single", "0.5")
+    assert (items["SomeFlag"].get("type"), items["SomeFlag"].text) == ("boolean", "True")
+    assert "NoType" not in items and "Font" not in items
+    assert fixer.apply_design_properties(root, None) == 0
+
+
+def test_the_shipped_designproperties_section_is_valid():
+    rules = json.loads(Path(fixer.DEFAULT_MAP).read_text(encoding="utf-8"))["postimport"]
+    root = ET.fromstring("<csurvey><properties/></csurvey>")
+    real = {k: v for k, v in rules.get("designproperties", {}).items() if not k.startswith("_")}
+    assert fixer.apply_design_properties(root, real) == len(real)

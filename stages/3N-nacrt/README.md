@@ -30,13 +30,17 @@ cave's `SB_<broj>_…` leaf and asks which file to use if there is more than one
 $T = "stages\3N-nacrt\production\tools"
 $INTAKE = ((Get-Content .env | Select-String '^LOCAL_DRIVE_ROOT=').Line -split '=', 2)[1] + '\!!!Digitalizacija\!Za digitalizirat'   # intake root, read from .env
 
+# KORAK 0 — once per computer, cSurvey CLOSED: prime its app settings (registry; e.g. smoothing 0.01)
+python $T\csurvey_app_settings.py apply     # `show` compares, `check` only warns (KORAK 2 runs it)
+#   which settings, and why file vs app: production/csurvey-settings.md
+
 # KORAK 1 — raw TDX export -> <name>_pp.csx (symbols renamed so they survive import)
 python $T\preprocess_tdx_csx.py $INTAKE --sb 1103 --force
 #   or: python $T\preprocess_tdx_csx.py "path\to\raw.csx" --force
 
 # [cSurvey] open <name>_pp.csx, then File > Save As
 
-# KORAK 2 — the saved file -> <name>_lt.csx (spline linetypes, water brush, sign sizes)
+# KORAK 2 — the saved file -> <name>_lt.csx (spline linetypes, water brush, sign sizes, the file settings in tdx-mapping.json postimport)
 python $T\fix_imported_linetypes.py $INTAKE --sb 1103 --force
 #   or: python $T\fix_imported_linetypes.py "path\to\saved.csx" --force
 

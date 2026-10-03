@@ -76,12 +76,19 @@ if not defined SB goto :odustao
 echo.
 python "%TOOLS%\fix_imported_linetypes.py" "%SCAN%" --sb %SB% --force
 :kraj
+rem  Only a check: app settings (registry) are primed by KORAK 0, never here.
+if exist "%TOOLS%\csurvey_app_settings.py" (
+    echo.
+    python "%TOOLS%\csurvey_app_settings.py" check
+)
 echo.
 echo ------------------------------------------------------------------
 echo  Gotovo. Procitaj retke iznad:
 echo    "OK ... _lt ..."   uspjeh: otvori _lt datoteku i u njoj crtaj.
 echo    "BLOCKED"          kriva datoteka/korak: napravi sto pise.
 echo    "ERROR"            nesto drugo: procitaj poruku.
+echo    "UPOZORENJE: cSurvey ... nije postavljen"
+echo                       zatvori cSurvey, pokreni csurvey_0_postavi_csurvey.bat.
 echo.
 echo  DALJE: kad si u _lt datoteci ispravio skicu i spremio je, pokreni
 echo         KORAK 3 ^(csurvey_3_dovrsi_nacrt.bat^) - on radi gotov Nacrt.
