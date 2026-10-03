@@ -27,11 +27,9 @@ from cave_dossier.sastavnica import addresses, fonts, prefill, render as render_
 # The values the authored template ships with, and the size the drafter chose
 # for each. Leading/trailing spaces are the drafter's own nudges and are
 # stripped here — the renderer centres properly instead.
-# Updated 2026-09-20 for template v1.0, which is authored in **Microsoft Sans
-# Serif** rather than Myriad Pro (see fonts.py for why). That face is wider, and
-# the drafter's own sizes came down with it — most values that sat at 10 pt now
-# sit at 9. `ekipa` is the drafter's FIRST LINE: in v1.0 they set that cell over
-# two lines, because a three-person team no longer fits one.
+# Template v2 (2026-10-03), Microsoft Sans Serif like v1.0. Ekipa is a full row
+# now and the drafter's five names sit on one line; Mjerilo shows the bare
+# profil/tlocrt pair, which the drafter set at 8 because it does not fit at 9.
 AUTHORED = {
     "katastarski_broj": ("0000", 10),
     "ime_objekta": ("Neka jama jako jako dugačkog imena", 10),
@@ -39,15 +37,16 @@ AUTHORED = {
     "htrs": ("339823 5037995", 9),
     "nadmorska_visina": ("1033 m", 9),
     "lokacija": ("Obruč, Jelenje, Gorski kotar", 9),
-    "stvarna_duljina": ("75 m", 9),
-    "tlocrtna_duljina": ("15 m", 9),
+    "stvarna_duljina": ("750 m", 9),
+    "tlocrtna_duljina": ("150 m", 9),
     "crtali": ("L. Kukuljan", 9),
     "mjerili": ("I. Dujmović", 9),
-    "dubina": ("-60 m", 9),
-    "mjerilo": ("1:500", 9),
+    "dubina": ("-60/+15 m", 9),
+    "mjerilo": ("1:500/1:300", 8),
+    "ekipa": ("T. Tepavac, S. Mikičić, T. Milićević, I. Prezime, I. Prezime", 8),
     "istrazili": ("SU Estavela", 8),
-    "ekipa": ("T. Tepavac, S. Mikičić,", 8),
-    "datum": ("10.12.2023.", 9),
+    "nacrt_uredio": ("T. Tepavac", 9),
+    "datum": ("2023.-2024.", 9),
 }
 
 # PyMuPDF's generated ToUnicode maps this face's space glyph to U+00A0, because
@@ -78,7 +77,7 @@ def _spans(data: bytes) -> dict[str, dict]:
                     continue          # a template label
                 mid_x = (span["bbox"][0] + span["bbox"][2]) / 2
                 mid_y = (span["bbox"][1] + span["bbox"][3]) / 2
-                for key, cell in addresses.V1.items():
+                for key, cell in addresses.V2.items():
                     if cell.x0 <= mid_x <= cell.x1 and cell.y0 <= mid_y <= cell.y1:
                         out[key] = span
                         break
@@ -90,11 +89,11 @@ def test_blank_template_keeps_labels_and_art(font):
     page = pymupdf.open(addresses.BLANK_TEMPLATE)[0]
     labels = [s for b in page.get_text("dict")["blocks"] for l in b.get("lines", [])
               for s in l["spans"]]
-    # 16, not 15: the v1.0 export emits a stray 5 pt space span beside
-    # "Katastarski broj:" alongside the fifteen real labels.
-    assert len(labels) == 16, "the printed labels must survive the strip"
+    # 17, not 16: the v2 export emits a stray 5 pt space span beside
+    # "Katastarski broj:" alongside the sixteen real labels.
+    assert len(labels) == 17, "the printed labels must survive the strip"
     assert all(s["size"] < 6 for s in labels), "no example value may survive"
-    assert len(page.get_drawings()) == 59, "the logo and rules must be untouched"
+    assert len(page.get_drawings()) == 61, "the logo and rules must be untouched"
 
 
 def test_blank_template_carries_no_embedded_illustrator_artwork(font):
@@ -126,16 +125,17 @@ def test_rendered_output_stays_free_of_it(font):
 def test_render_reproduces_the_authored_layout(font):
     values = {key: text for key, (text, _size) in AUTHORED.items()}
     data, placed = render_mod.render(addresses.BLANK_TEMPLATE, values, font.path)
-    assert len(placed) == 15
+    assert len(placed) == 16
     spans = _spans(data)
-    assert set(spans) == set(addresses.V1)
+    assert set(spans) == set(addresses.V2)
 
     for key, span in spans.items():
-        cell = addresses.V1[key]
+        cell = addresses.V2[key]
+        left, right = cell.text_span()
         centre = (span["bbox"][0] + span["bbox"][2]) / 2
-        assert abs(centre - cell.centre_x) < 0.6, f"{key} is not centred"
+        assert abs(centre - (left + right) / 2) < 0.6, f"{key} is not centred"
         baseline = span["origin"][1]
-        assert abs(baseline - (cell.y1 - addresses.BASELINE_LIFT)) < 0.1, \
+        assert abs(baseline - cell.baseline) < 0.1, \
             f"{key} sits on the wrong baseline"
 
 
@@ -143,14 +143,14 @@ def test_fitter_agrees_with_the_drafters_own_sizes(font):
     """Never shrink what the drafter did not, and never exceed their size."""
     face = pytest.importorskip("pymupdf").Font(fontfile=str(font.path))
     for key, (text, authored_size) in AUTHORED.items():
-        size, width, overflowed = render_mod.fit_size(face, text, addresses.V1[key])
+        size, width, overflowed = render_mod.fit_size(face, text, addresses.V2[key])
         assert not overflowed
         assert size >= authored_size - 0.5, f"{key}: shrank past the drafter's {authored_size} pt"
         assert size <= addresses.MAX_FONT_SIZE
 
 
 def test_long_value_shrinks_but_still_fits(font):
-    cell = addresses.V1["ime_objekta"]
+    cell = addresses.V2["ime_objekta"]
     myriad = pymupdf.Font(fontfile=str(font.path))
     long_name = "Špilja u Čardačkoj dragi kod Đurđevca"
     size, width, overflowed = render_mod.fit_size(myriad, long_name, cell)
@@ -162,15 +162,14 @@ def test_long_value_shrinks_but_still_fits(font):
 
 
 def test_overflow_is_reported_not_hidden(font):
-    cell = addresses.V1["mjerilo"]                 # the narrowest cell
+    cell = addresses.V2["mjerilo"]                 # the narrowest cell
     myriad = pymupdf.Font(fontfile=str(font.path))
     _size, _width, overflowed = render_mod.fit_size(myriad, "x" * 80, cell)
     assert overflowed
 
 
 def test_croatian_diacritics_survive_the_round_trip(font):
-    # ime_objekta, not ekipa: the Ekipa cell wraps a long list of names, and
-    # what is under test here is the glyphs, not the line breaking.
+    # ime_objekta, the widest-set cell: what is under test is the glyphs.
     text = "Čćžšđ Dujmović, Mikičić, Milićević"
     data, _ = render_mod.render(addresses.BLANK_TEMPLATE,
                                 {"ime_objekta": text}, font.path)
@@ -272,6 +271,21 @@ def test_zapisnik_wins_for_survey_facts(settings, run, monkeypatch):
     assert fields["datum"].value == "10.12.2023."
     assert all(fields[k].source == "osz" for k in
                ("stvarna_duljina", "tlocrtna_duljina", "mjerili", "ekipa", "datum"))
+
+
+def test_nacrt_uredio_comes_from_the_zapisnik(settings, run, monkeypatch):
+    """Template v2's new cell: the OSZ's "Nacrt uredio", abbreviated; with no
+    zapisnik value it is a "?" stub, never Crtali standing in."""
+    monkeypatch.setattr(prefill, "_read_osz", lambda folder, result: {
+        "crtali": "L. Kukuljan", "nacrt_uredio": "Tomislav Tepavac",
+    })
+    assert prefill.run_prefill(settings, 1).result.fields["nacrt_uredio"].value \
+        == "T. Tepavac"
+    monkeypatch.setattr(prefill, "_read_osz", lambda folder, result: {
+        "crtali": "L. Kukuljan",
+    })
+    field = prefill.run_prefill(settings, 1).result.fields["nacrt_uredio"]
+    assert (field.value, field.source) == (addresses.STUB_UNKNOWN, "stub")
 
 
 def test_ekipa_leaves_out_crtali_and_mjerili(settings, run, monkeypatch):

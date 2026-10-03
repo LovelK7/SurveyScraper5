@@ -2,14 +2,14 @@
 
     python sastavnica-template/tools/build_blank.py [--check]
 
-The society authors `!SUE_sastavnica.ai` in Illustrator and exports
-`!SUE_sastavnica.pdf` **filled with example values** (cave "Neka jama jako
-jako dugačkog imena", pločica 051-580, …). Those fifteen values are what
+The society authors the sastavnica in Illustrator and exports it
+(`!SUE_sastavnica_v2.pdf` since 2026-10-03) **filled with example values**
+(cave "Neka jama jako jako dugačkog imena", pločica 051-580, …). Those sixteen values are what
 makes the file a usable spec — they are how the drafter's own typesetting
 choices were measured — but the prefill needs the same page WITHOUT them.
 
 This script produces that blank once per template version; the result,
-`templates/sastavnica_blank_v1.pdf`, is committed and is what
+`templates/sastavnica_blank_v2.pdf`, is committed and is what
 `cave_dossier.sastavnica` fills at runtime. Re-run it after refreshing the
 authored copy from the Drive.
 
@@ -39,21 +39,25 @@ from pathlib import Path
 import pymupdf
 
 TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates"
-AUTHORED = TEMPLATE_DIR / "!SUE_sastavnica.pdf"
+# One authored export per template version; v1 (`!SUE_sastavnica.pdf`) lives on
+# in git history only, since nothing renders onto it any more.
+VERSION = "v2"
+AUTHORED = TEMPLATE_DIR / f"!SUE_sastavnica_{VERSION}.pdf"
 # The blank is a RUNTIME asset and lives inside the package, beside the code
 # that fills it and inside the prod bundle — not here in the build-time
 # workbench. (It was written here until 2026-09-20, which silently left the
 # package copy stale whenever the template was rebuilt.)
 BLANK = (Path(__file__).resolve().parents[2] / "src" / "cave_dossier"
-         / "sastavnica" / "templates" / "sastavnica_blank_v1.pdf")
+         / "sastavnica" / "templates" / f"sastavnica_blank_{VERSION}.pdf")
 
-# Text operators, not cells: the v1.0 template (2026-09-20) sets **Ekipa on two
-# lines**, so sixteen value operators fill fifteen cells. The label count rises
-# with it because the export emits a stray 5 pt space span beside "Katastarski
-# broj:". Both are counts of what the drafter's file happens to contain — a
-# revised .ai moves them, and that is exactly what these assertions are for.
+# Text operators, not cells. v2 (2026-10-03) has sixteen cells, each with one
+# value on one line — Ekipa got its own full-width row and no longer wraps — and
+# sixteen labels plus the stray 5 pt space span the export emits beside
+# "Katastarski broj:". Both are counts of what the drafter's file happens to
+# contain — a revised .ai moves them, and that is exactly what these
+# assertions are for.
 EXPECTED_VALUES = 16
-EXPECTED_LABELS = 16
+EXPECTED_LABELS = 17
 
 # Operator forms that show text. Illustrator only emits Tj/TJ here; ' and "
 # are listed so a future export cannot slip a value through.

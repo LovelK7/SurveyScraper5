@@ -299,10 +299,11 @@ cavedossier sastavnica 1234 --force        # overwrite a delivered file this too
 # Ekipa, which may have nothing to record (no plaque; surveyed solo). An empty
 # cell in Illustrator is no text box at all, so a stub turns "draw a box, then
 # type" into "type".
-# Two cells may take a second line rather than shrink: Mjerilo in its two-scale
-# form (profil 1:200 / tlocrt 1:100) and Ekipa when a team would otherwise be
-# set below 8 pt. Istražili abbreviates only when it names more than one
-# society: "SU Estavela" stays, "SU Estavela, SO Velebit" becomes "SUE, SOV".
+# Template v2 (2026-10-03): sixteen cells, every one a single line. Ekipa has
+# its own full-width row and leaves out whoever is already under Crtali or
+# Mjerili; Nacrt uredio comes from the zapisnik. Istražili abbreviates only when
+# it names more than one society: "SU Estavela" stays, "SU Estavela, SO
+# Velebit" becomes "SUE, SOV".
 # Font: Microsoft Sans Serif, the face template v1.0 is authored in; it ships
 # with Windows, so it is found on the machine, never bundled. Without it a
 # system face is used and the run says so. Override with sastavnica.font_path
@@ -345,8 +346,8 @@ cavedossier nacrt 1103 --force             # overwrite a delivered file this too
 # The title block is prefilled as by `sastavnica`, with one source added: the
 # dimensions JSON outranks the zapisnik and SB for Stvarna duljina, Tlocrtna
 # duljina and Dubina (measured off the very survey being composed) and fills
-# Mjerilo with the scale actually printed — two lines, "profil 1:200" over
-# "tlocrt 1:100", when the two designs differ. That supersedes the "1:" stub
+# Mjerilo with the scale actually printed — "1:200/1:100", profile first (the
+# v2 label says "profil/tlocrt"), when the two designs differ. That supersedes the "1:" stub
 # on THIS route only; `cavedossier sastavnica` never reads the file.
 # Collision: the delivered nacrt carries its OWN metadata stamp, so a nacrt and
 # a sastavnica never overwrite each other, and an edited file is refused.

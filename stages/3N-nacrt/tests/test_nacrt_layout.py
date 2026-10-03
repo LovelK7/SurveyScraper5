@@ -25,7 +25,7 @@ GAP = 10.0
 # Placements are rounded to 0.1 mm, so a constraint may be missed by half a step.
 TOL = 0.06
 
-MJERILO = re.compile(r"^(?:1:(\d+)|profil/tlocrt: 1:(\d+)/1:(\d+))$")
+MJERILO = re.compile(r"^(?:1:(\d+)|1:(\d+)/1:(\d+))$")
 
 
 # --- helpers -------------------------------------------------------------
@@ -74,12 +74,12 @@ def scale_of(bbox, scale):
 
 
 def test_title_block_derived_from_the_sastavnica_cell_table():
-    # 39.85, 49.58 -> 291.43, 149.94 pt (outermost of the fifteen cells).
+    # 39.85, 41.46 -> 291.43, 154.40 pt (outermost of template v2's sixteen cells).
     block = nacrt_layout.TITLE_BLOCK_MM
-    assert (block.x, block.y) == pytest.approx((14.06, 17.49), abs=0.01)
-    assert (block.width, block.height) == pytest.approx((88.75, 35.40), abs=0.01)
+    assert (block.x, block.y) == pytest.approx((14.06, 14.63), abs=0.01)
+    assert (block.width, block.height) == pytest.approx((88.75, 39.84), abs=0.01)
     assert block.right == pytest.approx(102.81, abs=0.01)
-    assert block.bottom == pytest.approx(52.90, abs=0.01)
+    assert block.bottom == pytest.approx(54.47, abs=0.01)
 
 
 def test_scalemode_is_the_print_dialog_combo_index():
@@ -122,7 +122,7 @@ def test_long_profile_and_small_plan_get_different_scales():
     assert reason == ""
     assert best.profile_scale == 200
     assert best.plan_scale == 100
-    assert best.mjerilo == "profil/tlocrt: 1:200/1:100"
+    assert best.mjerilo == "1:200/1:100"
     assert best.scalemodes == (2, 1)
     assert best.arrangement == "vertical"
     check_layout(best)
@@ -138,7 +138,7 @@ def test_a_40_m_profile_lands_on_1_250():
 
     assert best.profile_scale == 250
     assert best.scalemodes[0] == 3
-    assert best.mjerilo == "profil/tlocrt: 1:250/1:200"
+    assert best.mjerilo == "1:250/1:200"
     assert best.profile.width == pytest.approx(160.0)
     check_layout(best)
 

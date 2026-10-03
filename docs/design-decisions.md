@@ -49,6 +49,7 @@ keeps the chronology.
 - [3N wall orientation: merged walls, fixed in KORAK 2 (2026-10-03)](#3n-wall-orientation-merged-walls-fixed-in-korak-2-2026-10-03)
 - [3N wall merge: KORAK 2 merges the walls itself (2026-10-03)](#3n-wall-merge-korak-2-merges-the-walls-itself-2026-10-03)
 - [Sastavnica Ekipa: the rest of the team, clear of the label (2026-10-03)](#sastavnica-ekipa-the-rest-of-the-team-clear-of-the-label-2026-10-03)
+- [Sastavnica template v2 (2026-10-03)](#sastavnica-template-v2-2026-10-03)
 
 ---
 
@@ -1394,3 +1395,45 @@ label (`Cell.label_x1`, measured 111.83 pt in the blank, plus 1.5 pt). The four
 names still fit at the authored 8 pt. Mjerilo's two-scale block keeps the
 whole cell: right of its label only 25 pt would be left, too narrow for
 `profil 1:200`.
+
+The wrap-right-of-the-label half of this entry was retired the same evening by
+template v2 (next entry), whose Ekipa row is one line; the dedup stands.
+
+## Sastavnica template v2 (2026-10-03)
+
+The drafter re-authored the title block (`!SUE_sastavnica_v2.pdf`, Drive
+`!!!Digitalizacija`) and asked for everything to follow it. What v2 changed
+and what the code now does:
+
+- **Ekipa is a full-width row** (12.6 pt high) with its label on the value's
+  line. The value is centred in the span right of the label
+  (`Cell.label_x1`); the drafter's example starts it right after the label,
+  but centring is the rule of every other cell and the two coincide once the
+  team fills the row. Its baseline is the drafter's own 3.3 pt (`Cell.lift`),
+  which centres 8 pt caps in the shorter row.
+- **No cell wraps any more.** v1's two exceptions (`render.MULTILINE`: Mjerilo's
+  two-scale form, Ekipa below 8 pt) are removed with their code: the drafter's
+  five-name example fits the new row at 8 pt, and Mjerilo's label now reads
+  *Mjerilo (profil/tlocrt)*.
+- **Mjerilo is the bare pair, profile first** — `1:200/1:100`. The 3N kit's
+  `nacrt_layout.mjerilo()` writes that form; a dimensions JSON from a pre-v2
+  kit (`profil/tlocrt: 1:200/1:100`) is read with the prefix dropped, so caves
+  finished before the kit update still compose. The cell starts at the row's
+  9 pt although the drafter's example is 8: the example is the two-scale form,
+  which shrink-to-fit lands at 8 anyway.
+- **New cell Nacrt uredio** ← OSZ `nacrt_uredio` (row 6/17 of the v10
+  zapisnik), abbreviated like every people cell. No fallback: SB has no such
+  column, and Crtali is not a stand-in because the cave sketcher is often not
+  the person who draws the nacrt up. Empty → `?`. Ekipa's dedup still excludes
+  only Crtali and Mjerili, as asked; the drafter's own example lists the
+  Nacrt uredio person in Ekipa too.
+- **The block is 12.6 pt taller** (39.85, 41.46 → 291.43, 154.40 pt); 3N's
+  `nacrt_layout._BLOCK_PT` mirrors it, so the drawings' free area starts 1.6 mm
+  lower. **v1 is replaced, not kept beside v2**: nothing renders onto v1 any
+  more, and the blank, the authored export and the `V1` map are in git history.
+
+Validated: the drafter's own sixteen example values rendered through the new
+map reproduce the authored v2 to the eye (every size the drafter chose, every
+value centred within 0.25 pt but Ekipa), and `cavedossier nacrt 1220 --local`
+(Hrđava špilja) composes with Nacrt uredio from its zapisnik, Ekipa deduped to
+the two uncredited members, and both drawings clear of the taller block.

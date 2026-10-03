@@ -38,17 +38,18 @@ from dataclasses import dataclass
 #
 # A4 portrait, the same page 4S renders the sastavnica on: 595.28 x 841.89 pt
 # = 210 x 297 mm. The title block sits in the upper-left; its extent is the
-# bounding rectangle of the fifteen cells listed in
+# bounding rectangle of the sixteen cells of template v2 listed in
 # stages/4S-sastavnica/docs/sastavnica-design.md ("Cell geometry") — leftmost
-# x0 39.85 (crtali / istrazili), topmost y0 49.58, rightmost x1 291.43,
-# bottommost y1 149.94, all in PDF points with y growing downward, that is
-# 251.58 x 100.36 pt. 1 pt = 25.4/72 mm.
+# x0 39.85 (crtali / ekipa / istrazili), topmost y0 41.46, rightmost x1 291.43,
+# bottommost y1 154.40, all in PDF points with y growing downward, that is
+# 251.58 x 112.94 pt. 1 pt = 25.4/72 mm. Mirrors 4S's addresses.BLOCK; this
+# tool ships in the csx kit and cannot import it.
 
 PT_MM = 25.4 / 72.0
 
 A4_PORTRAIT_MM = (210.0, 297.0)
 
-_BLOCK_PT = (39.85, 49.58, 291.43, 149.94)  # x0, y0, x1, y1
+_BLOCK_PT = (39.85, 41.46, 291.43, 154.40)  # x0, y0, x1, y1
 
 # cSurvey scalemode = the print dialog's combo index (0 fit, 1 1:100, 2 1:200,
 # 3 1:250, 4 1:300, 5 1:500, 6 1:1000, 99 custom + `scale`). 1:250 joined the
@@ -232,10 +233,14 @@ def _waste(profile, plan):
 
 
 def mjerilo(profile_scale, plan_scale):
-    """The Mjerilo cell of the sastavnica (4S), brief 3.4."""
+    """The Mjerilo cell of the sastavnica (4S), brief 3.4.
+
+    Two scales go out bare, profile first: template v2's label reads
+    "Mjerilo (profil/tlocrt)", so the cell no longer names them (2026-10-03).
+    """
     if profile_scale == plan_scale:
         return "1:%d" % plan_scale
-    return "profil/tlocrt: 1:%d/1:%d" % (profile_scale, plan_scale)
+    return "1:%d/1:%d" % (profile_scale, plan_scale)
 
 
 def _note(arrangement, profile_scale, plan_scale, profile, plan):

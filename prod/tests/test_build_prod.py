@@ -112,7 +112,7 @@ def test_bundle_carries_the_runtime_tree(staged):
         "src/cave_dossier/osz/pristupi.yaml",
         "src/cave_dossier/osz/templates/Zapisnik_OSZ_v10.docx",
         "src/cave_dossier/georef/selectors.yaml",
-        "src/cave_dossier/sastavnica/templates/sastavnica_blank_v1.pdf",
+        "src/cave_dossier/sastavnica/templates/sastavnica_blank_v2.pdf",
         "data/people/registry.json",
         "PROD_VERSION.txt",
     ]:

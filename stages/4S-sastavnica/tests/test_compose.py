@@ -314,80 +314,10 @@ def test_pad_m_is_recovered_from_the_finisher_sidecar(tmp_path):
     assert Layout.from_mapping(LAYOUT_JSON).pad_m == compose_mod.DEFAULT_PAD_M
 
 
-# ── the two-line Mjerilo ─────────────────────────────────────────────
-
-@pytest.mark.parametrize("text, expected", [
-    ("profil/tlocrt: 1:200/1:100", ["profil 1:200", "tlocrt 1:100"]),
-    ("profil/tlocrt: 1:250/1:200", ["profil 1:250", "tlocrt 1:200"]),
-    ("1:100", ["1:100"]),
-    ("1:", ["1:"]),                       # the Illustrator route's stub
-    ("", [""]),
-])
-def test_mjerilo_splits_only_when_it_is_two_values(text, expected):
-    assert render_mod.split_lines("mjerilo", text) == expected
-
-
-def test_no_other_cell_ever_splits():
-    two_value = "profil/tlocrt: 1:200/1:100"
-    for key in addresses.V1:
-        if key in render_mod.MULTILINE:
-            continue
-        assert render_mod.split_lines(key, two_value) == [two_value]
-
-
-def _mjerilo_spans(data: bytes):
-    cell = addresses.V1["mjerilo"]
-    page = pymupdf.open("pdf", data)[0]
-    spans = []
-    for block in page.get_text("dict")["blocks"]:
-        for line in block.get("lines", []):
-            for span in line["spans"]:
-                if span["size"] < 6:
-                    continue              # a template label
-                mid_x = (span["bbox"][0] + span["bbox"][2]) / 2
-                mid_y = (span["bbox"][1] + span["bbox"][3]) / 2
-                if cell.x0 <= mid_x <= cell.x1 and cell.y0 <= mid_y <= cell.y1:
-                    spans.append(span)
-    return sorted(spans, key=lambda s: s["bbox"][1])
-
-
-def test_two_value_mjerilo_renders_two_lines_inside_the_cell(font):
-    data, placed = render_mod.render(
-        addresses.BLANK_TEMPLATE, {"mjerilo": "profil/tlocrt: 1:200/1:100"},
-        font.path)
-    spans = _mjerilo_spans(data)
-    assert [plain(span["text"]) for span in spans] == ["profil 1:200", "tlocrt 1:100"]
-    cell = addresses.V1["mjerilo"]
-    for span in spans:
-        x0, y0, x1, y1 = span["bbox"]
-        assert cell.y0 < y0 and y1 < cell.y1, "a line touches a cell rule"
-        assert cell.x0 <= x0 and x1 <= cell.x1
-        # centred, like every other value in this template
-        assert abs((x0 + x1) / 2 - cell.centre_x) < 0.5
-    assert spans[0]["bbox"][3] <= spans[1]["bbox"][1] + 0.1, "the lines overlap"
-    # one record per cell, carrying the tightest line
-    record = next(p for p in placed if p.key == "mjerilo")
-    assert record.text == "profil/tlocrt: 1:200/1:100"
-    assert record.font_size < addresses.V1["mjerilo"].size
-
-
-def test_single_value_mjerilo_is_unchanged(font):
-    """The Illustrator route's cell must render exactly as it does today."""
-    one, _ = render_mod.render(addresses.BLANK_TEMPLATE, {"mjerilo": "1:500"},
-                               font.path)
-    spans = _mjerilo_spans(one)
-    assert len(spans) == 1
-    assert spans[0]["text"] == "1:500"
-    assert spans[0]["size"] == pytest.approx(addresses.V1["mjerilo"].size)
-    # the one-line rule: baseline a constant lift above the cell's bottom rule
-    baseline = addresses.V1["mjerilo"].y1 - addresses.BASELINE_LIFT
-    assert spans[0]["origin"][1] == pytest.approx(baseline, abs=0.01)
-
-
-# ── Ekipa takes a second line rather than shrinking ──────────────────
+# ── template v2: every cell is one line ──────────────────────────────
 
 def _cell_spans(data: bytes, key: str):
-    cell = addresses.V1[key]
+    cell = addresses.V2[key]
     page = pymupdf.open("pdf", data)[0]
     spans = [span for block in page.get_text("dict")["blocks"]
              for line in block.get("lines", []) for span in line["spans"]
@@ -397,88 +327,81 @@ def _cell_spans(data: bytes, key: str):
     return sorted(spans, key=lambda span: span["bbox"][1])
 
 
-def test_a_short_team_stays_on_one_line(font):
+def test_two_scale_mjerilo_is_one_line_in_the_cell(font):
+    """v2's label says "(profil/tlocrt)", so the cell takes the bare pair and
+    lands near the drafter's own 8 pt (user, 2026-10-03)."""
+    data, placed = render_mod.render(addresses.BLANK_TEMPLATE,
+                                     {"mjerilo": "1:500/1:300"}, font.path)
+    spans = _cell_spans(data, "mjerilo")
+    assert [plain(s["text"]) for s in spans] == ["1:500/1:300"]
+    cell = addresses.V2["mjerilo"]
+    x0, y0, x1, y1 = spans[0]["bbox"]
+    assert cell.x0 < x0 and x1 < cell.x1 and cell.y0 < y0 and y1 < cell.y1
+    record = next(p for p in placed if p.key == "mjerilo")
+    assert not record.overflowed and record.font_size >= 7.5
+
+
+@pytest.mark.parametrize("written, cell", [
+    ("profil/tlocrt: 1:200/1:100", "1:200/1:100"),     # a pre-v2 kit's JSON
+    ("1:200/1:100", "1:200/1:100"),
+    ("1:250", "1:250"),
+])
+def test_a_v1_mjerilo_from_an_older_kit_loses_its_prefix(written, cell):
+    assert prefill._dimension_values({"mjerilo": written}, None)["mjerilo"] == cell
+
+
+def test_single_value_mjerilo_keeps_the_rows_size(font):
+    one, _ = render_mod.render(addresses.BLANK_TEMPLATE, {"mjerilo": "1:200"},
+                               font.path)
+    spans = _cell_spans(one, "mjerilo")
+    assert len(spans) == 1
+    assert spans[0]["size"] == pytest.approx(addresses.V2["mjerilo"].size)
+    assert spans[0]["origin"][1] == pytest.approx(addresses.V2["mjerilo"].baseline,
+                                                  abs=0.01)
+
+
+def test_ekipa_sits_right_of_its_label(font):
+    """v2's Ekipa row puts the label on the value's line: the value is centred
+    in what is left of the row and never reaches the label."""
     data, placed = render_mod.render(addresses.BLANK_TEMPLATE,
                                      {"ekipa": "A. Anić, I. Ivić"}, font.path)
     spans = _cell_spans(data, "ekipa")
     assert [plain(s["text"]) for s in spans] == ["A. Anić, I. Ivić"]
-    assert spans[0]["size"] == pytest.approx(addresses.V1["ekipa"].size)
+    cell = addresses.V2["ekipa"]
+    left, right = cell.text_span()
+    assert left > cell.label_x1
+    assert spans[0]["bbox"][0] > cell.label_x1
+    assert abs((spans[0]["bbox"][0] + spans[0]["bbox"][2]) / 2 - (left + right) / 2) < 0.5
+    assert spans[0]["size"] == pytest.approx(cell.size)
+    assert spans[0]["origin"][1] == pytest.approx(cell.baseline, abs=0.01)
 
 
-def test_a_long_team_wraps_instead_of_shrinking(font):
-    """Microsoft Sans Serif puts three names at 6.75 pt on one line; the
-    drafter's own v1.0 example wraps that cell instead (user, 2026-09-20)."""
-    team = "T. Tepavac, S. Mikičić, T. Milićević"
-    face = pymupdf.Font(fontfile=str(font.path))
-    one_line, _w, _o = render_mod.fit_size(face, team, addresses.V1["ekipa"])
-    assert one_line < addresses.WRAP_BELOW_SIZE       # the reason to wrap
-
+def test_a_five_person_team_fits_one_line_at_the_drafters_size(font):
+    """The drafter's own v2 example: five names, one line, 8 pt."""
+    team = "T. Tepavac, S. Mikičić, T. Milićević, I. Prezime, I. Prezime"
     data, placed = render_mod.render(addresses.BLANK_TEMPLATE,
                                      {"ekipa": team}, font.path)
     spans = _cell_spans(data, "ekipa")
-    assert len(spans) == 2
-    assert "".join(plain(s["text"]) for s in spans).replace(",", ", ").split()         == team.split()
-    # the break goes at a comma, and the comma stays on the first line
-    assert plain(spans[0]["text"]).endswith(",")
-    # one size for the whole cell, and bigger than the single line would be
-    assert spans[0]["size"] == spans[1]["size"] > one_line
-    cell = addresses.V1["ekipa"]
-    left, right = cell.text_span(2)
-    for span in spans:
-        assert cell.y0 < span["bbox"][1] and span["bbox"][3] < cell.y1
-        # centred in the part of the cell right of the "Ekipa:" label
-        assert abs((span["bbox"][0] + span["bbox"][2]) / 2 - (left + right) / 2) < 0.5
-        assert span["bbox"][0] >= cell.label_x1
-    assert spans[0]["bbox"][3] <= spans[1]["bbox"][1] + 0.1
+    assert len(spans) == 1
     record = next(p for p in placed if p.key == "ekipa")
-    assert record.text == team and not record.overflowed
+    assert record.font_size == pytest.approx(addresses.V2["ekipa"].size)
+    assert not record.overflowed
 
 
-def test_a_four_person_team_clears_the_label(font):
-    """SB 1256-style trip: four names wrapped, and the first line used to
-    print over the template's "Ekipa:" label (user, 2026-10-03)."""
-    team = "F. Karabaić, L. Kukuljan, I. Dujmović, T. Tepavac"
-    data, placed = render_mod.render(addresses.BLANK_TEMPLATE,
-                                     {"ekipa": team}, font.path)
-    spans = _cell_spans(data, "ekipa")
-    assert len(spans) == 2
-    label_x1 = addresses.V1["ekipa"].label_x1
-    assert all(span["bbox"][0] > label_x1 for span in spans)
-    assert not next(p for p in placed if p.key == "ekipa").overflowed
-
-
-def test_one_line_ekipa_keeps_the_whole_cell(font):
-    """A single line sits on the bottom rule, below the label: unchanged."""
-    cell = addresses.V1["ekipa"]
-    assert cell.text_span(1) == (cell.x0 + addresses.SIDE_PADDING,
-                                 cell.x1 - addresses.SIDE_PADDING)
-
-
-def test_the_wrap_splits_the_two_halves_evenly(font):
-    """Evenness is measured, not counted — one long name pulls the break."""
-    face = pymupdf.Font(fontfile=str(font.path))
-    names = ["A. A", "B. Bbbbbbbbbbbbbbbb", "C. C", "D. D"]
-    pair = render_mod._wrap_at_comma(face, ", ".join(names))
-
-    def widest(lines):
-        return max(face.text_length(line, 10) for line in lines)
-
-    others = [[", ".join(names[:cut]) + ",", ", ".join(names[cut:])]
-              for cut in range(1, len(names))]
-    assert widest(pair) == min(widest(other) for other in others)
-    assert pair[0].endswith(",")                    # the comma stays up
-    assert ", ".join(names) == (pair[0] + " " + pair[1]).replace(", ,", ",")
-    # nothing to split on
-    assert render_mod._wrap_at_comma(face, "A. Anić") is None
-
-
-def test_a_cell_that_may_not_wrap_never_does(font):
-    """Only MULTILINE cells take a second line, however tight they get."""
+def test_no_cell_ever_wraps(font):
     long_name = "A. Prvi, B. Drugi, C. Treći, D. Četvrti, E. Peti, F. Šesti"
-    data, _ = render_mod.render(addresses.BLANK_TEMPLATE,
-                                {"crtali": long_name}, font.path)
-    assert "crtali" not in render_mod.MULTILINE
-    assert len(_cell_spans(data, "crtali")) == 1
+    for key in ("crtali", "ekipa", "nacrt_uredio"):
+        data, _ = render_mod.render(addresses.BLANK_TEMPLATE,
+                                    {key: long_name}, font.path)
+        assert len(_cell_spans(data, key)) == 1, key
+
+
+def test_only_ekipa_shares_its_line_with_the_label():
+    for key, cell in addresses.V2.items():
+        if key == "ekipa":
+            continue
+        assert cell.text_span() == (cell.x0 + addresses.SIDE_PADDING,
+                                    cell.x1 - addresses.SIDE_PADDING), key
 
 
 # ── the dimensions JSON as a field source ────────────────────────────
@@ -611,7 +534,7 @@ def test_every_cell_carries_something(drive, wired):
     means drawing one first (user, 2026-09-20)."""
     settings, _leaf = drive
     fields = prefill.run_prefill(settings, 1).result.fields
-    assert set(fields) == set(addresses.V1)
+    assert set(fields) == set(addresses.V2)
     assert all(fv.value for fv in fields.values())
     stubs = {key for key, fv in fields.items() if fv.source == "stub"}
     assert "mjerili" in stubs and "ekipa" in stubs      # no zapisnik names them
@@ -636,7 +559,7 @@ def test_a_stub_is_not_counted_as_data(drive, wired):
     assert any("Bez podatka" in note for note in result.notes)
     # and it is on the page, so there is a box to type over
     data = pymupdf.open(str(prefill.run_prefill(settings, 1).pdf_path))
-    cell = addresses.V1["ekipa"]
+    cell = addresses.V2["ekipa"]
     texts = [s["text"] for b in data[0].get_text("dict")["blocks"]
              for l in b.get("lines", []) for s in l["spans"]
              if s["size"] >= 6
@@ -671,16 +594,16 @@ def test_a_value_is_set_at_its_cells_authored_size(font):
     9 and row 5 at 8, and short values never need to shrink from there."""
     face = pymupdf.Font(fontfile=str(font.path))
     for key, (text, authored) in AUTHORED_V1.items():
-        assert addresses.V1[key].size == authored, key
+        assert addresses.V2[key].size == authored, key
         size, _width, overflowed = render_mod.fit_size(face, text,
-                                                       addresses.V1[key])
+                                                       addresses.V2[key])
         assert not overflowed
         assert size == pytest.approx(authored), key
 
 
 def test_a_long_value_still_shrinks_from_its_own_size(font):
     face = pymupdf.Font(fontfile=str(font.path))
-    cell = addresses.V1["lokacija"]
+    cell = addresses.V2["lokacija"]
     size, _w, _o = render_mod.fit_size(
         face, "Obruč, Jelenje, Gorski kotar, i još malo teksta", cell)
     assert size < cell.size
@@ -693,7 +616,7 @@ def test_the_baseline_matches_the_authored_template(font):
     data, _ = render_mod.render(addresses.BLANK_TEMPLATE,
                                 {"crtali": "L. Kukuljan"}, font.path)
     span = _cell_spans(data, "crtali")[0]
-    cell = addresses.V1["crtali"]
+    cell = addresses.V2["crtali"]
     assert span["origin"][1] == pytest.approx(cell.y1 - addresses.BASELINE_LIFT,
                                               abs=0.01)
 
@@ -735,7 +658,7 @@ def test_the_society_shorthand_rule(name, expected):
 
 def test_two_societies_fit_the_cell_once_abbreviated(font):
     face = pymupdf.Font(fontfile=str(font.path))
-    cell = addresses.V1["istrazili"]
+    cell = addresses.V2["istrazili"]
     written_out = "SU Estavela, SO Velebit"
     short = prefill._societies(written_out)
     long_size, _w, _o = render_mod.fit_size(face, written_out, cell)

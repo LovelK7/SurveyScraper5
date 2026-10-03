@@ -1141,9 +1141,9 @@ def cmd_sastavnica(settings: Settings, serial: int, offline: bool,
     filled = {k: v for k, v in result.fields.items()
               if v.value and v.source != "stub"}
     sizes = {p.key: p.font_size for p in result.placed}
-    from cave_dossier.sastavnica.addresses import V1
+    from cave_dossier.sastavnica.addresses import V2
 
-    print(f"Popunjeno {len(filled)}/{len(V1)} polja:")
+    print(f"Popunjeno {len(filled)}/{len(V2)} polja:")
     for key, fv in filled.items():
         size = sizes.get(key)
         print(f"  {key:<18} {fv.value}"

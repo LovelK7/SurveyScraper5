@@ -411,6 +411,3 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-10-03 — 3N: possible cSurvey import bug (inferred from code, untested): TopoDroid writes reversed lines already
   flipped and cSurvey reverses when `reversed=0`, so the flag has no effect - pit/overhang ticks may land on the wrong
   side for strokes the surveyor reversed on the phone. Check on a real reversed pit line.
-- 2026-10-03 — 4S/3N: the two-scale Mjerilo block (`profil 1:200` over `tlocrt 1:100`) prints its first line over the
-  `Mjerilo:` label, the same overlap fixed for Ekipa today. Right of the label only 25 pt is left, so it needs a
-  different answer (smaller block under the label, or a shorter form like `P 1:200`) - user's call.

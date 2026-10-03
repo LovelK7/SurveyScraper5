@@ -1,10 +1,11 @@
 # Sastavnica prefill — `cavedossier sastavnica <Redni broj>` (design note)
 
 The **sastavnica** is the title block that sits on a finished Nacrt: the society
-logo plus fifteen labelled cells naming the cave, its numbers, its dimensions
-and the people who surveyed it. It is an Illustrator asset (`!SUE_sastavnica.ai`
-on the Drive) and today a drafter types all fifteen values into it by hand,
-copying from SB and from the filled OSZ.
+logo plus sixteen labelled cells naming the cave, its numbers, its dimensions
+and the people who surveyed and drew it. It is an Illustrator asset
+(`!SUE_sastavnica_v2` on the Drive since 2026-10-03; fifteen cells in v1) and
+before this step a drafter typed every value into it by hand, copying from SB
+and from the filled OSZ.
 
 This note is the step that stopped that: **a PDF prefill** — same input and
 same shape as `osz prefill`, a Redni broj in, a prefilled document delivered
@@ -27,15 +28,22 @@ composes 3N's printed plan and profile onto this same block to finish the
 [4S README](../README.md#cavedossier-nacrt--the-csurvey-routes-finished-sheet)
 and project [0004-nacrt-finishing](../../3N-nacrt/projects/0004-nacrt-finishing/brief.md)
 (T3). It touches this design in three places, each marked below: a fourth field
-source for four cells, the supersession of decision 3 on that route, and the one
-cell allowed two lines.
+source for four cells, the supersession of decision 3 on that route, and the
+cells v1 allowed two lines.
+
+**2026-10-03 — template v2.** The drafter re-authored the block: the same
+width, 12.6 pt taller, Ekipa moved to a full-width row of its own, a new cell
+**Nacrt uredio**, and Mjerilo's label now reads *Mjerilo (profil/tlocrt)*. Every
+cell is one line again. The geometry, field map and typesetting sections below
+describe v2; v1's numbers are in git history (see
+[the decision record](../../../docs/design-decisions.md#sastavnica-template-v2-2026-10-03)).
 
 ## Contents
 
 - [The command](#the-command)
 - [The template, measured](#the-template-measured)
 - [Cell geometry](#cell-geometry)
-- [Field map — where each of the fifteen values comes from](#field-map--where-each-of-the-fifteen-values-comes-from)
+- [Field map — where each of the sixteen values comes from](#field-map--where-each-of-the-sixteen-values-comes-from)
 - [Typesetting rules](#typesetting-rules)
 - [The font question](#the-font-question)
 - [The blank-template builder](#the-blank-template-builder)
@@ -64,15 +72,15 @@ stay the house convention: **1** delivered, **0** nothing to do, **99** error.
 
 | Fact | Value |
 |---|---|
-| Authored in | Adobe Illustrator 24.0 → `!SUE_sastavnica.ai` (Drive), exported as PDF 1.5 |
-| Committed copy | [`template-workbench/templates/!SUE_sastavnica.pdf`](../template-workbench/templates) — **v1.0, 2026-09-20**, re-authored in Microsoft Sans Serif (see [The font question](#the-font-question)); same page, same 59 vector paths, same cell rules to the hundredth of a point, so the geometry below is unchanged |
+| Authored in | Adobe Illustrator 24.0 → `!SUE_sastavnica_v2` (Drive `!!!Digitalizacija`), exported as PDF 1.5 |
+| Committed copy | [`template-workbench/templates/!SUE_sastavnica_v2.pdf`](../template-workbench/templates) — **v2, 2026-10-03**, Microsoft Sans Serif like v1.0 (see [The font question](#the-font-question)) |
 | Pages | 1, A4 portrait (595.28 × 841.89 pt), no rotation |
 | Form fields | **none** — not an AcroForm; there is nothing to "fill" in the PDF sense |
-| Images | **none** — the mammoth logo is 59 vector paths, so output stays fully vector |
-| Fonts | one embedded subset — `ZJSHCV+MicrosoftSansSerif` in v1.0 (`ECYHUF+MyriadPro-Regular` before it), custom encoding either way |
-| The block | (39.85, 49.58) → (291.43, 149.94) = **251.58 × 100.36 pt ≈ 88.7 × 35.4 mm**, top-left of the page |
-| Rows | five bands of ~20.08 pt; bottoms at y = 69.66 · 89.74 · 109.82 · 129.88 · 149.94 |
-| Logo cell | (39.85, 49.58) → (81.35, 109.82) — spans the first three rows |
+| Images | **none** — the mammoth logo and the rules are 61 vector paths, so output stays fully vector |
+| Fonts | embedded `MicrosoftSansSerif` subsets, custom encoding |
+| The block | (39.85, 41.46) → (291.43, 154.40) = **251.58 × 112.94 pt ≈ 88.7 × 39.8 mm**, top-left of the page |
+| Rows | five of ~20.07 pt and the 12.59 pt Ekipa row; bottoms at y = 61.51 · 81.58 · 101.66 · 121.72 · 134.31 · 154.40 |
+| Logo cell | (39.85, 41.46) → (81.35, 101.66) — spans the first three rows |
 
 **The one fact the whole design rests on:** labels and placeholder values are
 distinguishable by **fill colour alone**, in the content stream itself —
@@ -80,9 +88,9 @@ distinguishable by **fill colour alone**, in the content stream itself —
 | | CMYK operator in the stream | RGB | Size |
 |---|---|---|---|
 | Labels | `0.625 0.527 0.52 0.238 k` | `#5e6161` | 5 pt, always |
-| Values | `0.746 0.676 0.668 0.898 k` | `#030505` | 8–10 pt, hand-chosen per cell |
+| Values | `1 1 1 1 k` (v1: `0.746 0.676 0.668 0.898 k`) | `#000000` (v1: `#030505`) | 8–10 pt, hand-chosen per cell |
 
-So the fifteen placeholders can be found and removed mechanically, with no text
+So the sixteen placeholders can be found and removed mechanically, with no text
 matching — which matters, because the subset font's custom encoding makes the
 Croatian diacritics unreadable to text extraction (`Broj plo?ice`,
 `Istra?ili`). Nothing in this design ever matches on extracted text.
@@ -94,33 +102,41 @@ points, origin top-left, as PyMuPDF reports them.
 
 | Key | Label | x0 | y0 | x1 | y1 | Authored size |
 |---|---|---|---|---|---|---|
-| `katastarski_broj` | Katastarski broj | 81.35 | 49.58 | 120.18 | 69.66 | 10 |
-| `ime_objekta` | Ime speleološkog objekta | 120.18 | 49.58 | 291.43 | 69.66 | 10 |
-| `broj_plocice` | Broj pločice | 81.35 | 69.66 | 120.18 | 89.74 | 9 |
-| `htrs` | HTRS koordinate | 120.18 | 69.66 | 248.12 | 89.74 | 9 |
-| `nadmorska_visina` | Nadmorska visina | 248.12 | 69.66 | 291.43 | 89.74 | 9 |
-| `lokacija` | Lokacija | 81.35 | 89.74 | 204.82 | 109.82 | 9 |
-| `stvarna_duljina` | Stvarna duljina | 204.82 | 89.74 | 248.12 | 109.82 | 9 |
-| `tlocrtna_duljina` | Tlocrtna duljina | 248.12 | 89.74 | 291.43 | 109.82 | 9 |
-| `crtali` | Crtali | 39.85 | 109.82 | 120.18 | 129.88 | 9 |
-| `mjerili` | Mjerili | 120.18 | 109.82 | 204.82 | 129.88 | 9 |
-| `dubina` | Dubina/vis. razlika | 204.82 | 109.82 | 248.12 | 129.88 | 9 |
-| `mjerilo` | Mjerilo | 248.12 | 109.82 | 291.43 | 129.88 | 9 |
-| `istrazili` | Istražili | 39.85 | 129.88 | 95.03 | 149.94 | 8 |
-| `ekipa` | Ekipa | 95.03 | 129.88 | 204.82 | 149.94 | 8 |
-| `datum` | Datum/razdoblje istraživanja | 204.82 | 129.88 | 291.43 | 149.94 | 9 |
+| `katastarski_broj` | Katastarski broj | 81.35 | 41.46 | 120.18 | 61.51 | 10 |
+| `ime_objekta` | Ime speleološkog objekta | 120.18 | 41.46 | 291.43 | 61.51 | 10 |
+| `broj_plocice` | Broj pločice | 81.35 | 61.51 | 120.18 | 81.58 | 9 |
+| `htrs` | HTRS koordinate | 120.18 | 61.51 | 244.28 | 81.58 | 9 |
+| `nadmorska_visina` | Nadmorska visina | 244.28 | 61.51 | 291.43 | 81.58 | 9 |
+| `lokacija` | Lokacija | 81.35 | 81.58 | 198.74 | 101.66 | 9 |
+| `stvarna_duljina` | Stvarna duljina | 198.81 | 81.58 | 244.28 | 101.66 | 9 |
+| `tlocrtna_duljina` | Tlocrtna duljina | 244.28 | 81.58 | 291.43 | 101.66 | 9 |
+| `crtali` | Crtali | 39.85 | 101.66 | 120.18 | 121.72 | 9 |
+| `mjerili` | Mjerili | 120.18 | 101.66 | 198.74 | 121.72 | 9 |
+| `dubina` | Dubina/vis. razlika | 198.81 | 101.66 | 244.28 | 121.72 | 9 |
+| `mjerilo` | Mjerilo (profil/tlocrt) | 244.28 | 101.66 | 291.43 | 121.72 | 9 (authored 8, see below) |
+| `ekipa` | Ekipa | 39.85 | 121.72 | 291.43 | 134.31 | 8 — label on the value's line |
+| `istrazili` | Istražili | 39.85 | 134.31 | 120.18 | 154.40 | 8 |
+| `nacrt_uredio` | Nacrt uredio | 120.18 | 134.31 | 198.74 | 154.40 | 9 |
+| `datum` | Datum/razdoblje istraživanja | 198.81 | 134.31 | 291.43 | 154.40 | 9 |
+
+Two vertical rules sit 0.07 pt apart in the drafter's file (198.74 and 198.81);
+both are kept as measured. **Mjerilo** starts at the row's 9 pt although the
+drafter's example is 8: the example is the two-scale `1:500/1:300`, which does
+not fit at 9, and shrink-to-fit lands it at 8 anyway while a single `1:200`
+keeps the row's size.
 
 The authored sizes vary because they are the drafter's own choice per row —
-10 pt in row 1, 9 in rows 2 to 4, 8 in row 5 (re-measured for v1.0, 2026-09-20;
-most were 10 under the Myriad template) — and because the drafter **shrinks a
+10 pt in row 1, 9 for most of the rest, 8 for Ekipa and Istražili (v2,
+2026-10-03; most were 10 under the old Myriad template) — and because the drafter **shrinks a
 value by hand until it fits** when a long one needs it. Both halves are
 reproduced: `Cell.size` is where the fitter starts, and it only ever goes down
 from there. Starting every cell at 10 pt instead made the output visibly bigger
 than the template it copies. This table becomes `sastavnica/addresses.py`, the direct counterpart of
 [`osz/addresses.py`](../../4O-osz/src/cave_dossier/osz/addresses.py): one map per template
-version, regenerated by the builder tool whenever the `.ai` changes.
+version (`addresses.V2`; v1's map was replaced, not kept beside it, since
+nothing renders onto v1 any more), regenerated whenever the `.ai` changes.
 
-## Field map — where each of the fifteen values comes from
+## Field map — where each of the sixteen values comes from
 
 Three sources, in precedence order per field: **SB** (the master), the cave's
 **filled OSZ** in its intake leaf (read with the existing `osz/reader.read_osz`,
@@ -144,60 +160,46 @@ out as a `dopune-sb.csv` review row for a person to paste.
 | Stvarna duljina | *(`nacrt`: `l`)* → OSZ `duljina` → SB `Duljina` | `"<n> m"`; a **0** means "not surveyed yet" and stays blank |
 | Tlocrtna duljina | *(`nacrt`: `pl`)* → OSZ `horizontalna_duljina` | not in SB — blank when no OSZ |
 | Dubina/vis. razlika | *(`nacrt`: `nvr`/`pvr`)* → OSZ `dubina` / `visinska_razlika` → SB `Dubina` | `"-<n> m"` for jame; `nacrt` renders `"-9/+1 m"` when the cave also goes up **and** both numbers still fit above 7 pt |
-| Mjerilo | *(`nacrt`: the printed scale)* | the drafter's own choice on the Illustrator route, where the stub `1:` stays ([decision 3](#settled-user-2026-09-19)); on the cSurvey route it is known, and may take two lines |
+| Mjerilo | *(`nacrt`: the printed scale)* | the drafter's own choice on the Illustrator route, where the stub `1:` stays ([decision 3](#settled-user-2026-09-19)); on the cSurvey route it is known: `1:200`, or `1:200/1:100` profile first when the two designs differ — the label says which is which. A pre-v2 kit's `profil/tlocrt: ` prefix is dropped on read |
 | Crtali | OSZ `crtali` → SB `Autori nacrta ili izvor` | the SB cell holds the *source* for queued caves, so the OSZ wins; **abbreviated** |
 | Mjerili | OSZ `mjerili` (+ `mjerili_2`) | not in SB; **abbreviated** |
-| Istražili | OSZ `istrazile_udruge` (+ `_2`) → `sastavnica.society` | one society written out; **two or more abbreviated** — `SU Estavela, SO Velebit` → `SUE, SOV` — because the cell is 55 pt wide and that is the form a caver writes anyway (user, 2026-09-20). `core.people.society_shorthand`; a name outside the four caving-org patterns is never abbreviated |
+| Istražili | OSZ `istrazile_udruge` (+ `_2`) → `sastavnica.society` | one society written out; **two or more abbreviated** — `SU Estavela, SO Velebit` → `SUE, SOV` — because the v1 cell was 55 pt wide (v2: 80) and that is the form a caver writes anyway (user, 2026-09-20). `core.people.society_shorthand`; a name outside the four caving-org patterns is never abbreviated |
 | Ekipa | OSZ `clanovi_ekipe` (+ `_2`, `_3`) | joined with `, `; **abbreviated**; anyone already under Crtali or Mjerili is **left out** (diacritic-insensitive, on the short form), and a team of only those gets `/` (user, 2026-10-03) |
+| Nacrt uredio | OSZ `nacrt_uredio` | **v2**; who drew the nacrt up — not in SB, and Crtali is no stand-in (the cave sketcher is often not the finisher), so no zapisnik value means `?`; **abbreviated** |
 | Datum/razdoblje istraživanja | OSZ `datum_istrazivanja` → SB `Godina ili period istraživanja` | |
 
-Five of the fifteen cells cannot be filled from SB at all — they are survey
+Six of the sixteen cells cannot be filled from SB at all — they are survey
 facts. That is the honest ceiling of this step, and it is why reading the leaf's
 filled OSZ is part of the design rather than an extra: run before the OSZ is
-filled, the tool prefills nine cells; run after it, fourteen.
+filled, the tool prefills nine cells; run after it, fifteen.
 
 ## Typesetting rules
 
 Derived by measuring the authored values, then confirmed by reproducing them:
 
-- **Centred** horizontally in the cell. Verified on 13 of 15 authored values
-  (cell centre = value bbox centre to <0.5 pt); `istrazili` and `htrs` are
-  hand-nudged by ~2 pt and are not a different rule.
-- **Baseline = row bottom − 4.3 pt** (re-measured for v1.0, 2026-09-20; it was
-  4.6 under the Myriad template, which set every value a quarter-point high).
-  The authored baselines cluster at −4.11 … −4.59; row 2 and `datum` sit at
-  −3.2, hand nudges the drafter made in Illustrator. One uniform rule reads
-  better than fifteen copied numbers.
+- **Centred** horizontally in the cell — in v2 every authored value but Ekipa
+  sits within 0.25 pt of its cell centre.
+- **Baseline = row bottom − 4.3 pt** (`BASELINE_LIFT`; it was 4.6 under the
+  Myriad template, which set every value a quarter-point high). v2's authored
+  baselines spread −3.1 … −4.6 (Istražili −5.5), hand nudges the drafter made in
+  Illustrator; one uniform rule reads better than sixteen copied numbers. The
+  one exception has a reason: **Ekipa** (`Cell.lift` 3.3) — its row is 12.6 pt,
+  and 3.3 is the drafter's own baseline there, which centres 8 pt caps in it.
 - **Shrink to fit**: start at the **cell's own authored size** (`Cell.size`),
-  step down by 0.25 pt while `Font.text_length(text, size) > cell_width −
-  2 × 2 pt`, floor at ~6 pt. The 2 pt side padding is what the drafter's own
-  8 pt choice for *Ekipa* implies.
-- **Colour** `#030505`, the authored value colour.
-- **One line, with two named exceptions** (2026-09-20). `render.MULTILINE` is
-  the set of cells allowed a second line, and it holds `mjerilo` and `ekipa`;
-  every other cell is one line, and a value too long even at the floor size is
-  set at the floor size and named in a printed warning.
-  - **Mjerilo** wraps only in the two-value form the cSurvey route produces
-    when plan and profile print at different scales — `profil/tlocrt:
-    1:200/1:100` does not fit 43 pt on one line at any readable size, so it is
-    set as `profil 1:200` over `tlocrt 1:100`. A single-value Mjerilo,
-    including the `1:` stub, renders exactly as before.
-  - **Ekipa** wraps when one line would have to go below `WRAP_BELOW_SIZE`
-    (8 pt, the drafter's own size for that cell): Microsoft Sans Serif puts a
-    three-person team at 6.75 pt on one line and does not fit a four-person one
-    at all, which is why the v1.0 example itself sets that cell over two. The
-    break goes at a comma, the comma stays on the first line, and the two
-    halves are chosen by **measured** width so one long name pulls the break.
-    A wrapped block reaches the top rule, level with the printed `Ekipa:`
-    label, so it is centred in the part of the cell **right of the label**
-    (`Cell.label_x1`, 111.83 pt; user, 2026-10-03). One line keeps the whole
-    cell — it sits on the bottom rule, below the label.
-  - Both lines of a wrapped cell take **one size** — the tighter line's. The
-    block is centred in the cell and its size capped so it fits between the
-    rules, derived from the face's own ascent and descent
-    (`addresses.MULTILINE_PADDING`) rather than from fixed baseline fractions:
-    the first try, a third and two thirds of the cell height, put the two lines
-    0.9 pt into each other once the template moved to Microsoft Sans Serif.
+  step down by 0.25 pt while `Font.text_length(text, size)` exceeds the cell's
+  text span (cell width − 2 × 2 pt), floor at ~6 pt.
+- **Colour** black, the v2 value colour.
+- **One line, always.** v1 let Mjerilo and Ekipa take a second line
+  (`render.MULTILINE`, 2026-09-20); v2 retired both — Ekipa has a full-width row
+  where the drafter's own five names fit at 8 pt, and Mjerilo's label names the
+  order so the cell takes the bare `1:200/1:100`. A value too long even at the
+  floor size is set at the floor size and named in a printed warning.
+- **A label on the value's own line is kept clear of.** Every label sits above
+  its value except v2's Ekipa, whose row is too low for that: `Ekipa:` sits at
+  the left of the value's line, so the value is centred in the span **right of
+  the label** (`Cell.label_x1` 55.82 + 2 pt, `Cell.text_span()`). The drafter's
+  example starts the names right after the label; centring is the house rule,
+  and it is the same thing once the team fills the row.
 - **The value is formatted the drafter's way before it is measured** — names
   abbreviated, kota rounded, depth signed, a zero dropped. That is what keeps a
   three-person Ekipa at 9.5 pt instead of 6.25; see
@@ -271,16 +273,17 @@ it again on the composed page because the sastavnica's fonts travel into it. Reg
 
 A one-time step per template version, not a runtime one:
 `sastavnica-template/tools/build_blank.py` reads the authored PDF, removes the
-fifteen placeholder values, and writes
-`sastavnica-template/templates/sastavnica_blank_v1.pdf` — the committed artifact
-the prefill actually fills. Re-run it when the drafter revises the `.ai`.
+sixteen placeholder values, and writes
+`src/cave_dossier/sastavnica/templates/sastavnica_blank_v2.pdf` — the committed
+artifact the prefill actually fills. Re-run it when the drafter revises the `.ai`.
 
 **The algorithm: content-stream surgery, not redaction.** Walk the page's
 content stream tracking the active fill colour; drop every `Tj`/`TJ` operator
 issued under the value colour, keep everything else — including the `Tm`/`Td`
 positioning, which is relative to the text-line matrix and so stays valid.
-Measured result: 15 text operators removed, all 15 labels intact, all 59 logo
-and rule paths intact.
+Measured result on v2: 16 text operators removed, all 17 label spans intact
+(16 labels and a stray space beside *Katastarski broj:*), all 61 logo and rule
+paths intact.
 
 PyMuPDF's redaction API was tried first and **does not work here**: redaction
 removes any glyph whose box intersects the rectangle, and the 10 pt value boxes
@@ -348,8 +351,8 @@ src/cave_dossier/sastavnica/
   nacrt.py       # orchestrator for `cavedossier nacrt` — prefill + compose + deliver
   models.py      # the sastavnica.json and nacrt.json sidecars
 sastavnica-template/
-  templates/!SUE_sastavnica.pdf          # authored, copied verbatim from the Drive
-  templates/sastavnica_blank_v1.pdf      # generated by the builder, committed
+  templates/!SUE_sastavnica_v2.pdf       # authored, copied verbatim from the Drive
+  ../src/.../templates/sastavnica_blank_v2.pdf  # generated by the builder, committed
   tools/build_blank.py                   # the stripper (+ --check)
   tools/inspect_sastavnica.py            # dump cells/colours/fonts of any version
 ```
@@ -381,7 +384,7 @@ this is `tests/test_sastavnica.py` (31 tests):
    fits the cell; a short one stays at 10 pt.
 3. **Diacritics**: č ć ž š đ Č Ć Ž Š Đ render as glyphs, not notdef boxes.
 4. **Field map**: against `tests/fixtures/mini_sb.xlsx` plus a synthetic filled
-   v10 OSZ, each of the fifteen cells resolves from the expected source.
+   v10 OSZ, each of the sixteen cells resolves from the expected source.
 5. **Live**: run on a real cave that has both an SB row and a filled OSZ, open
    the result in Illustrator, confirm it places at 100 % and the text is
    editable vector text. Done on SB 1220 and SB 811 (2026-09-19); 1220's
@@ -414,7 +417,7 @@ The eight questions this note opened with, answered, and what each one became:
 |---|---|---|---|
 | 1 | Lokacija composition | **Najbliže mjesto + Lokalitet, nothing else** — the cell is narrow; order reversed to settlement-first by the user 2026-09-20 | `_resolve_lokacija` |
 | 2 | Katastarski broj | **Never filled; keep the template's `0000`.** The number is assigned at the very end and the archivist edits the PDF by hand. Carrying it across every product at once (SB, Nacrt, OSZ) is a later step of its own | `addresses.CONSTANTS` |
-| 3 | Mjerilo | **Blank, but keep `1:`** as a visible stub. **Superseded 2026-09-20 for the cSurvey route only** (project 0004, T3): `cavedossier nacrt` knows the scale the designs were printed at and writes it — `1:100`, or two lines when the two designs differ. The Illustrator route never reads that file and keeps the stub | `addresses.CONSTANTS`; `compose.DIMENSION_FIELDS` |
+| 3 | Mjerilo | **Blank, but keep `1:`** as a visible stub. **Superseded 2026-09-20 for the cSurvey route only** (project 0004, T3): `cavedossier nacrt` knows the scale the designs were printed at and writes it — `1:100`, or `1:200/1:100` (profile first) when the two designs differ. The Illustrator route never reads that file and keeps the stub | `addresses.CONSTANTS`; `compose.DIMENSION_FIELDS` |
 | 4 | Stvarna vs tlocrtna duljina | SB's `Duljina` is the **stvarna** one; tlocrtna stays blank until a zapisnik carries it | `_resolve_fields` |
 | 5 | Output page | **Keep the A4 page exactly as authored** — it places into Illustrator at 100 % | the renderer never touches the page box |
 | 6 | Istražili | The OSZ almost always names it; **`SU Estavela` when it does not** | `config.yaml` `sastavnica.society` |

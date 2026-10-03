@@ -8,10 +8,11 @@ Nacrt built around it.** This is the one point where the pipeline serves the
 ## What it does
 
 Produces `SB_<padded broj>_sastavnica.pdf` into the cave's intake leaf, beside
-its OSZ: the logo plus fifteen cells — numbers, name, koordinate, kota, lokacija,
-duljine/dubina, mjerilo, crtali/mjerili/istražili/ekipa, datum — filled from SB,
-the cave's filled OSZ, and the geo finders. The drafter places it into the
-Illustrator document instead of typing fifteen values by hand.
+its OSZ: the logo plus sixteen cells (template **v2**, 2026-10-03) — numbers,
+name, koordinate, kota, lokacija, duljine/dubina, mjerilo,
+crtali/mjerili/ekipa/istražili, nacrt uredio, datum — filled from SB, the cave's
+filled OSZ, and the geo finders. The drafter places it into the Illustrator
+document instead of typing sixteen values by hand.
 
 ## Commands
 
@@ -59,10 +60,10 @@ fills **Mjerilo** with the scale the designs were actually printed at. That
 supersedes decision 3's `1:` stub **on this route only** — plain `cavedossier
 sastavnica` never reads the file and is byte-for-byte unchanged.
 
-**The two-line Mjerilo.** When plan and profile print at different scales the
-cell reads `profil 1:200` over `tlocrt 1:100` — the only two-line cell in the
-template, since `profil/tlocrt: 1:200/1:100` does not fit 43 pt on one line at
-any readable size. See `render.MULTILINE`.
+**Two scales.** When plan and profile print at different scales the cell
+reads `1:200/1:100`, profile first: v2's label is *Mjerilo (profil/tlocrt)*, so
+the cell no longer names them. A dimensions JSON from a pre-v2 kit still says
+`profil/tlocrt: 1:200/1:100`; the prefix is dropped on read.
 
 Delivered as `SB_<padded broj>_nacrt.pdf` beside the OSZ, with its **own**
 metadata stamp: a delivered nacrt and a delivered sastavnica are different
@@ -88,18 +89,17 @@ same gates. Route B needs no second dossier builder and gets none.
 
 Pure PDF geometry. `addresses.py` holds the measured cell rectangles in PDF
 points (origin top-left); `render.py` centres each value, shrinks it to fit, and
-never wraps except in two named cells — Mjerilo in its two-scale form, and
-Ekipa when a team would otherwise be set below the drafter's own 8 pt (then
-right of its `Ekipa:` label). Ekipa lists only the people not already credited
-under Crtali or Mjerili. The font is **not** bundled —
-**Microsoft Sans Serif**, the face template v1.0 is authored in, is found on
+never wraps — every v2 cell is one line. Ekipa has a full-width row whose label
+sits on the value's line, so its value is centred right of `Ekipa:`; it lists
+only the people not already credited under Crtali or Mjerili. **Nacrt uredio**
+comes from the zapisnik's own cell, `?` when it is empty. The font is **not**
+bundled — **Microsoft Sans Serif**, the face the template is authored in, is found on
 the machine, with system fallbacks after it. A `STAMP` in the PDF metadata
 marks files this tool produced, so an edited one is refused rather than
 silently overwritten.
 
 **Istražili holds one society written out and several abbreviated** —
-`SU Estavela` alone, but `SUE, SOV` for two, because the cell is 55 pt wide and
-that is the form a caver writes anyway.
+`SU Estavela` alone, but `SUE, SOV` for two — the form a caver writes anyway.
 
 **No cell goes out empty**: what no source could fill carries `?`, or `/` for
 Broj pločice and Ekipa, where there may be nothing to record (a cave with no
@@ -111,9 +111,9 @@ typing over a text box instead of drawing one.
 - Code: [`src/cave_dossier/sastavnica/`](src/cave_dossier/sastavnica/) —
   `render.py`/`compose.py` are pure geometry (no SB, no Drive),
   `prefill.py`/`nacrt.py` orchestrate the two commands
-- **Runtime asset, inside the package**: `templates/sastavnica_blank_v1.pdf`
+- **Runtime asset, inside the package**: `templates/sastavnica_blank_v2.pdf`
 - **[`template-workbench/`](template-workbench/README.md)** — the authored
-  `!SUE_sastavnica.pdf` Illustrator export plus `build_blank.py`, which generates
+  `!SUE_sastavnica_v2.pdf` Illustrator export plus `build_blank.py`, which generates
   the blank from it by content-stream surgery (and strips the embedded `.ai`
   payload that otherwise made Illustrator open the *template*). Build-time only,
   never bundled.

@@ -152,7 +152,7 @@ def run_prefill(settings: Settings, serial: int, *, offline: bool = False,
     for item in result.placed:
         if item.overflowed:
             result.notes.append(
-                f"'{addresses.V1[item.key].label}' ne stane u ćeliju ni na "
+                f"'{addresses.V2[item.key].label}' ne stane u ćeliju ni na "
                 f"{addresses.MIN_FONT_SIZE:g} pt – skrati tekst u Illustratoru."
             )
 
@@ -254,6 +254,12 @@ def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
         fields["ekipa"] = FieldValue(value=rest, source="osz")
     elif _people(team):
         fields["ekipa"] = FieldValue(value=addresses.stub_for("ekipa"), source="osz")
+    # Nacrt uredio (template v2): who finished the drawing. Only the zapisnik
+    # records it — no SB column, and Crtali is not a stand-in, because the
+    # person who sketched in the cave is often not the one who drew it up.
+    _set_first(fields, "nacrt_uredio", [
+        (_people(osz.get("nacrt_uredio")), "osz"),
+    ])
     # Istražili: whatever the OSZ names, else this society (user, 2026-09-19).
     _set_first(fields, "istrazili", [
         (_societies(_join(osz.get("istrazile_udruge"),
@@ -269,10 +275,10 @@ def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
     # person finishing the document types over a text box instead of creating
     # one (user, 2026-09-20). See addresses.STUB_UNKNOWN.
     missing = []
-    for key in addresses.V1:
+    for key in addresses.V2:
         if fields.get(key) and fields[key].value:
             continue
-        missing.append(addresses.V1[key].label)
+        missing.append(addresses.V2[key].label)
         fields[key] = FieldValue(value=addresses.stub_for(key), source="stub")
     if missing:
         # Route-aware wording: on the cSurvey route the delivered page is a
@@ -388,7 +394,7 @@ def _read_dimensions(folder: Path | None, result: SastavnicaResult) -> dict | No
 
 
 # Below this the combined Dubina form (-9/+1 m) is dropped for the depth alone.
-# The cell is 43 pt wide and shrink-to-fit floors at 6 pt, so without a bar like
+# The cell is 45 pt wide and shrink-to-fit floors at 6 pt, so without a bar like
 # this a four-digit cave would print its two numbers at the floor size where the
 # depth alone would have sat at the authored 10 pt — smaller AND less legible
 # for the sake of a number the cell is not named after.
@@ -438,10 +444,17 @@ def _dimension_values(dims: dict, font_path: Path | None) -> dict[str, str]:
     drop = _drop(nvr, pvr, _measuring_font(font_path))
     if drop:
         out["dubina"] = drop
-    mjerilo = (dims.get("mjerilo") or "").strip()
+    mjerilo = _V1_MJERILO_PREFIX.sub("", (dims.get("mjerilo") or "").strip())
     if mjerilo:
         out["mjerilo"] = mjerilo
     return out
+
+
+# Template v1 had no room to say which scale is which, so the finisher wrote
+# "profil/tlocrt: 1:200/1:100". v2's label reads "Mjerilo (profil/tlocrt)" and
+# the cell takes the bare "1:200/1:100"; a dimensions JSON written before the
+# kit update still carries the prefix, and it is dropped here.
+_V1_MJERILO_PREFIX = re.compile(r"^\s*profil\s*/\s*tlocrt\s*:\s*", re.IGNORECASE)
 
 
 def _dim_number(value) -> str | None:
@@ -455,7 +468,7 @@ def _drop(nvr, pvr, font) -> str | None:
     """Dubina from the speleometrics: ``-9 m``, or ``-9/+1 m`` when it fits.
 
     A cave with a chimney above its entrance has both numbers, and the drafter's
-    own form shows them together — but the cell is 43 pt wide, so the combined
+    own form shows them together — but the cell is 45 pt wide, so the combined
     form is only used when it still fits above the floor size. Otherwise the
     depth alone is printed, which is what the cell is called after.
     """
@@ -474,7 +487,7 @@ def _drop(nvr, pvr, font) -> str | None:
     if font is None:
         return combined
     size, _width, overflowed = render_mod.fit_size(
-        font, combined, addresses.V1["dubina"])
+        font, combined, addresses.V2["dubina"])
     return plain if overflowed or size < MIN_COMBINED_SIZE else combined
 
 

@@ -99,8 +99,8 @@ the dev cycle stands), [CLAUDE.md](../CLAUDE.md) (agent orientation),
 | `.env` | per-machine: `LOCAL_DRIVE_ROOT`, `SB_*`, `GEOREF_*` | no (`.env.example` is) |
 | `config/selectors.yaml` | georef.hr DOM selectors (line-based, not real YAML) | yes |
 | `osz-template/templates/Zapisnik_OSZ_v10.docx` | the template `osz prefill` fills | yes |
-| `sastavnica-template/templates/!SUE_sastavnica.pdf` | the authored Nacrt title block, copied verbatim from Drive `!!!Digitalizacija/` (2.1e) | yes |
-| `sastavnica-template/templates/sastavnica_blank_v1.pdf` | the same page with the 15 example values stripped — what `sastavnica` fills; regenerate with `tools/build_blank.py` | yes |
+| `stages/4S-sastavnica/template-workbench/templates/!SUE_sastavnica_v2.pdf` | the authored Nacrt title block (template v2), copied verbatim from Drive `!!!Digitalizacija/` (4S) | yes |
+| `stages/4S-sastavnica/src/cave_dossier/sastavnica/templates/sastavnica_blank_v2.pdf` | the same page with the 16 example values stripped — what `sastavnica` and `nacrt` fill; regenerate with `template-workbench/tools/build_blank.py` | yes |
 | `data/geo/` | boundary GeoPackages, RGI gazetteer, DEM tiles (`geo fetch-data`) | no (README is) |
 | `data/people/registry.json` | the people registry: canonical authors + curated aliases (hand-curated record) | **yes** |
 | `runs/people/statements-index.json` | derived person ↔ izjava linkage snapshot (`people check`) | no |

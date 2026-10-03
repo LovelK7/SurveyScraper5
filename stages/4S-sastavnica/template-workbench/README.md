@@ -1,22 +1,23 @@
 # sastavnica-template — the Nacrt title block
 
 The **sastavnica** is the title block placed on a finished Nacrt: the society
-logo plus fifteen labelled cells (katastarski broj, ime, pločica, HTRS,
-nadmorska visina, lokacija, duljine, dubina, mjerilo, crtali, mjerili, istražili,
-ekipa, datum). It belongs to the **Illustrator route** to the Nacrt — part
-[2.1e](../../../ARCHITECTURE.md#part-21e) — where a drafter types all fifteen
-values by hand today.
+logo plus sixteen labelled cells (katastarski broj, ime, pločica, HTRS,
+nadmorska visina, lokacija, duljine, dubina, mjerilo, crtali, mjerili, ekipa,
+istražili, nacrt uredio, datum). It belongs to the **Illustrator route** to the
+Nacrt — part [2.1e](../../../ARCHITECTURE.md#part-21e) — and, composed with the
+printed designs, to the cSurvey route's finished sheet.
 
 This folder is the template workbench, the counterpart of
 [osz-template/](../../4O-osz/template-workbench/README.md).
 
 ## Provenance
 
-`templates/!SUE_sastavnica.pdf` is a verbatim copy of the society's authored
-template on the Drive, `!!!Digitalizacija/!SUE_sastavnica.pdf` (exported from
-`!SUE_sastavnica.ai`, Adobe Illustrator 24.0). The Drive copy is the source of
-truth; refresh this one when the drafter revises the `.ai`, and re-run the blank
-builder afterwards. The `!` prefix is kept so the provenance is obvious — it is
+`templates/!SUE_sastavnica_v2.pdf` is a verbatim copy of the society's authored
+template on the Drive, `!!!Digitalizacija/!SUE_sastavnica_v2.pdf` (Adobe
+Illustrator 24.0, 2026-10-03). The Drive copy is the source of truth; refresh
+this one when the drafter revises it, and re-run the blank builder afterwards.
+A new version gets a new file name and `build_blank.VERSION` /
+`addresses.TEMPLATE_VERSION` move with it; the v1 export is in git history. The `!` prefix is kept so the provenance is obvious — it is
 a Drive sorting convention, not part of any name the code constructs.
 
 The file ships filled with **example values** (cave "Neka jama jako jako
@@ -31,8 +32,8 @@ Built 2026-09-19; the full design, with every measured number, is
 
 | Path | What |
 |---|---|
-| `templates/sastavnica_blank_v1.pdf` | the authored template with the fifteen example values stripped — the artifact the prefill fills |
-| `tools/build_blank.py` | generates that blank by content-stream surgery (drop every text operator drawn in the value colour `#030505`, keep labels, rules and the 59 logo paths) — and strips the embedded `.ai` payload (see below) |
+| `../src/cave_dossier/sastavnica/templates/sastavnica_blank_v2.pdf` | the authored template with the sixteen example values stripped — the artifact the prefill fills (a package asset, so it lives with the code) |
+| `tools/build_blank.py` | generates that blank by content-stream surgery (drop every text operator drawn in the value colour — the darkest text fill, black in v2 — keep labels, rules and the 61 logo/rule paths) — and strips the embedded `.ai` payload (see below) |
 | `tools/inspect_sastavnica.py` | dump any version's cells, colours, fonts and value bboxes — how the address map is re-derived |
 
 Two traps, both measured and both recorded in the design note:
