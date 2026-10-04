@@ -12,6 +12,27 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-04 — 3N KORAK 4: the measurements into the OSZ from the Nacrt's side; 4S under 3N (agent) ✅
+
+- **Did:** the user picked option A for the second prefill pass: a 3N step rather than a walk back to
+  4O. New `osz/izmjera.py` + `cavedossier osz izmjera <broj>` — opens the OSZ already in the leaf and
+  writes only the measured cells (lengths, depth, Broj/Širina/Visina ulaza) with the prefill's
+  precedence, `_stari_<datum>` backup, Word-lock refusal, no-op when nothing changes, the entrance
+  reading by the zapisnik's own Vrsta objekta ticks. Prod launcher `osz_izmjera`, kit launcher
+  `csurvey_4_upisi_osz.bat` (calls the launcher beside it, like KORAK 3c does). Dashboard: the
+  spajanje step is now 3N's `3n-k4` after 3c; KORAK 4's sidecar carries the OSZ's mtime before/after
+  so its write does not make 3c stale while a hand edit still does. Nav: sub-pages (Mapiranje,
+  Sastavnica) drawn alike under 3N — indented, the parent's chip; 4S got `Stage.parent`.
+- **Result:** 794 tests green (6 new for izmjera, gui at 76); doctor clean; the kit renders the new
+  launcher; `osz izmjera 1220` live reports every cell as already written and touches nothing.
+- **Learned:** editing a filled v10 document in place works with the same `OszDocument` + address
+  fill calls the prefill uses on the template — only the save must never target the file being
+  read. A step that rewrites a file other steps depend on needs to leave a trace of *what* it
+  changed, or every staleness rule built on mtimes turns into a loop; the sidecar's two mtimes are
+  that trace. The CLI module has no EXIT_OK — success is a bare 0.
+- **Next:** `/publish` prod bundle + csx kit together (KORAK 3 needs `entrance_dims.py`, KORAK 4
+  the `cavedossier_osz_izmjera` launcher); re-run KORAK 3a/3b + 4 for SB 1103 and 1256.
+
 ### 2026-10-03 (evening) — 3N/4O: entrance dimensions shipped end to end (agent) ✅
 
 - **Did:** phase 3 of project 0005 through `/feature-dev`. New `production/tools/entrance_dims.py`
