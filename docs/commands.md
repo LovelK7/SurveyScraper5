@@ -232,6 +232,10 @@ cavedossier osz prefill 1234               # SB + finders -> prefilled DOCX + pr
 cavedossier osz prefill 1234 --force-karta # re-fetch the excerpt first (server-side save)
 cavedossier osz prefill 1234 --offline     # never touch the network; an already-collected
                                            #   excerpt is still embedded, georef.hr is skipped
+cavedossier osz provjera 1234             # read-only: obligatory zapisnik fields still EMPTY —
+                                           #   first those 3N's sastavnica reads (Nacrt uredio, Crtali,
+                                           #   Mjerili, Članovi ekipe, Datum), then the katastar ones;
+                                           #   the cells KORAK 4 fills are listed apart. --json for data
 cavedossier osz backfill 1234              # 3N KORAK 4: Duljina/Dubina/... + Broj/Sirina/Visina ulaza
                                            #   from <ime>_dimenzije.json INTO the existing OSZ in the
                                            #   leaf; nothing else touched, old file kept as _stari_<datum>

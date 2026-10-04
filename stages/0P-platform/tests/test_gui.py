@@ -659,3 +659,28 @@ def test_layouts_menu_reports_a_failed_run(tmp_path):
     survey.write_text("x", encoding="utf-8")
     with pytest.raises(layouts.LayoutError, match="cannot process"):
         layouts.menu(tools, survey)
+
+
+def test_workflow_lists_the_osz_gaps_before_3n():
+    """4O `osz provjera` (2026-10-04): an empty field the sastavnica reads keeps
+    "OSZ popunjen" open and is announced on KORAK 3c before it prints a "?"."""
+    pytest.importorskip("lxml")
+    from cave_dossier.osz import provjera
+
+    files = [_f("osz", "SB_1220_OSZ.docx", 50)]
+    detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
+    osz = {"opis": "Ulaz je…", "crtali": "L. K.", "mjerili": "A. A.", "clanovi_ekipe": "L. K.",
+           "datum_istrazivanja": "2023.", "zapisnicar": "L. K."}
+    check = provjera.check_content(osz, ()).to_json()
+    steps = {s.id: s for s in workflow.build(detail, osz, osz_check=check)}
+    filled = steps["osz-filled"]
+    assert filled.status == "todo" and "Nacrt uredio" in filled.note
+    assert filled.warnings[0].startswith("Nacrt uredio")      # the 3N ones first
+    assert any(w.startswith("Vrsta objekta") for w in filled.warnings)
+    assert "Nacrt uredio" in steps["3n-k3c"].warnings[0]
+    # Only katastar fields missing: the step is done, the list still shows.
+    osz["nacrt_uredio"] = "T. T."
+    check = provjera.check_content(osz, ()).to_json()
+    steps = {s.id: s for s in workflow.build(detail, osz, osz_check=check)}
+    assert steps["osz-filled"].status == "done" and steps["osz-filled"].warnings
+    assert steps["3n-k3c"].warnings == []

@@ -11,7 +11,7 @@ const S = {
   menuIdx: -1,
   broj: null, cave: null, tab: "home",
   dossier: null,              // {broj, data, error, loading}
-  jobs: new Map(), activeJob: null, remember: new Set(), polling: false,
+  jobs: new Map(), activeJob: null, noConfirm: false, polling: false,
 };
 
 // Which intake-leaf file kinds a catalog `file_kind` accepts (mirrors state.FILE_KINDS).
@@ -87,6 +87,13 @@ function store(key, value) {
 }
 function recall(key) {
   try { return localStorage.getItem(key); } catch (_) { return null; }
+}
+// "Ne pitaj više" in the confirm dialog switches the run confirmations off for
+// every action and recipe, kept across reloads (user, 2026-10-04); Pregled
+// shows a line to switch them back on. Deleting a photo always asks.
+function setNoConfirm(on) {
+  S.noConfirm = on;
+  store("cd.noConfirm", on ? "1" : null);
 }
 
 function toast(msg, isErr) {
@@ -377,6 +384,9 @@ function renderHome() {
     h("div", {}, h("h1", {}, "Pregled"),
       h("div", { class: "sub" }, "Trenutni objekt i njegov tijek rada, Speleo baza, mape na Driveu.")))];
   if (sum.settings_error) out.push(h("div", { class: "card note" }, h("b", {}, "Postavke se ne mogu učitati: "), sum.settings_error));
+  if (S.noConfirm) out.push(h("p", { class: "help", style: "margin:0 0 10px" },
+    "Potvrde prije pokretanja su isključene. ",
+    h("button", { class: "btn small ghost", onclick: () => { setNoConfirm(false); toast("Potvrde su ponovno uključene."); render(); } }, "Uključi ponovno")));
 
   const dups = S.sbIndex && S.sbIndex.duplicates ? Object.entries(S.sbIndex.duplicates) : [];
   if (dups.length) {
@@ -531,7 +541,9 @@ function flowStep(st) {
     h("span", { class: "lab" }, st.label, st.current ? h("span", { class: "now-tag" }, "SADA") : null),
     h("span", { class: "tail" }, btn,
       h("button", { class: "stagelink", title: "Otvori karticu " + st.stage, onclick: () => setTab(st.stage) }, st.stage)),
-    st.note ? h("span", { class: "note" }, st.note) : null);
+    st.note ? h("span", { class: "note" }, st.note) : null,
+    st.warnings && st.warnings.length
+      ? h("ul", { class: "warns" }, ...st.warnings.map(w => h("li", {}, w))) : null);
 }
 
 // Run an action straight from the workflow with its default options.
@@ -608,10 +620,11 @@ async function runRecipe(r, skip) {
     const w = writesFor(a, Object.fromEntries(Object.entries(st.options)));
     return w ? `• ${a.title}: ${w}` : null;
   }).filter(Boolean);
-  if (writes.length) {
+  if (writes.length && !S.noConfirm) {
     const ok = await confirmDialog({ title: `${r.title} – SB ${S.broj}`, text: "Ovi koraci pišu:\n" + writes.join("\n"),
-      cmd: chosen.map(([st]) => st.action).join(" → "), okLabel: "Pokreni sve", remember: false });
+      cmd: chosen.map(([st]) => st.action).join(" → "), okLabel: "Pokreni sve", remember: true });
     if (!ok) return;
+    if ($("#confirm-remember").checked) setNoConfirm(true);
   }
   try {
     addJob(await api("recipe", { recipe: r.id, broj: S.broj, skip: [...skip], confirmed: writes.length > 0 }));
@@ -1033,7 +1046,7 @@ function actionCard(a, st) {
     writesTag.style.display = w ? "" : "none";
     writesTag.title = w || "";
     runBtn.className = "btn " + (w ? "warn" : "primary");
-    runBtn.replaceChildren(icon("play"), st && st.status === "stale" ? "Ponovi" : w ? "Pokreni…" : "Pokreni");
+    runBtn.replaceChildren(icon("play"), st && st.status === "stale" ? "Ponovi" : w && !S.noConfirm ? "Pokreni…" : "Pokreni");
     const m = missing();
     runBtn.disabled = !!m;
     runBtn.title = m || "";
@@ -1197,10 +1210,10 @@ function confirmDialog({ title, text, cmd, okLabel, remember }) {
 }
 
 async function runAction(a, ctx) {
-  if (ctx.writes && !S.remember.has(a.id)) {
+  if (ctx.writes && !S.noConfirm) {
     const ok = await confirmDialog({ title: a.title, text: "Ova radnja " + ctx.writes + ".", cmd: ctx.cmd, okLabel: "Pokreni", remember: true });
     if (!ok) return;
-    if ($("#confirm-remember").checked) S.remember.add(a.id);
+    if ($("#confirm-remember").checked) setNoConfirm(true);
   }
   try {
     const job = await api("run", {
@@ -1346,6 +1359,7 @@ function wire() {
 (async function main() {
   wire();
   S.tab = recall("cd.tab") || "home";
+  S.noConfirm = recall("cd.noConfirm") === "1";
   const saved = recall("cd.broj");
   S.broj = saved ? parseInt(saved, 10) : null;
   render();

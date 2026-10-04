@@ -51,7 +51,29 @@ direction, below.)
 cavedossier osz prefill 1220     # SB + finders + excerpt -> SB_1220_OSZ.docx
 cavedossier osz backfill 1220    # 3N KORAK 4: the nacrt's numbers into the EXISTING OSZ
 cavedossier osz dopune 1220      # filled zapisnik -> dopune-sb-iz-osz.csv (was `osz backfill`)
+cavedossier osz provjera 1220    # read-only: which obligatory fields are still empty
 ```
+
+**Provjera** — the obligatory fields still empty in the cave's zapisnik
+(user, 2026-10-04), so they are typed in **before 3N** instead of turning up as a
+`?` on the composed nacrt. Two groups, in this order:
+
+- **Prije 3N** — what the sastavnica (3N KORAK 3c / 4S) reads from the OSZ and
+  nowhere else: *Nacrt uredio*, *Crtali*, *Mjerili*, *Članovi ekipe*, *Datum ili
+  razdoblje istraživanja*;
+- **Obvezno za katastar** — the OSZ-sourced fields of the 5D gates (Tablica 2 `*`):
+  Podrijetlo imena, Položaj i pristup, Vrsta objekta, Hidrološka karakteristika,
+  Hidrogeološka funkcija, Osnovni opis, Perspektiva, Zapisničar, Ime, koordinate;
+  for CroSpeleo also Istražile udruge and Izvor koordinata.
+
+The survey's cells — Duljina, Horizontalna duljina, Dubina, Visinska razlika,
+Širina / Visina-duljina ulaza — are never reported missing: KORAK 4 (`osz
+backfill`) writes them, so they are listed apart as "3N upisuje". A checkbox
+group counts when any option is ticked; `?`, `/`, `-` count as empty. The
+dashboard runs the same check on every cave view: the list sits under **OSZ
+popunjen (Word)** on Pregled, a gap that 3N needs keeps that step open, and KORAK
+3c repeats it ("Sastavnica će ispisati ? za: …"). The 4O tab has it as **Provjeri
+obvezna polja OSZ-a**.
 
 **Backfill** — 3N's KORAK 4 (user, 2026-10-04). Once KORAK 3b has produced
 `<ime>_dimenzije.json`, `osz backfill <broj>` writes the measured cells — Duljina,
@@ -83,7 +105,8 @@ lacks come out as `dopune-sb.csv` — a person pastes them into `Svi objekti`.
 ## Where things are
 
 - Code: [`src/cave_dossier/osz/`](src/cave_dossier/osz/) — `prefill.py` orchestrates,
-  `writer.py` / `reader.py` handle the v10 document, `legacy.py` the old ones,
+  `writer.py` / `reader.py` handle the v10 document, `provjera.py` the
+  obligatory-field check, `legacy.py` the old ones,
   `addresses.py` is the cell map
 - **Runtime assets, inside the package**: `templates/Zapisnik_OSZ_v10.docx` (the
   document prefill actually fills) and `pristupi.yaml` (the prefilled access texts)

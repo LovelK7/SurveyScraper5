@@ -12,6 +12,27 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-04 — 4O `osz provjera`: the obligatory OSZ fields, before 3N (agent) ✅
+
+- **Did:** new `osz/provjera.py` + `cavedossier osz provjera <broj> [--json]`. It reads the leaf's
+  zapisnik (same pick as KORAK 4) and lists the empty obligatory fields in two groups. *Prije 3N* is
+  Nacrt uredio, Crtali, Mjerili, Članovi ekipe and Datum. *Obvezno za katastar* is the OSZ-sourced 5D
+  gate rules, the checkbox groups included. The survey cells KORAK 4 writes are listed apart as
+  "3N upisuje". Dashboard: `Step.warnings` in `gui/workflow.py`, read with the same single OSZ read.
+  The list sits under *OSZ popunjen (Word)*, and a 3N gap keeps that step `todo`/SADA. KORAK 3c warns
+  "Sastavnica će ispisati ? za: …" (or that the composed nacrt has `?`). The 4O tab got the
+  *Provjeri obvezna polja OSZ-a* card. 7 + 1 tests. Docs: 4O/0P READMEs, commands.md, a decision
+  record entry, STATUS, ARCHITECTURE (B7 row). Also committed: the "Ne pitaj više" dashboard
+  confirm switch that was already uncommitted in the tree at session start.
+- **Result:** 829 tests green, doctor 0 fail. The live sweep read all 46 v10 zapisnici. Nacrt uredio
+  is empty in 41 of them, so the warning will show on most caves. Legacy 1443/1453 get the "migrate
+  with `osz prefill`" message.
+- **Learned:** the v10 checkbox groups can be told apart by label alone, since every label is unique
+  across groups, so "any tick in the group" needs no cell addresses. Placeholder text (`?`, `/`) has
+  to count as empty, because 4S's `_people` drops it and prints `?` anyway.
+- **Next:** a prod launcher for `osz provjera` at the next `/publish`, and derive the list from
+  `dossier/gating.py` once 5D reads the OSZ cells (both in the backlog).
+
 ### 2026-10-04 — 3N KORAK 4: the measurements into the OSZ from the Nacrt's side; 4S under 3N (agent) ✅
 
 - **Did:** the user picked option A for the second prefill pass: a 3N step rather than a walk back to

@@ -64,6 +64,9 @@ class Step:
     #: Options the step's button ticks when it runs the action (the queue pull
     #: is meant to move, so it carries --apply; the confirm still asks).
     preset: dict = field(default_factory=dict)
+    #: Lines listed under the step — the OSZ's empty obligatory fields
+    #: (4O `osz provjera`), so they are fixed before 3N asks for them.
+    warnings: list[str] = field(default_factory=list)
 
 
 def _newest(files: list[dict], *kinds: str) -> dict | None:
@@ -84,14 +87,32 @@ def _names(*files: dict | None) -> list[str]:
 
 def read_osz(path: str | None) -> tuple[dict | None, str]:
     """The OSZ's v10 cells, or (None, why) — lxml is an optional extra."""
+    fields, _, note = _read_osz_full(path)
+    return fields, note
+
+
+def _read_osz_full(path: str | None):
+    """(cells, the `osz provjera` verdict as JSON, why-not) — read once."""
     if not path:
-        return None, ""
+        return None, None, ""
     try:
+        from cave_dossier.osz import provjera
         from cave_dossier.osz.reader import read_osz_content
 
-        return read_osz_content(Path(path)).fields, ""
+        content = read_osz_content(Path(path))
+        return content.fields, provjera.check_content(content.fields, content.ticked).to_json(), ""
     except Exception as exc:  # noqa: BLE001 — a note on the page, never a crash
-        return None, f"OSZ se ne može pročitati ({type(exc).__name__})"
+        return None, None, f"OSZ se ne može pročitati ({type(exc).__name__})"
+
+
+def _gap_lines(check: dict | None) -> list[str]:
+    from cave_dossier.osz import provjera
+
+    gaps = [provjera.Gap(g["key"], g["label"], tuple(g["needed_by"]), g.get("hint", ""))
+            for g in (check or {}).get("missing", [])]
+    # 3N first: those are the ones that bite next.
+    gaps.sort(key=lambda g: "3N" not in g.needed_by)
+    return [provjera.describe(g) for g in gaps]
 
 
 def _number(text: str | None) -> float | None:
@@ -105,7 +126,8 @@ def _number(text: str | None) -> float | None:
 
 
 def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
-          dims: dict | None = None, backfill: dict | None = None) -> list[Step]:
+          dims: dict | None = None, backfill: dict | None = None,
+          osz_check: dict | None = None) -> list[Step]:
     """The cave's steps in working order, each with a status and its action."""
     files = detail.get("files", [])
     has_leaf = bool(detail.get("leaves"))
@@ -154,6 +176,19 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
                       f"{len(done)}/{len(HUMAN_OSZ_FIELDS)} ručnih polja popunjeno"
                       if done else f"Otvori {osz['name']} i upiši terenske podatke.",
                       files=_names(osz), open=osz["path"])
+    if osz_check and osz_fields is not None:
+        # The obligatory fields still empty (user, 2026-10-04): the ones the
+        # nacrt's sastavnica reads keep this step open, because 3N would
+        # otherwise only notice them as a "?" on the printed page.
+        filled.warnings = _gap_lines(osz_check)
+        need_3n = osz_check.get("missing_for_3n") or []
+        if need_3n:
+            filled.status = "todo"
+        if filled.warnings:
+            filled.note = (f"{osz_check.get('filled')}/{osz_check.get('total')} obveznih polja"
+                           + (f" · prije 3N nedostaje: {', '.join(need_3n)}" if need_3n else ""))
+        else:
+            filled.note = "Sva obvezna polja popunjena (duljine i ulaz upisuje 3N KORAK 4)."
     if locked:
         filled.note = (filled.note + " · " if filled.note else "") + "otvoren u Wordu"
     add(filled)
@@ -211,6 +246,14 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
                  "stale" if moved else "done",
                  ("Noviji: " + ", ".join(_names(*moved)) + " – složi ponovno") if moved else "",
                  action="3n-k3c", files=_names(nacrt)))
+
+    k3c = steps[-1]
+    need_3n = (osz_check or {}).get("missing_for_3n") or []
+    if need_3n:
+        k3c.warnings = [("Nacrt ima ? za: " + ", ".join(need_3n) + " – upiši u OSZ i složi ponovno.")
+                        if k3c.status == "done" else
+                        ("Sastavnica će ispisati ? za: " + ", ".join(need_3n)
+                         + " – upiši u OSZ prije ovog koraka.")]
 
     # ── KORAK 4 after 3c: the compose reads the same numbers from the
     # dimensions file, so it does not wait for the OSZ to carry them.
@@ -316,10 +359,10 @@ def last_backfill(broj) -> dict | None:
 def for_detail(detail: dict) -> dict:
     """The JSON the page draws: phases + steps, the OSZ read once."""
     osz = _newest(detail.get("files", []), "osz")
-    fields, note = read_osz(osz["path"] if osz else None)
+    fields, check, note = _read_osz_full(osz["path"] if osz else None)
     dims_file = _newest(detail.get("files", []), "dimenzije")
     steps = build(detail, fields, note, read_dims(dims_file["path"] if dims_file else None),
-                  backfill=last_backfill(detail.get("broj")))
+                  backfill=last_backfill(detail.get("broj")), osz_check=check)
     return {
         "phases": [{"id": key, "label": label} for key, label in PHASES],
         "steps": [asdict(step) for step in steps],

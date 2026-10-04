@@ -9,6 +9,7 @@ workbook is being read.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from datetime import date
@@ -1237,6 +1238,42 @@ def cmd_osz_backfill(settings: Settings, serial: int) -> int:
     return 0
 
 
+def cmd_osz_provjera(settings: Settings, serial: int, as_json: bool) -> int:
+    """4O: which obligatory zapisnik fields are still empty — before 3N."""
+    from cave_dossier.osz import provjera
+
+    try:
+        check, path = provjera.run_check(settings, serial)
+    except provjera.ProvjeraError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if as_json:
+        print(json.dumps(check.to_json(), ensure_ascii=False, indent=2))
+        return 0
+    print(f"Redni broj {serial}: {path.name} – {check.filled}/{check.total} obveznih polja popunjeno")
+    for note in check.notes:
+        print(f"  ! {note}")
+    if check.missing_for_3n:
+        print()
+        print("Prije 3N (sastavnica bi ispisala ?):")
+        for gap in check.missing_for_3n:
+            print(f"  - {provjera.describe(gap)}")
+    rest = [g for g in check.missing if "3N" not in g.needed_by]
+    if rest:
+        print()
+        print("Obvezno za katastar:")
+        for gap in rest:
+            print(f"  - {provjera.describe(gap)}")
+    if check.deferred:
+        print()
+        print("3N upisuje (KORAK 4, osz backfill) – ne upisuj ručno:")
+        print("  " + ", ".join(g.label for g in check.deferred))
+    if not check.missing:
+        print()
+        print("Sva obvezna polja su popunjena.")
+    return 0
+
+
 def cmd_osz_dopune(settings: Settings, serial: int, osz_path_arg: str | None,
                   osz_dir_arg: str | None) -> int:
     """Part 2.1b, the reverse of `osz prefill`: read a FILLED OSZ and
@@ -1847,6 +1884,19 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="SB Redni broj of the cave (the only input)",
     )
+    osz_provjera = osz_sub.add_parser(
+        "provjera",
+        help="Read-only: list the obligatory zapisnik fields still empty "
+             "(the ones 3N's sastavnica needs first), skipping the cells "
+             "3N KORAK 4 fills from the survey",
+    )
+    osz_provjera.add_argument(
+        "redni_broj",
+        type=int,
+        help="SB Redni broj of the cave (the only input)",
+    )
+    osz_provjera.add_argument("--json", dest="as_json", action="store_true",
+                              help="Print the result as JSON")
     osz_dopune = osz_sub.add_parser(
         "dopune",
         help="The reverse of prefill: read a FILLED OSZ and propose the SB "
@@ -2073,6 +2123,8 @@ def main(argv: list[str] | None = None) -> int:
                                        args.force_karta, args.offline)
             if args.osz_command == "backfill":
                 return cmd_osz_backfill(settings, args.redni_broj)
+            if args.osz_command == "provjera":
+                return cmd_osz_provjera(settings, args.redni_broj, args.as_json)
             if args.osz_command == "dopune":
                 return cmd_osz_dopune(settings, args.redni_broj, args.osz_path, args.osz_dir)
         if args.command == "report":

@@ -262,6 +262,11 @@ ACTIONS: tuple[Action, ...] = (
            ),
            writes="isporučuje SB_<broj>_OSZ.docx u mapu objekta "
                   "(stari OSZ ostaje kao <ime>_stari_<datum>.docx)"),
+    Action("osz-provjera", "4O", "Provjeri obvezna polja OSZ-a",
+           "Samo čitanje: koja obvezna polja u zapisniku su još prazna – najprije "
+           "ona koja sastavnica nacrta (3N KORAK 3c) čita iz OSZ-a, npr. Nacrt uredio, "
+           "Mjerili, Crtali. Duljine i dimenzije ulaza se preskaču: njih upisuje 3N KORAK 4.",
+           "cli", ("osz", "provjera", "{broj}")),
     Action("osz-dopune", "4O", "Iz popunjenog OSZ-a u SB (prijedlog)",
            "Čita popunjeni OSZ i predlaže dopune SB-a – CSV za ručni unos, "
            "SB se nikad ne mijenja.",

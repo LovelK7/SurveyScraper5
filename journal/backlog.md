@@ -413,3 +413,8 @@ when an idea's time comes. Nothing here is a commitment.
   empty room where 3a puts them), and the station labels the PAD_M margin is for.
 - 2026-10-04 — dashboard: the same sheets could already show on the KORAK 2 card from the `_prep`
   (the user: KORAK 2 does not change the proportions much), so the drafter sees the scale before correcting.
+- 2026-10-04 — 4O `osz provjera`: a prod launcher (`cavedossier_osz_provjera_v*.bat`, PROD_COMMANDS +
+  the bootstrap label) so operators without the dashboard get the list too; and maybe print it at the
+  end of `osz prefill` as well.
+- 2026-10-04 — `osz/provjera.py` REQUIREMENTS mirrors the OSZ-sourced rules of `dossier/gating.py` by
+  hand; once 5D reads the OSZ through `osz/reader.py`, derive one from the other so they cannot drift.

@@ -230,6 +230,7 @@ a { color: var(--brand-text); }
 .fstep .st .ico { width: 14px; height: 14px; stroke-width: 2.4; }
 .fstep .lab { font-weight: 600; font-size: 13px; }
 .fstep .note { grid-column: 2 / 4; font-size: 12px; color: var(--muted); }
+.fstep .warns { grid-column: 2 / 4; margin: 2px 0 0; padding-left: 18px; font-size: 12px; color: var(--stale); }
 .fstep .tail { display: flex; gap: 4px; align-items: center; }
 .fstep .stagelink { font: 700 10.5px var(--sans); color: var(--brand-text); background: none;
   border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; cursor: pointer; }

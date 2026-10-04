@@ -52,6 +52,7 @@ keeps the chronology.
 - [Sastavnica template v2 (2026-10-03)](#sastavnica-template-v2-2026-10-03)
 - [3N file suffixes renamed (2026-10-04)](#3n-file-suffixes-renamed-2026-10-04)
 - [3N KORAK 3a: the layout menu drawn as sheets (2026-10-04)](#3n-korak-3a-the-layout-menu-drawn-as-sheets-2026-10-04)
+- [4O OSZ provjera: the obligatory fields, before 3N (2026-10-04)](#4o-osz-provjera-the-obligatory-fields-before-3n-2026-10-04)
 
 ---
 
@@ -1583,3 +1584,43 @@ Validated on the live SB 1328 `051_819-1p_postp.csx` in Edge (Playwright),
 light and dark: three sheets (1:100 vertical, 1:100/1:200 and 1:200/1:100
 side by side) match the console menu, and clicking sheet 3 put
 `--layout 3` into the command.
+
+## 4O OSZ provjera: the obligatory fields, before 3N (2026-10-04)
+
+**Problem (user).** 3N KORAK 3c warned that *Nacrt uredio* was missing — it
+reads the title block from the zapisnik — when that could have been known, and
+typed into the OSZ, long before the survey was finished.
+
+- **A read-only check in 4O, `cavedossier osz provjera <broj>`**
+  (`osz/provjera.py`), over the same zapisnik KORAK 4 picks in the intake leaf.
+  It never writes anything.
+- **Two groups, the 3N one first.** *Prije 3N*: the five cells the sastavnica
+  takes from the OSZ with no real other source (Nacrt uredio, Crtali, Mjerili,
+  Članovi ekipe, Datum). Crtali and Datum do have an SB fallback in 4S, but SB's
+  author cell holds the *source* for a queued cave, so the zapisnik is where
+  they belong. Istražile udruge is not in this group because 4S has a default
+  society; it is CroSpeleo-obligatory. *Obvezno za katastar*: the OSZ-sourced
+  rules of `dossier/gating.py`, mirrored by hand (5D stays the authority; 5D
+  reads a dossier, this reads one docx, so the two are not merged).
+- **The survey's cells are deferred, never missing.** KORAK 4 writes Duljina,
+  Horizontalna duljina, Dubina, Visinska razlika and Širina / Visina-duljina
+  ulaza from `<ime>_dimenzije.json`, so asking for them by hand would invite a
+  number the measurement then overrides. They are listed apart as
+  "3N upisuje".
+- **Checkbox groups count by any tick**, matched diacritic-insensitively;
+  Perspektiva is satisfied by its text *or* a tick. Placeholder text (`?`,
+  `/`, `-`, `nema`, …, `core.people.is_placeholder`) counts as empty, the same
+  way the sastavnica would print `?`.
+- **Dashboard: on the existing step, not a new one.** The list rides on
+  **OSZ popunjen (Word)** (`Step.warnings`). A gap 3N needs keeps that step
+  `todo`, which makes it SADA before the 3N steps, and KORAK 3c repeats it. If
+  only katastar fields are missing, the step stays done and still shows the list.
+  The nacrt that was already composed with a `?` says so too, and filling the OSZ
+  makes 3c stale through the mtime rule already in place.
+
+Validated over the 48 zapisnici in the live intake tree. All 46 v10 documents
+read. Nacrt uredio was empty in 41 of them, and five were complete for 3N. The
+caves with all five 3N cells empty were untouched prefills. SB 1220 lacks only
+Podrijetlo imena. The two legacy documents (1443, 1453) get the "run `osz
+prefill` to migrate" message.
+

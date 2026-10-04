@@ -55,7 +55,14 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   entrance sign, origin mismatch …) are listed under the sheets.
 - Runs that only read go on one click. Anything that writes to Drive, to the
   cave's folder or to georef.hr asks first (orange **Pokreni…**). Ticking
-  `--dry-run` / `--local` makes it a plain run again.
+  `--dry-run` / `--local` makes it a plain run again. **Ne pitaj više** in
+  that dialog turns the question off for every action and ★ recipe, and it
+  stays off after a reload (the browser's localStorage). Pregled then shows
+  **Uključi ponovno** to turn it back on. Deleting a photo always asks.
+- **OSZ gaps on Pregled.** Each cave view also checks the zapisnik's obligatory
+  fields (4O `osz provjera`): the empty ones are listed under **OSZ popunjen
+  (Word)**, those the nacrt's sastavnica needs first. One of those missing keeps
+  the step open, and **KORAK 3c** warns that it would print a `?` for them.
 - **3N › Mapiranje simbola** draws the TopoDroid → cSurvey mapping for the
   current cave (TopoDroid's speleo and "speleo 2" sets by default, every set on
   request; a filter lists what would arrive without a proper cSurvey sign).
