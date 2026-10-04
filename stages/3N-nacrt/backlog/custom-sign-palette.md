@@ -1,6 +1,7 @@
 # Backlog: custom TDX↔cSurvey symbol palette from SVG icons
 
 **Status: idea, parked** (user request 2026-07-19, during the symbol-zoo campaign).
+**Superseded in part (2026-10-04)** by [projects/0007-symbol-themes](../projects/0007-symbol-themes/brief.md): glyphs are spliced into each csx post-import instead of installed into the cSurvey folder; items 2–3 below (new `SignEnum`, TDX palette) remain open.
 Grounding: [production/tdx-symbol-matrix.md](../production/tdx-symbol-matrix.md) ("Rendering layer" section).
 
 ## The insight
