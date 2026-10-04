@@ -105,13 +105,16 @@ function Format-JsonString($Value) {
 }
 
 function Get-SurveyBaseName([string] $Path) {
-    # X_lt_fin.csx -> X: strip the whole pipeline's suffix chain, so the PDFs are
+    # X_postp_resolved.csx -> X: strip the whole pipeline's suffix chain, so the PDFs are
     # named after the cave and not after the step that produced them.
     $stem = [IO.Path]::GetFileNameWithoutExtension($Path)
     $name = $stem
     for ($changed = $true; $changed; ) {
         $changed = $false
-        foreach ($suffix in @('_fin', '_lt', '_pp')) {
+        # _fin, _lt and _pp: the names before 2026-10-04, still on the Drive.
+        foreach ($suffix in @('_resolved', '_fin', '_postp', '_lt', '_prep', '_pp')) {
+
+
             if ($name.ToLowerInvariant().EndsWith($suffix)) {
                 $name = $name.Substring(0, $name.Length - $suffix.Length)
                 $changed = $true

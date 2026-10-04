@@ -409,3 +409,7 @@ when an idea's time comes. Nothing here is a commitment.
   `entrance_size`; re-run KORAK 3a + 3b for them before `osz prefill` is expected to fill the entrance cells.
 - 2026-10-03 — prod: `/publish` the csx kit AND the prod bundle together: KORAK 3 needs `entrance_dims.py`,
   KORAK 4 (`csurvey_4_upisi_osz.bat`) needs the `cavedossier_osz_backfill_v*.bat` launcher beside it.
+- 2026-10-04 — dashboard 3a sheets: draw the scale bar and north arrow too (today the plan box shows
+  empty room where 3a puts them), and the station labels the PAD_M margin is for.
+- 2026-10-04 — dashboard: the same sheets could already show on the KORAK 2 card from the `_prep`
+  (the user: KORAK 2 does not change the proportions much), so the drafter sees the scale before correcting.

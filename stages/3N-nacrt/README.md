@@ -38,21 +38,22 @@ python $T\csurvey_app_settings.py apply     # `show` compares, `check` only warn
 # that cave only (KORAK 1 and 2 pick it up); edit it in the dashboard, 3N > Mapiranje simbola
 python $T\tdx_mapping.py show "path\to\file.csx"   # the mapping that file gets
 
-# KORAK 1 — raw TDX export -> <name>_pp.csx (symbols renamed so they survive import)
+# KORAK 1 — raw TDX export -> <name>_prep.csx (symbols renamed so they survive import)
 python $T\preprocess_tdx_csx.py $INTAKE --sb 1103 --force
 #   or: python $T\preprocess_tdx_csx.py "path\to\raw.csx" --force
 
-# [cSurvey] open <name>_pp.csx, then File > Save As
+# [cSurvey] open <name>_prep.csx, then File > Save As
 
-# KORAK 2 — the saved file -> <name>_lt.csx (spline linetypes, water brush, sign sizes, walls merged, turned and ordered (wall_orient.py), the file settings in tdx-mapping.json postimport)
+# KORAK 2 — the saved file -> <name>_postp.csx (spline linetypes, water brush, sign sizes, walls merged, turned and ordered (wall_orient.py), the file settings in tdx-mapping.json postimport)
 python $T\fix_imported_linetypes.py $INTAKE --sb 1103 --force
 #   or: python $T\fix_imported_linetypes.py "path\to\saved.csx" --force
 
-# [cSurvey] open <name>_lt.csx, correct the sketch, save
+# [cSurvey] open <name>_postp.csx, correct the sketch, save
 
-# KORAK 3a — _lt -> <name>_lt_fin (entrance + its size for the OSZ, depth label, scale bar, north arrow, A4 print setup)
+# KORAK 3a — _postp -> <name>_postp_resolved (entrance + its size for the OSZ, depth label, scale bar, north arrow, A4 print setup)
 python $T\nacrt_finish.py $INTAKE --sb 1103 --force            # shows the layout menu
 #   --yes accepts the proposed layout; --layout N picks menu entry N; --dry-run writes nothing
+#   --layouts-json PATH: the menu as data (placements + wall outlines), a dry run; the dashboard draws it
 
 # KORAK 3b — drive cSurvey headlessly -> <name>_plan.pdf, <name>_profile.pdf, <name>_dimenzije.json
 python $T\csurvey_driver.py finish $INTAKE --sb 1103
@@ -68,9 +69,17 @@ cavedossier nacrt 1103                 # --local keeps the output in runs/ and d
 cavedossier osz backfill 1103
 ```
 
+The file name tells which step a file is at: `x.csx` (raw) → `x_prep.csx`
+(preprocessing, KORAK 1) → `x_postp.csx` (postprocessing, KORAK 2) →
+`x_postp_resolved.csx` (KORAK 3a). KORAK 2 replaces a trailing `_prep` and
+doesn't add to it. Files made before 2026-10-04 carry `_pp` / `_lt` / `_lt_fin`.
+Every tool and the dashboard still read those, and the list of suffixes lives in
+[`sb_select.py`](production/tools/sb_select.py) (`PREP_ALL` / `POSTP_ALL` /
+`RESOLVED_ALL`).
+
 If a drawing doesn't fit its box on the page, 3c refuses and prints the
 overlap in millimetres. Re-run 3a with `--layout N`, then 3b and 3c again.
-If 3b can't run cSurvey, open `_lt_fin` in cSurvey and print the plan and the
+If 3b can't run cSurvey, open `_postp_resolved` in cSurvey and print the plan and the
 profile separately to *Microsoft Print to PDF*. Don't change the print settings.
 Diagnostics: `python $T\inspect_survey.py <file>` gives read-only stats for any
 `.csz`/`.csx`; `csurvey_driver.py info|recalc|dimensions <file>` runs single

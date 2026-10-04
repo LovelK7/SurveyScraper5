@@ -23,9 +23,9 @@ Usage:
   python tdx_zip_to_csx.py <intake folder> --sb 811 908     only those caves' SB_<broj>_... folders
   python tdx_zip_to_csx.py <project.zip> -o out.csx         explicit output (single input only)
   --raw-only        skip the symbol-mapping preprocessor (preprocess_tdx_csx.py, run
-                    automatically when found next to this script; output <name>_recovered_pp.csx)
+                    automatically when found next to this script; output <name>_recovered_prep.csx)
 
-Outputs land next to each zip: <survey>_recovered.csx (raw) and <survey>_recovered_pp.csx
+Outputs land next to each zip: <survey>_recovered.csx (raw) and <survey>_recovered_prep.csx
 (import this one into cSurvey). Paths with spaces are fine — quote them, or use the
 csurvey_9_oporavi_iz_zipa.bat drag-and-drop wrapper published in
 !!!Digitalizacija\SurveyScraper5 (double-click asks which SB numbers to recover).
@@ -432,14 +432,14 @@ def is_project_zip(path):
 
 def run_preprocessor(csx_path):
     """Run the standing protocol's symbol-mapping preprocessor if it lives
-    next to this script. Returns the _pp path or None."""
+    next to this script. Returns the _prep path or None."""
     import subprocess
     pp = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                       "preprocess_tdx_csx.py")
     if not os.path.isfile(pp):
         print("  (preprocess_tdx_csx.py not found next to this script - raw csx only)")
         return None
-    out = os.path.splitext(csx_path)[0] + "_pp.csx"
+    out = os.path.splitext(csx_path)[0] + sb_select.PREP + ".csx"
     r = subprocess.run([sys.executable, pp, csx_path, "-o", out, "--force"])
     if r.returncode != 0:
         print("  WARNING: preprocessor failed on %s" % csx_path)

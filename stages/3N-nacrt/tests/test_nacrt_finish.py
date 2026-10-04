@@ -1,4 +1,4 @@
-"""nacrt_finish — the XML finisher that turns a corrected `_lt` into a printable file.
+"""nacrt_finish — the XML finisher that turns a corrected `_postp` into a printable file.
 
 Two layers of coverage. A **synthetic `.csx`** built in-process exercises every
 rule on every machine: the two entrance witnesses and their disagreement, the
@@ -172,10 +172,10 @@ def sidecar_of(out):
                       .read_text(encoding="utf-8"))
 
 
-def finish_to(tmp_path, name="cave_lt.csx", extra=(), **kwargs):
+def finish_to(tmp_path, name="cave_postp.csx", extra=(), **kwargs):
     """Build a synthetic survey, finish it, return (out_path, sidecar)."""
     src = make_csx(tmp_path / name, **kwargs)
-    out = tmp_path / (src.stem + "_fin" + src.suffix)
+    out = tmp_path / (src.stem + "_resolved" + src.suffix)
     assert run([src, "--yes", *extra]) == 0
     return out, sidecar_of(out)
 
@@ -349,12 +349,12 @@ def test_entrance_attribute_is_the_constant_two_not_the_station_name(tmp_path):
 
 
 def test_entrance_is_removed_from_every_other_trigpoint(tmp_path):
-    src = make_csx(tmp_path / "cave_lt.csx", origin="B")
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B")
     text = src.read_text(encoding="utf-8").replace(
         '<trigpoint name="C" labelsymbol="0" />',
         '<trigpoint name="C" labelsymbol="0" entrance="2" />')
     src.write_text(text, encoding="utf-8")
-    out = tmp_path / "cave_lt_fin.csx"
+    out = tmp_path / "cave_postp_resolved.csx"
     assert run([src, "--yes"]) == 0
     root = ET.parse(str(out)).getroot()
     flagged = {tp.get("name"): tp.get("entrance")
@@ -409,7 +409,7 @@ def test_dislivello_falls_back_to_all_layers_when_borders_is_empty(tmp_path):
 
 def test_dislivello_is_skipped_when_one_is_already_there(tmp_path):
     out, _sidecar = finish_to(tmp_path, origin="B")
-    second = tmp_path / "again_fin.csx"
+    second = tmp_path / "again_resolved.csx"
     assert run([out, "-o", second, "--yes"]) == 0
     root = ET.parse(str(second)).getroot()
     assert len([i for i in items_of(root, "profile")
@@ -541,7 +541,7 @@ def test_scale_bar_is_ten_metres_at_a_coarser_scale(tmp_path):
 
 def test_scale_bar_is_skipped_when_one_is_already_there(tmp_path):
     out, _sidecar = finish_to(tmp_path, origin="B")
-    second = tmp_path / "again_fin.csx"
+    second = tmp_path / "again_resolved.csx"
     assert run([out, "-o", second, "--yes"]) == 0
     root = ET.parse(str(second)).getroot()
     assert len([i for i in items_of(root, "plan")
@@ -591,7 +591,7 @@ def test_an_existing_compass_clipart_is_reused(tmp_path):
 
 def test_compass_is_skipped_when_one_is_already_there(tmp_path):
     out, _sidecar = finish_to(tmp_path, origin="B")
-    second = tmp_path / "again_fin.csx"
+    second = tmp_path / "again_resolved.csx"
     assert run([out, "-o", second, "--yes"]) == 0
     root = ET.parse(str(second)).getroot()
     assert len([i for i in items_of(root, "plan") if i.get("type") == "15"]) == 1
@@ -631,10 +631,10 @@ def test_print_options_and_render_quality_are_written(tmp_path):
 
 
 def test_pagelandscape_is_removed(tmp_path):
-    src = make_csx(tmp_path / "cave_lt.csx", origin="B")
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B")
     src.write_text(src.read_text(encoding="utf-8").replace(
         'pageformat=""', 'pageformat="" pagelandscape="1"'), encoding="utf-8")
-    out = tmp_path / "cave_lt_fin.csx"
+    out = tmp_path / "cave_postp_resolved.csx"
     assert run([src, "--yes"]) == 0
     root = ET.parse(str(out)).getroot()
     for key in ("_preview.plan", "_preview.profile"):
@@ -677,8 +677,8 @@ def test_nothing_fits_falls_back_to_cSurvey_fit_to_page(tmp_path):
 
 
 def test_layout_picks_an_alternative_non_interactively(tmp_path):
-    src = make_csx(tmp_path / "cave_lt.csx", origin="B")
-    out = tmp_path / "cave_lt_fin.csx"
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B")
+    out = tmp_path / "cave_postp_resolved.csx"
     assert run([src, "--layout", 2]) == 0
     sidecar = sidecar_of(out)
     assert sidecar["chosen"] == "alternative 2"
@@ -686,10 +686,10 @@ def test_layout_picks_an_alternative_non_interactively(tmp_path):
 
 
 def test_layout_out_of_range_is_an_error(tmp_path, capsys):
-    src = make_csx(tmp_path / "cave_lt.csx", origin="B")
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B")
     assert run([src, "--layout", 9]) == 1
     assert "nije ponudeni broj" in capsys.readouterr().err
-    assert not (tmp_path / "cave_lt_fin.csx").exists()
+    assert not (tmp_path / "cave_postp_resolved.csx").exists()
 
 
 def test_the_sidecar_carries_millimetres_for_the_compositor(tmp_path):
@@ -711,14 +711,14 @@ def test_the_sidecar_carries_millimetres_for_the_compositor(tmp_path):
 
 def test_csz_round_trip_keeps_every_zip_entry(tmp_path):
     inner = make_csx(tmp_path / "inner.csx", origin="B")
-    src = tmp_path / "cave_lt.csz"
+    src = tmp_path / "cave_postp.csz"
     entries = {"_data.xml": inner.read_bytes(),
                "_data/images/sketch.png": b"\x89PNG not really",
                "_data/surface/dem.bin": b"\x00\x01\x02"}
     with zipfile.ZipFile(src, "w", zipfile.ZIP_DEFLATED) as z:
         for name, blob in entries.items():
             z.writestr(name, blob)
-    out = tmp_path / "cave_lt_fin.csz"
+    out = tmp_path / "cave_postp_resolved.csz"
     assert run([src, "--yes"]) == 0
     with zipfile.ZipFile(out) as z:
         names = set(z.namelist())
@@ -738,9 +738,9 @@ def test_csz_round_trip_keeps_every_zip_entry(tmp_path):
 
 def test_only_our_elements_show_up_in_a_diff(tmp_path):
     """Everything else survives byte for byte, line endings included."""
-    src = make_csx(tmp_path / "cave_lt.csx", origin="B",
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B",
                    declaration=False, crlf=True)
-    out = tmp_path / "cave_lt_fin.csx"
+    out = tmp_path / "cave_postp_resolved.csx"
     assert run([src, "--yes"]) == 0
     before = src.read_bytes()
     after = out.read_bytes()
@@ -761,7 +761,7 @@ def test_only_our_elements_show_up_in_a_diff(tmp_path):
 
 def test_running_on_the_output_changes_nothing(tmp_path):
     out, _sidecar = finish_to(tmp_path, origin="B")
-    again = tmp_path / "again_fin.csx"
+    again = tmp_path / "again_resolved.csx"
     assert run([out, "-o", again, "--yes"]) == 0
     assert again.read_bytes() == out.read_bytes()
     sidecar = sidecar_of(again)
@@ -771,7 +771,7 @@ def test_running_on_the_output_changes_nothing(tmp_path):
 
 
 def test_dry_run_writes_nothing(tmp_path, capsys):
-    src = make_csx(tmp_path / "cave_lt.csx", origin="B")
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B")
     before = sorted(p.name for p in tmp_path.iterdir())
     assert run([src, "--dry-run"]) == 0
     assert sorted(p.name for p in tmp_path.iterdir()) == before
@@ -782,15 +782,15 @@ def test_dry_run_writes_nothing(tmp_path, capsys):
 
 
 def test_the_input_is_never_modified(tmp_path):
-    src = make_csx(tmp_path / "cave_lt.csx", origin="B")
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B")
     before = src.read_bytes()
     assert run([src, "--yes"]) == 0
     assert src.read_bytes() == before
 
 
 def test_an_existing_output_needs_force(tmp_path, capsys):
-    src = make_csx(tmp_path / "cave_lt.csx", origin="B")
-    out = tmp_path / "cave_lt_fin.csx"
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B")
+    out = tmp_path / "cave_postp_resolved.csx"
     out.write_bytes(b"busy")
     assert run([src, "--yes"]) == 1
     assert "use --force" in capsys.readouterr().err
@@ -806,12 +806,73 @@ def test_a_file_not_yet_imported_is_blocked(tmp_path, capsys):
                     b"<profile /></csurvey>")
     assert run([src, "--yes"]) == 1
     assert "BLOCKED" in capsys.readouterr().err
-    assert not (tmp_path / "phone_fin.csx").exists()
+    assert not (tmp_path / "phone_resolved.csx").exists()
 
 
-def test_a_name_without_lt_is_only_a_warning(tmp_path):
+def test_a_name_without_postp_is_only_a_warning(tmp_path):
     _out, sidecar = finish_to(tmp_path, name="cave.csx", origin="B")
-    assert warned(sidecar, "naziv ne sadrzi _lt")
+    assert warned(sidecar, "naziv ne sadrzi _postp")
+
+
+# ---------------------------------------------------------------------------
+# --layouts-json: the menu as data, for the dashboard's sheet thumbnails
+
+
+def test_layouts_json_is_the_menu_and_writes_nothing(tmp_path):
+    src = make_csx(tmp_path / "cave_postp.csx", origin="B")
+    menu_path = tmp_path / "menu.json"
+    assert run([src, "--layouts-json", menu_path]) == 0
+    assert not (tmp_path / "cave_postp_resolved.csx").exists()
+    assert not (tmp_path / "cave_postp_resolved.layout.json").exists()
+
+    menu = json.loads(menu_path.read_text(encoding="utf-8"))
+    assert menu["source"] == "cave_postp.csx"
+    assert menu["page_mm"] == [210.0, 297.0]
+    numbers = [entry["n"] for entry in menu["layouts"]]
+    assert numbers == list(range(1, len(numbers) + 1))
+    assert menu["layouts"][0]["proposal"] and not any(e["proposal"] for e in menu["layouts"][1:])
+
+    # Entry 1 is what --yes writes: same scales, same arrangement, same box.
+    (tmp_path / "yes").mkdir()
+    _out, sidecar = finish_to(tmp_path / "yes", origin="B")
+    first = menu["layouts"][0]
+    assert (first["plan"]["scale"], first["profile"]["scale"], first["arrangement"]) == (
+        sidecar["plan_scale"], sidecar["profile_scale"], sidecar["arrangement"])
+    assert first["plan"]["x"] == sidecar["plan_mm"]["x"]
+
+    # The outlines sit inside their padded design boxes.
+    for name in ("plan", "profile"):
+        design = menu["designs"][name]
+        width, height = design["size_m"]
+        points = [p for line in design["lines"] for p in line]
+        assert points
+        assert all(0 <= x <= width and 0 <= y <= height for x, y in points)
+
+
+def test_layouts_json_takes_one_input_only(tmp_path, capsys):
+    a = make_csx(tmp_path / "a_postp.csx")
+    b = make_csx(tmp_path / "b_postp.csx")
+    assert run([a, b, "--layouts-json", tmp_path / "m.json"]) == 1
+    assert "single input" in capsys.readouterr().err
+
+
+def test_outline_starts_a_new_stroke_at_a_begin_flag():
+    design = ET.fromstring(
+        '<plan><layers><layer type="5"><items><item>'
+        '<points data="0 0 B 1 0 2 0 B 2 1 3 1 " /></item></items></layer></layers></plan>')
+    lines = nacrt_finish.design_outline(design, [0, 0, 3, 1])
+    pad = nacrt_finish.PAD_M
+    assert lines == [[[pad, pad], [1 + pad, pad]],
+                     [[2 + pad, pad], [2 + pad, 1 + pad], [3 + pad, 1 + pad]]]
+
+
+def test_outline_is_thinned_but_keeps_each_stroke_end():
+    data = " ".join("%d 0" % i for i in range(100)) + " "
+    design = ET.fromstring('<plan><layers><layer type="5"><items><item>'
+                           '<points data="%s" /></item></items></layer></layers></plan>' % data)
+    lines = nacrt_finish.design_outline(design, [0, 0, 99, 0], max_points=10)
+    assert len(lines) == 1 and len(lines[0]) <= 11
+    assert lines[0][-1][0] == 99 + nacrt_finish.PAD_M
 
 
 # ---------------------------------------------------------------------------
@@ -820,7 +881,7 @@ def test_a_name_without_lt_is_only_a_warning(tmp_path):
 
 @needs_fixture
 def test_sb1103_reproduces_the_manual_result(tmp_path):
-    out = tmp_path / "SB_1103_golobreska_lt_fin.csx"
+    out = tmp_path / "SB_1103_golobreska_postp_resolved.csx"
     assert run([RAW, "-o", out, "--yes"]) == 0
     sidecar = sidecar_of(out)
     root = ET.parse(str(out)).getroot()
@@ -958,7 +1019,7 @@ def test_dislivello_is_big_scale_bar_uses_cave_name_font_and_arrow_is_doubled(tm
 def _with_surface_leg(tmp_path, flags='exclude="1" surface="1"', start="B",
                       **kwargs):
     """<start> -> S is a surface leg; S sits far above every cave station."""
-    src = make_csx(tmp_path / "cave_lt.csx",
+    src = make_csx(tmp_path / "cave_postp.csx",
                    stations=DEFAULT_STATIONS + [("S", 3.0, 4.0, -9.0, 3.0)],
                    **kwargs)
     text = src.read_text(encoding="utf-8").replace(
@@ -982,7 +1043,7 @@ def test_a_station_reached_only_by_a_flagged_shot_is_not_in_the_cave(tmp_path, f
 def test_surface_station_is_neither_the_entrance_nor_the_height(tmp_path):
     src = _with_surface_leg(tmp_path)
     assert run([src, "--yes"]) == 0
-    sidecar = sidecar_of(tmp_path / "cave_lt_fin.csx")
+    sidecar = sidecar_of(tmp_path / "cave_postp_resolved.csx")
     assert sidecar["entrance"] == "B"
     assert sidecar["entrance_witnesses"]["highest"] == "B"
 
@@ -1000,7 +1061,7 @@ def test_the_cave_end_of_a_surface_leg_is_the_entrance(tmp_path):
     # C is the lowest cave station; only the surface leg says it is the entrance
     src = _with_surface_leg(tmp_path, start="C")
     assert run([src, "--yes"]) == 0
-    sidecar = sidecar_of(tmp_path / "cave_lt_fin.csx")
+    sidecar = sidecar_of(tmp_path / "cave_postp_resolved.csx")
     assert sidecar["entrance"] == "C"
     assert sidecar["entrance_witnesses"]["surface_leg"] == ["C"]
     assert "povrsinski" in sidecar["entrance_witnesses"]["decision"]
@@ -1010,7 +1071,7 @@ def test_a_sign_drawn_at_the_surface_station_points_at_the_leg_s_cave_end(tmp_pa
     # SB 1220: the surveyor drew the entrance sign at the surface station
     src = _with_surface_leg(tmp_path, start="C", plan_sign=(3.1, 4.1))
     assert run([src, "--yes"]) == 0
-    sidecar = sidecar_of(tmp_path / "cave_lt_fin.csx")
+    sidecar = sidecar_of(tmp_path / "cave_postp_resolved.csx")
     sign = sidecar["entrance_sign"]
     assert sign["station"] == "C" and sign["via"] == "S"
     assert not warned(sidecar, "povrsinski vlak veze")
@@ -1019,7 +1080,7 @@ def test_a_sign_drawn_at_the_surface_station_points_at_the_leg_s_cave_end(tmp_pa
 def test_an_excluded_shot_that_is_not_surface_names_no_entrance(tmp_path):
     src = _with_surface_leg(tmp_path, flags='exclude="1"', start="C")
     assert run([src, "--yes"]) == 0
-    sidecar = sidecar_of(tmp_path / "cave_lt_fin.csx")
+    sidecar = sidecar_of(tmp_path / "cave_postp_resolved.csx")
     assert sidecar["entrance_witnesses"]["surface_leg"] == []
     assert sidecar["entrance"] == "B"          # the highest cave station
 

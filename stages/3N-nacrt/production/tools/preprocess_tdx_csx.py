@@ -43,7 +43,7 @@ Usage:
   python production/tools/preprocess_tdx_csx.py INTAKE --sb 811 908   # only those caves' folders
 
 A FOLDER argument is scanned recursively for raw TopoDroid .csx files (creatid="TopoDroid",
-no creat_postprocessed); *_pp.csx outputs and post-import saves are skipped automatically.
+no creat_postprocessed); *_prep.csx outputs (and the old *_pp.csx) and post-import saves are skipped automatically.
 --sb narrows that scan to the `SB_<broj>_…` leaf folders of the named caves (sb_select.py).
 No-typing path: csurvey_1_pripremi_csx.bat in !!!Digitalizacija\SurveyScraper5 (double-click asks
 which SB numbers to prepare; or drag .csx files onto it).
@@ -311,7 +311,7 @@ def process_item(item, stats, warnings):
 
 
 def process_file(input_path, out, force):
-    out = out or (os.path.splitext(input_path)[0] + "_pp.csx")
+    out = out or (os.path.splitext(input_path)[0] + sb_select.PREP + ".csx")
     if os.path.abspath(out) == os.path.abspath(input_path):
         print("ERROR: output must differ from input", file=sys.stderr)
         return 1
@@ -376,7 +376,7 @@ def main(argv=None):
                     help="raw TopoDroid .csx file(s), or a folder to scan "
                          "recursively for them")
     ap.add_argument("-o", "--out",
-                    help="output path (default: <input>_pp.csx; single input only)")
+                    help="output path (default: <input>_prep.csx; single input only)")
     ap.add_argument("--force", action="store_true",
                     help="overwrite an existing output file")
     ap.add_argument("--sb", nargs="+", metavar="BROJ",
@@ -410,7 +410,7 @@ def main(argv=None):
                 for fn in sorted(names):
                     if not fn.lower().endswith(".csx"):
                         continue
-                    if fn.lower().endswith("_pp.csx"):
+                    if sb_select.stem_endswith(fn, sb_select.PREP_ALL):
                         continue
                     if sb_select.is_backup(fn):
                         continue

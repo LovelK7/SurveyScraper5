@@ -78,7 +78,7 @@ def test_resolve_selects_only_the_named_caves(intake):
 def files(tmp_path):
     leaf = tmp_path / "SB_1103_Nova jama"
     leaf.mkdir()
-    for name in ("nova.csx", "nova_pp.csx", "nova_rad.csz", "nova_rad_lt.csz",
+    for name in ("nova.csx", "nova_prep.csx", "nova_rad.csz", "nova_rad_postp.csz",
                  "biljeske.txt"):
         (leaf / name).write_bytes(b"x")
     return tmp_path, leaf
@@ -87,8 +87,8 @@ def files(tmp_path):
 def test_list_files_keeps_surveys_and_drops_its_own_output(files):
     root, leaf = files
     got = sb_select.list_files([str(leaf)], (".csz", ".csx"),
-                               skip_suffixes=("_lt",))
-    assert [Path(p).name for p in got] == ["nova.csx", "nova_pp.csx",
+                               skip_suffixes=sb_select.POSTP_ALL)
+    assert [Path(p).name for p in got] == ["nova.csx", "nova_prep.csx",
                                            "nova_rad.csz"]
 
 
@@ -120,41 +120,65 @@ def test_choose_cancels_on_eof(monkeypatch):
 def test_list_files_never_offers_csurvey_backups(tmp_path):
     leaf = tmp_path / "SB_1220_Hrdava"
     leaf.mkdir()
-    for name in ("h.csx", "h_pp.csx", "h_pp_backup.csx", "h_pp_lt.csx",
-                 "h_pp_lt_backup.csx"):
+    for name in ("h.csx", "h_prep.csx", "h_prep_backup.csx", "h_postp.csx",
+                 "h_postp_backup.csx"):
         (leaf / name).write_bytes(b"x")
     got = sb_select.list_files([str(leaf)], (".csz", ".csx"))
-    assert [Path(p).name for p in got] == ["h.csx", "h_pp.csx", "h_pp_lt.csx"]
+    assert [Path(p).name for p in got] == ["h.csx", "h_postp.csx", "h_prep.csx"]
 
 
-def _is_lt(p):
-    return Path(p).stem.lower().endswith("_lt")
+def _is_postp(p):
+    return sb_select.stem_endswith(p, sb_select.POSTP_ALL)
+
+
+@pytest.mark.parametrize("name, suffixes, expected", [
+    ("x_prep.csx", "PREP_ALL", True),
+    ("x_pp.csx", "PREP_ALL", True),            # the name before 2026-10-04
+    ("x_postp.csz", "POSTP_ALL", True),
+    ("x_pp_lt.csx", "POSTP_ALL", True),
+    ("x_postp_resolved.csx", "RESOLVED_ALL", True),
+    ("x_pp_lt_fin.csx", "RESOLVED_ALL", True),
+    ("x_postp_resolved.csx", "POSTP_ALL", False),
+    ("x.csx", "PREP_ALL", False),
+])
+def test_step_suffixes_read_new_and_old_names(name, suffixes, expected):
+    assert sb_select.stem_endswith(name, getattr(sb_select, suffixes)) is expected
+
+
+@pytest.mark.parametrize("path, expected", [
+    ("d/x_prep.csz", "d/x"),
+    ("d/x_pp.csx", "d/x"),
+    ("d/x_rad.csz", "d/x_rad"),
+    ("d/x_postp.csx", "d/x_postp"),
+])
+def test_postp_replaces_a_trailing_prep(path, expected):
+    assert sb_select.postp_base(path) == expected
 
 
 def test_pick_takes_the_one_file_at_this_step_without_asking(tmp_path, monkeypatch):
     leaf = tmp_path / "SB_1220_Hrdava"
-    paths = [str(leaf / n) for n in ("h.csx", "h_pp.csx", "h_pp_lt.csx")]
+    paths = [str(leaf / n) for n in ("h.csx", "h_prep.csx", "h_postp.csx")]
     monkeypatch.setattr("builtins.input", lambda _p: pytest.fail("asked"))
-    assert sb_select.pick(paths, _is_lt, [str(leaf)]) == [paths[2]]
+    assert sb_select.pick(paths, _is_postp, [str(leaf)]) == [paths[2]]
 
 
 def test_pick_takes_one_per_cave(tmp_path, monkeypatch):
     a, b = tmp_path / "SB_1_A", tmp_path / "SB_2_B"
-    paths = [str(a / "a.csx"), str(a / "a_lt.csx"), str(b / "b_lt.csz")]
+    paths = [str(a / "a.csx"), str(a / "a_postp.csx"), str(b / "b_lt.csz")]
     monkeypatch.setattr("builtins.input", lambda _p: pytest.fail("asked"))
-    assert sb_select.pick(paths, _is_lt, [str(a), str(b)]) == [paths[1], paths[2]]
+    assert sb_select.pick(paths, _is_postp, [str(a), str(b)]) == [paths[1], paths[2]]
 
 
 def test_pick_asks_between_several_files_at_this_step(tmp_path, monkeypatch, capsys):
     leaf = tmp_path / "SB_1220_Hrdava"
-    paths = [str(leaf / n) for n in ("h.csx", "x_lt.csx", "y_lt.csz")]
+    paths = [str(leaf / n) for n in ("h.csx", "x_postp.csx", "y_postp.csz")]
     monkeypatch.setattr("builtins.input", lambda _p: "2")
-    assert sb_select.pick(paths, _is_lt, [str(leaf)]) == [paths[2]]
+    assert sb_select.pick(paths, _is_postp, [str(leaf)]) == [paths[2]]
     assert "h.csx" not in capsys.readouterr().out
 
 
 def test_pick_shows_everything_when_nothing_is_at_this_step(tmp_path, monkeypatch):
     leaf = tmp_path / "SB_1220_Hrdava"
-    paths = [str(leaf / n) for n in ("h.csx", "h_pp.csx")]
+    paths = [str(leaf / n) for n in ("h.csx", "h_prep.csx")]
     monkeypatch.setattr("builtins.input", lambda _p: "1")
-    assert sb_select.pick(paths, _is_lt, [str(leaf)]) == [paths[0]]
+    assert sb_select.pick(paths, _is_postp, [str(leaf)]) == [paths[0]]

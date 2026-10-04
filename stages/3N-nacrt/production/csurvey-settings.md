@@ -20,7 +20,7 @@ being set, and its own file in this folder where the values live.
 | Belong to | that survey, on any computer | one Windows user on one computer |
 | Typically | Properties dialog: centerline colours and widths, text scales, line type; sign and label sizes on items | ribbon and options: pen smoothing on/off and its factor, rulers, grid, quality |
 | Values live in | [`tools/tdx-mapping.json`](tools/tdx-mapping.json), section `postimport` | [`tools/csurvey-app-settings.json`](tools/csurvey-app-settings.json) |
-| Applied by | **KORAK 2** (`fix_imported_linetypes.py`), into every `_lt` file | **KORAK 0** (`csurvey_0_postavi_csurvey.bat` → `csurvey_app_settings.py apply`), once per computer |
+| Applied by | **KORAK 2** (`fix_imported_linetypes.py`), into every `_postp` file | **KORAK 0** (`csurvey_0_postavi_csurvey.bat` → `csurvey_app_settings.py apply`), once per computer |
 | Checked by | — (it is in the file) | KORAK 2 prints a warning when this computer isn't primed (`… check`) |
 
 When cSurvey offers a choice, the file wins: a design property in the survey
@@ -182,7 +182,7 @@ the change lands:
 A setting for **one cave only** needs no JSON editing: use the Mapiranje page,
 or put the same entry into that cave's `tdx-mapping-objekt.json`.
 
-**3. Ship it.** Publish the kit (`/publish`). File settings reach every `_lt`
+**3. Ship it.** Publish the kit (`/publish`). File settings reach every `_postp`
 made from then on. For app settings, KORAK 2 warns each computer that isn't
 primed with the new value yet, until KORAK 0 is run there again.
 
@@ -194,7 +194,7 @@ primed with the new value yet, until KORAK 0 is run there again.
   it, copy the `postimport` block back from the old file, or the red
   centerline and every other file setting are gone.
 - **A new file setting only reaches surveys that pass KORAK 2 after the
-  change.** `_lt` files made earlier keep what they had; set those by hand in
+  change.** `_postp` files made earlier keep what they had; set those by hand in
   Properties.
 - **cSurvey clamps the smoothing factors** (`pens.smooth`, `tools.smooth`)
   to at least 0.01 (`frmMain2.vb:2679`). A lower profile value is shown as

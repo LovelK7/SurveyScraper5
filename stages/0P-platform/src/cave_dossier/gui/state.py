@@ -45,28 +45,35 @@ _PHOTO_EXT = {".jpg", ".jpeg", ".png", ".heic"}
 _SKIP_NAMES = {"desktop.ini", "thumbs.db", ".ds_store"}
 
 
+#: Name suffix -> 3N step, first match wins (the chain is x_prep, x_postp,
+#: x_postp_resolved). The second of each pair is the name before 2026-10-04,
+#: still on files in the Drive; the kit tools keep the same list in sb_select.py.
+_SURVEY_SUFFIXES = (
+    ("_backup", "backup"),
+    ("_resolved", "resolved"), ("_fin", "resolved"),
+    ("_postp", "postp"), ("_lt", "postp"),
+    ("_prep", "prep"), ("_pp", "prep"),
+)
+
+
 def _survey_kind(stem: str) -> str:
     """Where a survey file sits in the 3N chain, from its name suffix."""
     low = stem.lower()
-    if low.endswith("_backup"):
-        return "backup"
-    if low.endswith("_fin"):
-        return "fin"
-    if low.endswith("_lt"):
-        return "lt"
-    if low.endswith("_pp"):
-        return "pp"
+    for suffix, kind in _SURVEY_SUFFIXES:
+        if low.endswith(suffix):
+            return kind
     return "raw"
 
 
 #: `file_kind` of a catalog action -> the survey kinds it accepts.
 FILE_KINDS = {
     "raw": {"raw"},
-    "pp": {"pp"},
-    "lt": {"lt"},
-    "fin": {"fin"},
-    "survey": {"raw", "pp", "lt", "fin"},
+    "prep": {"prep"},
+    "postp": {"postp"},
+    "resolved": {"resolved"},
+    "survey": {"raw", "prep", "postp", "resolved"},
 }
+
 
 
 def classify(path: Path, broj: int) -> str:

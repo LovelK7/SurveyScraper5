@@ -46,6 +46,13 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
 - **Pokreni** runs a command. Output streams into the **Ispis** panel at the
   bottom; when a tool asks something (the 3N file menu, the layout menu) you
   answer in the box under the output. Every run is logged to `runs/gui/`.
+- **3N › KORAK 3a** draws the layout menu as A4 sheets: the title block, and
+  each proposal's plan and profile boxes with the cave's walls in them,
+  computed by a dry run of `nacrt_finish.py --layouts-json` on the chosen
+  `_postp` file (well under a second, cached until the file changes). Clicking
+  a sheet puts its number in `--layout`, and a new file starts from the
+  proposal (1), so the run never stops to ask. The dry run's warnings (no
+  entrance sign, origin mismatch …) are listed under the sheets.
 - Runs that only read go on one click. Anything that writes to Drive, to the
   cave's folder or to georef.hr asks first (orange **Pokreni…**). Ticking
   `--dry-run` / `--local` makes it a plain run again.
@@ -59,7 +66,7 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   effect in. **Spremi** writes only the difference from the shared
   `tdx-mapping.json` into the cave's folder as `tdx-mapping-objekt.json`, so
   KORAK 1 and 2 apply it to that cave alone. **Vrati na zadano** deletes that
-  file. When `_pp`/`_lt` are older than the saved override, the page says
+  file. When `_prep`/`_postp` are older than the saved override, the page says
   which KORAK to redo. See
   [csurvey-settings.md](../3N-nacrt/production/csurvey-settings.md#per-cave-mapping-the-dashboards-mapiranje-page).
 - **4F** shows the cave's photos as a gallery (Pillow thumbnails cached in
@@ -108,9 +115,10 @@ How it is built, for whoever turns it into the real GUI:
 | `gui/workflow.py` | **The per-cave dependency graph**: each step's output files, input files and status (done / stale / todo / blocked …), and the catalog action that (re)makes it. Reads file names, mtimes, the OSZ's v10 cells and the dimensions JSON; writes nothing. |
 | `gui/state.py` | Read-only view of the machine: settings, SB versions, Drive dirs, caves in work, a cave's files classified by name, open-document locks. Fail-soft: a missing Drive is a note on the page. |
 | `gui/mapping.py` | The 3N mapping page: the shared mapping, a cave's override, the pictures (`tdx-mapping-catalog.json`). Loads 3N's pure-data `tdx_mapping.py` from the tools folder by path, so the page and KORAK 1/2 merge the same way; validates and writes the override. Runs no tool. |
+| `gui/layouts.py` | KORAK 3a's sheet thumbnails: runs `nacrt_finish.py --layouts-json` (a dry run, writes nothing) as a script, so the picture and the run read the same menu; caches per (path, mtime, size). |
 | `gui/media.py` | Photo thumbnails and the recoverable delete (shell "allow undo"). |
 | `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. `start_sequence` runs a recipe's steps one after another as a single job (stop on exit 2+ unless `keep_going`; 0/1 are the CLI's "done / not ready"). |
-| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, `/mapping/<broj>` (GET, POST, POST `…/reset`), `/mapping-catalog`, and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
+| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, `/mapping/<broj>` (GET, POST, POST `…/reset`), `/mapping-catalog`, `/layouts?broj=&path=` (KORAK 3a's sheets; only the cave's own `_postp` files), and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
 | `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`, `mapping.js` (the 3N mapping page). Plain JS, no build step. |
 
 Only standard library in the base install; Pillow (the `photos` extra) makes

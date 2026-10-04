@@ -285,6 +285,29 @@ a { color: var(--brand-text); }
 .cmd-row .cmd { flex: 1; margin: 0; }
 .cmd-row select { flex: 1; min-width: 0; }
 
+/* KORAK 3a layout sheets */
+.sheets { margin: 4px 0 10px; }
+.sheets-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: 12px; margin-bottom: 6px; }
+.sheets-head > span:first-child { font-weight: 600; }
+.sheet-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.sheet {
+  display: flex; flex-direction: column; gap: 4px; padding: 6px; width: 176px;
+  border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel-2);
+  color: inherit; font: inherit; cursor: pointer; text-align: left;
+}
+.sheet:hover { border-color: var(--brand-line); }
+.sheet:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.sheet.on { border: 2px solid var(--brand); padding: 5px; background: var(--brand-softer); }
+.sheet-page { width: 100%; height: auto; display: block; }
+.sheet-paper { fill: var(--panel); stroke: var(--line-strong); stroke-width: 1.2; }
+.sheet-block { fill: var(--line); }
+.sheet-box { fill: none; stroke: var(--muted); stroke-width: .8; stroke-dasharray: 3 2; }
+.sheet-wall { fill: none; stroke: var(--ink); stroke-width: .9; stroke-linejoin: round; stroke-linecap: round; }
+.sheet-label { fill: var(--muted); font: 11px var(--sans); }
+.sheet-cap { font-size: 12px; display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.sheet-tag { font-size: 10px; padding: 0 5px; border-radius: 6px; background: var(--brand-soft); color: var(--brand-text); }
+.sheet-warn { margin: 6px 0 0; padding-left: 18px; font-size: 12px; color: var(--stale); }
+
 /* file table */
 .files { width: 100%; border-collapse: collapse; }
 .files td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }

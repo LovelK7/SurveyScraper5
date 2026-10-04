@@ -25,7 +25,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from cave_dossier.core.paths import repo_root, workspace, workspace_root
-from cave_dossier.gui import catalog, mapping, media
+from cave_dossier.gui import catalog, layouts, mapping, media
 from cave_dossier.gui.jobs import JobManager, SequenceStep, cli_argv, script_argv
 from cave_dossier.gui.state import Workspace, csurvey_exe, tools_dir
 
@@ -179,6 +179,22 @@ class App:
         except OSError as exc:
             raise ApiError(f"Mapiranje: {exc}") from exc
 
+    # ── 3N KORAK 3a layout menu ─────────────────────────────────────
+    def layouts(self, query: dict) -> dict:
+        """GET layouts?broj=&path= — the sheets KORAK 3a would offer (gui/layouts.py)."""
+        broj = _int(query.get("broj"))
+        path = str(query.get("path", ""))
+        if path not in self.ws.candidate_files(broj, "postp"):
+            raise ApiError("Nije _postp datoteka ovog objekta.", HTTPStatus.NOT_FOUND)
+        tools = tools_dir()
+        if tools is None:
+            raise ApiError("3N alati nisu pronađeni (nema stages/3N-nacrt/production/"
+                           "tools, a CSX_TOOLS nije postavljen).")
+        try:
+            return layouts.menu(tools, Path(path))
+        except layouts.LayoutError as exc:
+            raise ApiError(str(exc)) from exc
+
     # ── photos ──────────────────────────────────────────────────────
     PHOTO_KINDS = {"photo", "photo_processed", "queued"}
 
@@ -285,12 +301,16 @@ def make_handler(app: App):
 
         # -- plumbing --
         def _send(self, status: int, body: bytes, ctype: str) -> None:
-            self.send_response(status)
-            self.send_header("Content-Type", f"{ctype}; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.send_response(status)
+                self.send_header("Content-Type", f"{ctype}; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(body)
+            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+                # The browser left mid-reply (reload, closed tab); nobody to answer.
+                self.close_connection = True
 
         def _json(self, data, status: int = HTTPStatus.OK) -> None:
             self._send(status, json.dumps(data, ensure_ascii=False).encode("utf-8"),
@@ -391,6 +411,8 @@ def make_handler(app: App):
                 if head == "files":
                     return {"files": app.ws.candidate_files(_int(query.get("broj")),
                                                             query.get("kind", ""))}
+                if head == "layouts":
+                    return app.layouts(query)
                 if head == "mapping-catalog" or (head == "mapping" and len(parts) == 2):
                     return app.mapping_api("GET", parts)
                 if head == "jobs":

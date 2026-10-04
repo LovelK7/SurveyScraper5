@@ -8,7 +8,7 @@ parses its JSON. The XML side of KORAK 3 (`nacrt_finish.py`) never touches
 cSurvey, and this side never touches XML — the two meet through files.
 
     from csurvey_driver import finish_and_print
-    result = finish_and_print("SB_1103_..._lt_fin.csx", out_dir)
+    result = finish_and_print("SB_1103_..._postp_resolved.csx", out_dir)
     # -> {"plan": ..._plan.pdf, "profile": ..._profile.pdf,
     #     "dimensions": {...}, "json": ..._dimenzije.json}
 
@@ -76,7 +76,7 @@ EXIT_MESSAGES = {
 
 # The suffix chain the pipeline appends; stripped so outputs are named after the
 # cave. Same rule as Get-SurveyBaseName in the .ps1 — keep the two in step.
-STEP_SUFFIXES = ("_fin", "_lt", "_pp")
+STEP_SUFFIXES = sb_select.STEP_SUFFIXES
 
 # What finish_and_print copies out of nacrt_finish.py's sidecar into the
 # dimensions JSON, so 4S and the compositor read one file.
@@ -183,7 +183,7 @@ def setting(name, default, override=None):
 
 
 def survey_base_name(path):
-    """`X_lt_fin.csx` -> `X`, so the PDFs are named after the cave."""
+    """`X_postp_resolved.csx` -> `X`, so the PDFs are named after the cave."""
     stem = os.path.splitext(os.path.basename(path))[0]
     name = stem
     changed = True
@@ -197,7 +197,7 @@ def survey_base_name(path):
 
 
 def layout_sidecar(survey):
-    """nacrt_finish.py's `<name>_fin.layout.json`, when it is beside the survey."""
+    """nacrt_finish.py's `<name>_resolved.layout.json`, when it is beside the survey."""
     path = os.path.splitext(survey)[0] + ".layout.json"
     return path if os.path.exists(path) else None
 
@@ -376,15 +376,15 @@ def finish_and_print(survey, out_dir, timeout=DEFAULT_TIMEOUT, **kw):
 def finished_state(path):
     """Short Croatian label for the --sb menu."""
     stem = os.path.splitext(os.path.basename(path))[0].lower()
-    if stem.endswith("_fin"):
-        return "dovrseno (_fin) - ovo se ispisuje"
-    if stem.endswith("_lt"):
+    if stem.endswith(sb_select.RESOLVED_ALL):
+        return "dovrseno (_resolved) - ovo se ispisuje"
+    if stem.endswith(sb_select.POSTP_ALL):
         return "jos nije dovrseno - prvo nacrt_finish.py"
     return "nije iz ovog koraka"
 
 
 def pick_by_sb(inputs, sb):
-    """--sb: intake folder + Redni broj -> the `_lt_fin` file(s), or None."""
+    """--sb: intake folder + Redni broj -> the `_postp_resolved` file(s), or None."""
     dirs = [a for a in inputs if os.path.isdir(a)]
     if len(dirs) != len(inputs) or len(dirs) != 1:
         print("ERROR: --sb takes exactly one folder (the intake dir) as input",
@@ -395,9 +395,9 @@ def pick_by_sb(inputs, sb):
     if leaves is None:
         return None
     files = [f for f in sb_select.list_files(leaves, (".csz", ".csx"))
-             if os.path.splitext(f)[0].lower().endswith("_fin")]
+             if sb_select.stem_endswith(f, sb_select.RESOLVED_ALL)]
     if not files:
-        print("nothing to do - u toj mapi nema dovrsene (_fin) datoteke; "
+        print("nothing to do - u toj mapi nema dovrsene (_resolved) datoteke; "
               "prvo pokreni nacrt_finish.py")
         return None
     return sb_select.choose(files, labels=[finished_state(f) for f in files],
@@ -421,7 +421,8 @@ def main(argv=None):
     ap.add_argument("--scale", type=int, help="scale denominator override")
     ap.add_argument("--landscape", action="store_true")
     ap.add_argument("--sb", nargs="+", metavar="BROJ",
-                    help="with a folder input: pick the cave's _fin file")
+                    help="with a folder input: pick the cave's _resolved file")
+
     args = ap.parse_args(argv)
 
     if args.sb:

@@ -69,6 +69,8 @@ class Action:
     #: A manual step shown between runs (no command): cSurvey work etc.
     manual: str = ""
     group: str = ""
+    #: An extra panel the card draws: "layouts" = KORAK 3a's sheet thumbnails.
+    preview: str = ""
 
     @property
     def needs_cave(self) -> bool:
@@ -143,34 +145,34 @@ ACTIONS: tuple[Action, ...] = (
     # ── 3N — nacrt ───────────────────────────────────────────────────
     Action(
         "3n-k1", "3N", "Pripremi sirovi .csx",
-        "TopoDroid izvoz → <ime>_pp.csx (simboli preimenovani da prežive uvoz).",
+        "TopoDroid izvoz → <ime>_prep.csx (simboli preimenovani da prežive uvoz).",
         "preprocess_tdx_csx.py", ("{file}",),
-        options=(Option("--force", "Prepiši postojeći _pp (--force)", default=True),),
-        writes="zapisuje <ime>_pp.csx u mapu objekta",
+        options=(Option("--force", "Prepiši postojeći _prep (--force)", default=True),),
+        writes="zapisuje <ime>_prep.csx u mapu objekta",
         file_kind="raw", step="KORAK 1",
     ),
     Action(
-        "3n-m1", "3N", "cSurvey: otvori _pp i spremi",
-        "", "manual", (), file_kind="pp", step="cSurvey",
-        manual="Otvori <ime>_pp.csx u cSurveyu, pa File › Save As (isto ime).",
+        "3n-m1", "3N", "cSurvey: otvori _prep i spremi",
+        "", "manual", (), file_kind="prep", step="cSurvey",
+        manual="Otvori <ime>_prep.csx u cSurveyu, pa File › Save As (isto ime).",
     ),
     Action(
         "3n-k2", "3N", "Dovrši uvoz",
-        "Spremljena datoteka → <ime>_lt.csx (linije u splajnove, voda, veličine znakova).",
+        "Spremljena <ime>_prep → <ime>_postp.csx (linije u splajnove, voda, veličine znakova).",
         "fix_imported_linetypes.py", ("{file}",),
-        options=(Option("--force", "Prepiši postojeći _lt (--force)", default=True),),
-        writes="zapisuje <ime>_lt.csx u mapu objekta",
-        file_kind="pp", step="KORAK 2",
+        options=(Option("--force", "Prepiši postojeći _postp (--force)", default=True),),
+        writes="zapisuje <ime>_postp.csx u mapu objekta",
+        file_kind="prep", step="KORAK 2",
     ),
     Action(
         "3n-m2", "3N", "cSurvey: ispravi skicu",
-        "", "manual", (), file_kind="lt", step="cSurvey",
-        manual="Otvori <ime>_lt.csx u cSurveyu, ispravi skicu i spremi.",
+        "", "manual", (), file_kind="postp", step="cSurvey",
+        manual="Otvori <ime>_postp.csx u cSurveyu, ispravi skicu i spremi.",
     ),
     Action(
-        "3n-k3a", "3N", "Dovrši nacrt (_lt → _lt_fin)",
-        "Ulaz, dubina, mjerilo, strelica sjevera, A4 postavke ispisa. Bez --yes "
-        "i --layout pokazuje izbornik rasporeda – odgovori u polju ispod ispisa.",
+        "3n-k3a", "3N", "Dovrši nacrt (_postp → _postp_resolved)",
+        "Ulaz, dubina, mjerilo, strelica sjevera, A4 postavke ispisa. Raspored na "
+        "stranici biraš klikom na list ispod (1 = prijedlog); broj ide u --layout.",
         "nacrt_finish.py", ("{file}",),
         options=(
             FORCE,
@@ -179,8 +181,9 @@ ACTIONS: tuple[Action, ...] = (
                    help="Broj iz izbornika rasporeda (1 = prijedlog)."),
             Option("--dry-run", "Samo pokaži (--dry-run)", safe=True),
         ),
-        writes="zapisuje <ime>_lt_fin.csx u mapu objekta",
-        file_kind="lt", step="KORAK 3a",
+        writes="zapisuje <ime>_postp_resolved.csx u mapu objekta",
+        file_kind="postp", step="KORAK 3a", preview="layouts",
+
     ),
     Action(
         "3n-k3b", "3N", "Ispiši tlocrt i profil (cSurvey bez dijaloga)",
@@ -188,7 +191,7 @@ ACTIONS: tuple[Action, ...] = (
         "<ime>_dimenzije.json. Treba C:\\csurvey64 i pisač Microsoft Print to PDF.",
         "csurvey_driver.py", ("finish", "{file}"),
         writes="zapisuje _plan.pdf, _profile.pdf i _dimenzije.json u mapu objekta",
-        file_kind="fin", step="KORAK 3b",
+        file_kind="resolved", step="KORAK 3b",
     ),
     Action(
         "3n-k3c", "3N", "Složi Nacrt na sastavnicu",

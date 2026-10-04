@@ -79,7 +79,7 @@ def install(tmp_path, monkeypatch):
 
 @pytest.fixture()
 def survey(tmp_path):
-    path = tmp_path / "SB_1103_golobreska_lt_fin.csx"
+    path = tmp_path / "SB_1103_golobreska_postp_resolved.csx"
     path.write_text("<csurvey />", encoding="utf-8")
     return path
 
@@ -227,12 +227,15 @@ def test_broken_json_is_an_error(install, survey, monkeypatch):
 
 
 @pytest.mark.parametrize("stem, expected", [
+    ("SB_1103_golobreska_postp_resolved", "SB_1103_golobreska"),
+    ("SB_1103_golobreska_postp", "SB_1103_golobreska"),
+    ("cave_prep", "cave"),
+    ("cave_recovered_postp_resolved", "cave_recovered"),
+    # names from before 2026-10-04, still on the Drive
     ("SB_1103_golobreska_lt_fin", "SB_1103_golobreska"),
-    ("SB_1103_golobreska_lt", "SB_1103_golobreska"),
-    ("cave_pp", "cave"),
     ("cave_recovered_pp_lt_fin", "cave_recovered"),
     ("plain", "plain"),
-    ("_lt", "_lt"),                      # nothing left to name it by
+    ("_postp", "_postp"),                # nothing left to name it by
 ])
 def test_the_pipeline_suffix_chain_is_stripped(stem, expected):
     assert csurvey_driver.survey_base_name(stem + ".csx") == expected
@@ -325,10 +328,10 @@ def test_the_driver_refuses_politely_off_windows(monkeypatch):
 
 def _staged(tmp_path, monkeypatch, layout=None):
     """A survey plus the PDFs a print would leave, and optionally T1's sidecar."""
-    survey = tmp_path / "SB_1103_golobreska_lt_fin.csx"
+    survey = tmp_path / "SB_1103_golobreska_postp_resolved.csx"
     survey.write_text("<csurvey />", encoding="utf-8")
     if layout is not None:
-        (tmp_path / "SB_1103_golobreska_lt_fin.layout.json").write_text(
+        (tmp_path / "SB_1103_golobreska_postp_resolved.layout.json").write_text(
             json.dumps(layout), encoding="utf-8")
     out = tmp_path / "pdf"
     runner = fake(monkeypatch, stdout=DIMENSIONS_JSON + "\n",
@@ -395,10 +398,10 @@ def test_end_to_end_on_sb1103(tmp_path):
     sys.path.insert(0, str(TOOLS))
     import nacrt_finish
 
-    survey = tmp_path / "SB_1103_golobreska_lt.csx"
+    survey = tmp_path / "SB_1103_golobreska_postp.csx"
     survey.write_bytes(RAW.read_bytes())
     assert nacrt_finish.main([str(survey), "--yes"]) == 0
-    finished = tmp_path / "SB_1103_golobreska_lt_fin.csx"
+    finished = tmp_path / "SB_1103_golobreska_postp_resolved.csx"
     assert finished.exists()
 
     out = tmp_path / "pdf"

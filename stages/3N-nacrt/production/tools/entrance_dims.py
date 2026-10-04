@@ -2,7 +2,9 @@
 """Entrance size at the entrance station - the OSZ's Sirina / Visina ulaza.
 
 Called by nacrt_finish.py once the entrance station is decided; the result
-lands in the `_lt_fin.layout.json` sidecar as `entrance_size`, travels into
+lands in the `_postp_resolved.layout.json`
+ sidecar
+ as `entrance_size`, travels into
 `<name>_dimenzije.json` (csurvey_driver.py) and `cavedossier osz prefill`
 writes the cells. Project 0005 (stages/3N-nacrt/projects/0005-entrance-dimensions)
 settled the rules with the user, 2026-10-02/03:

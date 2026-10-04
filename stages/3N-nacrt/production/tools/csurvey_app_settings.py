@@ -135,7 +135,8 @@ def cmd_check(settings, reg):
         print("  %-14s je %s, treba %s  (%s)"
               % (name, "-" if cur is None else cur, value, ui))
     print("  -> zatvori cSurvey i dvoklikni csurvey_0_postavi_csurvey.bat")
-    return 0  # a warning, never a stop: the _lt file is already written
+    return 0  # a warning, never a stop: the _postp file is already written
+
 
 
 def cmd_show(settings, reg):

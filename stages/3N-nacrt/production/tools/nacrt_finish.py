@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""KORAK 3, step one: finish a corrected `_lt` survey so it can be printed.
+"""KORAK 3, step one: finish a corrected `_postp` survey so it can be printed.
 
-Takes the `_lt.csx`/`_lt.csz` the operator saved after correcting the sketch and
-writes `<name>_lt_fin.<same ext>` plus a sidecar `<name>_lt_fin.layout.json`.
+Takes the `_postp.csx`/`_postp.csz` the operator saved after correcting the sketch and
+writes `<name>_postp_resolved.<same ext>` plus a sidecar `<name>_postp_resolved.layout.json`.
 Pure XML — no cSurvey, no printing. It does by hand exactly what the operator
 used to click through (projects/0004-nacrt-finishing brief §2.1):
 
@@ -25,7 +25,7 @@ endings and the numeric-escape style of the input are reproduced, so a diff of
 input against output shows only the elements this tool added.
 
 Usage:
-  python production/tools/nacrt_finish.py INPUT_lt.csx|.csz [-o OUT] [--force]
+  python production/tools/nacrt_finish.py INPUT_postp.csx|.csz [-o OUT] [--force]
   python production/tools/nacrt_finish.py INTAKE --sb 1103      (pick from the cave folder)
   python production/tools/nacrt_finish.py INPUT --dry-run       (report, write nothing)
   python production/tools/nacrt_finish.py INPUT --yes           (accept the proposed layout)
@@ -188,7 +188,7 @@ def write_root(root, src_path, out, is_csz, style, extra_entries=None):
 
 
 def not_yet_imported(root):
-    """True if this is a raw/phone or _pp file (flat <plan>/<item>, no
+    """True if this is a raw/phone or _prep file (flat <plan>/<item>, no
     <layers>) that has not been through cSurvey's import + Save. The finisher
     would find no layer to write into."""
     for design in ("plan", "profile"):
@@ -1277,6 +1277,77 @@ def print_menu(best, alternatives, out):
             out("   " + line)
 
 
+# Points kept per design in --layouts-json: plenty for a thumbnail, small enough
+# that a long cave's dense TopoDroid walls don't make a megabyte of JSON.
+OUTLINE_MAX_POINTS = 800
+
+
+def design_outline(design, bbox, max_points=OUTLINE_MAX_POINTS):
+    """The design's walls as polylines in metres, origin at the padded bbox's
+    top-left (the corner its Placement starts at), thinned to `max_points`.
+
+    Walls only (the Borders layer); a design without any falls back to every
+    item. A `B` flag starts a new stroke (cPoints.vb, bBeginSequence), so one
+    item may give several polylines.
+    """
+    if design is None or bbox is None:
+        return []
+    items = list(iter_items(design, (LAYER_BORDERS,))) or list(iter_items(design))
+    strokes = []
+    for item in items:
+        stroke = []
+        for x, y, flags in item_points(item):
+            if flags.startswith("B") and stroke:
+                strokes.append(stroke)
+                stroke = []
+            stroke.append((x, y))
+        if stroke:
+            strokes.append(stroke)
+    total = sum(len(s) for s in strokes)
+    step = max(1, -(-total // max_points))
+    x0, y0 = bbox[0] - PAD_M, bbox[1] - PAD_M
+    lines = []
+    for stroke in strokes:
+        kept = stroke[::step]
+        if kept[-1] != stroke[-1]:
+            kept.append(stroke[-1])
+        if len(kept) >= 2:
+            lines.append([[round(x - x0, 2), round(y - y0, 2)] for x, y in kept])
+    return lines
+
+
+def layouts_payload(root, menu, reason, plan_bbox, profile_bbox, warnings):
+    """What --layouts-json writes: the page, the title block and every proposal
+    of the menu with its placements, plus each design's outline so a caller
+    (the dashboard's KORAK 3a card) can draw the sheets instead of reading the
+    console's character sketch. Entry n is what `--layout n` takes."""
+    def rect(placement, scale):
+        return {"x": placement.x, "y": placement.y, "width": placement.width,
+                "height": placement.height, "scale": scale}
+
+    designs = {}
+    for name, box in (("plan", plan_bbox), ("profile", profile_bbox)):
+        padded = layout_bbox(box)
+        designs[name] = None if padded is None else {
+            "size_m": [round(padded.width, 2), round(padded.height, 2)],
+            "lines": design_outline(root.find(name), box),
+        }
+    block = nacrt_layout.TITLE_BLOCK_MM
+    return {
+        "page_mm": list(nacrt_layout.A4_PORTRAIT_MM),
+        "title_block_mm": {"x": block.x, "y": block.y,
+                           "width": block.width, "height": block.height},
+        "designs": designs,
+        "layouts": [{"n": n, "proposal": n == 1, "mjerilo": layout.mjerilo,
+                     "note": layout.note, "arrangement": layout.arrangement,
+                     "plan": rect(layout.plan, layout.plan_scale),
+                     "profile": rect(layout.profile, layout.profile_scale)}
+                    for n, layout in enumerate(menu, 1)],
+        "no_fit_reason": reason or "",
+        "warnings": list(warnings),
+    }
+
+
 def ask_layout(best, alternatives, chooser):
     """Let the operator take an alternative. Returns (layout, label)."""
     if not alternatives:
@@ -1340,8 +1411,8 @@ def finish(inp, out_path, args, report):
               file=sys.stderr)
         return None, False
     stem = os.path.splitext(os.path.basename(inp))[0]
-    if "_lt" not in stem.lower():
-        warn("naziv ne sadrzi _lt - je li ovo datoteka nakon KORAKA 2?")
+    if not any(s in stem.lower() for s in sb_select.POSTP_ALL):
+        warn("naziv ne sadrzi _postp - je li ovo datoteka nakon KORAKA 2?")
 
     report("NACRT FINISH  %s" % inp)
     report("  izlaz:    %s" % out_path)
@@ -1452,6 +1523,7 @@ def finish(inp, out_path, args, report):
                       max(plan_after[3], scale_bar["points"][1] + BAR_LABEL_M))
     profile_after = design_bbox(root.find("profile"))
     best, alternatives, reason = choose(plan_after, profile_after)
+    menu = [best] + list(alternatives) if best is not None else []
     if best is not None and best.plan_scale != provisional_plan_scale:
         warn("duzina mjerila je odabrana za 1:%d, a tlocrt na kraju ide u "
              "1:%d - provjeri je li stap prave duzine"
@@ -1550,6 +1622,16 @@ def finish(inp, out_path, args, report):
         for message in warnings:
             report("   ! %s" % message)
 
+    if getattr(args, "layouts_json", None):
+        payload = layouts_payload(root, menu, reason, plan_after, profile_after,
+                                  warnings)
+        payload["source"] = os.path.basename(inp)
+        with open(args.layouts_json, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False)
+        report("")
+        report("  --layouts-json: %d rasporeda -> %s"
+               % (len(menu), args.layouts_json))
+
     if args.dry_run:
         report("")
         report("  --dry-run: nista nije zapisano.")
@@ -1582,9 +1664,9 @@ def finish_state(path):
     if plan is not None and has_quota(plan, "6"):
         return "vec dovrseno (ima mjerilo)"
     stem = os.path.splitext(os.path.basename(path))[0].lower()
-    if stem.endswith("_lt"):
-        return "dovrsen uvoz (_lt) - ovo dovrsavas"
-    return "nije _lt - provjeri je li skica ispravljena"
+    if stem.endswith(sb_select.POSTP_ALL):
+        return "dovrsen uvoz (_postp) - ovo dovrsavas"
+    return "nije _postp - provjeri je li skica ispravljena"
 
 
 def pick_by_sb(inputs, sb):
@@ -1598,25 +1680,27 @@ def pick_by_sb(inputs, sb):
     leaves = sb_select.resolve(intake, sb)
     if leaves is None:
         return None
-    files = sb_select.list_files(leaves, (".csz", ".csx"), skip_suffixes=("_fin",))
+    files = sb_select.list_files(leaves, (".csz", ".csx"),
+                                 skip_suffixes=sb_select.RESOLVED_ALL)
     if not files:
         print("nothing to do - u toj mapi nema .csz ni .csx datoteke")
         return None
-    # The _lt is what KORAK 2 made and the drafter corrected — the one input
+    # The _postp is what KORAK 2 made and the drafter corrected — the one input
     # here. Ask only if a cave has none, or more than one.
     labels = [finish_state(f) for f in files]
     return sb_select.pick(
-        files, lambda f: os.path.splitext(f)[0].lower().endswith("_lt"),
+        files, lambda f: sb_select.stem_endswith(f, sb_select.POSTP_ALL),
         leaves, labels=labels, root=intake, prompt="Koju datoteku dovrsiti? ")
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Dovrsi ispravljeni _lt survey za ispis Nacrta (KORAK 3).")
+        description="Dovrsi ispravljeni _postp survey za ispis Nacrta (KORAK 3).")
     ap.add_argument("input", nargs="+",
-                    help="corrected _lt .csz or .csx file(s) saved by cSurvey")
+                    help="corrected _postp .csz or .csx file(s) saved by cSurvey")
+
     ap.add_argument("-o", "--out",
-                    help="output path (default: <input>_fin.<same ext>); "
+                    help="output path (default: <input>_resolved.<same ext>); "
                          "single input only")
     ap.add_argument("--force", action="store_true",
                     help="overwrite an existing output")
@@ -1626,6 +1710,10 @@ def main(argv=None):
                     help="accept the proposed layout without asking")
     ap.add_argument("--layout", type=int, metavar="N",
                     help="take layout N from the menu (1 = the proposal)")
+    ap.add_argument("--layouts-json", metavar="PATH",
+                    help="write the layout menu (placements + the drawings' "
+                         "outlines) to PATH as JSON; implies --dry-run, single "
+                         "input only")
     ap.add_argument("--sb", nargs="+", metavar="BROJ",
                     help="with a folder input: pick the file from that cave's "
                          "SB_<broj>_... leaf")
@@ -1640,19 +1728,27 @@ def main(argv=None):
     if args.out and len(args.input) > 1:
         print("ERROR: -o/--out works with a single input only", file=sys.stderr)
         return 1
+    if args.layouts_json:
+        if len(args.input) > 1:
+            print("ERROR: --layouts-json works with a single input only",
+                  file=sys.stderr)
+            return 1
+        args.dry_run = True
+
 
     batch = len(args.input) > 1
     rc = 0
     for inp in args.input:
         base, ext = os.path.splitext(inp)
-        if batch and base.lower().endswith("_fin"):
-            print("skip %s (already a _fin output)" % inp)
+        if batch and sb_select.stem_endswith(inp, sb_select.RESOLVED_ALL):
+            print("skip %s (already a _resolved output)" % inp)
             continue
         if not os.path.exists(inp):
             print("ERROR: %s does not exist" % inp, file=sys.stderr)
             rc = 1
             continue
-        out_path = args.out or (base + "_fin" + ext)
+        out_path = args.out or (base + sb_select.RESOLVED + ext)
+
         if os.path.abspath(out_path) == os.path.abspath(inp):
             print("ERROR: output must differ from input (%s)" % inp,
                   file=sys.stderr)

@@ -55,7 +55,7 @@ KORAK 0 - POSTAVI cSURVEY (jednom po računalu, prije prvog objekta)
     KORAK 2 javi da cSurvey "nije postavljen" (novo računalo, netko je
     ručno promijenio postavke, ili su dodane nove).
   * Boja poligona (crvena), veličine znakova i sl. NISU ovdje - njih
-    KORAK 2 upiše u samu _lt datoteku.
+    KORAK 2 upiše u samu _postp datoteku.
 
 PRILAGODBA ZA JEDAN OBJEKT (po potrebi)
   * Ako u mapi objekta postoji  tdx-mapping-objekt.json , KORAK 1 i
@@ -82,14 +82,14 @@ KORAK 1 - PRIPREMI DATOTEKU (na računalu)
       - SVE = obradi sve objekte pod !Za digitalizirat
       - samo Enter = odustani, ništa se ne mijenja
   * Ili, ako ti je lakše: povuci svoj .csx s mobitela na tu ikonu.
-  * Nastaje nova datoteka pokraj polazne, naziva koji završava na  _pp
-    Primjer:  spilja.csx  ->  spilja_pp.csx
+  * Nastaje nova datoteka pokraj polazne, naziva koji završava na  _prep
+    Primjer:  spilja.csx  ->  spilja_prep.csx
   * Pročitaj retke koji počinju s WARNING - oni kažu koji nacrtani
     simboli neće prijeći u cSurvey.
 
 UVOZ U cSURVEY (ručno)
   * Pokreni cSurvey.
-  * Otvori  _pp  datoteku (onu iz KORAKA 1).   <-- otvaraš _pp!
+  * Otvori  _prep  datoteku (onu iz KORAKA 1).   <-- otvaraš _prep!
   * cSurvey sam uveze i izračuna.
   * Zidove NE moraš spajati (Merge) ni okretati (Revert sequence) -
     to radi KORAK 2.
@@ -107,9 +107,11 @@ KORAK 2 - DOVRŠI UVOZ  (NAPRAVI PRIJE NEGO IŠTA NACRTAŠ)
       - SVE = sve ponuđene, samo Enter = odustani
   * Ili, ako ti je lakše: povuci datoteku koju si upravo spremio na
     tu ikonu.
-  * Nastaje nova datoteka pokraj nje, naziva koji završava na  _lt
-    Primjer:  spilja_rad.csz  ->  spilja_rad_lt.csz
-  * U cSurveyu OTVORI TU  _lt  DATOTEKU i u njoj crtaj sve dalje.
+  * Nastaje nova datoteka pokraj nje, naziva koji završava na  _postp
+    Primjer:  spilja_prep.csz  ->  spilja_postp.csz
+              (spremljena pod drugim imenom:  spilja_rad.csz  ->
+              spilja_rad_postp.csz)
+  * U cSurveyu OTVORI TU  _postp  DATOTEKU i u njoj crtaj sve dalje.
 
   ZAŠTO OVAJ KORAK POSTOJI: kad cSurvey uveze linije s mobitela, radi
   ih kao "Straight line", a u tom načinu linije kosine i slične NE
@@ -121,7 +123,7 @@ KORAK 2 - DOVRŠI UVOZ  (NAPRAVI PRIJE NEGO IŠTA NACRTAŠ)
   zatvori ulaz umjesto da presiječe kanal. Gdje je unutrašnjost špilje
   zna iz vlakova i vizura. Linija koju snimak ne "vidi" (npr. površina
   terena nacrtana olovkom zida) ostane kako je nacrtana. U crnom
-  prozoru piše "zidovi: spojeno ..."; u _lt datoteci PROVJERI ispunu.
+  prozoru piše "zidovi: spojeno ..."; u _postp datoteci PROVJERI ispunu.
   Ako si zidove ipak sam spojio prije Save As, KORAK 2 ih ne spaja
   ponovno, samo okrene i složi linije u tvojim obrubima; "provjeri
   rucno" znači da popravak nije siguran i da tu liniju pogledaš sam.
@@ -130,7 +132,7 @@ KORAK 2 - DOVRŠI UVOZ  (NAPRAVI PRIJE NEGO IŠTA NACRTAŠ)
   imaju jednako malog.
 
 CRTANJE U cSURVEYU (ručno)
-  * U  _lt  datoteci ispravi i dovrši skicu, pa je spremi.
+  * U  _postp  datoteci ispravi i dovrši skicu, pa je spremi.
   * NE moraš sam dodavati mjerilo, strelicu sjevera ni dubinu, i ne
     moraš ništa podešavati za ispis - to radi KORAK 3.
 
@@ -138,11 +140,11 @@ KORAK 3 - DOVRŠI NACRT
   * Dvoklik na  csurvey_3_dovrsi_nacrt.bat  i upiši Redni broj objekta
     (isto kao u KORAKU 1).
       - ako u mapi objekta ima više datoteka, pitat će te koju
-        dovršavaš; dovršava se ona koja završava na  _lt
+        dovršavaš; dovršava se ona koja završava na  _postp
       - zatim ispiše ponuđena mjerila i rasporede crteža na stranici
         i pita "Koji raspored?" - Enter uzima prijedlog (1), a broj
         uzima neku od ponuđenih inačica
-  * Ili, ako ti je lakše: povuci ispravljenu  _lt  datoteku na tu
+  * Ili, ako ti je lakše: povuci ispravljenu  _postp  datoteku na tu
     ikonu - tada ništa ne pita, nego uzima prijedlog.
   * Što radi, redom:
       1. u datoteku upiše mjerilo (crtica s brojkama), strelicu
@@ -150,16 +152,16 @@ KORAK 3 - DOVRŠI NACRT
       2. sam ispiše tlocrt i profil iz cSurveya u PDF, bez dijaloga,
       3. složi oba crteža na sastavnicu objekta.
   * Kad završi, u mapi objekta stoji:
-      <ime>_lt_fin.csx      dovršena datoteka za cSurvey
-      <ime>_plan.pdf        ispisani tlocrt
-      <ime>_profile.pdf     ispisani profil
-      <ime>_dimenzije.json  duljine i dubina (za sastavnicu i zapisnik)
-      SB_<broj>_nacrt.pdf   GOTOV NACRT - to je konačni proizvod
+      <ime>_postp_resolved.csx  dovršena datoteka za cSurvey
+      <ime>_plan.pdf            ispisani tlocrt
+      <ime>_profile.pdf         ispisani profil
+      <ime>_dimenzije.json      duljine i dubina (za sastavnicu i zapisnik)
+      SB_<broj>_nacrt.pdf       GOTOV NACRT - to je konačni proizvod
   * Otvori  SB_<broj>_nacrt.pdf  i provjeri stranicu. Ako ti raspored
     ne odgovara, pokreni KORAK 3 ponovo i odaberi drugi iz izbornika.
 
   AKO NA RAČUNALU NEMA cSURVEYA: korak stane poslije prve točke i to
-  ti napiše. Datoteka  _lt_fin  je već napravljena - otvori je u
+  ti napiše. Datoteka  _postp_resolved  je već napravljena - otvori je u
   cSurveyu na računalu gdje ga ima, pa File > Print, posebno tlocrt i
   posebno profil, a za pisač odaberi "Microsoft Print to PDF".
   Mjerilo i A4 su već upisani u datoteku - ne diraj ih.
@@ -168,29 +170,35 @@ KORAK 3 - DOVRŠI NACRT
 ------------------------------------------------------------------
  NASTAVCI U NAZIVU (da ti naziv kaže gdje si)
 ------------------------------------------------------------------
-   (bez nastavka)  sirova datoteka s mobitela
-   _pp             PRIPREMLJENA - nju UVOZIŠ u cSurvey
-   _recovered      obnovljena iz zipa (KORAK 9)
-   _lt             UVEZENA - nju OTVARAŠ I U NJOJ CRTAŠ (KORAK 2)
-   _lt_fin         DOVRŠENA za ispis - nju više ne diraš (KORAK 3)
+   (bez nastavka)    sirova datoteka s mobitela
+   _prep             PRIPREMLJENA (preprocessing, KORAK 1) - nju
+                     UVOZIŠ u cSurvey
+   _recovered        obnovljena iz zipa (KORAK 9)
+   _postp            UVEZENA i dorađena (postprocessing, KORAK 2) -
+                     nju OTVARAŠ I U NJOJ CRTAŠ
+   _postp_resolved   DOVRŠENA za ispis - nju više ne diraš (KORAK 3)
 
-Pravilo u jednoj rečenici:  UVEZI _pp datoteku  ->  CRTAJ U _lt datoteci
+Pravilo u jednoj rečenici:  UVEZI _prep datoteku  ->  CRTAJ U _postp datoteci
 ->  KORAK 3 napravi ostalo.
+
+Starije datoteke nose stare nastavke: _pp (= _prep), _lt (= _postp) i
+_lt_fin (= _postp_resolved). Alati ih i dalje prepoznaju - ne moraš ih
+preimenovati.
 
 
 ------------------------------------------------------------------
  AKO CRNI PROZOR JAVI...
 ------------------------------------------------------------------
- "OK ... _lt ..."   Uspjeh. Otvori _lt datoteku u cSurveyu i crtaj.
+ "OK ... _postp ..."   Uspjeh. Otvori _postp datoteku u cSurveyu i crtaj.
 
  "BLOCKED"          Dao si csurvey_2_dovrsi_uvoz.bat datoteku koja
-                    još nije uvezena u cSurvey (npr. _pp). Prvo je
+                    još nije uvezena u cSurvey (npr. _prep). Prvo je
                     uvezi i spremi (Save As), pa tu spremljenu
                     datoteku odaberi (ili povuci na ikonu).
 
  "UPOZORENJE: cSurvey na ovom racunalu nije postavljen"
                     (KORAK 2) Zatvori cSurvey i dvoklikni
-                    csurvey_0_postavi_csurvey.bat. _lt datoteka je
+                    csurvey_0_postavi_csurvey.bat. _postp datoteka je
                     svejedno napravljena.
 
  "BLOCKED: cSurvey je otvoren"
@@ -220,7 +228,7 @@ od KORAKA 1.
 
   * Dvoklik na  csurvey_9_oporavi_iz_zipa.bat  i upiši Redni broj
     (isto kao u KORAKU 1), ili povuci projektni .zip na tu ikonu.
-  * Nastaje  <objekt>_recovered_pp.csx  -> nju uvozi u cSurvey, i
+  * Nastaje  <objekt>_recovered_prep.csx  -> nju uvozi u cSurvey, i
     preskoči KORAK 1 (oporavak ga je već odradio). Dalje normalno:
     Save As, pa KORAK 2, pa KORAK 3.
 ==================================================================

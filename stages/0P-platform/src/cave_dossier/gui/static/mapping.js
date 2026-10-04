@@ -154,7 +154,7 @@ function changedSections(a, b) {
   return ["points", "lines", "areas", "generic", "postimport"].filter(s => !same(prune(a[s] || {}), prune(b[s] || {})));
 }
 
-// A saved override newer than the cave's _pp / _lt means those files were made
+// A saved override newer than the cave's _prep / _postp means those files were made
 // with the old mapping.
 function redoHints() {
   const d = M.data;
@@ -162,9 +162,10 @@ function redoHints() {
   const newest = kind => Math.max(0, ...S.cave.files.filter(f => f.kind === kind).map(f => f.modified));
   const k1 = (d.changed || []).some(s => d.korak_of[s] === 1), k2 = (d.changed || []).some(s => d.korak_of[s] === 2);
   const out = [];
-  const pp = newest("pp"), lt = newest("lt");
-  if (k1 && pp && pp < d.override_modified) out.push("_pp je napravljen prije ove prilagodbe simbola: ponovi KORAK 1, pa uvoz u cSurvey i KORAK 2.");
-  else if (k2 && lt && lt < d.override_modified) out.push("_lt je napravljen prije ove prilagodbe: ponovi KORAK 2 na datoteci spremljenoj iz cSurveya.");
+  const prep = newest("prep"), postp = newest("postp");
+  if (k1 && prep && prep < d.override_modified) out.push("_prep je napravljen prije ove prilagodbe simbola: ponovi KORAK 1, pa uvoz u cSurvey i KORAK 2.");
+  else if (k2 && postp && postp < d.override_modified) out.push("_postp je napravljen prije ove prilagodbe: ponovi KORAK 2 na datoteci spremljenoj iz cSurveya.");
+
   return out;
 }
 

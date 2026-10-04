@@ -25,7 +25,7 @@ All paths under `stages/3N-nacrt/production/tools/`.
 
 | The user wants… | Kind | Edit | Takes effect |
 |---|---|---|---|
-| a TopoDroid symbol/line/area to become a cSurvey sign/line/area, a text label, or be left alone | file, KORAK 1 | `tdx-mapping.json` › `points` / `lines` / `areas` | new `_pp` (KORAK 1, re-import, KORAK 2) |
+| a TopoDroid symbol/line/area to become a cSurvey sign/line/area, a text label, or be left alone | file, KORAK 1 | `tdx-mapping.json` › `points` / `lines` / `areas` | new `_prep` (KORAK 1, re-import, KORAK 2) |
 | centerline (polygon) colour, width, style; station symbol/size/colour; station-number or note text scale/colour; splay, LRUD, translation line, surface profile pens | file, KORAK 2 | `tdx-mapping.json` › `postimport.centerline` | next KORAK 2 |
 | any other survey-wide Properties value | file, KORAK 2 | `tdx-mapping.json` › `postimport.designproperties` | next KORAK 2 |
 | splays on/off and their style (Points / Points and rays / Rays) – any per-view option saved as an attribute on `<options><_design.plan>` etc. | file, KORAK 2 | `tdx-mapping.json` › `postimport.viewoptions` (`"design.plan": {"splaystyle": 2}`, no leading `_`; views in `VIEW_NAMES`) | next KORAK 2 |
@@ -107,6 +107,6 @@ Cite the `path:line` in the entry's `source`, or in the commit message for file 
    - **what** changed and **where it takes effect** (the table in §1),
    - that operators get it only after **`/publish`** (the csx kit ships these files),
    - for an app setting: each computer must close cSurvey and re-run KORAK 0 (`csurvey_0_postavi_csurvey.bat`); KORAK 2 will warn until it does. Offer to run `python stages/3N-nacrt/production/tools/csurvey_app_settings.py apply` here (refuses while cSurvey is open),
-   - for a symbol mapping: existing `_pp` files keep the old result; only a fresh KORAK 1 + import uses it.
+   - for a symbol mapping: existing `_prep` files keep the old result; only a fresh KORAK 1 + import uses it.
 
 Batch several changes into one commit when the user lists several. Never run `/publish` on your own.

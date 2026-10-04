@@ -224,7 +224,7 @@ before M2 finishes is allowed (ARCHITECTURE calls the M3/M4 order flexible).
 ## Waiting on user
 
 - **3N cSurvey settings:** close cSurvey and run `python stages/3N-nacrt/production/tools/csurvey_app_settings.py apply` once (pen smoothing is still on here; the live `apply` was blocked because cSurvey was open), then `/publish` the csx kit (v1.6: KORAK 0, the per-cave mapping, `tdx_mapping.py`, en-dash messages, red station numbers). Name further settings to predefine as they come up. Decide the mapping for the speleo 2 symbols that arrive without a proper sign (dashboard › 3N › Mapiranje › "Bez pravog znaka"); an agent can propose a first pass.
-- **3N walls (project 0006, csx kit v1.6):** on the next real cave, run KORAK 2 on a fresh import (no manual Merge) and check the fill in the `_lt` — the console's `zidovi: spojeno …` / `provjeri rucno` lines say what it did. Closes the project.
+- **3N walls (project 0006, csx kit v1.6):** on the next real cave, run KORAK 2 on a fresh import (no manual Merge) and check the fill in the `_postp` — the console's `zidovi: spojeno …` / `provjeri rucno` lines say what it did. Closes the project.
 - **3N KORAK 4 / entrance dimensions (project 0005):** nothing open. For a cave finished before 2026-10-03 re-run KORAK 3a + 3b, then KORAK 4 (`osz backfill`). Optional: Sopača's station 5. Next `/publish`: prod bundle + csx kit together (the kit's KORAK 3 needs `entrance_dims.py`, KORAK 4 needs the `cavedossier_osz_backfill` launcher).
 
 - ~~Society's blank OSZ template DOCX~~ → delivered 2026-08-23:

@@ -73,9 +73,9 @@ so it sorts to the bottom of the listing and of the guide.
 | File | KORAK |
 |---|---|
 | [`csx_templates/csurvey_0_PROCITAJ_ME.txt.template`](csx_templates/csurvey_0_PROCITAJ_ME.txt.template) | 0 — the Croatian operator guide (diacritics, UTF-8 BOM) |
-| [`csx_templates/csurvey_1_pripremi_csx.bat.template`](csx_templates/csurvey_1_pripremi_csx.bat.template) | 1 — raw `.csx` → import-ready `_pp.csx` |
+| [`csx_templates/csurvey_1_pripremi_csx.bat.template`](csx_templates/csurvey_1_pripremi_csx.bat.template) | 1 — raw `.csx` → import-ready `_prep.csx` |
 | [`csx_templates/csurvey_2_dovrsi_uvoz.bat.template`](csx_templates/csurvey_2_dovrsi_uvoz.bat.template) | 2 — after cSurvey "Save As", before drawing |
-| [`csx_templates/csurvey_3_dovrsi_nacrt.bat.template`](csx_templates/csurvey_3_dovrsi_nacrt.bat.template) | 3 — corrected `_lt` → the finished `SB_<broj>_nacrt.pdf` |
+| [`csx_templates/csurvey_3_dovrsi_nacrt.bat.template`](csx_templates/csurvey_3_dovrsi_nacrt.bat.template) | 3 — corrected `_postp` → the finished `SB_<broj>_nacrt.pdf` |
 | [`csx_templates/csurvey_4_upisi_osz.bat.template`](csx_templates/csurvey_4_upisi_osz.bat.template) | 4 — the nacrt's lengths, depth and entrance size into the existing `SB_<broj>_OSZ.docx` (calls the `cavedossier_osz_backfill_v*.bat` launcher beside it) |
 | [`csx_templates/csurvey_9_oporavi_iz_zipa.bat.template`](csx_templates/csurvey_9_oporavi_iz_zipa.bat.template) | 9 — rescue: rebuild a broken `.csx` from the TopoDroid project `.zip` |
 | [`build_csx_kit.py`](build_csx_kit.py) | Generates and publishes the kit (`--publish`); `csurvey_alati/` carries the Python tools |
@@ -97,8 +97,8 @@ Sweeping the whole tree is now opt-in, not the default (user, 2026-09-20).
 KORAK 2 and KORAK 3 go one step further and ask *which file* in that cave's
 folder to work on, annotating each with how far through the chain it is.
 Dragging files onto a launcher skips both prompts and works from anywhere. The
-two manual steps between the launchers are cSurvey's own: open the `_pp.csx` and
-Save As (between 1 and 2), then correct the sketch in the `_lt` file (between 2
+two manual steps between the launchers are cSurvey's own: open the `_prep.csx` and
+Save As (between 1 and 2), then correct the sketch in the `_postp` file (between 2
 and 3).
 
 **KORAK 3 spans both kits.** Its first two steps are kit tools (`nacrt_finish.py`

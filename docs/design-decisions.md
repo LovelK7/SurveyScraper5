@@ -50,6 +50,8 @@ keeps the chronology.
 - [3N wall merge: KORAK 2 merges the walls itself (2026-10-03)](#3n-wall-merge-korak-2-merges-the-walls-itself-2026-10-03)
 - [Sastavnica Ekipa: the rest of the team, clear of the label (2026-10-03)](#sastavnica-ekipa-the-rest-of-the-team-clear-of-the-label-2026-10-03)
 - [Sastavnica template v2 (2026-10-03)](#sastavnica-template-v2-2026-10-03)
+- [3N file suffixes renamed (2026-10-04)](#3n-file-suffixes-renamed-2026-10-04)
+- [3N KORAK 3a: the layout menu drawn as sheets (2026-10-04)](#3n-korak-3a-the-layout-menu-drawn-as-sheets-2026-10-04)
 
 ---
 
@@ -1516,3 +1518,68 @@ current kit puts that bar under the plan. Compose cannot recover what the
 paper clipped, so `cavedossier nacrt` now names any edge a printed design runs
 past (`compose.cut_edges`, 0.5 pt tolerance) and says to redo KORAK 3. Of the
 Drive's KORAK 3 prints only that plan is flagged.
+
+## 3N file suffixes renamed (2026-10-04)
+
+The user found `_pp` and `_lt` uninformative: an operator could not tell from
+the name what had happened to a file. The 3N chain is now:
+
+| Step | Before | Now |
+|---|---|---|
+| KORAK 1 (preprocessing) | `x_pp.csx` | `x_prep.csx` |
+| KORAK 2 (postprocessing) | `x_pp_lt.csx` | `x_postp.csx` |
+| KORAK 3a | `x_pp_lt_fin.csx` | `x_postp_resolved.csx` |
+| KORAK 9 | `x_recovered_pp.csx` | `x_recovered_prep.csx` |
+
+- **KORAK 2 replaces a trailing `_prep`; it does not append.** The operator
+  saves the imported file under its own name (`x_prep`), so appending would
+  give `x_prep_postp`. `sb_select.postp_base` strips a trailing `_prep`/`_pp`
+  first. A save under some other name still gets `_postp` appended:
+  `x_rad.csz` → `x_rad_postp.csz`.
+- **`_resolved` is appended to the end**, as `_fin` was (user's wording: "so it
+  stacks at the end"). The `.layout.json` sidecar follows the survey's name, and
+  4S/4O find it and `_dimenzije.json` by glob, so they needed no change.
+- **The old names stay readable.** The Drive already holds `_pp`/`_lt`/`_lt_fin`
+  files (e.g. SB 1328's `051_819-1p_pp.csx`, made that same morning), and
+  renaming them by hand is exactly the cleanup ritual the Drive rules forbid.
+  Every reader takes both: the kit tools through
+  `sb_select.PREP_ALL`/`POSTP_ALL`/`RESOLVED_ALL`, the dashboard through
+  `state._SURVEY_SUFFIXES`, and the headless `.ps1` through its own copy of
+  the list. Tools only *write* the new names.
+- The dashboard's internal file kinds are renamed to match (`prep`, `postp`,
+  `resolved`), so no stale `pp`/`lt`/`fin` keys are left in the code.
+- Older entries in this record, the project logs and the session journal keep
+  the old suffixes. They describe what was true at the time.
+
+## 3N KORAK 3a: the layout menu drawn as sheets (2026-10-04)
+
+The dashboard's 3a card offered only an empty "Raspored br." field, and the
+proposals could be seen only by running the step and reading the console's
+character sketch. The user asked for the arrangement to be shown on the card
+right away.
+
+- **The menu comes from the finisher itself.** `nacrt_finish.py
+  --layouts-json PATH` runs the whole step as a dry run and writes the menu as
+  data: the A4 page, the title block, each proposal's plan and profile
+  placements (mm) and scales, and each design's wall outline in metres, in the
+  padded-bbox frame its placement uses. The dashboard runs it as a script
+  (`gui/layouts.py`), not by importing the layout chooser. The bboxes the
+  chooser sees exist only after 3a has added the scale bar and the north
+  arrow, so re-deriving them in the dashboard would drift. It takes 0.3 s on
+  SB 1328 and is cached per (path, mtime, size).
+- **Walls only, thinned.** The outline is the Borders layer (every item when
+  a design has none), split into strokes at cPoints' `B` begin-sequence flag,
+  and capped at 800 points per design. That is enough for a 176 px thumbnail,
+  and a long cave's dense TopoDroid walls stay small. Smaller y is up in a
+  cSurvey design, as in SVG, so nothing is flipped.
+- **A click writes `--layout N`, and every newly loaded menu preselects 1.**
+  The highlighted sheet and the command always agree, and a run from the card
+  never stops at the console prompt. `--layout 1` is the proposal, the same
+  as `--yes`.
+- **Only the cave's own `_postp` files** are accepted by `/api/layouts` (the
+  same candidate list the card's file menu shows).
+
+Validated on the live SB 1328 `051_819-1p_postp.csx` in Edge (Playwright),
+light and dark: three sheets (1:100 vertical, 1:100/1:200 and 1:200/1:100
+side by side) match the console menu, and clicking sheet 3 put
+`--layout 3` into the command.

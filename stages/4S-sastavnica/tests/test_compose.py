@@ -302,7 +302,7 @@ def test_two_runs_never_mix(tmp_path):
 
 def test_pad_m_is_recovered_from_the_finisher_sidecar(tmp_path):
     leaf = _leaf_with_korak3(tmp_path)
-    (leaf / "Cave-1p_lt_fin.layout.json").write_text(
+    (leaf / "Cave-1p_postp_resolved.layout.json").write_text(
         json.dumps({"pad_m": 0.25}), encoding="utf-8")
     found = compose_mod.find_inputs(leaf)
     assert compose_mod.read_pad_m(found.layout_sidecar) == 0.25

@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from cave_dossier.cli import build_parser
-from cave_dossier.gui import catalog
+from cave_dossier.gui import catalog, layouts
 from cave_dossier.gui.jobs import JobManager
 from cave_dossier.gui.server import App, make_handler
 from cave_dossier.gui import workflow
@@ -98,10 +98,14 @@ def test_build_args_validation():
 
 @pytest.mark.parametrize("name,kind", [
     ("Hrđava_špilja-1s.csx", "raw"),
-    ("Hrđava_špilja-1s_pp.csx", "pp"),
-    ("Hrđava_špilja-1s_pp_lt.csx", "lt"),
-    ("Hrđava_špilja-1s_pp_lt_fin.csx", "fin"),
-    ("Hrđava_špilja-1s_pp_lt_backup.csx", "backup"),
+    ("Hrđava_špilja-1s_prep.csx", "prep"),
+    ("Hrđava_špilja-1s_postp.csx", "postp"),
+    ("Hrđava_špilja-1s_postp_resolved.csx", "resolved"),
+    ("Hrđava_špilja-1s_postp_backup.csx", "backup"),
+    # names from before 2026-10-04, still on the Drive
+    ("Hrđava_špilja-1s_pp.csx", "prep"),
+    ("Hrđava_špilja-1s_pp_lt.csx", "postp"),
+    ("Hrđava_špilja-1s_pp_lt_fin.csx", "resolved"),
     ("x_plan.pdf", "plan"),
     ("x_profile.pdf", "profile"),
     ("x_dimenzije.json", "dimenzije"),
@@ -124,7 +128,7 @@ def drive(tmp_path: Path, settings):
     intake = root / "!!!Digitalizacija" / "!Za digitalizirat"
     leaf = intake / "!!Grupa" / "SB_1220_Hrđava špilja_Flavio"
     leaf.mkdir(parents=True)
-    for name in ("a.csx", "a_pp.csx", "a_pp_lt.csx", "SB_1220_OSZ.docx", "desktop.ini"):
+    for name in ("a.csx", "a_prep.csx", "a_postp.csx","SB_1220_OSZ.docx", "desktop.ini"):
         (leaf / name).write_text("x", encoding="utf-8")
     (intake / "Neimenovana mapa").mkdir()
     (intake / "Neimenovana mapa" / "f.txt").write_text("x", encoding="utf-8")
@@ -155,9 +159,9 @@ def test_caves_and_detail(drive):
     assert unprefixed == ["Neimenovana mapa"]  # primjeri is ignored, not listed
     detail = ws.cave_detail(1220)
     kinds = sorted(f["kind"] for f in detail["files"])
-    assert kinds == ["lt", "osz", "pp", "raw"]  # desktop.ini skipped
+    assert kinds == ["osz", "postp", "prep", "raw"]  # desktop.ini skipped
     assert detail["karta"]["exists"] is True
-    assert ws.candidate_files(1220, "lt") == [str(leaf / "a_pp_lt.csx")]
+    assert ws.candidate_files(1220, "postp") == [str(leaf / "a_postp.csx")]
     assert ws.cave_detail(9999)["leaves"] == []
 
 
@@ -341,8 +345,8 @@ def test_workflow_fresh_cave_points_at_karta():
 
 
 def test_workflow_survey_change_makes_downstream_stale():
-    files = [_f("raw", "a.csx", 100), _f("pp", "a_pp.csx", 200), _f("lt", "a_pp_lt.csx", 300),
-             _f("fin", "a_pp_lt_fin.csx", 400), _f("plan", "a_plan.pdf", 500),
+    files = [_f("raw", "a.csx", 100), _f("prep", "a_prep.csx", 200), _f("postp", "a_postp.csx", 300),
+             _f("resolved", "a_postp_resolved.csx", 400), _f("plan", "a_plan.pdf", 500),
              _f("profile", "a_profile.pdf", 500), _f("dimenzije", "a_dimenzije.json", 500),
              _f("nacrt", "SB_1220_nacrt.pdf", 600), _f("osz", "SB_1220_OSZ.docx", 50)]
     detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
@@ -350,11 +354,11 @@ def test_workflow_survey_change_makes_downstream_stale():
     states = _states(workflow.build(detail, osz, dims={"l": 18}))
     assert states["3n-k3c"] == "done" and states["3n-k4"] == "done"
     # The sketch is corrected again after finishing: 3a and everything after it moves.
-    files[2] = _f("lt", "a_pp_lt.csx", 450)
+    files[2] = _f("postp", "a_postp.csx",450)
     states = _states(workflow.build(detail, osz, dims={"l": 18}))
     assert states["3n-k3a"] == "stale"
     # The OSZ is filled after the nacrt was composed: 3c must be redone (postfill).
-    files[2] = _f("lt", "a_pp_lt.csx", 300)
+    files[2] = _f("postp", "a_postp.csx",300)
     files[8] = _f("osz", "SB_1220_OSZ.docx", 700)
     states = _states(workflow.build(detail, osz, dims={"l": 18}))
     assert states["3n-k3c"] == "stale"
@@ -589,8 +593,8 @@ def test_workflow_korak4_touching_the_osz_does_not_stale_3c():
     """KORAK 4 rewrote the measured cells after the nacrt was composed: with its
     sidecar the OSZ counts as old as before, so 3c stays done; a later hand edit
     (another mtime) still makes 3c stale."""
-    files = [_f("raw", "a.csx", 100), _f("pp", "a_pp.csx", 200), _f("lt", "a_pp_lt.csx", 300),
-             _f("fin", "a_pp_lt_fin.csx", 400), _f("plan", "a_plan.pdf", 500),
+    files = [_f("raw", "a.csx", 100), _f("prep", "a_prep.csx", 200), _f("postp", "a_postp.csx", 300),
+             _f("resolved", "a_postp_resolved.csx", 400), _f("plan", "a_plan.pdf", 500),
              _f("profile", "a_profile.pdf", 500), _f("dimenzije", "a_dimenzije.json", 500),
              _f("nacrt", "SB_1220_nacrt.pdf", 600), _f("osz", "SB_1220_OSZ.docx", 700)]
     detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
@@ -602,3 +606,56 @@ def test_workflow_korak4_touching_the_osz_does_not_stale_3c():
     files[8] = _f("osz", "SB_1220_OSZ.docx", 900)        # edited by hand afterwards
     assert _states(workflow.build(detail, osz, dims={"l": 18}, backfill=sidecar))["3n-k3c"] == "stale"
     assert workflow.last_backfill(None) is None
+
+
+# ── 3N KORAK 3a layout sheets (gui/layouts.py) ──────────────────────
+
+
+def test_layouts_endpoint_serves_only_this_caves_postp_files(server, monkeypatch):
+    base, _, leaf = server
+    asked = []
+    monkeypatch.setattr("cave_dossier.gui.server.layouts.menu",
+                        lambda tools, path: asked.append(path) or {"layouts": []})
+    query = urllib.parse.urlencode({"broj": 1220, "path": str(leaf / "a_postp.csx")})
+    status, data = _call(base, "/api/layouts?" + query)
+    assert status == 200 and data == {"layouts": []}
+    assert asked == [leaf / "a_postp.csx"]
+
+    for other in (leaf / "a_prep.csx", leaf.parent / "elsewhere_postp.csx"):
+        query = urllib.parse.urlencode({"broj": 1220, "path": str(other)})
+        status, data = _call(base, "/api/layouts?" + query)
+        assert status == 404 and "_postp" in data["error"]
+
+
+def _stub_tools(tmp_path, body):
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    (tools / "nacrt_finish.py").write_text(
+        "import json, sys\n"
+        "out = sys.argv[sys.argv.index('--layouts-json') + 1]\n" + body, encoding="utf-8")
+    return tools
+
+
+def test_layouts_menu_runs_the_finisher_once_per_file_version(tmp_path):
+    tools = _stub_tools(tmp_path, (
+        "import os\n"
+        "log = os.path.join(os.path.dirname(__file__), 'calls.txt')\n"
+        "open(log, 'a').write('x')\n"
+        "json.dump({'layouts': [{'n': 1}], 'source': os.path.basename(sys.argv[1])},"
+        " open(out, 'w'))\n"))
+    survey = tmp_path / "cave_postp.csx"
+    survey.write_text("one", encoding="utf-8")
+    assert layouts.menu(tools, survey)["source"] == "cave_postp.csx"
+    layouts.menu(tools, survey)
+    assert (tools / "calls.txt").read_text() == "x"          # cached
+    survey.write_text("changed", encoding="utf-8")
+    layouts.menu(tools, survey)
+    assert (tools / "calls.txt").read_text() == "xx"         # new version, new run
+
+
+def test_layouts_menu_reports_a_failed_run(tmp_path):
+    tools = _stub_tools(tmp_path, "print('ERROR: cannot process', file=sys.stderr)\nsys.exit(1)\n")
+    survey = tmp_path / "cave_postp.csx"
+    survey.write_text("x", encoding="utf-8")
+    with pytest.raises(layouts.LayoutError, match="cannot process"):
+        layouts.menu(tools, survey)

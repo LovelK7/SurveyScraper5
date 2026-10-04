@@ -11,7 +11,7 @@ rem    * ...ili povuci jedan ili vise projektnih .zip na ovu ikonu
 rem
 rem  DOBIVAS, pokraj svakog zipa:
 rem    <objekt>_recovered.csx     obnovljena datoteka s mobitela
-rem    <objekt>_recovered_pp.csx  vec pripremljena -> NJU uvozis u cSurvey
+rem    <objekt>_recovered_prep.csx  vec pripremljena -> NJU uvozis u cSurvey
 rem
 rem  Ovo za tebe odradi i KORAK 1, pa odmah idi na uvoz u cSurvey.
 rem  Kad je csx ispravan, ovo NE trebas - koristi csurvey_1_pripremi_csx.bat.
@@ -86,7 +86,7 @@ if /i "%SB%"=="SVE" (
 :kraj
 echo.
 echo ------------------------------------------------------------------
-echo  DALJE: otvori _recovered_pp.csx u cSurveyu, pa File ^> Save As, i
+echo  DALJE: otvori _recovered_prep.csx u cSurveyu, pa File ^> Save As, i
 echo         zatim KORAK 2 ^(csurvey_2_dovrsi_uvoz.bat^).
 echo ------------------------------------------------------------------
 pause

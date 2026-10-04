@@ -16,20 +16,21 @@ const S = {
 
 // Which intake-leaf file kinds a catalog `file_kind` accepts (mirrors state.FILE_KINDS).
 const FILE_KINDS = {
-  raw: ["raw"], pp: ["pp"], lt: ["lt"], fin: ["fin"], survey: ["raw", "pp", "lt", "fin"],
+  raw: ["raw"], prep: ["prep"], postp: ["postp"], resolved: ["resolved"], survey: ["raw", "prep", "postp", "resolved"],
 };
-const SURVEY_KINDS = new Set(["raw", "pp", "lt", "fin", "backup"]);
+const SURVEY_KINDS = new Set(["raw", "prep", "postp", "resolved", "backup"]);
 const PHOTO_KINDS = new Set(["photo", "photo_processed"]);
 
 // Files each stage tab lists for the current cave (4F draws a gallery instead).
 const STAGE_FILES = {
-  "3N": ["raw", "pp", "lt", "fin", "plan", "profile", "dimenzije", "nacrt"],
+  "3N": ["raw", "prep", "postp", "resolved", "plan", "profile", "dimenzije", "nacrt"],
   "4O": ["osz", "doc"],
   "4S": ["sastavnica"],
 };
 
 const KIND_LABEL = {
-  raw: "sirovi", pp: "_pp", lt: "_lt", fin: "_lt_fin", backup: "backup",
+  raw: "sirovi", prep: "_prep", postp: "_postp", resolved: "_postp_resolved", backup: "backup",
+
   plan: "tlocrt", profile: "profil", dimenzije: "dimenzije", nacrt: "NACRT",
   sastavnica: "sastavnica", osz: "OSZ", doc: "dokument", photo: "foto",
   photo_processed: "foto SB_", pdf: "pdf", other: "",
@@ -1015,6 +1016,8 @@ function actionCard(a, st) {
 
   const preview = h("code", { class: "cmd" });
   const runBtn = h("button", { class: "btn primary" }, "Pokreni");
+  const inputs = {};
+  const sheets = a.preview === "layouts" ? layoutPicker(ctx, inputs, () => refresh()) : null;
   const writesTag = h("span", { class: "writes-tag" });
 
   const missing = () => {
@@ -1043,7 +1046,7 @@ function actionCard(a, st) {
   if (a.file_kind) {
     const files = candidates(a.file_kind);
     ctx.file = files[0] ? files[0].path : null;
-    const sel = h("select", { onchange: e => { ctx.file = e.target.value; refresh(); } },
+    const sel = h("select", { onchange: e => { ctx.file = e.target.value; refresh(); if (sheets) sheets.load(); } },
       ...files.map(f => h("option", { value: f.path }, `${f.relative}  ·  ${fmtTime(f.modified)}`)));
     const openBtn = h("button", { class: "btn small ghost", title: "Otvori odabranu datoteku u cSurveyu",
       onclick: () => ctx.file && openTarget({ what: "csurvey", path: ctx.file }) }, icon("nacrt"), "cSurvey");
@@ -1066,13 +1069,15 @@ function actionCard(a, st) {
           h("select", { onchange: e => { ctx.vals[o.flag] = e.target.value; refresh(); } },
             ...o.choices.map(c => h("option", { value: c, selected: c === o.default }, c)))));
       } else {
-        opts.append(h("label", { class: "opt-inline", title: o.help || o.flag }, o.label,
-          h("input", { type: o.kind === "int" ? "number" : "text", value: o.default || "",
-            style: o.kind === "text" ? "width:160px" : "", oninput: e => { ctx.vals[o.flag] = e.target.value; refresh(); } })));
+        inputs[o.flag] = h("input", { type: o.kind === "int" ? "number" : "text", value: o.default || "",
+          style: o.kind === "text" ? "width:160px" : "",
+          oninput: e => { ctx.vals[o.flag] = e.target.value; refresh(); if (sheets) sheets.mark(); } });
+        opts.append(h("label", { class: "opt-inline", title: o.help || o.flag }, o.label, inputs[o.flag]));
       }
     }
     card.append(opts);
   }
+  if (sheets) { card.append(sheets.el); sheets.load(); }
   const copyBtn = h("button", { class: "btn small ghost", title: "Kopiraj naredbu za terminal",
     onclick: () => copy(cmdTextFor(a, ctx)) }, icon("copy"), "Kopiraj");
   card.append(h("div", { class: "cmd-row" }, preview, copyBtn));
@@ -1080,6 +1085,80 @@ function actionCard(a, st) {
   card.append(h("div", { class: "row", style: "margin-top:8px" }, runBtn));
   refresh();
   return card;
+}
+
+// KORAK 3a: the layout menu nacrt_finish.py would print, drawn as A4 sheets
+// (GET /api/layouts runs it with --layouts-json, writing nothing). A click puts
+// the sheet's number into --layout, so the run takes it without asking.
+function layoutPicker(ctx, inputs, changed) {
+  const el = h("div", { class: "sheets" });
+  let token = 0, data = null;
+  const svgEl = (tag, attrs) => {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
+  };
+  const chosen = () => Number(ctx.vals["--layout"]) || 1;
+  const mark = () => {
+    for (const tile of el.querySelectorAll(".sheet")) tile.classList.toggle("on", Number(tile.dataset.n) === chosen());
+  };
+  const pick = n => {
+    ctx.vals["--layout"] = String(n);
+    if (inputs["--layout"]) inputs["--layout"].value = n;
+    mark();
+    changed();
+  };
+  const design = (svg, name, box) => {
+    const d = data.designs[name];
+    svg.append(svgEl("rect", { class: "sheet-box", x: box.x, y: box.y, width: box.width, height: box.height }));
+    if (d && d.size_m[0] > 0 && d.size_m[1] > 0) {
+      const sx = box.width / d.size_m[0], sy = box.height / d.size_m[1];
+      for (const line of d.lines) {
+        svg.append(svgEl("polyline", { class: "sheet-wall",
+          points: line.map(([x, y]) => `${(box.x + x * sx).toFixed(1)},${(box.y + y * sy).toFixed(1)}`).join(" ") }));
+      }
+    }
+    const label = svgEl("text", { class: "sheet-label", x: box.x + 2, y: box.y + 9 });
+    label.textContent = `${name === "plan" ? "tlocrt" : "profil"} 1:${box.scale}`;
+    svg.append(label);
+  };
+  const tile = l => {
+    const [w, hgt] = data.page_mm, t = data.title_block_mm;
+    const svg = svgEl("svg", { viewBox: `0 0 ${w} ${hgt}`, class: "sheet-page", role: "img",
+      "aria-label": `Raspored ${l.n}: ${l.note}` });
+    svg.append(svgEl("rect", { class: "sheet-paper", x: 0, y: 0, width: w, height: hgt }));
+    svg.append(svgEl("rect", { class: "sheet-block", x: t.x, y: t.y, width: t.width, height: t.height }));
+    design(svg, "profile", l.profile);
+    design(svg, "plan", l.plan);
+    return h("button", { class: "sheet", type: "button", "data-n": l.n, title: l.note, onclick: () => pick(l.n) },
+      svg, h("span", { class: "sheet-cap" }, h("b", {}, `${l.n})`), ` ${l.mjerilo}`, l.proposal ? h("span", { class: "sheet-tag" }, "prijedlog") : null));
+  };
+  const load = async () => {
+    const mine = ++token;
+    data = null;
+    if (!ctx.file || S.broj === null) { el.replaceChildren(); return; }
+    el.replaceChildren(h("p", { class: "help" }, "Računam rasporede…"));
+    try {
+      const got = await api(`layouts?broj=${S.broj}&path=${encodeURIComponent(ctx.file)}`);
+      if (mine !== token) return;
+      data = got;
+      const head = h("div", { class: "sheets-head" }, h("span", {}, "Raspored na stranici"),
+        h("span", { class: "muted" }, "klikni list – broj ide u --layout"));
+      if (!got.layouts.length) {
+        el.replaceChildren(head, h("p", { class: "warnline" }, `Ništa ne stane ni u 1:500 (${got.no_fit_reason}) – ispis ide na „fit to page”.`));
+        return;
+      }
+      const notes = got.warnings.length
+        ? h("ul", { class: "sheet-warn" }, ...got.warnings.map(w => h("li", {}, w))) : null;
+      el.replaceChildren(head, h("div", { class: "sheet-row" }, ...got.layouts.map(tile)), notes);
+      // A new file is a new menu: start from its proposal, so the run takes
+      // the sheet that is highlighted instead of stopping to ask.
+      pick(1);
+    } catch (e) {
+      if (mine === token) el.replaceChildren(h("p", { class: "warnline" }, "Raspored: " + e.message));
+    }
+  };
+  return { el, load, mark };
 }
 
 function filesCard(kinds) {

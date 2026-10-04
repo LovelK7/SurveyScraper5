@@ -20,6 +20,37 @@ import re
 # SB_<broj> optionally followed by _<anything>. The broj may be zero-padded.
 _LEAF = re.compile(r"^SB[_-]0*(\d+)(?:[_\-. ].*)?$", re.I)
 
+# The 3N step suffixes, one place for every kit tool (user, 2026-10-04: the old
+# _pp/_lt said nothing to an operator). KORAK 1 writes <ime>_prep.csx, KORAK 2
+# turns the cSurvey save into <ime>_postp, KORAK 3a appends _resolved:
+# <ime>_postp_resolved.
+PREP = "_prep"
+POSTP = "_postp"
+RESOLVED = "_resolved"
+# Files made before the rename keep their old names on the Drive; read both.
+PREP_ALL = (PREP, "_pp")
+POSTP_ALL = (POSTP, "_lt")
+RESOLVED_ALL = (RESOLVED, "_fin")
+# The whole chain, stripped to name outputs after the cave. Same list as
+# Get-SurveyBaseName in csurvey_headless.ps1 — keep the two in step.
+STEP_SUFFIXES = RESOLVED_ALL + POSTP_ALL + PREP_ALL
+
+
+def stem_endswith(path, suffixes):
+    """Does the file's name (without extension) end with one of `suffixes`?"""
+    stem = os.path.splitext(os.path.basename(path))[0].lower()
+    return stem.endswith(tuple(suffixes))
+
+
+def postp_base(path):
+    """`<dir>/x_prep.csz` -> `<dir>/x`: KORAK 2 replaces the _prep it was given
+    with _postp rather than stacking x_prep_postp."""
+    base = os.path.splitext(path)[0]
+    for suffix in PREP_ALL:
+        if base.lower().endswith(suffix):
+            return base[:-len(suffix)]
+    return base
+
 
 def parse_numbers(tokens):
     """['811', '0908,', '9'] -> [811, 908, 9]; raises ValueError on junk."""
@@ -100,8 +131,8 @@ def is_backup(path):
 def list_files(dirs, exts, skip_suffixes=()):
     """Every file with one of `exts` under the given folders, sorted.
 
-    `skip_suffixes` drops outputs a tool made itself (e.g. `_lt`), so a second
-    pass over a cave folder does not offer <name>_lt as an input again.
+    `skip_suffixes` drops outputs a tool made itself (e.g. `_postp`), so a second
+    pass over a cave folder does not offer <name>_postp as an input again.
     cSurvey's `_backup` copies are always dropped.
     """
     exts = tuple(e.lower() for e in exts)
@@ -124,7 +155,7 @@ def pick(paths, at_step, leaves, labels=None, root=None,
     """Take the file that is at this step without asking, when that is clear.
 
     `at_step(path)` says whether a file is the input this step expects (the
-    `_lt` for KORAK 3, the file cSurvey saved for KORAK 2). If every cave
+    `_postp` for KORAK 3, the file cSurvey saved for KORAK 2). If every cave
     folder in `leaves` holds exactly one such file, those are used. Otherwise
     the menu is shown: just the files at this step if there are several, or
     every file, with its label saying why, if none of them is.

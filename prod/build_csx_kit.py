@@ -71,7 +71,7 @@ TARGET_REL = Path("!!!Digitalizacija") / "SurveyScraper5"
 # v1.2 (2026-09-20): KORAK 2 also shrinks the entrance sign to size 1 -
 # cSurvey imports it at size 2 on the plan, where it draws too big.
 # v1.6 (2026-10-03): KORAK 2 merges, turns and orders the cave walls itself (no manual
-# Merge / Revert sequence; check the fill in the _lt); KORAK 0 primes cSurvey's app
+# Merge / Revert sequence; check the fill in the _postp); KORAK 0 primes cSurvey's app
 # settings; per-cave mapping (tdx-mapping-objekt.json) picked up by KORAK 1/2.
 KIT_VERSION = "1.6"
 # Subfolder holding the machinery, beside the launchers.

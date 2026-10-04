@@ -159,9 +159,9 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
     add(filled)
 
     raw = _newest(files, "raw")
-    pp = _newest(files, "pp")
-    lt = _newest(files, "lt")
-    fin = _newest(files, "fin")
+    prep = _newest(files, "prep")
+    postp = _newest(files, "postp")
+    resolved = _newest(files, "resolved")
     plan = _newest(files, "plan")
     profile = _newest(files, "profile")
     dimenzije = _newest(files, "dimenzije")
@@ -178,23 +178,23 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
         else:
             add(Step(step_id, "rucno", label, "3N", "todo", action=action, files=_names(src)))
 
-    chain("3n-k1", "KORAK 1 – pripremi sirovi .csx (_pp)", pp, raw, "3n-k1",
+    chain("3n-k1", "KORAK 1 – pripremi sirovi .csx (_prep)", prep, raw, "3n-k1",
           "Ubaci TopoDroid .csx izvoz u mapu objekta.")
-    chain("3n-k2", "KORAK 2 – dovrši uvoz (_lt)", lt, pp, "3n-k2",
-          "Prvo KORAK 1, pa otvori _pp u cSurveyu i spremi.")
-    chain("3n-k3a", "KORAK 3a – ispravljena skica dovršena (_lt_fin)", fin, lt, "3n-k3a",
+    chain("3n-k2", "KORAK 2 – dovrši uvoz (_postp)", postp, prep, "3n-k2",
+          "Prvo KORAK 1, pa otvori _prep u cSurveyu i spremi.")
+    chain("3n-k3a", "KORAK 3a – ispravljena skica dovršena (_postp_resolved)", resolved, postp, "3n-k3a",
           "Prvo KORAK 2, pa ispravi skicu u cSurveyu.")
     printed = [plan, profile, dimenzije]
     if all(printed):
-        moved = _older(min(printed, key=lambda f: f["modified"]), fin)
+        moved = _older(min(printed, key=lambda f: f["modified"]), resolved)
         add(Step("3n-k3b", "rucno", "KORAK 3b – tlocrt, profil, dimenzije", "3N",
                  "stale" if moved else "done",
-                 f"{fin['name']} je noviji – ispiši ponovno" if moved else "",
+                 f"{resolved['name']} je noviji – ispiši ponovno" if moved else "",
                  action="3n-k3b", files=_names(*printed)))
     else:
         add(Step("3n-k3b", "rucno", "KORAK 3b – tlocrt, profil, dimenzije", "3N",
-                 "todo" if fin else "blocked",
-                 "" if fin else "Prvo KORAK 3a.", action="3n-k3b"))
+                 "todo" if resolved else "blocked",
+                 "" if resolved else "Prvo KORAK 3a.", action="3n-k3b"))
 
     # ── spajanje ────────────────────────────────────────────────────
     nacrt = _newest(files, "nacrt")

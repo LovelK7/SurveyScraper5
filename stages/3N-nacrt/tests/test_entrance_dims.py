@@ -33,7 +33,7 @@ TWO_WALLS = "0.00 -1.00 4.00 -1.00 0.00 1.00 B 4.00 1.00 "   # y = -1 and y = +1
 
 def measured(tmp_path, *, stations, plan_sign=(3.1, 0.1), plan_borders=TWO_WALLS,
              profile_borders="-1.00 -2.00 7.00 3.00 "):
-    path = make_csx(tmp_path / "cave_lt.csx", stations=stations, plan_sign=plan_sign,
+    path = make_csx(tmp_path / "cave_postp.csx", stations=stations, plan_sign=plan_sign,
                     plan_borders=plan_borders, profile_borders=profile_borders)
     root = ET.parse(path).getroot()
     sts = nacrt_finish.read_stations(root)
@@ -89,7 +89,7 @@ def test_one_lateral_splay_means_walls_for_both_sides(tmp_path):
 
 
 def test_a_borders_item_is_split_into_sequences_on_the_B_flag(tmp_path):
-    path = make_csx(tmp_path / "cave_lt.csx", plan_borders=TWO_WALLS)
+    path = make_csx(tmp_path / "cave_postp.csx", plan_borders=TWO_WALLS)
     root = ET.parse(path).getroot()
     paths, bridges = entrance_dims.wall_paths(root, "plan")
     assert paths == [[(0.0, -1.0), (4.0, -1.0)], [(0.0, 1.0), (4.0, 1.0)]]
@@ -159,7 +159,7 @@ def test_the_sidecar_carries_the_entrance_size(tmp_path):
 
 def test_read_stations_takes_d_from_the_tcon_copy(tmp_path):
     # the direct <p> says d="0" in every cSurvey file; the <tcon><p> has the real one
-    path = make_csx(tmp_path / "cave_lt.csx")
+    path = make_csx(tmp_path / "cave_postp.csx")
     data = path.read_text(encoding="utf-8")
     data = data.replace(
         '      <t n="B">\n        <p x="3.0000" y="0.0000" z="-5.0000" d="3.0000" />',

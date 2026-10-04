@@ -65,7 +65,7 @@ This superseded an earlier flat "Osnovni speleološki zapisnik" folder
 | Map excerpt | `SB_<padded broj>.png` in `!!Isječci karte`, plus a row in `!georef_zapisi.csv` |
 | Prefilled OSZ | `SB_<broj>_OSZ.docx` in the cave's intake leaf |
 | Sastavnica | `SB_<padded broj>_sastavnica.pdf` in the cave's intake leaf |
-| Nacrt (cSurvey route) | `SB_<padded broj>_nacrt.pdf` in the cave's intake leaf, beside the `_lt_fin` survey, the two printed `_plan.pdf` / `_profile.pdf` and `<name>_dimenzije.json` (3N KORAK 3) |
+| Nacrt (cSurvey route) | `SB_<padded broj>_nacrt.pdf` in the cave's intake leaf, beside the `_postp_resolved` survey, the two printed `_plan.pdf` / `_profile.pdf` and `<name>_dimenzije.json` (3N KORAK 3) |
 | Processed entrance photo | `SB_<broj>_<Ime>_<Autor>_<n>.jpg` in the leaf |
 | Archived entrance photo | `<padded SUE>_<ime>_…_<autor>.jpg` in `!!Fotografije ulaza` (M6) |
 | Izjava | `Izjava_<Ime>.<ext>`, optionally scope-suffixed |

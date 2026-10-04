@@ -5,6 +5,8 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import pytest
+
 TOOLS = Path(__file__).resolve().parents[1] / "production" / "tools"
 sys.path.insert(0, str(TOOLS))
 
@@ -73,9 +75,16 @@ def test_a_sign_size_the_operator_set_is_left_alone(tmp_path):
     rules = tmp_path / "map.json"
     rules.write_text('{"postimport": {"sign_sizes": {"entrance": "small"}}}', encoding="utf-8")
     assert fixer.main([str(src), "--map", str(rules)]) == 0
-    root = ET.parse(str(tmp_path / "cave_lt.csx")).getroot()
+    root = ET.parse(str(tmp_path / "cave_postp.csx")).getroot()
     sizes = [i.get("signsize") for i in root.iter("item") if i.get("sign") == "263"]
     assert sizes == ["4", "2"]           # the hand-set one kept, the bare one sized
+
+
+@pytest.mark.parametrize("given", ["cave_prep.csx", "cave_pp.csx"])
+def test_the_output_replaces_prep_with_postp(tmp_path, given):
+    (tmp_path / given).write_text(CSX, encoding="utf-8")
+    assert fixer.main([str(tmp_path / given)]) == 0
+    assert (tmp_path / "cave_postp.csx").exists()
 
 
 def test_designproperties_write_any_typed_key_and_skip_bad_ones():

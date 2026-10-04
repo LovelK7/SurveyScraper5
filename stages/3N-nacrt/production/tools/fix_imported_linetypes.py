@@ -17,12 +17,14 @@ are untouched — dense points constrain the spline, geometry stays visually
 identical, decorations start rendering.
 
 Accepts BOTH the rich .csz (zip) you get from a normal Save and the bare .csx —
-whichever you saved, drag it in. Output keeps the same container (_lt.csz /
-_lt.csx). Never modifies the input. Re-open the _lt output in cSurvey and do
+whichever you saved, drag it in. Output keeps the same container (_postp.csz /
+_postp.csx), and a _prep at the end of the input's name is replaced, not
+stacked: x_prep.csz -> x_postp.csz. Never modifies the input. Re-open the
+_postp output in cSurvey and do
 all mapping there. For drag-and-drop convenience use csurvey_2_dovrsi_uvoz.bat.
 
 It refuses a file that has NOT been imported into cSurvey yet (a raw/phone or
-_pp file), telling you to import + Save As first — so you cannot run it on the
+_prep file), telling you to import + Save As first — so you cannot run it on the
 wrong step by accident.
 
 Usage:
@@ -257,7 +259,7 @@ def write_root(root, src_path, out, is_csz):
 
 
 def not_yet_imported(root):
-    """True if this is a raw/phone or _pp file (flat <plan>/<item>, no
+    """True if this is a raw/phone or _prep file (flat <plan>/<item>, no
     <layers>) that has NOT been through cSurvey's import + Save. Such a file
     must be imported first; running the fixer on it would silently do nothing."""
     for design in ("plan", "profile"):
@@ -275,7 +277,7 @@ def import_state(path):
     """Short Croatian label for the menu: has cSurvey already saved this file?
 
     cSurvey stamps its own GUID into <csurvey id="..."> the first time it saves;
-    a phone export and our _pp both carry an empty id and creatid="TopoDroid".
+    a phone export and our _prep both carry an empty id and creatid="TopoDroid".
     That is a sharper signal than not_yet_imported()'s layer check, which an
     empty sketch cannot answer — but the BLOCKED gate below stays on the layer
     check, since that is what decides whether the fix would do anything.
@@ -289,9 +291,9 @@ def import_state(path):
     props = root.find("properties")
     phone = (props is not None
              and "topodroid" in (props.get("creatid") or "").lower())
-    tail = "_pp" if os.path.splitext(path)[0].lower().endswith("_pp") else ""
     if phone:
-        return ("pripremljeno (_pp) - prvo uvezi u cSurvey" if tail
+        return ("pripremljeno (_prep) - prvo uvezi u cSurvey"
+                if sb_select.stem_endswith(path, sb_select.PREP_ALL)
                 else "s mobitela - prvo uvezi u cSurvey")
     return "nepoznato - jos nije spremljeno iz cSurveya"
 
@@ -299,7 +301,7 @@ def import_state(path):
 def pick_by_sb(inputs, sb):
     """--sb: intake folder + Redni broj -> the file(s) to fix, or None to stop.
 
-    The cave folder holds the phone export, the _pp, and whatever came out of
+    The cave folder holds the phone export, the _prep, and whatever came out of
     Save As, so the menu says which of them is actually at this step — picking
     a not-yet-imported one would only earn a BLOCKED message.
     """
@@ -313,12 +315,14 @@ def pick_by_sb(inputs, sb):
     if leaves is None:
         return None
     files = sb_select.list_files(leaves, (".csz", ".csx"),
-                                 skip_suffixes=("_lt", "_fin"))
+                                 skip_suffixes=sb_select.POSTP_ALL
+                                 + sb_select.RESOLVED_ALL)
+
     if not files:
         print("nothing to do - u toj mapi nema .csz ni .csx datoteke")
         return None
     # The file cSurvey saved is the input here; the phone export and an
-    # unsaved _pp beside it are not. Ask only if that is not clear-cut.
+    # unsaved _prep beside it are not. Ask only if that is not clear-cut.
     labels = [import_state(f) for f in files]
     saved = {f for f, lab in zip(files, labels) if lab.startswith("spremljeno")}
     return sb_select.pick(files, lambda f: f in saved, leaves, labels=labels,
@@ -357,7 +361,8 @@ def main(argv=None):
     ap.add_argument("input", nargs="+",
                     help="post-import .csz or .csx file(s) saved by cSurvey")
     ap.add_argument("-o", "--out",
-                    help="output path (default: <input>_lt.<same ext>); "
+                    help="output path (default: <input>_postp.<same ext>, "
+                         "a trailing _prep replaced); "
                          "single input only")
     ap.add_argument("--all-lines", action="store_true",
                     help="also fix lines without a TopoDroid import stamp")
@@ -386,9 +391,9 @@ def main(argv=None):
     for inp in args.input:
         base, ext = os.path.splitext(inp)
         # In batch/drag-drop mode, silently skip our own outputs so a folder
-        # full of files doesn't produce <name>_lt_lt on a second pass.
-        if batch and base.lower().endswith("_lt"):
-            print("skip %s (already a _lt output)" % inp)
+        # full of files doesn't produce <name>_postp_postp on a second pass.
+        if batch and sb_select.stem_endswith(inp, sb_select.POSTP_ALL):
+            print("skip %s (already a _postp output)" % inp)
             continue
         if not os.path.exists(inp):
             print("ERROR: %s does not exist" % inp, file=sys.stderr)
@@ -407,7 +412,7 @@ def main(argv=None):
             rc = 1
             continue
 
-        # BLOCKER: wrong step. A raw/phone or _pp file has no cSurvey <layers>
+        # BLOCKER: wrong step. A raw/phone or _prep file has no cSurvey <layers>
         # yet; the fixer would silently change nothing. Stop and say what to do.
         if not_yet_imported(root):
             print("BLOCKED: %s has NOT been imported into cSurvey yet.\n"
@@ -419,7 +424,7 @@ def main(argv=None):
             rc = 1
             continue
 
-        out = args.out or (base + "_lt" + ext)
+        out = args.out or (sb_select.postp_base(inp) + sb_select.POSTP + ext)
         if os.path.abspath(out) == os.path.abspath(inp):
             print("ERROR: output must differ from input (%s)" % inp,
                   file=sys.stderr)
@@ -458,7 +463,8 @@ def main(argv=None):
                         brush.set("type", "6")  # Water -> NotStandardWater
                         fixed_water += 1
                 # Only where no size is set yet: a `signsize` already on the item
-                # is the operator's choice (re-running KORAK 2 on a corrected _lt
+                # is the operator's choice (re-running KORAK 2 on a corrected _postp
+
                 # shrank a hand-sized entrance arrow, 2026-09-20).
                 if (item.get("type") == "6"
                         and item.get("sign") in sign_sizes

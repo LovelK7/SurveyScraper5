@@ -9,7 +9,7 @@ The composition lives here, in the 4S package, and not in the 3N tools: 4S
 already owns this page, the font, PyMuPDF and the delivery convention. The 3N
 tools stay stdlib and only *produce* the inputs —
 
-    nacrt_finish.py   the corrected survey -> _lt_fin.csx + a layout sidecar
+    nacrt_finish.py   the corrected survey -> _postp_resolved.csx + a layout sidecar
     csurvey_driver.py -> <name>_plan.pdf, <name>_profile.pdf, <name>_dimenzije.json
     this module       -> SB_<padded>_nacrt.pdf in the cave's intake leaf
 
@@ -173,7 +173,7 @@ class NacrtInputs:
     plan: Path
     profile: Path
     dimensions: Path
-    layout_sidecar: Path | None      # <survey>_lt_fin.layout.json, when present
+    layout_sidecar: Path | None      # <survey>_postp_resolved.layout.json, when present
 
     @property
     def files(self) -> list[Path]:

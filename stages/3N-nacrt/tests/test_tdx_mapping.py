@@ -127,7 +127,7 @@ def test_korak2_rules_follow_the_cave(intake):
     tm.write_override(str(a.parent), DEFAULT, tm.merge(DEFAULT, {
         "postimport": {"centerline": {"PlotPenColor": -16776961},
                        "sign_sizes": {"stalactite": "large"}}}))
-    rules, signs, _, over = fixer.load_rules(str(a / "x_lt.csx"), str(default))
+    rules, signs, _, over = fixer.load_rules(str(a / "x_postp.csx"), str(default))
     assert over and rules["centerline"]["PlotPenColor"] == -16776961
     assert signs[str(fixer.SIGN_VALUES["stalactite"])] == fixer.SIZES["large"]
     rules, _, _, over = fixer.load_rules(str(b / "y.csx"), str(default))

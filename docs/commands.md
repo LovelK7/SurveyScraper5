@@ -474,9 +474,9 @@ SurveyScraper5/
 ├─ podaci/geo/                            ← cloud copy of data/geo (~280 MB)
 ├─ csurvey_0_PROCITAJ_ME.txt              ← the TDX kit (build_csx_kit.py):
 ├─ csurvey_0_postavi_csurvey.bat          ←   KORAK 0 once per computer: cSurvey app settings
-├─ csurvey_1_pripremi_csx.bat             ←   KORAK 1 raw csx → _pp
-├─ csurvey_2_dovrsi_uvoz.bat              ←   KORAK 2 after Save As → _lt
-├─ csurvey_3_dovrsi_nacrt.bat             ←   KORAK 3 corrected _lt → the Nacrt
+├─ csurvey_1_pripremi_csx.bat             ←   KORAK 1 raw csx → _prep
+├─ csurvey_2_dovrsi_uvoz.bat              ←   KORAK 2 after Save As → _postp
+├─ csurvey_3_dovrsi_nacrt.bat             ←   KORAK 3 corrected _postp → the Nacrt
 ├─ csurvey_9_oporavi_iz_zipa.bat          ←   KORAK 9 rescue (not a step)
 ├─ csurvey_alati/                         ←   the Python tools those drive
 └─ _arhiva/                               ← superseded versions

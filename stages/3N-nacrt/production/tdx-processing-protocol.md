@@ -36,9 +36,9 @@ in one place:
     SurveyScraper5\
         cavedossier_*_v1.4.bat          the OSZ / photo / sastavnica commands
         csurvey_0_PROCITAJ_ME.txt       the operator guide (Croatian)
-        csurvey_1_pripremi_csx.bat      KORAK 1 — raw phone csx → import-ready _pp
-        csurvey_2_dovrsi_uvoz.bat       KORAK 2 — after cSurvey "Save As" → _lt
-        csurvey_3_dovrsi_nacrt.bat      KORAK 3 — corrected _lt → SB_<broj>_nacrt.pdf
+        csurvey_1_pripremi_csx.bat      KORAK 1 — raw phone csx → import-ready _prep
+        csurvey_2_dovrsi_uvoz.bat       KORAK 2 — after cSurvey "Save As" → _postp
+        csurvey_3_dovrsi_nacrt.bat      KORAK 3 — corrected _postp → SB_<broj>_nacrt.pdf
         csurvey_9_oporavi_iz_zipa.bat   KORAK 9 — rescue, only when a csx is broken
         csurvey_alati\                  the Python tools the .bat files drive
     !Za digitalizirat\SB_<broj>_<Ime>\  the surveys themselves
@@ -71,8 +71,8 @@ Four properties of the layout, each a user decision of 2026-09-20:
   and is now something you ask for by name. Dragging files onto a launcher still
   works and skips the prompt.
 - **KORAK 2 then asks *which file***, because a cave folder holds the phone
-  export, the `_pp` and whatever came out of Save As. It lists the `.csz`/`.csx`
-  it found (its own `_lt` outputs excluded) and annotates each with whether
+  export, the `_prep` and whatever came out of Save As. It lists the `.csz`/`.csx`
+  it found (its own `_postp` outputs excluded) and annotates each with whether
   cSurvey has saved it yet — `<csurvey id>` carries a GUID only after a cSurvey
   save, which an empty sketch's layer check cannot tell. One candidate is used
   without asking, and named.
@@ -89,41 +89,41 @@ in [`production/tools/`](tools/) and re-publish; never edit the Drive copy.
 
 ## The standing protocol (routine survey)
 
-> **Non-technical operator?** The step-by-step, jargon-free version lives beside the launchers as **`csurvey_0_PROCITAJ_ME.txt`**, in Croatian. It explains drag-and-drop, the SB-number prompt, the `_pp`/`_lt` name endings, and what each black-window message means. The rule in one line: **import the `_pp` file → draw in the `_lt` file.**
+> **Non-technical operator?** The step-by-step, jargon-free version lives beside the launchers as **`csurvey_0_PROCITAJ_ME.txt`**, in Croatian. It explains drag-and-drop, the SB-number prompt, the `_prep`/`_postp` name endings, and what each black-window message means. The rule in one line: **import the `_prep` file → draw in the `_postp` file.**
 
 1. **Phone:** draw in TopoDroid preferring green-verdict tools (see workbench); export **one** csx (it contains both plan and profile) into that cave's folder under `!!!Digitalizacija\!Za digitalizirat\SB_<broj>_<Ime>\` (anywhere else works too — then drag the file onto the launcher instead of double-clicking it). **Also export the project ZIP archive every time** (Survey window → menu → Archive) — since TopoDroid 6.4.99 the zip is the durable artifact: it always carries the full sketch and survives app-version churn (see the rescue step below).
 
-   **Rescue (KORAK 9), if the csx is missing/0-byte or the sketch vanished (TopoDroid ≥6.4.98 bugs):** regenerate the csx from the project zip — double-click `csurvey_9_oporavi_iz_zipa.bat` and give it the SB number(s), or drag specific zips onto it; equivalently `python stages\3N-nacrt\production\tools\tdx_zip_to_csx.py <zip|folder> [--sb 811 908]`. It writes `<survey>_recovered.csx` **and already runs KORAK 1** (`<survey>_recovered_pp.csx` → continue at step 3). Background + validation: [projects/0003-tdx-zip-recovery](../projects/0003-tdx-zip-recovery/brief.md). Export-bundle zips (csx/dxf/csv collections) are not project archives and are skipped.
+   **Rescue (KORAK 9), if the csx is missing/0-byte or the sketch vanished (TopoDroid ≥6.4.98 bugs):** regenerate the csx from the project zip — double-click `csurvey_9_oporavi_iz_zipa.bat` and give it the SB number(s), or drag specific zips onto it; equivalently `python stages\3N-nacrt\production\tools\tdx_zip_to_csx.py <zip|folder> [--sb 811 908]`. It writes `<survey>_recovered.csx` **and already runs KORAK 1** (`<survey>_recovered_prep.csx` → continue at step 3). Background + validation: [projects/0003-tdx-zip-recovery](../projects/0003-tdx-zip-recovery/brief.md). Export-bundle zips (csx/dxf/csv collections) are not project archives and are skipped.
 2. **Pre-process (KORAK 1):** double-click **`csurvey_1_pripremi_csx.bat`** and type the Redni broj of
-   each cave to prepare (`811 908`, or `SVE` for the whole intake tree); `_pp` outputs and post-import
+   each cave to prepare (`811 908`, or `SVE` for the whole intake tree); `_prep` outputs and post-import
    saves are skipped automatically. Or drag specific `.csx` files onto it. Terminal equivalent (takes
    files, or a folder with or without `--sb`):
    `python stages\3N-nacrt\production\tools\preprocess_tdx_csx.py "<...>\!Za digitalizirat" --sb 811`
-   → `<survey>_pp.csx` + a report; read the ⚠ warnings (they list what will degrade).
-3. **Import:** open `<survey>_pp.csx` in cSurvey (fix-up chain + therion calculation run automatically), check the import — **no need to merge the walls (Merge) or turn strokes (*Revert sequence*)**, KORAK 2 does both — then **Save As** your working file (either save type — `.csz` or `.csx` — is fine).
+   → `<survey>_prep.csx` + a report; read the ⚠ warnings (they list what will degrade).
+3. **Import:** open `<survey>_prep.csx` in cSurvey (fix-up chain + therion calculation run automatically), check the import — **no need to merge the walls (Merge) or turn strokes (*Revert sequence*)**, KORAK 2 does both — then **Save As** your working file (either save type — `.csz` or `.csx` — is fine).
 4. **Post-fix (KORAK 2; do it right after Save As, *before* you start mapping — else lines stay straight):**
    double-click **`csurvey_2_dovrsi_uvoz.bat`**, give it the Redni broj, and pick the saved file from
    the menu (one candidate is taken as-is); or drag the file onto it (accepts `.csz` **or** `.csx`,
    one or more files); or
    `python stages\3N-nacrt\production\tools\fix_imported_linetypes.py <saved>.csz`
    / `… "<...>\!Za digitalizirat" --sb 1103`
-   → `<saved>_lt.<same ext>`; **open that one and do all mapping in it** — it is the finished import (decorated lines, sizes, water brush). This is what flips imported slope/gradient/etc. lines from *Line style: Straight line* (decorations hidden) to *Splines* so their graphics render; cSurvey stamps decorations per straight segment and only spline lines take the curve branch. Skipping this step is why decorated lines show up plain. It also **merges and fixes the walls** (`postimport.wall_merge` / `wall_orientation` / `wall_reorder`): on a fresh import every open cave-wall stroke the survey can see goes into one cave border per design, each turned to the right side and chained for the shortest fill joins; strokes the survey cannot see (a surface line drawn with the wall pen) stay as drawn. Where the operator already merged walls, it does not merge again but reverses the strokes that run against the rest of their border and puts its sequences in chain order. The cave's side comes from the survey (legs, and splays up to the first wall they cross). The console prints `zidovi: spojeno …` / `okrenuto …`, and `provjeri rucno` where a change would make the fill worse — then the operator decides. Check the fill in the `_lt`. It also **shrinks the entrance sign to size 1** (`signsize="1"`, *VerySmall*) wherever the csx carries it: cSurvey's import leaves it at size 1 in the profile but size 2 in the plan, where it draws too big — after this step both designs carry the same, small marker. (One value, `postimport.sign_sizes.entrance` in `tdx-mapping.json`, alongside the other per-sign sizes.) The fixer **blocks** (with instructions) if you hand it a not-yet-imported file, and is safe to re-run.
-5. **Finish the nacrt (KORAK 3):** correct the sketch in the `_lt` file and save it, then
+   → `<saved>_postp.<same ext>`; **open that one and do all mapping in it** — it is the finished import (decorated lines, sizes, water brush). This is what flips imported slope/gradient/etc. lines from *Line style: Straight line* (decorations hidden) to *Splines* so their graphics render; cSurvey stamps decorations per straight segment and only spline lines take the curve branch. Skipping this step is why decorated lines show up plain. It also **merges and fixes the walls** (`postimport.wall_merge` / `wall_orientation` / `wall_reorder`): on a fresh import every open cave-wall stroke the survey can see goes into one cave border per design, each turned to the right side and chained for the shortest fill joins; strokes the survey cannot see (a surface line drawn with the wall pen) stay as drawn. Where the operator already merged walls, it does not merge again but reverses the strokes that run against the rest of their border and puts its sequences in chain order. The cave's side comes from the survey (legs, and splays up to the first wall they cross). The console prints `zidovi: spojeno …` / `okrenuto …`, and `provjeri rucno` where a change would make the fill worse — then the operator decides. Check the fill in the `_postp`. It also **shrinks the entrance sign to size 1** (`signsize="1"`, *VerySmall*) wherever the csx carries it: cSurvey's import leaves it at size 1 in the profile but size 2 in the plan, where it draws too big — after this step both designs carry the same, small marker. (One value, `postimport.sign_sizes.entrance` in `tdx-mapping.json`, alongside the other per-sign sizes.) The fixer **blocks** (with instructions) if you hand it a not-yet-imported file, and is safe to re-run.
+5. **Finish the nacrt (KORAK 3):** correct the sketch in the `_postp` file and save it, then
    double-click **`csurvey_3_dovrsi_nacrt.bat`** and give it the Redni broj — it runs the three
-   steps below in order and leaves the finished Nacrt in the cave's leaf. (Drag the corrected `_lt`
+   steps below in order and leaves the finished Nacrt in the cave's leaf. (Drag the corrected `_postp`
    file onto the icon instead and it runs unattended, taking the proposed scale and arrangement.)
    The terminal equivalents, which are also what the launcher calls:
    - `python stagesN-nacrt\production	ools
-acrt_finish.py <saved>_lt.csx`
-     → `<saved>_lt_fin.csx` + a `.layout.json` sidecar: entrance flagged, Dislivello quota, scale
+acrt_finish.py <saved>_postp.csx`
+     → `<saved>_postp_resolved.csx` + a `.layout.json` sidecar: entrance flagged, Dislivello quota, scale
      bar, north arrow, A4 print options at a scale chosen per design. Pure XML, no cSurvey. It
      prints the scale/arrangement menu and takes Enter for the proposal (`--yes` skips the menu,
      `--layout N` picks an entry, `--sb <broj>` finds the file from the intake root).
-   - `python stagesN-nacrt\production	ools\csurvey_driver.py finish <saved>_lt_fin.csx -o <cave folder>`
+   - `python stagesN-nacrt\production	ools\csurvey_driver.py finish <saved>_postp_resolved.csx -o <cave folder>`
      → `<name>_plan.pdf`, `<name>_profile.pdf` and `<name>_dimenzije.json`, printed headlessly out
      of the installed cSurvey (reflection, no dialog). **This is the only step that needs cSurvey
      installed**: without it the call raises one readable line and the launcher stops cleanly with
-     the manual recipe — open `_lt_fin` in cSurvey, File › Print, plan and profile separately,
+     the manual recipe — open `_postp_resolved` in cSurvey, File › Print, plan and profile separately,
      Microsoft Print to PDF. The print settings are already in the file; changing them breaks the
      scale.
    - `cavedossier nacrt <broj>` → **`SB_<broj>_nacrt.pdf`** in the cave's intake leaf: both
