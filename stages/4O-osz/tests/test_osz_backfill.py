@@ -1,266 +1,119 @@
-"""The backfill direction (`osz backfill`): person aliases, year cropping, reader round-trip,
-and the SB backfill rules (empty cells get proposals, conflicts get notes,
-authors merge across the full-name/shorthand conventions)."""
+"""osz/backfill.py — KORAK 4: the survey's measurements written into the existing OSZ."""
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
-from cave_dossier.core.person_aliases import same_person, to_sb_shorthand, variants_for
-from cave_dossier.osz.backfill import build_backfill, extract_year_period
-from cave_dossier.sb.loader import SBReader
+pytest.importorskip("lxml")
+
+from cave_dossier.osz import backfill, prefill  # noqa: E402
+from cave_dossier.osz.reader import read_osz_content  # noqa: E402
+from cave_dossier.osz.writer import OszDocument  # noqa: E402
+
+from test_osz_prefill import ENTRANCE_BLOCK, _leaf, _template_guard, intake_settings, run_dir  # noqa: E402,F401
+from test_osz_writer import TEMPLATE  # noqa: E402
 
 
-# ── person aliases ───────────────────────────────────────────────────
-def test_variants_for_core_forms():
-    variants = variants_for("Lovel Kukuljan")
-    assert variants[0] == "L.Kukuljan"  # the SB convention leads
-    assert "L. Kukuljan" in variants and "LK" in variants
-    assert variants_for("Ana") == []              # single token
-    assert variants_for("Ana Marija Horvat") == []  # 3 tokens — skipped, as in crospeleo
-
-
-def test_to_sb_shorthand():
-    assert to_sb_shorthand("Lovel Kukuljan") == "L.Kukuljan"
-    assert to_sb_shorthand("L.Kukuljan") == "L.Kukuljan"   # passthrough
-    assert to_sb_shorthand("Ana Marija Horvat") == "Ana Marija Horvat"
-
-
-def test_same_person_across_conventions():
-    assert same_person("Lovel Kukuljan", "L.Kukuljan")
-    assert same_person("L.Kukuljan", "Lovel Kukuljan")
-    assert same_person("L. Kukuljan", "L.Kukuljan")
-    assert not same_person("Nina Grozić", "Dino Grozić")
-    # Surname alone stays ambiguous — singletons are deliberately excluded.
-    assert not same_person("Kukuljan", "Lovel Kukuljan")
-
-
-# ── year / period cropping ───────────────────────────────────────────
-def test_extract_year_period():
-    assert extract_year_period("10.05.2025.") == "2025"
-    assert extract_year_period("10.5.2014 – 17.5.2025") == "2014-2025"
-    assert extract_year_period("2019") == "2019"
-    assert extract_year_period("svibanj, bez godine") is None
-    assert extract_year_period(None) is None
-
-
-# ── reader round-trip (real template) ────────────────────────────────
-def test_reader_roundtrip(tmp_path):
-    pytest.importorskip("lxml")
-    from cave_dossier.osz.reader import read_osz
-    from cave_dossier.osz.writer import OszDocument
-    from test_osz_writer import TEMPLATE
-
-    if not TEMPLATE.exists():
-        pytest.skip("v10 template not present")
+def _osz(folder, **cells):
+    """A v10 zapisnik in the leaf with some cells typed in by hand."""
+    _template_guard()
+    folder.mkdir(parents=True, exist_ok=True)
     doc = OszDocument(TEMPLATE)
-    doc.fill_plain(0, 1, 1, "051-999")            # broj_plocice
-    doc.fill_plain(1, 0, 1, "Jama Proba")         # ime_objekta
-    doc.fill_plain(1, 1, 1, "Stara Proba")        # sinonimi
-    doc.fill_sdt_cell(2, 2, 2, ["333001"])        # x_htrs — a filled control
-    doc.fill_plain(4, 3, 0, "12,5")               # duljina
-    doc.fill_plain(6, 8, 1, "10.05.2025.")        # datum
-    doc.fill_plain(6, 14, 1, "Lovel Kukuljan, Ivana Dujmović")  # crtali
-    out = tmp_path / "filled.docx"
-    doc.save(out)
-
-    values = read_osz(out)
-    assert values["broj_plocice"] == "051-999"
-    assert values["ime_objekta"] == "Jama Proba"
-    assert values["x_htrs"] == "333001"
-    assert values["duljina"] == "12,5"
-    assert values["datum_istrazivanja"] == "10.05.2025."
-    assert values["crtali"] == "Lovel Kukuljan, Ivana Dujmović"
-    # Untouched control (grey placeholder) and untouched plain cell → None.
-    assert values["y_htrs"] is None
-    assert values["dubina"] is None
+    for key, value in cells.items():
+        backfill._fill(doc, key, value)
+    path = folder / "SB_0001_OSZ.docx"
+    doc.save(path)
+    return path
 
 
-# ── filled-OSZ discovery in the intake tree ──────────────────────────
-def _intake_settings(settings, tmp_path):
-    import dataclasses
-
-    return dataclasses.replace(
-        settings,
-        local_drive_root=tmp_path,
-        archive_dirs={"intake_dir": "!Za digitalizirat",
-                      "osz_prefill_dir": "OSZ prefill"},
-    )
+def _dims(folder, **values):
+    data = {"calculated": True, "l": 18.4, "pl": 16, "nvr_m": 5.0, "pvr_m": 5.5, "vr": 10,
+            "entrance_size": ENTRANCE_BLOCK}
+    data.update(values)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / "SB_1_test_dimenzije.json"
+    path.write_text(json.dumps({k: v for k, v in data.items() if v is not None}), encoding="utf-8")
+    return path
 
 
-def test_locate_filled_osz_in_intake_dir(settings, tmp_path):
-    from cave_dossier.osz.backfill import locate_filled_osz
-
-    cave_dir = tmp_path / "!Za digitalizirat" / "Veprinac" / "SB_764_Piccolo_orig"
-    cave_dir.mkdir(parents=True)
-    (cave_dir / "opis terena.txt").write_text("x", encoding="utf-8")
-    target = cave_dir / "SB_0764_OSZ.docx"
-    target.write_bytes(b"docx")
-    (cave_dir / "~$SB_0764_OSZ.docx").write_bytes(b"lock")  # Word lock file
-
-    location = locate_filled_osz(_intake_settings(settings, tmp_path), 764)
-    assert location.path == target
+def test_measured_cells_follow_the_zapisnik_type():
+    dims = {"l": 18, "pl": 16, "nvr": 5, "pvr": 1, "vr": 6, "entrance_size": ENTRANCE_BLOCK}
+    values, kind, notes = backfill.measured_cells(dims, ("špilja",))
+    assert kind == "horizontal" and values["sirina_ulaza"] == "0,6" and values["duljina"] == "18"
+    values, kind, _ = backfill.measured_cells(dims, ("jama",))
+    assert kind == "pit" and values["sirina_ulaza"] == "1,5" and values["visina_duljina_ulaza"] == "4,0"
+    values, kind, _ = backfill.measured_cells({"l": 18}, ())
+    assert kind is None and values == {"duljina": "18"}
 
 
-def test_locate_filled_osz_prefers_osz_named_docx(settings, tmp_path):
-    from cave_dossier.osz.backfill import locate_filled_osz
-
-    cave_dir = tmp_path / "!Za digitalizirat" / "SB_15_Volarova"
-    cave_dir.mkdir(parents=True)
-    (cave_dir / "biljeske.docx").write_bytes(b"x")
-    target = cave_dir / "zapisnik Volarova.docx"
-    target.write_bytes(b"x")
-    location = locate_filled_osz(_intake_settings(settings, tmp_path), 15)
-    assert location.path == target
+def test_plan_changes_keeps_the_same_measurement_and_overrides_the_rest():
+    recorded = {"duljina": "18 m", "dubina": "7", "sirina_ulaza": "0.55", "broj_ulaza": ""}
+    measured = {"duljina": "18", "dubina": "5", "sirina_ulaza": "0,6", "broj_ulaza": "1"}
+    written, kept = backfill.plan_changes(recorded, measured)
+    assert kept == {"duljina": "18 m", "sirina_ulaza": "0.55"}
+    assert written == {"dubina": "5", "broj_ulaza": "1"}
 
 
-def test_locate_filled_osz_ambiguous_reports_candidates(settings, tmp_path):
-    from cave_dossier.osz.backfill import locate_filled_osz
-
-    cave_dir = tmp_path / "!Za digitalizirat" / "SB_20_Blazici"
-    cave_dir.mkdir(parents=True)
-    (cave_dir / "prva.docx").write_bytes(b"x")
-    (cave_dir / "druga.docx").write_bytes(b"x")
-    location = locate_filled_osz(_intake_settings(settings, tmp_path), 20)
-    assert location.path is None
-    assert any("kandidata" in note for note in location.notes)
-
-
-def test_locate_filled_osz_ignores_the_prefill_backup_beside_the_delivered_osz(
-    settings, tmp_path
-):
-    """The leaf a prefill migration has touched holds BOTH the delivered
-    `SB_<broj>_OSZ.docx` and the `_stari_<datum>` backup of what was there
-    before. Until 2026-09-01 the backfill locator counted the backup as a rival
-    candidate and reported the cave as having no zapisnik at all (found via
-    `photos process 1250`, whose author lookup went empty)."""
-    from cave_dossier.osz.backfill import locate_filled_osz
-
-    cave_dir = tmp_path / "!Za digitalizirat" / "Veprinac" / "SB_1250_LiDAR Kristal 304"
-    cave_dir.mkdir(parents=True)
-    target = cave_dir / "SB_1250_OSZ.docx"
-    target.write_bytes(b"docx")
-    (cave_dir / "Zapisnik 304_stari_2026-09-01.docx").write_bytes(b"docx")
-
-    location = locate_filled_osz(_intake_settings(settings, tmp_path), 1250)
-    assert location.path == target
-    assert not any("kandidata" in note for note in location.notes)
+def test_izmjera_writes_the_cells_and_keeps_the_rest(intake_settings, run_dir):
+    leaf = _leaf(intake_settings)
+    path = _osz(leaf, ime_objekta="Špilja Testovka", opis="Ulaz je nizak.", dubina="7")
+    _dims(leaf)
+    outcome = backfill.run_backfill(intake_settings, 1)
+    r = outcome.result
+    assert r.written == {"duljina": "18", "horizontalna_duljina": "16", "dubina": "5",
+                         "visinska_razlika": "10", "sirina_ulaza": "0,6",
+                         "visina_duljina_ulaza": "1,4", "broj_ulaza": "1"}
+    assert r.entrance_kind == "horizontal"   # no Vrsta objekta ticked -> the geometric guess
+    assert r.backup and r.backup.startswith("SB_0001_OSZ_stari_")
+    assert any("zapisano '7'" in n for n in r.notes)
+    assert r.osz_mtime_before is not None and r.osz_mtime_after is not None
+    content = read_osz_content(path)
+    assert content.fields["dubina"] == "5" and content.fields["sirina_ulaza"] == "0,6"
+    assert content.fields["ime_objekta"] == "Špilja Testovka" and content.fields["opis"] == "Ulaz je nizak."
+    assert (leaf / r.backup).exists()
+    assert outcome.sidecar_path.exists() and backfill.last_write(1)["written"]["dubina"] == "5"
 
 
-def test_a_humans_own_stari_file_still_counts(settings, tmp_path):
-    """Only OUR dated backup marker is excluded — someone's hand-named
-    "Zapisnik_stari.docx" may well be the real document."""
-    from cave_dossier.osz.backfill import locate_filled_osz
-
-    cave_dir = tmp_path / "!Za digitalizirat" / "SB_21_Kosa"
-    cave_dir.mkdir(parents=True)
-    target = cave_dir / "Zapisnik_stari.docx"
-    target.write_bytes(b"docx")
-
-    assert locate_filled_osz(_intake_settings(settings, tmp_path), 21).path == target
-
-
-def test_locate_filled_osz_falls_back_to_prefill_dir(settings, tmp_path):
-    from cave_dossier.osz.backfill import locate_filled_osz
-
-    (tmp_path / "!Za digitalizirat").mkdir()
-    prefill_dir = tmp_path / "OSZ prefill"
-    prefill_dir.mkdir()
-    target = prefill_dir / "SB_0764_OSZ.docx"
-    target.write_bytes(b"docx")
-    location = locate_filled_osz(_intake_settings(settings, tmp_path), 764)
-    assert location.path == target
-    assert any("prefill" in note for note in location.notes)
+def test_izmjera_second_run_changes_nothing(intake_settings, run_dir):
+    leaf = _leaf(intake_settings)
+    _osz(leaf, ime_objekta="X")
+    _dims(leaf)
+    backfill.run_backfill(intake_settings, 1)
+    before = sorted(p.name for p in leaf.iterdir())
+    outcome = backfill.run_backfill(intake_settings, 1)
+    assert outcome.result.written == {} and outcome.result.backup is None
+    assert any("ništa nije mijenjano" in n for n in outcome.result.notes)
+    assert sorted(p.name for p in leaf.iterdir()) == before
 
 
-def test_locate_filled_osz_override_dir(settings, tmp_path):
-    from cave_dossier.osz.backfill import locate_filled_osz
-
-    cave_dir = tmp_path / "negdje" / "SB_99_Proba"
-    cave_dir.mkdir(parents=True)
-    target = cave_dir / "SB_99_OSZ.docx"
-    target.write_bytes(b"docx")
-    # Pointing at the parent...
-    location = locate_filled_osz(_intake_settings(settings, tmp_path), 99,
-                                 override_dir=tmp_path / "negdje")
-    assert location.path == target
-    # ...or straight at the cave's own dir both work.
-    location = locate_filled_osz(_intake_settings(settings, tmp_path), 99,
-                                 override_dir=cave_dir)
-    assert location.path == target
+def test_izmjera_takes_the_pit_reading_when_the_zapisnik_says_jama(intake_settings, run_dir):
+    leaf = _leaf(intake_settings)
+    path = _osz(leaf, ime_objekta="X")
+    doc = OszDocument(path)
+    assert doc.tick({"jama"}) == set()
+    staged = leaf / "ticked.docx"
+    doc.save(staged)
+    staged.replace(path)
+    _dims(leaf)
+    r = backfill.run_backfill(intake_settings, 1).result
+    assert r.entrance_kind == "pit"
+    assert r.written["sirina_ulaza"] == "1,5" and r.written["visina_duljina_ulaza"] == "4,0"
 
 
-# ── backfill rules over the mini SB fixture ──────────────────────────
-def _cave(reader: SBReader, settings, serial: int):
-    from cave_dossier.georef.worker import find_by_serial
-
-    cave = find_by_serial(reader, settings, serial)
-    assert cave is not None
-    return cave
-
-
-def test_backfill_fills_empty_queue_row(reader, settings):
-    cave = _cave(reader, settings, 4)  # Đulin ponor mali: everything empty, "/" author
-    osz = {
-        "broj_plocice": "051-777",
-        "ime_objekta": "Đulin ponor mali",
-        "sinonimi": None,
-        "duljina": "22",
-        "dubina": "7,5",
-        "datum_istrazivanja": "3.3.2024. i 4.4.2025.",
-        "crtali": "Lovel Kukuljan i Ivana Dujmović",
-    }
-    result = build_backfill(cave, osz, settings)
-    proposed = {p.column: p.proposed for p in result.proposals}
-    assert proposed["Broj pločice"] == "051-777"
-    assert proposed["Duljina"] == "22"
-    assert proposed["Dubina"] == "7,5"
-    assert proposed["Godina ili period istraživanja"] == "2024-2025"
-    assert proposed["Autori nacrta ili izvor"] == "L.Kukuljan, I.Dujmović"
-    assert result.differences == []
-
-
-def test_backfill_new_name_moves_old_to_synonyms(reader, settings):
-    cave = _cave(reader, settings, 1)  # Špilja Testovka, synonym "Testovka mala"
-    osz = {"ime_objekta": "Jama Prekrasna", "sinonimi": "Treće ime"}
-    result = build_backfill(cave, osz, settings)
-    proposed = {p.column: p.proposed for p in result.proposals}
-    assert proposed["Ime objekta"] == "Jama Prekrasna"
-    # Old SB name + old synonyms + OSZ synonyms, new name excluded.
-    assert proposed["Sinonimi"] == "Testovka mala, Špilja Testovka, Treće ime"
-
-
-def test_backfill_full_match_proposes_nothing(reader, settings):
-    cave = _cave(reader, settings, 1)  # plaque T-01, 40/12, 2015, Ana Anić
-    osz = {
-        "broj_plocice": "T-01",
-        "ime_objekta": "Špilja Testovka",
-        "sinonimi": "Testovka mala",
-        "duljina": "40",
-        "dubina": "12",
-        "datum_istrazivanja": "15.07.2015.",
-        "crtali": "Ana Anić",
-    }
-    result = build_backfill(cave, osz, settings)
-    assert result.proposals == []
-    assert result.differences == []
-    assert len(result.matches) >= 6
-
-
-def test_backfill_authors_merge_never_drop(reader, settings):
-    cave = _cave(reader, settings, 2)  # Jama Čavlić: "Ivo Ivić; Ana Anić"
-    osz = {"ime_objekta": "Jama Čavlić",
-           "crtali": "Ivo Ivić, Luka Peloza"}
-    result = build_backfill(cave, osz, settings)
-    proposed = {p.column: p.proposed for p in result.proposals}
-    # Luka is new → merged in as shorthand; Ana stays (note, not a drop).
-    assert proposed["Autori nacrta ili izvor"] == "Ivo Ivić, Ana Anić, L.Peloza"
-    assert any("Ana Anić" in note for note in result.notes)
-
-
-def test_backfill_conflict_is_a_difference_not_a_proposal(reader, settings):
-    cave = _cave(reader, settings, 1)  # Duljina 40 in SB
-    osz = {"ime_objekta": "Špilja Testovka", "duljina": "55"}
-    result = build_backfill(cave, osz, settings)
-    assert not any(p.column == "Duljina" for p in result.proposals)
-    assert any("Duljina" in d for d in result.differences)
+def test_izmjera_refuses_without_osz_or_dimensions_or_when_word_holds_it(intake_settings, run_dir):
+    leaf = _leaf(intake_settings)
+    with pytest.raises(backfill.BackfillError, match="nema mapu"):
+        backfill.run_backfill(intake_settings, 1)
+    leaf.mkdir(parents=True)
+    with pytest.raises(backfill.BackfillError, match="nema OSZ-a"):
+        backfill.run_backfill(intake_settings, 1)
+    path = _osz(leaf, ime_objekta="X")
+    with pytest.raises(backfill.BackfillError, match="dimenzije.json"):
+        backfill.run_backfill(intake_settings, 1)
+    _dims(leaf)
+    (leaf / "~$_0001_OSZ.docx").write_text("lock", encoding="utf-8")
+    with pytest.raises(backfill.BackfillError, match="Wordu"):
+        backfill.run_backfill(intake_settings, 1)
+    assert read_osz_content(path).fields.get("duljina") in (None, "")

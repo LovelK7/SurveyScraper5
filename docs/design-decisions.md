@@ -701,6 +701,11 @@ cave's intake leaf), so the rule is narrowed, not reversed:
 
 ## OSZ backfill → SB rules (2026-08-30)
 
+> **Renamed `osz dopune` on 2026-10-04.** The user wanted *backfill* for the
+> other direction — the nacrt's numbers into the OSZ (3N's KORAK 4) — so this
+> command took the name of its output, `dopune-sb-iz-osz.csv`. The rules below
+> are unchanged; `osz/dopune.py` is the module.
+
 The reverse direction (`cavedossier osz backfill`, renamed from `osz fetch`
 2026-09-02), settled with the user the
 same day the prefill shipped; enforced in `osz/reader.py` + `osz/backfill.py`:
@@ -1265,10 +1270,11 @@ dashboard works 4O first, then 3N; a second full `osz prefill` after KORAK 3b me
 walking back a page and redoing geo lookups and the excerpt for nothing. Three
 placements were weighed: a 3N step that writes only the measured cells into the
 existing zapisnik; a link from 3N to 4O with the prefill split in two (rejected:
-"backfill" already means OSZ → SB here, and the operator still jumps pages);
+the operator still jumps pages);
 keeping the full rerun (rejected: it redoes everything to change seven cells). The
-user chose the first. `cavedossier osz izmjera <broj>` (4O owns the code, 3N owns
-the step) opens the OSZ in the leaf, writes Duljina / Horizontalna duljina / Dubina /
+user chose the first and, the same day, the name: `cavedossier osz backfill <broj>`
+(built as `osz izmjera`; the former `osz backfill`, OSZ → SB, became `osz dopune`).
+4O owns the code, 3N owns the step; it opens the OSZ in the leaf, writes Duljina / Horizontalna duljina / Dubina /
 Visinska razlika and Broj / Širina / Visina-duljina ulaza with the prefill's own
 precedence, keeps the old file as `_stari_<datum>`, refuses a document open in Word
 and does nothing when nothing changes. The full prefill still writes the same cells
@@ -1276,7 +1282,7 @@ when the dimensions file exists, so either order ends the same. The dashboard's
 *spajanje* step is now 3N's KORAK 4 (after 3c); its sidecar records the OSZ's mtime
 before and after, so a KORAK 4 write does not make 3c stale (3c reads the same
 numbers from the dimensions file) while a later hand edit still does. The kit
-carries `csurvey_4_upisi_osz.bat`, which calls the `cavedossier_osz_izmjera` launcher
+carries `csurvey_4_upisi_osz.bat`, which calls the `cavedossier_osz_backfill` launcher
 beside it.
 
 ## 3N predefined cSurvey settings: file vs app (2026-10-03)

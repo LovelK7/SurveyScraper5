@@ -597,8 +597,8 @@ def test_workflow_korak4_touching_the_osz_does_not_stale_3c():
     osz = {"opis": "x", "duljina": "18", "dubina": "5"}
     assert _states(workflow.build(detail, osz, dims={"l": 18}))["3n-k3c"] == "stale"
     sidecar = {"osz_mtime_before": 50.0, "osz_mtime_after": 700.0}
-    states = _states(workflow.build(detail, osz, dims={"l": 18}, izmjera=sidecar))
+    states = _states(workflow.build(detail, osz, dims={"l": 18}, backfill=sidecar))
     assert states["3n-k3c"] == "done" and states["3n-k4"] == "done"
     files[8] = _f("osz", "SB_1220_OSZ.docx", 900)        # edited by hand afterwards
-    assert _states(workflow.build(detail, osz, dims={"l": 18}, izmjera=sidecar))["3n-k3c"] == "stale"
-    assert workflow.last_izmjera(None) is None
+    assert _states(workflow.build(detail, osz, dims={"l": 18}, backfill=sidecar))["3n-k3c"] == "stale"
+    assert workflow.last_backfill(None) is None

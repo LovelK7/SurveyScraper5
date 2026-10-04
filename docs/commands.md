@@ -86,7 +86,7 @@ current state per milestone: [STATUS.md](../STATUS.md#milestone-ladder)):
 | M1 | read SB (the live workbook) safely |
 | M2 | the dossier object + `report` (+ archive intake, still open) |
 | M3 | isječak karte (`karta`) |
-| M4 | OSZ both ways: `osz prefill` + `osz backfill` (+ the CroSpeleo-field reader, still open) |
+| M4 | OSZ both ways: `osz prefill` + `osz dopune` (OSZ → SB review list; `osz backfill` until 2026-10-04) + `osz backfill` (3N KORAK 4, the nacrt's numbers into the OSZ) |
 | M5 | consume the 2.1a survey artifacts (Nacrt + dimensions) |
 | M6 | the only WRITE step: SB write-back + archive delivery (+ the 2.1d mover) |
 
@@ -232,7 +232,7 @@ cavedossier osz prefill 1234               # SB + finders -> prefilled DOCX + pr
 cavedossier osz prefill 1234 --force-karta # re-fetch the excerpt first (server-side save)
 cavedossier osz prefill 1234 --offline     # never touch the network; an already-collected
                                            #   excerpt is still embedded, georef.hr is skipped
-cavedossier osz izmjera 1234               # 3N KORAK 4: Duljina/Dubina/... + Broj/Sirina/Visina ulaza
+cavedossier osz backfill 1234              # 3N KORAK 4: Duljina/Dubina/... + Broj/Sirina/Visina ulaza
                                            #   from <ime>_dimenzije.json INTO the existing OSZ in the
                                            #   leaf; nothing else touched, old file kept as _stari_<datum>
 # After KORAK 3 the cave's <name>_dimenzije.json also fills Duljina / Horizontalna
@@ -364,14 +364,14 @@ cavedossier nacrt 1103 --force             # overwrite a delivered file this too
 # Collision: the delivered nacrt carries its OWN metadata stamp, so a nacrt and
 # a sastavnica never overwrite each other, and an edited file is refused.
 
-# ── OSZ backfill → SB (part 2.1b — reads a FILLED zapisnik back) ──
-cavedossier osz backfill 1234                # find the cave's SB_<broj>_… dir in the intake
+# ── OSZ dopune → SB (part 2.1b — reads a FILLED zapisnik back; `osz backfill` until 2026-10-04) ──
+cavedossier osz dopune 1234                  # find the cave's SB_<broj>_… dir in the intake
                                              #   tree (!Za digitalizirat), read the OSZ DOCX
                                              #   inside it (prefers osz/zapisnik-named files;
                                              #   falls back to the prefill copy) and propose
                                              #   the SB backfill
-cavedossier osz backfill 1234 --osz-dir DIR  # search a different root for the SB_<broj>_… dir
-cavedossier osz backfill 1234 --osz FILE     # point at an exact filled v10 DOCX instead
+cavedossier osz dopune 1234 --osz-dir DIR    # search a different root for the SB_<broj>_… dir
+cavedossier osz dopune 1234 --osz FILE       # point at an exact filled v10 DOCX instead
 # Proposes for EMPTY SB cells: Broj pločice, Duljina, Dubina, Godina/period
 # (cropped out of the OSZ's free-form Datum: "10.05.2025." -> "2025",
 # two visits -> "2025-2026"), Autori nacrta (OSZ full names -> SB shorthand,

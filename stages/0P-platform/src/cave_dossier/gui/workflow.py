@@ -105,7 +105,7 @@ def _number(text: str | None) -> float | None:
 
 
 def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
-          dims: dict | None = None, izmjera: dict | None = None) -> list[Step]:
+          dims: dict | None = None, backfill: dict | None = None) -> list[Step]:
     """The cave's steps in working order, each with a status and its action."""
     files = detail.get("files", [])
     has_leaf = bool(detail.get("leaves"))
@@ -130,10 +130,10 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
     # compose steps the OSZ is as old as before it, else every KORAK 4 would
     # make 3c stale and 3c would make 4 look needed again.
     osz_for_compose = osz
-    if (osz and isinstance(izmjera, dict) and izmjera.get("osz_mtime_after")
-            and izmjera.get("osz_mtime_before")
-            and abs(osz["modified"] - float(izmjera["osz_mtime_after"])) <= 2):
-        osz_for_compose = dict(osz, modified=float(izmjera["osz_mtime_before"]))
+    if (osz and isinstance(backfill, dict) and backfill.get("osz_mtime_after")
+            and backfill.get("osz_mtime_before")
+            and abs(osz["modified"] - float(backfill["osz_mtime_after"])) <= 2):
+        osz_for_compose = dict(osz, modified=float(backfill["osz_mtime_before"]))
     add(Step("osz-prefill", "auto", "OSZ pripremljen (SB + geo + karta)", "4O",
              "done" if osz else "todo",
              action="osz-prefill", files=_names(osz)))
@@ -215,10 +215,10 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
     # ── KORAK 4 after 3c: the compose reads the same numbers from the
     # dimensions file, so it does not wait for the OSZ to carry them.
     if osz is None or dimenzije is None:
-        add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "blocked",
+        add(Step("3n-k4", "spajanje", "KORAK 4 – backfill OSZ-a (izmjera)", "3N", "blocked",
                  "Treba OSZ (Pripremi OSZ) i KORAK 3b (dimenzije).", action="3n-k4"))
     elif osz_fields is None:
-        add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "unknown",
+        add(Step("3n-k4", "spajanje", "KORAK 4 – backfill OSZ-a (izmjera)", "3N", "unknown",
                  osz_note, action="3n-k4"))
     else:
         expected = list(MEASURED_OSZ_FIELDS)
@@ -234,15 +234,15 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
         differs = (measured is not None and recorded is not None
                    and round(measured) != round(recorded))
         if empty:
-            add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "todo",
+            add(Step("3n-k4", "spajanje", "KORAK 4 – backfill OSZ-a (izmjera)", "3N", "todo",
                      "Upisuje duljine, dubinu i ulaz iz nacrta u postojeći OSZ; "
                      "sve ostalo u zapisniku ostaje.", action="3n-k4"))
         elif differs:
-            add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "stale",
+            add(Step("3n-k4", "spajanje", "KORAK 4 – backfill OSZ-a (izmjera)", "3N", "stale",
                      f"OSZ kaže {osz_fields.get('duljina')}, izmjera {dims.get('l')} m.",
                      action="3n-k4"))
         else:
-            add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "done"))
+            add(Step("3n-k4", "spajanje", "KORAK 4 – backfill OSZ-a (izmjera)", "3N", "done"))
 
     sastavnica = _newest(files, "sastavnica")
     if sastavnica is None:
@@ -301,14 +301,14 @@ def read_dims(path: str | None) -> dict | None:
         return None
 
 
-def last_izmjera(broj) -> dict | None:
-    """KORAK 4's last sidecar for this cave (runs/osz/<broj>/izmjera.json), or None."""
+def last_backfill(broj) -> dict | None:
+    """KORAK 4's last sidecar for this cave (runs/osz/<broj>/backfill.json), or None."""
     if broj in (None, ""):
         return None
     try:
-        from cave_dossier.osz import izmjera as izmjera_mod
+        from cave_dossier.osz import backfill as backfill_mod
 
-        return izmjera_mod.last_write(int(broj))
+        return backfill_mod.last_write(int(broj))
     except Exception:  # noqa: BLE001 — lxml missing, odd broj: the page still draws
         return None
 
@@ -319,7 +319,7 @@ def for_detail(detail: dict) -> dict:
     fields, note = read_osz(osz["path"] if osz else None)
     dims_file = _newest(detail.get("files", []), "dimenzije")
     steps = build(detail, fields, note, read_dims(dims_file["path"] if dims_file else None),
-                  izmjera=last_izmjera(detail.get("broj")))
+                  backfill=last_backfill(detail.get("broj")))
     return {
         "phases": [{"id": key, "label": label} for key, label in PHASES],
         "steps": [asdict(step) for step in steps],

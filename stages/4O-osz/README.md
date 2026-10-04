@@ -39,20 +39,22 @@ Nothing changed → the document is left untouched. If the zapisnik is **open in
 Word** (`~$…` file in the leaf), prefill warns at the start and leaves the leaf
 alone — close Word and run it again.
 
-**Backfill** — the reverse. Reads a **filled** zapisnik and proposes the SB
-backfill (pločica, ime→sinonimi, duljina/dubina, godina, autori via the alias
-registry) as a review CSV. It never writes to SB.
+**Dopune** — the reverse. Reads a **filled** zapisnik and proposes the SB
+corrections (pločica, ime→sinonimi, duljina/dubina, godina, autori via the alias
+registry) as the review CSV `dopune-sb-iz-osz.csv`. It never writes to SB.
+(It was `osz backfill` until 2026-10-04; that name now means the other
+direction, below.)
 
 ## Commands
 
 ```powershell
 cavedossier osz prefill 1220     # SB + finders + excerpt -> SB_1220_OSZ.docx
-cavedossier osz izmjera 1220     # 3N KORAK 4: the nacrt's numbers into the EXISTING OSZ
-cavedossier osz backfill 1220    # filled zapisnik -> dopune-sb-iz-osz.csv
+cavedossier osz backfill 1220    # 3N KORAK 4: the nacrt's numbers into the EXISTING OSZ
+cavedossier osz dopune 1220      # filled zapisnik -> dopune-sb-iz-osz.csv (was `osz backfill`)
 ```
 
-**Izmjera** — 3N's KORAK 4 (user, 2026-10-04). Once KORAK 3b has produced
-`<ime>_dimenzije.json`, `osz izmjera <broj>` writes the measured cells — Duljina,
+**Backfill** — 3N's KORAK 4 (user, 2026-10-04). Once KORAK 3b has produced
+`<ime>_dimenzije.json`, `osz backfill <broj>` writes the measured cells — Duljina,
 Horizontalna duljina, Dubina, Visinska razlika, Broj / Širina / Visina-duljina
 ulaza — into the zapisnik already in the leaf. Nothing else is touched: no SB,
 no finders, no excerpt, no new document. Same precedence as the prefill (the
@@ -94,6 +96,6 @@ lacks come out as `dopune-sb.csv` — a person pastes them into `Svi objekti`.
 
 ## Status
 
-Prefill and backfill both operational (2026-08-30). Open: validation against the
+Prefill and dopune (then called backfill) both operational (2026-08-30); backfill = KORAK 4 since 2026-10-04. Open: validation against the
 first **real** filled zapisnici, and the CroSpeleo-field reader (checkbox groups,
 narratives, the Google Docs variant).

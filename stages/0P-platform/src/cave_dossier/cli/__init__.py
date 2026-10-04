@@ -1212,13 +1212,13 @@ def cmd_nacrt(settings: Settings, serial: int, offline: bool,
     return 0
 
 
-def cmd_osz_izmjera(settings: Settings, serial: int) -> int:
+def cmd_osz_backfill(settings: Settings, serial: int) -> int:
     """3N KORAK 4: the survey's measurements into the cave's existing OSZ."""
-    from cave_dossier.osz import izmjera
+    from cave_dossier.osz import backfill as backfill_mod
 
     try:
-        outcome = izmjera.run_izmjera(settings, serial)
-    except izmjera.IzmjeraError as exc:
+        outcome = backfill_mod.run_backfill(settings, serial)
+    except backfill_mod.BackfillError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
     r = outcome.result
@@ -1237,7 +1237,7 @@ def cmd_osz_izmjera(settings: Settings, serial: int) -> int:
     return 0
 
 
-def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
+def cmd_osz_dopune(settings: Settings, serial: int, osz_path_arg: str | None,
                   osz_dir_arg: str | None) -> int:
     """Part 2.1b, the reverse of `osz prefill`: read a FILLED OSZ and
     propose the SB backfill.
@@ -1249,7 +1249,7 @@ def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
     M6). Exit 1 when there is something to carry over, 0 when SB already
     holds everything, 99 on errors.
     """
-    from cave_dossier.osz import backfill as backfill_mod
+    from cave_dossier.osz import dopune as dopune_mod
     from cave_dossier.osz import prefill as prefill_mod
     from cave_dossier.osz.reader import OszReadError, read_osz
 
@@ -1264,7 +1264,7 @@ def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
             return EXIT_ERROR
     else:
         override = Path(osz_dir_arg).resolve() if osz_dir_arg else None
-        location = backfill_mod.locate_filled_osz(settings, serial, override_dir=override)
+        location = dopune_mod.locate_filled_osz(settings, serial, override_dir=override)
         for note in location.notes:
             print(f"  ! {note}")
         if location.path is None:
@@ -1283,7 +1283,7 @@ def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
 
-    result = backfill_mod.build_backfill(cave, osz_values, settings)
+    result = dopune_mod.build_dopune(cave, osz_values, settings)
     print()
     if result.matches:
         print(f"Slaže se ({len(result.matches)}):")
@@ -1305,7 +1305,7 @@ def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
         run_dir = prefill_mod.RUNS_DIR / georef.padded_serial(serial)
         run_dir.mkdir(parents=True, exist_ok=True)
         csv_path = run_dir / "dopune-sb-iz-osz.csv"
-        backfill_mod.write_backfill_csv(csv_path, serial, result)
+        dopune_mod.write_dopune_csv(csv_path, serial, result)
         print(f"\nDopune za SB: {csv_path}")
         print("  (upiši ručno u Svi objekti — alat nikad ne piše u SB)")
         return EXIT_READY
@@ -1836,36 +1836,36 @@ def build_parser() -> argparse.ArgumentParser:
              "and the georef.hr flow is skipped (an already-collected excerpt "
              "is still embedded)",
     )
-    osz_izmjera = osz_sub.add_parser(
-        "izmjera",
+    osz_backfill = osz_sub.add_parser(
+        "backfill",
         help="3N KORAK 4: write the survey's measurements (Duljina/Dubina/..., "
              "Broj/Širina/Visina ulaza) from <ime>_dimenzije.json into the cave's "
              "EXISTING OSZ in the intake leaf; nothing else is touched",
     )
-    osz_izmjera.add_argument(
+    osz_backfill.add_argument(
         "redni_broj",
         type=int,
         help="SB Redni broj of the cave (the only input)",
     )
-    osz_backfill = osz_sub.add_parser(
-        "backfill",
+    osz_dopune = osz_sub.add_parser(
+        "dopune",
         help="The reverse of prefill: read a FILLED OSZ and propose the SB "
-             "backfill (pločica, ime/sinonimi, duljina/dubina, godina, autori) "
-             "— review CSV, never writes SB",
+             "dopune (pločica, ime/sinonimi, duljina/dubina, godina, autori) "
+             "— review CSV, never writes SB (was `osz backfill` until 2026-10-04)",
     )
-    osz_backfill.add_argument(
+    osz_dopune.add_argument(
         "redni_broj",
         type=int,
         help="SB Redni broj of the cave the zapisnik belongs to",
     )
-    osz_backfill.add_argument(
+    osz_dopune.add_argument(
         "--osz-dir",
         dest="osz_dir",
         metavar="DIR",
         help="Where to look for the cave's SB_<broj>_… dir holding the filled "
              "OSZ (default: the intake dir, !!!Digitalizacija/!Za digitalizirat)",
     )
-    osz_backfill.add_argument(
+    osz_dopune.add_argument(
         "--osz",
         dest="osz_path",
         metavar="FILE",
@@ -2071,10 +2071,10 @@ def main(argv: list[str] | None = None) -> int:
             if args.osz_command == "prefill":
                 return cmd_osz_prefill(settings, args.redni_broj, args.debug,
                                        args.force_karta, args.offline)
-            if args.osz_command == "izmjera":
-                return cmd_osz_izmjera(settings, args.redni_broj)
             if args.osz_command == "backfill":
-                return cmd_osz_backfill(settings, args.redni_broj, args.osz_path, args.osz_dir)
+                return cmd_osz_backfill(settings, args.redni_broj)
+            if args.osz_command == "dopune":
+                return cmd_osz_dopune(settings, args.redni_broj, args.osz_path, args.osz_dir)
         if args.command == "report":
             return cmd_report(settings, args.cave, args.as_json, args.gate, args.broj)
         return EXIT_ERROR

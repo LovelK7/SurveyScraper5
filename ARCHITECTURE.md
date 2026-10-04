@@ -205,7 +205,7 @@ not a gap ([key facts](#key-facts-that-shape-the-design)).
   Liburnija LIDAR sheet          filled OSZ zapisnik            empty SB cells a geo
   (satellites, <a href="#stage-2b">2B</a>)               (in the cave's intake dir,     finder could fill
         │                         arrived there via [<a href="#h2">H2</a>])       (found during prefill)
-        │ [<a href="#b1">B1</a>] sat sync                │ [<a href="#b7">B7</a>] osz backfill           │ [<a href="#b6">B6</a>] osz prefill
+        │ [<a href="#b1">B1</a>] sat sync                │ [<a href="#b7">B7</a>] osz dopune             │ [<a href="#b6">B6</a>] osz prefill
         ▼                              ▼                             ▼
   4 review lists                dopune-sb-iz-osz.csv           dopune-sb.csv
   (new rows · synonyms ·        (pločica · ime→sinonimi ·      (Z · Najbliže mjesto ·
@@ -308,11 +308,11 @@ What each label actually runs. One line here; flags and details in the
 | <a name="b4"></a>**B4** | `cavedossier geo fetch-data` | open DGU services → `data/geo` | once per machine (and after deleting the cache) |
 | <a name="b5"></a>**B5** | `cavedossier geo locate/kota <broj>` | `data/geo` + RGI ↔ one SB row | verifying what the finders would say — feeds nothing |
 | <a name="b6"></a>**B6** | `cavedossier osz prefill <broj>` | SB + excerpt + geo + the nacrt's `_dimenzije.json` (Duljina/Dubina since 2026-10-02; Broj/Širina/Visina ulaza since 2026-10-03, project 0005) → prefilled DOCX (+ `dopune-sb.csv`) | a queued cave is about to be explored, or an explored one needs its zapisnik started |
-| <a name="b7"></a>**B7** | `cavedossier osz backfill <broj>` | filled zapisnik → `dopune-sb-iz-osz.csv` | a completed zapisnik landed in the cave's intake dir |
+| <a name="b7"></a>**B7** | `cavedossier osz dopune <broj>` (was `osz backfill` until 2026-10-04) | filled zapisnik → `dopune-sb-iz-osz.csv` | a completed zapisnik landed in the cave's intake dir |
 | <a name="b8"></a>**B8** | `cavedossier photos process` (per cave) · `photos pull-staged` (queue → intake leaf) · `photos check-flag` · `photos match-queued` (one-off staging sweep, finished) | intake photos → archive-ready copies; staged photos ↔ SB | a cave's field photos arrived in its intake leaf |
 | <a name="b9"></a>**B9** | `cavedossier report --cave <x>` | gathered sources → gate verdicts | any time — it never changes anything |
 | <a name="b10"></a>**B10** | *(M5, planned)* | 3N Nacrt + dimensions → dossier | — |
-| <a name="b12"></a>**B12** | `cavedossier osz izmjera <broj>` (3N KORAK 4) | `<ime>_dimenzije.json` → the measured cells of the existing OSZ (Duljina/Dubina/…, Broj/Širina/Visina ulaza) | right after KORAK 3b; the dashboard's 3N page and the kit's `csurvey_4_upisi_osz.bat` |
+| <a name="b12"></a>**B12** | `cavedossier osz backfill <broj>` (3N KORAK 4) | `<ime>_dimenzije.json` → the measured cells of the existing OSZ (Duljina/Dubina/…, Broj/Širina/Visina ulaza) | right after KORAK 3b; the dashboard's 3N page and the kit's `csurvey_4_upisi_osz.bat` |
 | <a name="b11"></a>**B11** | *(M6, planned)* `cavedossier deliver <broj>` | dossier → katastarski broj + every file filed under it + SB write-back | gate 1 passes; designed in [m6-delivery-design.md](stages/6P-predaja/docs/m6-delivery-design.md) |
 | <a name="b12"></a>**B12** | `cavedossier people list/check` | people registry ↔ izjave dir ↔ SB author cells → audit + `statements-index.json` | a new izjava or author appeared, or periodically — it never changes anything |
 | <a name="b13"></a>**B13** | `cavedossier sastavnica <broj>` | SB + the leaf's filled OSZ + geo → `SB_<padded>_sastavnica.pdf` in the cave's intake leaf | a cave is about to be drafted in Illustrator ([route B](#two-routes-to-the-nacrt--csurvey-and-illustrator)); best after the zapisnik is filled, but useful before it |

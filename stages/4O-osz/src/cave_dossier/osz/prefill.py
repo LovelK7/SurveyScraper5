@@ -577,9 +577,9 @@ def dimension_values(dims: dict) -> dict[str, str]:
 
     Bare whole metres, unsigned: the v10 headers already say ``(m)``, legacy
     zapisnici record ``Dubina: 45 m`` positive (``legacy.to_v10_fields``),
-    ``osz backfill`` parses the cell back into SB's positive Dubina, and 4S's
+    ``osz dopune`` parses the cell back into SB's positive Dubina, and 4S's
     ``_depth`` adds the minus itself — a signed cell would print fine there but
-    disagree with SB in the backfill. Whole metres match what the nacrt's
+    disagree with SB in the dopune. Whole metres match what the nacrt's
     title block prints from the same file. Zero means "not surveyed" → absent.
 
     Mapping as 4S's ``_dimension_values``: ``l`` stvarna duljina, ``pl``
@@ -654,8 +654,8 @@ def _existing_intake_folder(settings: Settings, serial: int) -> Path | None:
 
 def _find_old_osz(folder: Path, result: PrefillResult) -> Path | None:
     """The OSZ document already in the leaf, by the shared selection rules
-    (`backfill.pick_osz_docx`); an ambiguous set is reported and skipped."""
-    from cave_dossier.osz.backfill import pick_osz_docx
+    (`dopune.pick_osz_docx`); an ambiguous set is reported and skipped."""
+    from cave_dossier.osz.dopune import pick_osz_docx
 
     path, pool = pick_osz_docx(folder)
     if pool:

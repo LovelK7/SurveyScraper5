@@ -84,7 +84,7 @@ LAUNCHERS = [
     "csurvey_2_dovrsi_uvoz.bat",
     "csurvey_3_dovrsi_nacrt.bat",
     # KORAK 4: the measurements into the existing OSZ, via the
-    # cavedossier_osz_izmjera launcher published beside the kit.
+    # cavedossier_osz_backfill launcher published beside the kit.
     "csurvey_4_upisi_osz.bat",
     "csurvey_9_oporavi_iz_zipa.bat",
 ]

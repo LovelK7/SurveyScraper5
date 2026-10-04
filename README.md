@@ -31,7 +31,7 @@ stages/
   3N-nacrt/         TopoDroid -> Nacrt PDF (route A, cSurvey)
   4G-geo/           locality + kota finders
   4I-isjecak/       isječak karte via georef.hr
-  4O-osz/           the OSZ builder (prefill + backfill)
+  4O-osz/           the OSZ builder (prefill, backfill, dopune)
   4F-fotografije/   entrance-photo processing
   4S-sastavnica/    the Nacrt title block (route B, Illustrator)
   5O-osobe/         registar osoba + izjave

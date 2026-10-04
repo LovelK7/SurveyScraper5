@@ -62,10 +62,10 @@ python $T\csurvey_driver.py finish $INTAKE --sb 1103
 # KORAK 3c — compose plan + profile onto the title block -> SB_1103_nacrt.pdf in the intake leaf
 cavedossier nacrt 1103                 # --local keeps the output in runs/ and does not deliver it to Drive; --offline makes no network calls
 
-# KORAK 4 — the nacrt's numbers into the EXISTING OSZ in the leaf (4O `osz izmjera`, project 0005):
+# KORAK 4 — the nacrt's numbers into the EXISTING OSZ in the leaf (4O `osz backfill`, project 0005):
 #   Duljina / Horizontalna duljina / Dubina / Visinska razlika + Broj / Sirina / Visina ulaza;
 #   nothing else in the zapisnik is touched, the old file stays as _stari_<datum>
-cavedossier osz izmjera 1103
+cavedossier osz backfill 1103
 ```
 
 If a drawing doesn't fit its box on the page, 3c refuses and prints the

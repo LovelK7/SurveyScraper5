@@ -202,13 +202,13 @@ ACTIONS: tuple[Action, ...] = (
         step="KORAK 3c",
     ),
     Action(
-        "3n-k4", "3N", "Upiši izmjeru u OSZ",
+        "3n-k4", "3N", "Backfill OSZ-a – upiši izmjeru",
         "Duljina, horizontalna duljina, dubina, visinska razlika te broj, širina i "
         "visina/duljina ulaza iz <ime>_dimenzije.json upisuju se u postojeći "
         "SB_<broj>_OSZ.docx u mapi objekta. Sve ostalo u zapisniku ostaje; stari "
         "primjerak čuva se kao _stari_<datum>. Izmjera pobjeđuje drukčiji upisani broj, "
         "isti broj ostaje kako je zapisan; zapisnik ne smije biti otvoren u Wordu.",
-        "cli", ("osz", "izmjera", "{broj}"),
+        "cli", ("osz", "backfill", "{broj}"),
         writes="mijenja SB_<broj>_OSZ.docx u mapi objekta (stari primjerak ostaje)",
         step="KORAK 4",
     ),
@@ -259,10 +259,10 @@ ACTIONS: tuple[Action, ...] = (
            ),
            writes="isporučuje SB_<broj>_OSZ.docx u mapu objekta "
                   "(stari OSZ ostaje kao <ime>_stari_<datum>.docx)"),
-    Action("osz-backfill", "4O", "Iz popunjenog OSZ-a u SB (prijedlog)",
+    Action("osz-dopune", "4O", "Iz popunjenog OSZ-a u SB (prijedlog)",
            "Čita popunjeni OSZ i predlaže dopune SB-a – CSV za ručni unos, "
            "SB se nikad ne mijenja.",
-           "cli", ("osz", "backfill", "{broj}")),
+           "cli", ("osz", "dopune", "{broj}")),
     # ── 4F — fotografije ─────────────────────────────────────────────
     Action("photos-process", "4F", "Obradi fotografije ulaza",
            "Kopije SB_<broj>_<Ime>_<Autor>_<n>.jpg pokraj originala "

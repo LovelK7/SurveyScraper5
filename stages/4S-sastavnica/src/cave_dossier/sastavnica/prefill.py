@@ -506,7 +506,7 @@ def _read_osz(folder: Path | None, result: SastavnicaResult) -> dict[str, str | 
         )
         return {}
     try:
-        from cave_dossier.osz.backfill import pick_osz_docx
+        from cave_dossier.osz.dopune import pick_osz_docx
         from cave_dossier.osz.reader import read_osz
     except ImportError:
         result.notes.append(

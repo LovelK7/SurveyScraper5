@@ -68,17 +68,17 @@ rem --- the work is a cavedossier command from this same folder -------
 rem  Kit i cavedossier launcheri dijele prod mapu (prod/README.md);
 rem  objavljivanje ostavlja samo najnoviju verziju vidljivom.
 :izmjera
-set "CDIZMJERA="
-for /f "delims=" %%L in ('dir /b /o-n "%~dp0cavedossier_osz_izmjera_v*.bat" 2^>nul') do (
-    if not defined CDIZMJERA set "CDIZMJERA=%~dp0%%L"
+set "CDBACKFILL="
+for /f "delims=" %%L in ('dir /b /o-n "%~dp0cavedossier_osz_backfill_v*.bat" 2^>nul') do (
+    if not defined CDBACKFILL set "CDBACKFILL=%~dp0%%L"
 )
-if not defined CDIZMJERA (
-    echo  Ne mogu pronaci cavedossier_osz_izmjera_v*.bat u ovoj mapi:
+if not defined CDBACKFILL (
+    echo  Ne mogu pronaci cavedossier_osz_backfill_v*.bat u ovoj mapi:
     echo    %~dp0
     echo  Javi razvijatelju da u ovu mapu objavi cavedossier naredbe.
     goto :eof
 )
-call "%CDIZMJERA%" %1
+call "%CDBACKFILL%" %1
 if errorlevel 1 (
     echo.
     echo  Upis nije uspio - procitaj poruku iznad. Zapisnik nije mijenjan.

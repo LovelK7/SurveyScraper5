@@ -31,7 +31,7 @@ STATUS, session logs and conversation — `4O` always means the OSZ builder.
 | **3N** | [stages/3N-nacrt/](stages/3N-nacrt/README.md) | csx-to-survey → Nacrt PDF + dimensions; the cSurvey knowledge base | 2.1a |
 | **4G** | [stages/4G-geo/](stages/4G-geo/README.md) | Locality + kota finders (DGU / RGI / DMV) | part of 2.1b |
 | **4I** | [stages/4I-isjecak/](stages/4I-isjecak/README.md) | Isječak karte via georef.hr | 2.1c |
-| **4O** | [stages/4O-osz/](stages/4O-osz/README.md) | OSZ builder — prefill + backfill over the v10 template | 2.1b |
+| **4O** | [stages/4O-osz/](stages/4O-osz/README.md) | OSZ builder — prefill, backfill (the nacrt's numbers into the OSZ) and dopune (OSZ → SB review list) over the v10 template | 2.1b |
 | **4F** | [stages/4F-fotografije/](stages/4F-fotografije/README.md) | Entrance-photo processing | 2.1d |
 | **4S** | [stages/4S-sastavnica/](stages/4S-sastavnica/README.md) | Nacrt title block for the Illustrator route | 2.1e |
 | **5O** | [stages/5O-osobe/](stages/5O-osobe/README.md) | Registar osoba + izjave linkage | part of 2.1 |

@@ -76,7 +76,7 @@ so it sorts to the bottom of the listing and of the guide.
 | [`csx_templates/csurvey_1_pripremi_csx.bat.template`](csx_templates/csurvey_1_pripremi_csx.bat.template) | 1 — raw `.csx` → import-ready `_pp.csx` |
 | [`csx_templates/csurvey_2_dovrsi_uvoz.bat.template`](csx_templates/csurvey_2_dovrsi_uvoz.bat.template) | 2 — after cSurvey "Save As", before drawing |
 | [`csx_templates/csurvey_3_dovrsi_nacrt.bat.template`](csx_templates/csurvey_3_dovrsi_nacrt.bat.template) | 3 — corrected `_lt` → the finished `SB_<broj>_nacrt.pdf` |
-| [`csx_templates/csurvey_4_upisi_osz.bat.template`](csx_templates/csurvey_4_upisi_osz.bat.template) | 4 — the nacrt's lengths, depth and entrance size into the existing `SB_<broj>_OSZ.docx` (calls the `cavedossier_osz_izmjera_v*.bat` launcher beside it) |
+| [`csx_templates/csurvey_4_upisi_osz.bat.template`](csx_templates/csurvey_4_upisi_osz.bat.template) | 4 — the nacrt's lengths, depth and entrance size into the existing `SB_<broj>_OSZ.docx` (calls the `cavedossier_osz_backfill_v*.bat` launcher beside it) |
 | [`csx_templates/csurvey_9_oporavi_iz_zipa.bat.template`](csx_templates/csurvey_9_oporavi_iz_zipa.bat.template) | 9 — rescue: rebuild a broken `.csx` from the TopoDroid project `.zip` |
 | [`build_csx_kit.py`](build_csx_kit.py) | Generates and publishes the kit (`--publish`); `csurvey_alati/` carries the Python tools |
 

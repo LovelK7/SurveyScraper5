@@ -106,7 +106,7 @@ stages:
   - id: osz
     label: "4O"
     dir: stages/4O-osz
-    name: "OSZ builder — prefill and backfill over the v10 template"
+    name: "OSZ builder — prefill, backfill and dopune over the v10 template"
     was: "2.1b"
     status: operational
     modules: [osz]

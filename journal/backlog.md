@@ -408,4 +408,4 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-10-03 — 3N: the live `_lt_fin` files finished before today (SB 1103, 1256) carry no
   `entrance_size`; re-run KORAK 3a + 3b for them before `osz prefill` is expected to fill the entrance cells.
 - 2026-10-03 — prod: `/publish` the csx kit AND the prod bundle together: KORAK 3 needs `entrance_dims.py`,
-  KORAK 4 (`csurvey_4_upisi_osz.bat`) needs the `cavedossier_osz_izmjera_v*.bat` launcher beside it.
+  KORAK 4 (`csurvey_4_upisi_osz.bat`) needs the `cavedossier_osz_backfill_v*.bat` launcher beside it.

@@ -292,10 +292,10 @@ def _author_from_osz(
     run, so a missing OSZ, a missing ``lxml`` and an unreadable document all
     degrade the same way.
     """
-    from cave_dossier.osz import backfill as backfill_mod
+    from cave_dossier.osz import dopune as dopune_mod
 
     if osz_path is None:
-        location = backfill_mod.locate_filled_osz(settings, serial)
+        location = dopune_mod.locate_filled_osz(settings, serial)
         osz_path = location.path
         if osz_path is None:
             # The locator's own notes say WHY (no leaf, several .docx

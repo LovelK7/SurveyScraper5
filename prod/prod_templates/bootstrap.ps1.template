@@ -182,8 +182,8 @@ try {
             $cliVerb = @('nacrt')
             $label = 'Nacrt - slozi tlocrt i profil na sastavnicu (cSurvey ruta)'
         }
-        'osz_izmjera' {
-            $cliVerb = @('osz', 'izmjera')
+        'osz_backfill' {
+            $cliVerb = @('osz', 'backfill')
             $label = 'KORAK 4 - upisi duljine, dubinu i dimenzije ulaza iz nacrta u postojeci OSZ'
         }
         default {

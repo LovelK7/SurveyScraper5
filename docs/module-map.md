@@ -31,8 +31,8 @@
 | `cli.py` | `cavedossier` entry point (argparse), mode banner, exit codes (1 ready / 0 not / 99 error) | every command |
 | `core/config.py` | config.yaml + .env → `Settings`; LIVE-first workbook resolution with fallback; `geo.*` knobs | every command |
 | `core/normalization.py` | diacritic-insensitive matching keys (ported) | column + name matching |
-| `core/people.py` | split an author cell into people; peel off the society bracket | SB mapping, `osz backfill`, `sastavnica` |
-| `core/person_aliases.py` | "First Last" abbreviation variants (ported), `to_sb_shorthand` (`L.Kukuljan`), cross-convention `same_person` | `osz backfill`, `sastavnica` |
+| `core/people.py` | split an author cell into people; peel off the society bracket | SB mapping, `osz dopune`, `sastavnica` |
+| `core/person_aliases.py` | "First Last" abbreviation variants (ported), `to_sb_shorthand` (`L.Kukuljan`), cross-convention `same_person` | `osz dopune`, `sastavnica` |
 | `core/matching.py` | the shared name/plaque/number matcher behind photo and folder mapping; `SB_PREFIX` | `photos *`, `intake *` |
 | `sb/safe_io.py` | workbook preflight/backup/COM-write safety (ported) | reads: preflight only; writes: M6 |
 | `sb/loader.py` | `SBReader`: header autodetect, column aliases, `find_caves` | `sb *`, `report`, all serial lookups |
@@ -43,7 +43,7 @@
 | `dossier/report.py` | the text rendering behind `cavedossier report` | `report` |
 | `georef/` | 2.1c: georef.hr Playwright flow (ported) — `worker` (orchestration, delivery, `refresh_reason` self-healing, Excel-tolerant CSV), `flows` (5:4 marker-centered crop, PNG budget), `client`, `models`, `selectors`, `artifacts` | `karta`, `osz prefill` |
 | `geo/` | 2.1b finders: `locality` (SB-wins synthesizer), `admin_lookup` (DGU PIP), `rgi_client` (WFS + offline gpkg), `toponym_matcher`, `elevation` (INSPIRE DMV grid, 3765→3045), `provision` (`fetch-data`), `models` | `geo *`, `osz prefill`, `sastavnica` |
-| `osz/` | 2.1b: `writer` (lxml on word/document.xml — cell-own styles, `embed_png`), `addresses` (v10 table coordinates), `prefill` (orchestrator + sidecar + dopune-sb.csv), `reader` (filled-document cells; placeholders read as empty), `backfill` (OSZ vs SB → review proposals), `models` | `osz prefill`, `osz backfill` |
+| `osz/` | 2.1b: `writer` (lxml on word/document.xml — cell-own styles, `embed_png`), `addresses` (v10 table coordinates), `prefill` (orchestrator + sidecar + dopune-sb.csv), `reader` (filled-document cells; placeholders read as empty), `backfill` (OSZ vs SB → review proposals), `models` | `osz prefill`, `osz dopune` |
 | `sastavnica/` | 2.1e: `addresses` (cell geometry + typesetting constants, measured off the template), `render` (blank PDF + values → filled PDF: centring, shrink-to-fit, no wrap), `fonts` (Myriad Pro → system fallback, Croatian coverage verified), `prefill` (orchestrator: SB + the leaf's filled OSZ + finders → deliver + sidecar), `models` | `sastavnica` |
 | `satellites/` | 2.2b: `model` · `liburnija` · `resolver` (ranked keys, never local row ids) · `sync` (four review lists) | `sat sync` |
 | `intake/scanner.py` | field-data leaf folders → SB rows, `SB_<Redni broj>_<Ime>_…` proposals; `find_cave_leaf` (a cave's `SB_<broj>_…` folder, shared by every per-cave step) | `intake map`, `osz prefill`, `photos process`, `sastavnica` |

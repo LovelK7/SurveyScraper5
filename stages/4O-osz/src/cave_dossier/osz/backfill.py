@@ -1,395 +1,228 @@
-"""SB backfill from a filled OSZ (part 2.1b/M4 — `cavedossier osz backfill`,
-the reverse of `osz prefill`).
+"""KORAK 4 — write the survey's measurements into the cave's EXISTING zapisnik.
 
-Compares what a filled zapisnik says against the cave's SB row and proposes
-what to carry back (user, 2026-08-30):
+``cavedossier osz backfill <broj>`` is the Nacrt chain's last step (user,
+2026-10-04; built as ``osz izmjera`` and renamed the same day — the former
+``osz backfill``, the OSZ → SB review list, is now ``osz dopune``): after KORAK 3b has produced ``<ime>_dimenzije.json`` the operator
+stays on the 3N page and this command carries the numbers into the OSZ that
+``osz prefill`` delivered earlier — Duljina, Horizontalna duljina, Dubina,
+Visinska razlika, and Broj / Širina / Visina-duljina ulaza (project 0005).
+Nothing else in the document is touched: no SB lookup, no finders, no map
+excerpt, no new document. The full prefill still writes the same cells when
+the dimensions file exists, so a cave done in either order ends the same.
 
-- **Broj pločice** — filled when SB's cell is empty;
-- **Ime objekta / Sinonimi** — when the OSZ gave the cave a NEW name, the
-  OSZ name replaces SB's and the old SB name moves into Sinonimi (plus any
-  OSZ synonyms SB lacks);
-- **Duljina / Dubina** — filled when SB's cells are empty;
-- **Godina ili period istraživanja** — the OSZ's "Datum ili razdoblje
-  istraživanja" cropped to SB's convention: a single year ("2025") or a
-  period ("2018-2019");
-- **Autori nacrta ili izvor** — the OSZ's Crtali, full names converted to
-  SB's shorthand ("Lovel Kukuljan" → "L.Kukuljan", core/person_aliases);
-  spellings are matched across the two conventions so an author already in
-  SB is never duplicated.
+Rules, the same as the prefill's (``docs/design-decisions.md``):
 
-Precedence mirrors the rest of the tool: an EMPTY SB cell gets a proposal;
-a conflicting non-empty cell gets a difference note, never an override —
-and, as everywhere, nothing writes to SB automatically: the output is a
-review CSV a person carries into Excel (write-back lands at M6).
+- a measured value fills an empty cell and **wins** over a different recorded
+  number (the note names both); a recorded number that is the same
+  measurement (``18 m`` vs ``18``, ``0.55`` vs ``0,6``) stays as written;
+- the pit / horizontal reading of the entrance follows the zapisnik's own
+  ticked *Vrsta objekta*, the finisher's geometric guess otherwise;
+- nothing to change → the document is left alone (no backup churn);
+- a document open in Word (``~$`` lock) is not touched — close Word and rerun;
+- the previous file survives as ``<ime>_stari_<datum>.docx`` beside the new one.
+
+A zapisnik the v10 reader cannot read (a legacy layout) is not edited in place:
+``osz prefill`` migrates it first, and this command says so.
 """
 
 from __future__ import annotations
 
-import csv
-import re
-from dataclasses import dataclass, field
+import json
+import shutil
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from cave_dossier import georef
 from cave_dossier.core.config import Settings
-from cave_dossier.core.normalization import normalize_lookup_key, parse_optional_float
-from cave_dossier.core.people import is_placeholder, split_authors, split_person_names
-from cave_dossier.core.person_aliases import same_person, to_sb_shorthand
-from cave_dossier.sb.loader import CaveRow, SBReader
+from cave_dossier.osz import prefill
+from cave_dossier.osz.addresses import V10
+from cave_dossier.osz.writer import OszDocument
 
-BACKFILL_CSV_COLUMNS = (
-    "Redni broj", "Stupac", "Sadašnja SB vrijednost", "Nova vrijednost", "Izvor",
-)
-
-_YEAR_RE = re.compile(r"\b(1[89]\d{2}|20\d{2})\b")
-
-# An intake leaf dir names the cave by its pre-SUE id: SB_<Redni broj>_…
-# (unpadded there; the excerpt/zapisnik files pad to 4 — accept both).
-_SB_DIR_RE = re.compile(r"^SB_0*(\d+)[_.]", re.IGNORECASE)
+#: The cells this step owns, in the order the report lists them.
+MEASURED_KEYS: tuple[str, ...] = prefill.DIMENSION_FIELDS + prefill.ENTRANCE_FIELDS
 
 
-@dataclass(frozen=True)
-class OszLocation:
-    """Where the filled OSZ was (or was not) found."""
-
-    path: Path | None
-    notes: tuple[str, ...] = ()
-
-
-def locate_filled_osz(settings: Settings, serial: int,
-                      override_dir: Path | None = None) -> OszLocation:
-    """Find the cave's filled zapisnik (user, 2026-08-30).
-
-    Default search: the intake tree (``archive.intake_dir`` —
-    `!!!Digitalizacija/!Za digitalizirat`), where each cave's field material
-    lives in an ``SB_<Redni broj>_…`` dir — the OSZ is the DOCX inside it
-    (preferring a filename that says osz/zapisnik when several exist).
-    ``--osz-dir`` overrides the search root. Falls back to the prefilled
-    ``SB_<broj>_OSZ.docx`` in ``archive.osz_prefill_dir``.
-    """
-    notes: list[str] = []
-    roots: list[Path] = []
-    if override_dir is not None:
-        roots.append(override_dir)
-    elif settings.local_drive_root:
-        intake = settings.archive_dirs.get("intake_dir")
-        if intake:
-            roots.append(settings.local_drive_root / intake)
-
-    for root in roots:
-        if not root.is_dir():
-            notes.append(f"dir ne postoji: {root}")
-            continue
-        cave_dirs = [d for d in root.rglob("SB_*") if d.is_dir() and _dir_serial(d.name) == serial]
-        if override_dir is not None and not cave_dirs and _dir_serial(root.name) == serial:
-            cave_dirs = [root]  # --osz-dir pointed straight at the cave's dir
-        if not cave_dirs:
-            notes.append(f"nema SB_{serial}_… mape pod {root}")
-            continue
-        for cave_dir in cave_dirs:
-            docx = _pick_docx(cave_dir, notes)
-            if docx is not None:
-                return OszLocation(path=docx, notes=tuple(notes))
-            notes.append(f"mapa {cave_dir.name} nema (jednoznačan) OSZ .docx")
-
-    # Fallback: the prefilled document delivered by `osz prefill`.
-    subdir = settings.archive_dirs.get("osz_prefill_dir")
-    if settings.local_drive_root and subdir:
-        prefilled = (settings.local_drive_root / subdir
-                     / f"SB_{str(serial).zfill(4)}_OSZ.docx")
-        if prefilled.exists():
-            notes.append("nađen samo prefill primjerak u osz_prefill_dir – "
-                         "provjeri je li stvarno ispunjen")
-            return OszLocation(path=prefilled, notes=tuple(notes))
-        notes.append(f"ni prefill primjerka nema: {prefilled}")
-    return OszLocation(path=None, notes=tuple(notes))
-
-
-def _dir_serial(name: str) -> int | None:
-    match = _SB_DIR_RE.match(name.strip())
-    return int(match.group(1)) if match else None
-
-
-#: ``<ime>_stari_<datum>.docx`` — the backup `osz prefill` leaves behind when it
-#: migrates an older zapisnik (``prefill._backup_path``). Only OUR dated form is
-#: excluded: a human's own "Zapisnik_stari.docx" may well be the real document.
-BACKUP_MARKER_RE = re.compile(r"_stari_\d{4}-\d{2}-\d{2}(_\d+)?$", re.IGNORECASE)
-#: What `osz prefill` delivers, and therefore the document to prefer outright.
-CANONICAL_OSZ_RE = re.compile(r"SB_\d+_OSZ\.docx$", re.IGNORECASE)
-
-
-def pick_osz_docx(folder: Path) -> tuple[Path | None, tuple[Path, ...]]:
-    """The folder's OSZ, or the pool that made the choice ambiguous.
-
-    Shared by the fetcher (`locate_filled_osz`) and the prefill migration
-    (`prefill._find_old_osz`) so both answer "which document IS this cave's
-    zapisnik" identically — they diverged until 2026-09-01, and the fetcher's
-    laxer version went ambiguous on every leaf prefill had already migrated,
-    where its own ``_stari_<datum>`` backup sits beside the delivered
-    ``SB_<broj>_OSZ.docx``.
-
-    In order: the canonical ``SB_<broj>_OSZ.docx``; else a lone name saying
-    osz/zapisnik; else a lone DOCX. Word lock files and our dated backups never
-    count. Returns ``(None, pool)`` when the pool is still ambiguous and
-    ``(None, ())`` when the folder has no DOCX at all — each caller words its
-    own note, since "no zapisnik to read" and "no zapisnik to migrate" are
-    different messages.
-    """
-    candidates = [
-        f for f in sorted(folder.rglob("*.docx"))
-        if not f.name.startswith("~$") and not BACKUP_MARKER_RE.search(f.stem)
-    ]
-    if not candidates:
-        return None, ()
-    canonical = [f for f in candidates if CANONICAL_OSZ_RE.fullmatch(f.name)]
-    if len(canonical) == 1:
-        return canonical[0], ()
-    named = [f for f in candidates
-             if "osz" in f.name.lower() or "zapisnik" in normalize_lookup_key(f.name)]
-    pool = named or candidates
-    if len(pool) == 1:
-        return pool[0], ()
-    return None, tuple(pool)
-
-
-def _pick_docx(cave_dir: Path, notes: list[str]) -> Path | None:
-    path, pool = pick_osz_docx(cave_dir)
-    if pool:
-        notes.append("više .docx kandidata: " + ", ".join(f.name for f in pool))
-    return path
-
-
-@dataclass(frozen=True)
-class BackfillProposal:
-    column: str          # the SB column header
-    current: str         # what SB says now ("" when empty)
-    proposed: str        # what the OSZ supports writing
-    reason: str
+class BackfillError(RuntimeError):
+    """Nothing could be written; the message is CLI-ready (Croatian)."""
 
 
 @dataclass
 class BackfillResult:
-    proposals: list[BackfillProposal] = field(default_factory=list)
-    differences: list[str] = field(default_factory=list)  # SB kept, human decides
-    matches: list[str] = field(default_factory=list)      # confirmed identical
+    serial: int
+    osz: str | None = None
+    dimensions: str | None = None
+    #: which entrance reading filled Širina/Visina: "pit" | "horizontal" | None
+    entrance_kind: str | None = None
+    #: cell -> the value written this run
+    written: dict[str, str] = field(default_factory=dict)
+    #: cell -> the recorded text that stays (same measurement, or nothing measured)
+    kept: dict[str, str] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
+    backup: str | None = None
+    #: the OSZ's mtime before and after the write — the dashboard uses them to
+    #: tell "KORAK 4 touched the OSZ" from "someone edited the OSZ" (the
+    #: former must not make KORAK 3c stale: 3c reads the same numbers from
+    #: the dimensions file already)
+    osz_mtime_before: float | None = None
+    osz_mtime_after: float | None = None
 
 
-def build_backfill(cave: CaveRow, osz: dict[str, str | None],
-                   settings: Settings) -> BackfillResult:
-    result = BackfillResult()
-    _compare_plain(result, "Broj pločice",
-                   _sb_text(cave, settings.sb_plaque_column), osz.get("broj_plocice"))
-    _resolve_name_and_synonyms(result, cave, osz, settings)
-    _compare_number(result, _column(settings, "length_m", "Duljina"),
-                    _sb_text(cave, _column(settings, "length_m", "Duljina"), cave_row=True),
-                    osz.get("duljina"))
-    _compare_number(result, _column(settings, "depth_m", "Dubina"),
-                    _sb_text(cave, _column(settings, "depth_m", "Dubina"), cave_row=True),
-                    osz.get("dubina"))
-    _resolve_year(result, cave, osz, settings)
-    _resolve_authors(result, cave, osz, settings)
-    return result
+@dataclass(frozen=True)
+class BackfillOutcome:
+    result: BackfillResult
+    osz_path: Path | None
+    sidecar_path: Path
 
 
-def write_backfill_csv(path: Path, serial: int, result: BackfillResult) -> None:
-    """Same dialect as every other review CSV (utf-8-sig, comma, CRLF)."""
-    with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.writer(handle, lineterminator="\r\n")
-        writer.writerow(BACKFILL_CSV_COLUMNS)
-        for p in result.proposals:
-            writer.writerow([serial, p.column, p.current, p.proposed, p.reason])
+def measured_cells(dims: dict, ticked) -> tuple[dict[str, str], str | None, list[str]]:
+    """(cell -> text, entrance reading used, notes) from a dimensions JSON and
+    the zapisnik's ticked checkboxes — the prefill's own mapping, reused."""
+    values = dict(prefill.dimension_values(dims))
+    kind: str | None = None
+    notes: list[str] = []
+    block = dims.get("entrance_size")
+    if isinstance(block, dict):
+        evalues, kind, notes = prefill.entrance_values(block, prefill.entrance_kind_from_ticks(ticked))
+        values.update(evalues)
+    return values, kind, notes
 
 
-# ── year / period ────────────────────────────────────────────────────
-def extract_year_period(datum_text: str | None) -> str | None:
-    """SB's convention out of the OSZ's free-form date cell.
+def plan_changes(recorded: dict, measured: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]:
+    """(cells to write, cells that stay). A recorded number that is the same
+    measurement keeps the recorder's text; anything else yields to the survey."""
+    written: dict[str, str] = {}
+    kept: dict[str, str] = {}
+    for key in MEASURED_KEYS:
+        if key not in measured:
+            continue
+        value = measured[key]
+        old = (recorded.get(key) or "").strip()
+        if old and prefill._same_measurement(old, value):
+            kept[key] = old
+        else:
+            written[key] = value
+    return written, kept
 
-    "10.05.2025." → "2025"; "10.5.2014 – 17.5.2025" → "2014-2025";
-    "2019" → "2019". No 4-digit year → None.
-    """
-    if not datum_text:
+
+def _fill(doc: OszDocument, key: str, value: str) -> None:
+    addr = V10[key]
+    if addr.kind == "sdt_cell":
+        doc.fill_sdt_cell(addr.table, addr.row, addr.cell, [value])
+    elif addr.kind == "sdt_inline":
+        doc.fill_sdt_inline(addr.table, addr.row, addr.cell, [value])
+    else:
+        doc.fill_plain(addr.table, addr.row, addr.cell, value)
+
+
+def _newest_dimensions(folder: Path) -> Path | None:
+    try:
+        found = sorted(folder.glob("*_dimenzije.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
         return None
-    years = sorted({int(y) for y in _YEAR_RE.findall(datum_text)})
-    if not years:
+    return found[0] if found else None
+
+
+def run_backfill(settings: Settings, serial: int) -> BackfillOutcome:
+    """Write the measured cells into the cave's OSZ; see the module docstring."""
+    from cave_dossier.osz import reader as reader_mod
+    from cave_dossier.osz.dopune import pick_osz_docx
+
+    result = BackfillResult(serial=serial)
+    run_dir = prefill.RUNS_DIR / georef.padded_serial(serial)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    sidecar_path = run_dir / "backfill.json"
+
+    folder = prefill._existing_intake_folder(settings, serial)
+    if folder is None:
+        raise BackfillError(
+            f"Objekt {serial} nema mapu pod !Za digitalizirat – prvo `cavedossier osz prefill {serial}`."
+        )
+    osz_path, pool = pick_osz_docx(folder)
+    if osz_path is None:
+        raise BackfillError(
+            f"U mapi {folder.name} nema OSZ-a – prvo `cavedossier osz prefill {serial}`, pa KORAK 4."
+        )
+    if pool:
+        result.notes.append("Više OSZ kandidata u mapi – uzet " + osz_path.name
+                            + " (ostali: " + ", ".join(p.name for p in pool) + ").")
+    result.osz = osz_path.name
+
+    dims_path = _newest_dimensions(folder)
+    if dims_path is None:
+        raise BackfillError(
+            f"U mapi {folder.name} nema <ime>_dimenzije.json – prvo KORAK 3b (ispis iz cSurveya)."
+        )
+    try:
+        data = json.loads(dims_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise BackfillError(f"Ne mogu pročitati {dims_path.name} ({exc.__class__.__name__}).") from exc
+    if not isinstance(data, dict):
+        raise BackfillError(f"{dims_path.name} nije JSON objekt.")
+    result.dimensions = dims_path.name
+    if not data.get("calculated"):
+        result.notes.append(f"{dims_path.name}: survey nije izračunat – provjeri duljine.")
+
+    try:
+        content = reader_mod.read_osz_content(osz_path)
+    except reader_mod.OszReadError as exc:
+        raise BackfillError(
+            f"{osz_path.name} nije v10 zapisnik ({exc}) – pokreni `cavedossier osz prefill {serial}`, "
+            "koji ga migrira, pa KORAK 4."
+        ) from exc
+
+    measured, kind, enotes = measured_cells(data, content.ticked)
+    result.entrance_kind = kind
+    result.notes.extend(enotes)
+    if not measured:
+        result.notes.append(f"{dims_path.name} nema izmjerenih vrijednosti (sve 0) – ništa za upisati.")
+    written, kept = plan_changes(content.fields, measured)
+    result.written, result.kept = written, kept
+    for key, value in written.items():
+        old = (content.fields.get(key) or "").strip()
+        if old:
+            result.notes.append(f"{key}: zapisano '{old}' ≠ izmjera '{value}' – upisana izmjera.")
+    if not written:
+        result.notes.append("OSZ već sadrži izmjeru – ništa nije mijenjano.")
+        _write_sidecar(sidecar_path, result)
+        return BackfillOutcome(result, osz_path, sidecar_path)
+
+    lock = prefill._word_lock(osz_path)
+    if lock is not None:
+        raise BackfillError(f"{prefill._LOCKED_NOTE} ({lock.name}). Ništa nije upisano.")
+
+    result.osz_mtime_before = osz_path.stat().st_mtime
+    doc = OszDocument(osz_path)
+    for key, value in written.items():
+        _fill(doc, key, value)
+    staged = run_dir / osz_path.name
+    doc.save(staged)
+
+    backup = prefill._backup_path(osz_path)
+    osz_path.rename(backup)
+    try:
+        shutil.copy2(staged, osz_path)
+    except OSError:
+        try:
+            backup.rename(osz_path)          # never leave the leaf with only a backup
+        except OSError:
+            result.notes.append(f"Stari OSZ je ostao preimenovan u {backup.name} – vrati ime ručno.")
+        raise
+    result.backup = backup.name
+    result.osz_mtime_after = osz_path.stat().st_mtime
+    result.notes.append(f"Stari OSZ sačuvan kao: {backup.name}")
+    _write_sidecar(sidecar_path, result)
+    return BackfillOutcome(result, osz_path, sidecar_path)
+
+
+def _write_sidecar(path: Path, result: BackfillResult) -> None:
+    path.write_text(json.dumps(asdict(result), ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def last_write(serial: int) -> dict | None:
+    """The last run's sidecar for the dashboard (None when KORAK 4 never ran)."""
+    path = prefill.RUNS_DIR / georef.padded_serial(serial) / "backfill.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
         return None
-    if len(years) == 1:
-        return str(years[0])
-    return f"{years[0]}-{years[-1]}"
-
-
-# ── field resolvers ──────────────────────────────────────────────────
-def _resolve_name_and_synonyms(result: BackfillResult, cave: CaveRow,
-                               osz: dict[str, str | None], settings: Settings) -> None:
-    name_col = settings.sb_object_name_column
-    syn_col = _column(settings, "synonyms", "Sinonimi")
-    sb_name = (cave.object_name or "").strip()
-    osz_name = (osz.get("ime_objekta") or "").strip()
-    sb_syns = _split_names_list(_sb_text(cave, syn_col, cave_row=True))
-    osz_syns = _split_names_list(osz.get("sinonimi"))
-
-    if not osz_name:
-        if sb_name:
-            result.notes.append("OSZ nema Ime objekta – ime i sinonimi preskočeni.")
-        return
-
-    renamed = sb_name and normalize_lookup_key(sb_name) != normalize_lookup_key(osz_name)
-    if renamed:
-        # The OSZ gave the cave a new name: it replaces SB's, and the old
-        # SB name survives as a synonym (user, 2026-08-30).
-        result.proposals.append(BackfillProposal(
-            column=name_col, current=sb_name, proposed=osz_name,
-            reason="OSZ daje novo ime; staro ime seli u Sinonimi",
-        ))
-    elif sb_name:
-        result.matches.append(f"Ime objekta: '{sb_name}'")
-    elif osz_name:
-        result.proposals.append(BackfillProposal(
-            column=name_col, current="", proposed=osz_name, reason="OSZ Ime objekta",
-        ))
-
-    merged = list(sb_syns)
-    if renamed:
-        _add_unique(merged, sb_name)
-    for syn in osz_syns:
-        _add_unique(merged, syn)
-    merged = [s for s in merged if normalize_lookup_key(s) != normalize_lookup_key(osz_name)]
-    if [normalize_lookup_key(s) for s in merged] != [normalize_lookup_key(s) for s in sb_syns]:
-        result.proposals.append(BackfillProposal(
-            column=syn_col, current=", ".join(sb_syns), proposed=", ".join(merged),
-            reason="staro ime + sinonimi iz OSZ-a" if renamed else "sinonimi iz OSZ-a",
-        ))
-    elif sb_syns:
-        result.matches.append(f"Sinonimi: '{', '.join(sb_syns)}'")
-
-
-def _resolve_year(result: BackfillResult, cave: CaveRow,
-                  osz: dict[str, str | None], settings: Settings) -> None:
-    column = settings.sb_exploration_period_column or "Godina ili period istraživanja"
-    sb_value = _sb_text(cave, column)
-    osz_period = extract_year_period(osz.get("datum_istrazivanja"))
-    if osz_period is None:
-        if osz.get("datum_istrazivanja"):
-            result.notes.append(
-                f"Datum istraživanja '{osz['datum_istrazivanja']}' ne sadrži godinu."
-            )
-        return
-    if not sb_value:
-        result.proposals.append(BackfillProposal(
-            column=column, current="", proposed=osz_period,
-            reason=f"iz OSZ Datum istraživanja '{osz['datum_istrazivanja']}'",
-        ))
-    elif sb_value.replace("–", "-").replace(" ", "") == osz_period:
-        result.matches.append(f"{column}: '{sb_value}'")
-    else:
-        result.differences.append(
-            f"{column}: SB kaže '{sb_value}', OSZ podupire '{osz_period}' "
-            f"(iz '{osz['datum_istrazivanja']}'). SB vrijednost je zadržana."
-        )
-
-
-def _resolve_authors(result: BackfillResult, cave: CaveRow,
-                     osz: dict[str, str | None], settings: Settings) -> None:
-    column = settings.sb_drawing_authors_column or "Autori nacrta ili izvor"
-    sb_raw = _sb_text(cave, column)
-    osz_people = split_person_names(osz.get("crtali"))
-    if not osz_people:
-        return
-    shorthands = [to_sb_shorthand(p) for p in osz_people]
-
-    if is_placeholder(sb_raw):
-        result.proposals.append(BackfillProposal(
-            column=column, current=sb_raw or "", proposed=", ".join(shorthands),
-            reason="OSZ Crtali (puno ime → SB kratica)",
-        ))
-        return
-
-    sb_people, _societies = split_authors(sb_raw)
-    missing = [shorthands[i] for i, person in enumerate(osz_people)
-               if not any(same_person(person, sb_person) for sb_person in sb_people)]
-    extra = [sb_person for sb_person in sb_people
-             if not any(same_person(sb_person, person) for person in osz_people)]
-    if not missing:
-        result.matches.append(
-            f"{column}: '{sb_raw}' pokriva OSZ Crtali ({', '.join(osz_people)})"
-        )
-    else:
-        # A later survey legitimately ADDS authors — merge, never drop.
-        merged = sb_people + missing
-        result.proposals.append(BackfillProposal(
-            column=column, current=sb_raw or "", proposed=", ".join(merged),
-            reason=f"OSZ Crtali dodaje: {', '.join(missing)}",
-        ))
-    if extra:
-        result.notes.append(
-            f"{column}: SB navodi i {', '.join(extra)} – OSZ Crtali ih nema "
-            "(možda raniji nacrt); zadržani."
-        )
-
-
-# ── generic comparators ──────────────────────────────────────────────
-def _compare_plain(result: BackfillResult, column: str | None,
-                   sb_value: str | None, osz_value: str | None) -> None:
-    if not column or not osz_value:
-        return
-    if not sb_value:
-        result.proposals.append(BackfillProposal(
-            column=column, current="", proposed=osz_value.strip(), reason="iz OSZ-a",
-        ))
-    elif normalize_lookup_key(sb_value) == normalize_lookup_key(osz_value):
-        result.matches.append(f"{column}: '{sb_value}'")
-    else:
-        result.differences.append(
-            f"{column}: SB kaže '{sb_value}', OSZ kaže '{osz_value}'. "
-            "SB vrijednost je zadržana."
-        )
-
-
-def _compare_number(result: BackfillResult, column: str | None,
-                    sb_text: str | None, osz_text: str | None) -> None:
-    if not column or not osz_text:
-        return
-    osz_value = parse_optional_float(osz_text)
-    if osz_value is None:
-        return
-    sb_value = parse_optional_float(sb_text)
-    if sb_value is None:
-        result.proposals.append(BackfillProposal(
-            column=column, current="", proposed=_number_text(osz_value), reason="iz OSZ-a",
-        ))
-    elif abs(sb_value - osz_value) < 0.05:
-        result.matches.append(f"{column}: {_number_text(sb_value)}")
-    else:
-        result.differences.append(
-            f"{column}: SB kaže {_number_text(sb_value)}, OSZ kaže "
-            f"{_number_text(osz_value)}. SB vrijednost je zadržana."
-        )
-
-
-# ── helpers ──────────────────────────────────────────────────────────
-def _column(settings: Settings, key: str, fallback: str) -> str:
-    return settings.sb_field_columns.get(key, fallback)
-
-
-def _sb_text(cave: CaveRow, column: str | None, *, cave_row: bool = True) -> str | None:
-    if not column:
-        return None
-    return SBReader._cell_as_text(cave.values, column) or None
-
-
-def _split_names_list(raw: str | None) -> list[str]:
-    if not raw:
-        return []
-    return [part.strip() for part in re.split(r"[;,]", raw) if part.strip()]
-
-
-def _add_unique(items: list[str], candidate: str) -> None:
-    if candidate and normalize_lookup_key(candidate) not in {
-        normalize_lookup_key(existing) for existing in items
-    }:
-        items.append(candidate)
-
-
-def _number_text(value: float) -> str:
-    if float(value).is_integer():
-        return str(int(value))
-    return f"{value:g}".replace(".", ",")
+    return data if isinstance(data, dict) else None

@@ -30,6 +30,11 @@ numbers through the mapping in
   read. A step that rewrites a file other steps depend on needs to leave a trace of *what* it
   changed, or every staleness rule built on mtimes turns into a loop; the sidecar's two mtimes are
   that trace. The CLI module has no EXIT_OK — success is a bare 0.
+- **Renamed the same day (user):** the new step is `cavedossier osz backfill <broj>` (module `osz/backfill.py`,
+  prod command `osz_backfill`, kit launcher looks for `cavedossier_osz_backfill_v*.bat`); the former `osz backfill`
+  (filled OSZ → SB review CSV) is `osz dopune` (module `osz/dopune.py`, dashboard action `osz-dopune`), named after
+  its output `dopune-sb-iz-osz.csv`. Docs, decision record (rename note under the 2026-08-30 section), CLAUDE.md,
+  README, module map and pipeline.yaml follow; journal history untouched.
 - **Next:** `/publish` prod bundle + csx kit together (KORAK 3 needs `entrance_dims.py`, KORAK 4
   the `cavedossier_osz_izmjera` launcher); re-run KORAK 3a/3b + 4 for SB 1103 and 1256.
 
