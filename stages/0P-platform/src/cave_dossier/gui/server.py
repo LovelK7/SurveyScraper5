@@ -467,7 +467,10 @@ def serve(port: int = DEFAULT_PORT, open_browser: bool = True) -> int:
 
 def _open_with_os(target: Path, app: Path | None = None, reveal: bool = False) -> None:
     if app is not None:
-        subprocess.Popen([str(app), str(target)], close_fds=True)
+        # cSurvey lowercases a bare filename argument (cCommandLineParameters.vb:142)
+        # and Drive's .shortcut-targets-by-id\<ID>\… paths stop resolving once the
+        # ID is lowercased; the value of filename=… keeps its case.
+        subprocess.Popen([str(app), f"filename={target}"], close_fds=True)
         return
     if os.name == "nt":
         if reveal:
