@@ -255,6 +255,20 @@ def test_api_caves_and_catalog(server):
     assert status == 200 and any(a["id"] == "3n-k3a" for a in data["actions"])
 
 
+def test_api_societies_serves_the_searchable_registry(server):
+    base, _, _ = server
+    status, data = _call(base, "/api/societies")
+    assert status == 200 and data["conflicts"] == {}
+    rows = {r["name"]: r for r in data["societies"]}
+    jakov = rows["SS PD Sv. Jakov"]
+    assert jakov["short"] == "SS Sv. JB" and jakov["curated"]
+    # the page searches a folded key, so the OSZ's wrong "SO" spelling finds it too
+    assert "sosvjakovbitelic" in jakov["search"]
+    # curated first, then the CroSpeleo-only organisations
+    curated = [r["curated"] for r in data["societies"]]
+    assert curated == sorted(curated, reverse=True)
+
+
 def test_run_refuses_unconfirmed_write_and_foreign_file(server):
     base, _, _ = server
     status, data = _call(base, "/api/run", {"action": "karta", "broj": 1220})

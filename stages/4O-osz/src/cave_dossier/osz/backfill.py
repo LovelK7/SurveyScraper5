@@ -19,7 +19,11 @@ Rules, the same as the prefill's (``docs/design-decisions.md``):
   ticked *Vrsta objekta*, the finisher's geometric guess otherwise;
 - nothing to change → the document is left alone (no backup churn);
 - a document open in Word (``~$`` lock) is not touched — close Word and rerun;
-- the previous file survives as ``<ime>_stari_<datum>.docx`` beside the new one.
+- the zapisnik is **overwritten in place** (user, 2026-10-04: Google Drive keeps
+  the file's versions, and the step writes only measured cells); with
+  ``keep_old`` (``--keep-old``) the previous file survives as
+  ``<ime>_stari_<datum>.docx`` beside the new one instead. Either way the
+  written copy also stays in ``runs/osz/<broj>/``.
 
 A zapisnik the v10 reader cannot read (a legacy layout) is not edited in place:
 ``osz prefill`` migrates it first, and this command says so.
@@ -122,7 +126,7 @@ def _newest_dimensions(folder: Path) -> Path | None:
     return found[0] if found else None
 
 
-def run_backfill(settings: Settings, serial: int) -> BackfillOutcome:
+def run_backfill(settings: Settings, serial: int, *, keep_old: bool = False) -> BackfillOutcome:
     """Write the measured cells into the cave's OSZ; see the module docstring."""
     from cave_dossier.osz import reader as reader_mod
     from cave_dossier.osz.dopune import pick_osz_docx
@@ -197,19 +201,29 @@ def run_backfill(settings: Settings, serial: int) -> BackfillOutcome:
     staged = run_dir / osz_path.name
     doc.save(staged)
 
-    backup = prefill._backup_path(osz_path)
-    osz_path.rename(backup)
-    try:
-        shutil.copy2(staged, osz_path)
-    except OSError:
+    if keep_old:
+        backup = prefill._backup_path(osz_path)
+        osz_path.rename(backup)
         try:
-            backup.rename(osz_path)          # never leave the leaf with only a backup
+            shutil.copy2(staged, osz_path)
         except OSError:
-            result.notes.append(f"Stari OSZ je ostao preimenovan u {backup.name} – vrati ime ručno.")
-        raise
-    result.backup = backup.name
+            try:
+                backup.rename(osz_path)          # never leave the leaf with only a backup
+            except OSError:
+                result.notes.append(f"Stari OSZ je ostao preimenovan u {backup.name} – vrati ime ručno.")
+            raise
+        result.backup = backup.name
+        result.notes.append(f"Stari OSZ sačuvan kao: {backup.name}")
+    else:
+        try:
+            shutil.copyfile(staged, osz_path)    # same file, a new version on Drive
+        except OSError:
+            result.notes.append(f"Upis nije uspio – zapisana kopija je u {staged}; "
+                                "prethodna verzija je u povijesti verzija na Driveu.")
+            raise
+        result.notes.append(f"Upisano u postojeći {osz_path.name} (prethodna verzija ostaje u "
+                            "povijesti verzija na Driveu; --keep-old čuva i _stari kopiju).")
     result.osz_mtime_after = osz_path.stat().st_mtime
-    result.notes.append(f"Stari OSZ sačuvan kao: {backup.name}")
     _write_sidecar(sidecar_path, result)
     return BackfillOutcome(result, osz_path, sidecar_path)
 

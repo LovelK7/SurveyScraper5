@@ -2,8 +2,8 @@
 rem ------------------------------------------------------------------
 rem  KORAK 4 - UPISI IZMJERU U OSZ
 rem  Duljine, dubinu i dimenzije ulaza iz <ime>_dimenzije.json ^(KORAK 3^)
-rem  upise u postojeci SB_<broj>_OSZ.docx u mapi objekta. Sve ostalo u
-rem  zapisniku ostaje; stari primjerak cuva se kao _stari_<datum>.docx.
+rem  upise u postojeci SB_<broj>_OSZ.docx u mapi objekta, u istu datoteku
+rem  ^(prethodnu verziju cuva Drive^). Sve ostalo u zapisniku ostaje.
 rem
 rem  NAPRAVI POSLIJE KORAKA 3. Zapisnik mora vec postojati u mapi
 rem  objekta ^(cavedossier_osz_prefill^) i ne smije biti otvoren u Wordu.
@@ -92,8 +92,8 @@ echo.
 echo ------------------------------------------------------------------
 if defined IZMJERA_OK (
     echo  Gotovo: zapisnik u mapi objekta sada nosi duljine, dubinu i
-    echo  dimenzije ulaza iz nacrta. Stari primjerak je pokraj njega
-    echo  ^(_stari_^<datum^>.docx^).
+    echo  dimenzije ulaza iz nacrta. Prethodna verzija ostaje u povijesti
+    echo  verzija na Driveu ^(desni klik - Upravljanje verzijama^).
 ) else (
     echo  Upis nije prosao - razlog je u porukama iznad.
 )

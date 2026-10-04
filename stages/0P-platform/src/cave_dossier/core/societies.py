@@ -133,6 +133,20 @@ class SocietyRegistry:
             if key not in curated and len(owners) == 1:
                 self._index[key] = owners[0]
 
+    def to_json(self) -> dict:
+        """The table the dashboard's Udruge page draws and filters."""
+        rows = [{
+            "name": s.name, "short": s.shortest, "place": s.place,
+            "canonical": s.canonical, "aliases": list(s.aliases),
+            "plaque": list(s.plaque), "uses": s.crospeleo_uses,
+            "curated": s.curated,
+            # every spelling that resolves here, for the page's search box
+            "search": " ".join(normalize_lookup_key(form) for form in
+                               [*s.forms(), *_derived_forms(s.name), s.place or ""]),
+        } for s in self.societies]
+        rows.sort(key=lambda r: (not r["curated"], -r["uses"], r["name"].casefold()))
+        return {"societies": rows, "conflicts": self.conflicts}
+
     def find(self, text: str | None) -> Society | None:
         """The society ``text`` names, or None. Never guesses."""
         if not text or not text.strip():

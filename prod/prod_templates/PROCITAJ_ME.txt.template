@@ -17,8 +17,9 @@ cavedossier_osz_prefill_v@VERSION@.bat
 
 cavedossier_photos_process_v@VERSION@.bat
     Obradi fotografije ulaza objekta: iz mape objekta (SB_<broj>_...) napravi
-    smanjene KOPIJE nazvane SB_<broj>_<Ime>_<Autor>_<n>.jpg (autor se čita iz
-    OSZ polja "Autor fotografije ulaza"). Originali ostaju netaknuti.
+    smanjene fotografije nazvane SB_<broj>_<Ime>_<Autor>_<n>.jpg (autor se
+    čita iz OSZ polja "Autor fotografije ulaza"). Obrađena fotografija
+    zamjenjuje original; original ide u smeće na Driveu (30 dana).
 
 cavedossier_sastavnica_v@VERSION@.bat
     Predispuni sastavnicu (naslovni blok) nacrta za objekte koji se crtaju u

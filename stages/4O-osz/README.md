@@ -49,7 +49,7 @@ direction, below.)
 
 ```powershell
 cavedossier osz prefill 1220     # SB + finders + excerpt -> SB_1220_OSZ.docx
-cavedossier osz backfill 1220    # 3N KORAK 4: the nacrt's numbers into the EXISTING OSZ
+cavedossier osz backfill 1220    # 3N KORAK 4: the nacrt's numbers into the EXISTING OSZ (--keep-old: _stari copy)
 cavedossier osz dopune 1220      # filled zapisnik -> dopune-sb-iz-osz.csv (was `osz backfill`)
 cavedossier osz provjera 1220    # read-only: which obligatory fields are still empty
 ```
@@ -83,7 +83,9 @@ no finders, no excerpt, no new document. Same precedence as the prefill (the
 measurement wins over a different recorded number, the same measurement keeps
 the recorder's text), the entrance reading follows the zapisnik's own *Vrsta
 objekta* ticks, nothing to change leaves the file alone, a document open in
-Word is refused, the old file survives as `…_stari_<datum>.docx`. A legacy
+Word is refused. The zapisnik is **overwritten in place** — Google Drive keeps its
+earlier versions (user, 2026-10-04); `--keep-old` (a checkbox on the dashboard)
+leaves the previous file beside it as `…_stari_<datum>.docx` instead. A legacy
 zapisnik is not edited in place: run `osz prefill` first, which migrates it.
 The dashboard's 3N page carries it as KORAK 4; the Drive kit as
 `csurvey_4_upisi_osz.bat`.

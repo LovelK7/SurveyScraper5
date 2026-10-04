@@ -528,3 +528,13 @@ table.sizes tr.changed td:first-child { box-shadow: inset 3px 0 0 var(--brand); 
 }
 .cl-field input[type=color].unset { opacity: .35; }
 .nav-item.sub { padding-left: 30px; font-size: 13px; }
+
+/* registar udruga */
+.soc-bar { gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+.soc-search { flex: 1 1 260px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-2); font-size: 14px; }
+.societies th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 4px 6px; border-bottom: 1px solid var(--line-strong); }
+.societies td { vertical-align: top; }
+.societies td.short { font-weight: 700; white-space: nowrap; }
+.societies td.aliases { font-size: 12.5px; }
+.societies td.name { min-width: 150px; }
+.societies tr.auto td.short { font-weight: 500; }

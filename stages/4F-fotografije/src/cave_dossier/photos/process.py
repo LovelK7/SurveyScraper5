@@ -15,9 +15,13 @@ OSZ has no author, rather than guessed from anywhere else.
 
 Two deliberate limits (user, 2026-09-01):
 
-- **Copies, never in-place edits.** The optimal output resolution is not
-  settled yet, so every run writes new files and leaves the originals
-  untouched — a second run with different targets is free.
+- **The original goes once its copy is written** (user, 2026-10-04; until then
+  the originals always stayed). The leaf then holds only the archive-ready
+  files, and Google Drive's trash still has the original for 30 days.
+  ``keep_originals`` (``--keep-originals``) keeps them beside the copies, so a
+  second run with different targets is free. An original is removed only when
+  ITS copy was written in this run — never on a skipped (``exists``) copy,
+  whose index may belong to another photo.
 - **This is not the filing step.** The copies stay in the intake leaf next to
   their originals. Moving them into `!!Fotografije ulaza` and re-numbering
   `SB_<Redni broj>` → `<Katastarski broj>` happens when the cave earns its SUE
@@ -32,7 +36,7 @@ from __future__ import annotations
 
 import re
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -90,6 +94,8 @@ class ProcessedPhoto:
     target_bytes: int | None = None
     source_px: tuple[int, int] | None = None
     target_px: tuple[int, int] | None = None
+    #: the original was deleted after its copy was written (the default)
+    source_removed: bool = False
 
 
 @dataclass(frozen=True)
@@ -550,12 +556,29 @@ def process_job(
     long_edge_px: int,
     max_bytes: int,
     overwrite: bool = False,
+    keep_originals: bool = False,
 ) -> list[ProcessedPhoto]:
-    return [
-        process_photo(plan, long_edge_px=long_edge_px, max_bytes=max_bytes,
-                      overwrite=overwrite)
-        for plan in job.plans
-    ]
+    outcomes = []
+    for plan in job.plans:
+        outcome = process_photo(plan, long_edge_px=long_edge_px, max_bytes=max_bytes,
+                                overwrite=overwrite)
+        if outcome.status == "written" and not keep_originals:
+            outcome = _remove_original(outcome)
+        outcomes.append(outcome)
+    return outcomes
+
+
+def _remove_original(outcome: ProcessedPhoto) -> ProcessedPhoto:
+    """Delete the source of a freshly written copy; a failure is a note."""
+    plan = outcome.plan
+    if plan.source.resolve() == plan.target.resolve():
+        return outcome                      # never delete the copy itself
+    try:
+        plan.source.unlink()
+    except OSError as exc:
+        detail = f"original nije obrisan ({exc.__class__.__name__})"
+        return replace(outcome, detail=f"{outcome.detail}; {detail}" if outcome.detail else detail)
+    return replace(outcome, source_removed=True)
 
 
 def resolve_targets(settings: Settings) -> tuple[int, int]:

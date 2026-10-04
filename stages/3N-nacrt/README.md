@@ -65,8 +65,9 @@ cavedossier nacrt 1103                 # --local keeps the output in runs/ and d
 
 # KORAK 4 — the nacrt's numbers into the EXISTING OSZ in the leaf (4O `osz backfill`, project 0005):
 #   Duljina / Horizontalna duljina / Dubina / Visinska razlika + Broj / Sirina / Visina ulaza;
-#   nothing else in the zapisnik is touched, the old file stays as _stari_<datum>
+#   nothing else in the zapisnik is touched; written into the same file (Drive keeps the versions)
 cavedossier osz backfill 1103
+cavedossier osz backfill 1103 --keep-old   # ...or keep the previous file as _stari_<datum>
 ```
 
 The file name tells which step a file is at: `x.csx` (raw) → `x_prep.csx`

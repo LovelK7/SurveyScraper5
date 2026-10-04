@@ -61,6 +61,9 @@ def test_crospeleo_organisations_without_an_overlay_entry_are_still_found(shippe
     ("SO Sv. Jakov Bitelić", "SS PD Sv. Jakov"),
     ("Speleo sekcija PD Sv. Jakov Bitelić", "SS PD Sv. Jakov"),
     ('Speleološka sekcija PD "Sv. Jakov", Gornji Bitelić', "SS PD Sv. Jakov"),
+    ("Speleo 8", "Osmica"),          # the HPS name of CroSpeleo's Osmica (user, 2026-10-04)
+    ("SKH", "SK Had"),
+    ("SD Had", "SK Had"),
 ])
 def test_a_written_form_resolves_to_its_society(shipped, text, name):
     found = shipped.find(text)

@@ -208,11 +208,13 @@ ACTIONS: tuple[Action, ...] = (
         "3n-k4", "3N", "Backfill OSZ-a – upiši izmjeru",
         "Duljina, horizontalna duljina, dubina, visinska razlika te broj, širina i "
         "visina/duljina ulaza iz <ime>_dimenzije.json upisuju se u postojeći "
-        "SB_<broj>_OSZ.docx u mapi objekta. Sve ostalo u zapisniku ostaje; stari "
-        "primjerak čuva se kao _stari_<datum>. Izmjera pobjeđuje drukčiji upisani broj, "
+        "SB_<broj>_OSZ.docx u mapi objekta – u istu datoteku (Drive čuva prethodne "
+        "verzije). Sve ostalo u zapisniku ostaje. Izmjera pobjeđuje drukčiji upisani broj, "
         "isti broj ostaje kako je zapisan; zapisnik ne smije biti otvoren u Wordu.",
         "cli", ("osz", "backfill", "{broj}"),
-        writes="mijenja SB_<broj>_OSZ.docx u mapi objekta (stari primjerak ostaje)",
+        options=(Option("--keep-old", "Sačuvaj stari OSZ kao _stari_<datum> (--keep-old)",
+                        help="Novi zapisnik pokraj staroga umjesto upisa u isti dokument."),),
+        writes="mijenja SB_<broj>_OSZ.docx u mapi objekta",
         step="KORAK 4",
     ),
     Action("3n-inspect", "3N", "Statistika datoteke",
@@ -273,16 +275,18 @@ ACTIONS: tuple[Action, ...] = (
            "cli", ("osz", "dopune", "{broj}")),
     # ── 4F — fotografije ─────────────────────────────────────────────
     Action("photos-process", "4F", "Obradi fotografije ulaza",
-           "Kopije SB_<broj>_<Ime>_<Autor>_<n>.jpg pokraj originala "
-           "(1920 px / 1.5 MB). Originali ostaju.",
+           "SB_<broj>_<Ime>_<Autor>_<n>.jpg (1920 px / 1.5 MB) zamjenjuje original – "
+           "original ide u smeće na Driveu (30 dana). Kvačica čuva originale pokraj kopija.",
            "cli", ("photos", "process", "{broj}"),
            options=(
                Option("--dry-run", "Samo plan (--dry-run)", safe=True),
                Option("--author", "Autor", kind="text", default="",
                       help="Kad OSZ ne navodi autora fotografije."),
+               Option("--keep-originals", "Sačuvaj originale (--keep-originals)",
+                      help="Obrađene kopije pokraj originala umjesto zamjene."),
                Option("--overwrite", "Ponovno izreži (--overwrite)"),
            ),
-           writes="dodaje obrađene kopije fotografija u mapu objekta"),
+           writes="zamjenjuje fotografije u mapi objekta obrađenima (originali u smeće na Driveu)"),
     Action("photos-pull", "4F", "Povuci fotografije iz reda čekanja",
            "Fotografije iz '…za istražit' u mapu objekta. Bez --apply samo plan.",
            "cli", ("photos", "pull-staged", "{broj}"),

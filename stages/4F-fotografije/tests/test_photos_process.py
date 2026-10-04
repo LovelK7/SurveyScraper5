@@ -350,9 +350,12 @@ def test_process_job_writes_every_planned_copy(drive_settings: Settings, leaf: P
         drive_settings, 1220, "Hrđava špilja", author_override="Lovel Kukuljan"
     )
 
-    outcomes = process_mod.process_job(job, long_edge_px=1920, max_bytes=1_500_000)
+    outcomes = process_mod.process_job(job, long_edge_px=1920, max_bytes=1_500_000,
+                                       keep_originals=True)
 
     assert [o.status for o in outcomes] == ["written", "written"]
+    assert not any(o.source_removed for o in outcomes)
+    assert all(o.plan.source.exists() for o in outcomes)
     assert sorted(p.name for p in leaf.glob("SB_1220_*")) == [
         "SB_1220_Hrđava špilja_LKukuljan_1.jpg",
         "SB_1220_Hrđava špilja_LKukuljan_2.jpg",
@@ -490,3 +493,34 @@ def test_pulling_never_overwrites_an_existing_file(
 def test_an_empty_queue_plans_nothing(drive_settings: Settings) -> None:
     plan = process_mod.plan_pull(drive_settings, _cave(1220, "Hrđava špilja"), 1220)
     assert plan.moves == ()
+
+
+def test_by_default_the_copy_replaces_the_original(drive_settings: Settings, leaf: Path) -> None:
+    """User, 2026-10-04: overwriting is the default — each original is deleted
+    once its own copy is written; Drive's trash keeps it."""
+    job = process_mod.build_job(
+        drive_settings, 1220, "Hrđava špilja", author_override="Lovel Kukuljan"
+    )
+    sources = [plan.source for plan in job.plans]
+
+    outcomes = process_mod.process_job(job, long_edge_px=1920, max_bytes=1_500_000)
+
+    assert [o.status for o in outcomes] == ["written", "written"]
+    assert all(o.source_removed for o in outcomes)
+    assert not any(path.exists() for path in sources)
+    assert all(o.plan.target.exists() for o in outcomes)
+    assert process_mod.build_job(
+        drive_settings, 1220, "Hrđava špilja", author_override="Lovel Kukuljan"
+    ).plans == ()
+
+
+def test_a_skipped_copy_never_costs_its_original(drive_settings: Settings, leaf: Path) -> None:
+    job = process_mod.build_job(
+        drive_settings, 1220, "Hrđava špilja", author_override="Lovel Kukuljan"
+    )
+    job.plans[0].target.write_bytes(b"older copy")
+
+    outcomes = process_mod.process_job(job, long_edge_px=1920, max_bytes=1_500_000)
+
+    assert [o.status for o in outcomes] == ["exists", "written"]
+    assert job.plans[0].source.exists() and not job.plans[1].source.exists()

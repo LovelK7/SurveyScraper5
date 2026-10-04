@@ -268,7 +268,8 @@ The bridges that keep names/numbers straight and say when a cave is done.
                                          cave has none; drops the SB_&lt;broj&gt;_ prefix)
 
   a cave's intake leaf             ───[<a href="#b8">B8</a>] process ─────► SB_&lt;broj&gt;_&lt;Ime&gt;_&lt;Autor&gt;_&lt;n&gt;.jpg
-                                        (downsized COPIES beside the originals;
+                                        (downsized, replacing the originals –
+                                         --keep-originals keeps them;
                                          autor from the OSZ. Each run also checks
                                          the queue above and prints the pull-staged
                                          command when this cave still has photos there)

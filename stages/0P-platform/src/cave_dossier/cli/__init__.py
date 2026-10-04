@@ -394,13 +394,15 @@ def cmd_photos_check_flag(settings: Settings, limit: int) -> int:
 def cmd_photos_process(settings: Settings, serial: int, dry_run: bool,
                        from_dir: str | None, author_arg: str | None,
                        osz_path_arg: str | None, long_edge: int | None,
-                       max_bytes: int | None, overwrite: bool) -> int:
+                       max_bytes: int | None, overwrite: bool,
+                       keep_originals: bool = False) -> int:
     """Part 2.1d — archive-ready copies of ONE cave's entrance photos.
 
     Reads the raw photos from the cave's ``SB_<broj>_…`` intake leaf and writes
     ``SB_<broj>_<Ime objekta>_<Autor>_<n>.jpg`` copies beside them, downsized to
     the config's screen-size targets. The author is the OSZ cell "Autor
-    fotografije ulaza"; the originals are never touched, and nothing is moved
+    fotografije ulaza". Each original is deleted once its copy is written
+    (user, 2026-10-04; Drive's trash keeps it) unless --keep-originals; nothing is moved
     into `!!Fotografije ulaza` — that (and the SB→katastarski renumbering) is
     the later filing step.
 
@@ -458,7 +460,9 @@ def cmd_photos_process(settings: Settings, serial: int, dry_run: bool,
     print(
         "PROBNI RUN — ništa se ne zapisuje (--dry-run)."
         if dry_run
-        else "OBRAĐUJEM — kopije se zapisuju uz originale; originali ostaju netaknuti."
+        else "OBRAĐUJEM — kopije se zapisuju uz originale; originali ostaju (--keep-originals)."
+        if keep_originals
+        else "OBRAĐUJEM — obrađena fotografija zamjenjuje original (original ide u smeće na Driveu)."
     )
     print()
     for plan in job.plans:
@@ -473,7 +477,8 @@ def cmd_photos_process(settings: Settings, serial: int, dry_run: bool,
 
     print()
     outcomes = process_mod.process_job(
-        job, long_edge_px=long_edge_px, max_bytes=budget_bytes, overwrite=overwrite
+        job, long_edge_px=long_edge_px, max_bytes=budget_bytes, overwrite=overwrite,
+        keep_originals=keep_originals,
     )
     written = [o for o in outcomes if o.status == "written"]
     problems = [o for o in outcomes if o.status not in ("written", "exists")]
@@ -486,7 +491,16 @@ def cmd_photos_process(settings: Settings, serial: int, dry_run: bool,
             print(f"  {outcome.status}: {outcome.plan.source.name}"
                   + (f"  ({outcome.detail})" if outcome.detail else ""))
     print()
-    print(f"Zapisano {len(written)} kopija; originali su netaknuti.")
+    removed = [o for o in written if o.source_removed]
+    if keep_originals:
+        print(f"Zapisano {len(written)} kopija; originali su netaknuti.")
+    else:
+        print(f"Zapisano {len(written)} fotografija; {len(removed)} originala obrisano "
+              "(vraćaju se iz smeća na Driveu 30 dana).")
+        kept = [o for o in outcomes if o.status == "exists"]
+        if kept:
+            print(f"  {len(kept)} originala ostaje: njihova kopija je već postojala "
+                  "(--overwrite ih ponovno obradi i zamijeni).")
     oversized = [o for o in written
                  if o.target_bytes is not None and o.target_bytes > budget_bytes]
     if oversized:
@@ -1213,12 +1227,12 @@ def cmd_nacrt(settings: Settings, serial: int, offline: bool,
     return 0
 
 
-def cmd_osz_backfill(settings: Settings, serial: int) -> int:
+def cmd_osz_backfill(settings: Settings, serial: int, keep_old: bool = False) -> int:
     """3N KORAK 4: the survey's measurements into the cave's existing OSZ."""
     from cave_dossier.osz import backfill as backfill_mod
 
     try:
-        outcome = backfill_mod.run_backfill(settings, serial)
+        outcome = backfill_mod.run_backfill(settings, serial, keep_old=keep_old)
     except backfill_mod.BackfillError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
@@ -1987,6 +2001,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="SB Redni broj of the cave (the only input)",
     )
+    osz_backfill.add_argument(
+        "--keep-old",
+        dest="keep_old",
+        action="store_true",
+        help="Keep the previous zapisnik as <ime>_stari_<datum>.docx (default: "
+             "overwrite in place; Google Drive keeps the earlier versions)",
+    )
     osz_provjera = osz_sub.add_parser(
         "provjera",
         help="Read-only: list the obligatory zapisnik fields still empty "
@@ -2159,6 +2180,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Per-file size budget (default: photos.target_max_bytes in config.yaml)",
     )
     photos_process.add_argument(
+        "--keep-originals",
+        dest="keep_originals",
+        action="store_true",
+        help="Keep each original beside its copy (default: the original is "
+             "deleted once its copy is written; Drive's trash keeps it 30 days)",
+    )
+    photos_process.add_argument(
         "--overwrite",
         action="store_true",
         help="Rewrite copies that already exist (default is to skip them) — use "
@@ -2225,7 +2253,7 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_photos_process(
                     settings, args.redni_broj, args.dry_run, args.from_dir,
                     args.author, args.osz_path, args.long_edge, args.max_bytes,
-                    args.overwrite,
+                    args.overwrite, args.keep_originals,
                 )
         if args.command == "sat":
             if args.sat_command == "sync":
@@ -2261,7 +2289,7 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_osz_prefill(settings, args.redni_broj, args.debug,
                                        args.force_karta, args.offline)
             if args.osz_command == "backfill":
-                return cmd_osz_backfill(settings, args.redni_broj)
+                return cmd_osz_backfill(settings, args.redni_broj, args.keep_old)
             if args.osz_command == "provjera":
                 return cmd_osz_provjera(settings, args.redni_broj, args.as_json)
             if args.osz_command == "dopune":

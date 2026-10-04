@@ -37,7 +37,7 @@ const KIND_LABEL = {
 };
 
 const STAGE_ICON = {
-  home: "home", fast: "star", map3n: "nacrt", "1T": "teren", "2B": "baza", "3N": "nacrt", "4G": "geo", "4I": "karta",
+  home: "home", fast: "star", map3n: "nacrt", udruge: "udruge", "1T": "teren", "2B": "baza", "3N": "nacrt", "4G": "geo", "4I": "karta",
   "4O": "osz", "4F": "foto", "4S": "sastavnica", "5O": "osobe", "5D": "dosje", "6P": "predaja",
 };
 const DIR_ICON = {
@@ -320,6 +320,9 @@ function renderNav() {
     if (s.parent) continue;                       // listed under its parent below
     if (s.group !== group) { group = s.group; kids.push(h("div", { class: "nav-group" }, group)); }
     kids.push(item(s.label, s.label, s.title, s.status));
+    // the registar udruga sits beside the registar osoba (user, 2026-10-04);
+    // the data lives in 0P (core/societies.py), so it is not a stage of its own
+    if (s.label === "5O") kids.push(item("udruge", "0P", "Udruge"));
     // sub-pages (3N: Mapiranje simbola, Sastavnica) are listed only while the
     // parent or one of them is open
     const children = stages.filter(c => c.parent === s.label);
@@ -368,6 +371,7 @@ function render() {
   if (S.tab === "fast") return main.replaceChildren(...renderFast());
   if (S.tab.startsWith("doc:")) return main.replaceChildren(...renderDoc(S.tab.slice(4)));
   if (S.tab === "map3n") return main.replaceChildren(...renderMapping());  // mapping.js
+  if (S.tab === "udruge") return main.replaceChildren(...renderSocieties());
   const stage = S.catalog.stages.find(s => s.label === S.tab);
   if (!stage) return setTab("home");
   main.replaceChildren(...renderStage(stage));
@@ -803,6 +807,65 @@ function renderPeopleOfCave() {
   const st = dossierState();
   if (!st.data) return [st.node];
   return [h("div", { class: "grid", style: "margin-bottom:14px" }, peopleCard(st.data))];
+}
+
+// ── registar udruga (0P core/societies.py) ───────────────────────────
+// The same fold as normalize_lookup_key: diacritics, case and punctuation
+// out, so "sv jakov" finds "SS PD Sv. Jakov" and "SO Sv. Jakov Bitelić".
+// \p{L} keeps đ, which NFKD does not decompose (Python keeps it too).
+const foldKey = t => (t || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+function renderSocieties() {
+  const head = h("div", { class: "page-head" },
+    h("span", { class: "stage-chip" }, icon("udruge", "xl"), h("span", { class: "lbl" }, "0P")),
+    h("div", {}, h("h1", {}, "Udruge"),
+      h("div", { class: "sub" }, "Registar udruga – CroSpeleo nazivi, kratice i drugi zapisi koje alati prepoznaju")),
+    h("div", { class: "spacer" }),
+    h("button", { class: "btn ghost", onclick: () => setTab("doc:stages/0P-platform/README.md") }, icon("book"), "README"));
+  if (!S.societies) {
+    api("societies").then(d => { S.societies = d; if (S.tab === "udruge") render(); })
+      .catch(e => { S.societies = { error: e.message }; if (S.tab === "udruge") render(); });
+    return [head, h("div", { class: "loading" }, "Učitavam registar udruga…")];
+  }
+  if (S.societies.error) return [head, h("div", { class: "card note" }, "Registar se ne može učitati: " + S.societies.error)];
+  const rows = S.societies.societies;
+  const ui = S.societiesUi || (S.societiesUi = { query: "", all: false });
+  const tbody = h("tbody");
+  const count = h("span", { class: "muted" });
+  const fill = () => {
+    const q = foldKey(ui.query);
+    const shown = rows.filter(r => (ui.all || r.curated || q) && (!q || r.search.includes(q)));
+    count.textContent = `${shown.length} od ${rows.length}`;
+    tbody.replaceChildren(...shown.map(r => h("tr", { class: r.curated ? "" : "auto" },
+      h("td", { class: "short" }, r.short),
+      h("td", { class: "name" }, r.name, r.place ? h("div", { class: "muted" }, r.place) : null),
+      h("td", {}, r.canonical ? r.canonical : h("span", { class: "muted", title: "HPS popis; CroSpeleo ovu udrugu ne vodi" }, "samo HPS popis"),
+        r.uses ? h("div", { class: "muted" }, `${r.uses}× u CroSpeleo izvozu`) : null),
+      h("td", { class: "aliases" }, r.aliases.length ? r.aliases.join(" · ") : h("span", { class: "muted" }, "–")),
+      h("td", { class: "kind" }, r.plaque.join(", ")))));
+    if (!shown.length) tbody.append(h("tr", {}, h("td", { colspan: 5, class: "muted" }, "Ništa ne odgovara – registar ne pogađa, traži točan zapis.")));
+  };
+  const search = h("input", { type: "search", class: "soc-search", placeholder: "Traži: SKOL, Sv. Jakov, Bitelić, 051…", value: ui.query,
+    oninput: e => { ui.query = e.target.value; fill(); } });
+  const all = h("label", { class: "check" },
+    h("input", { type: "checkbox", checked: ui.all, onchange: e => { ui.all = e.target.checked; fill(); } }),
+    "i sve ostale CroSpeleo organizacije");
+  fill();
+  // into the box on arrival, but never away from something else being typed in
+  setTimeout(() => { const a = document.activeElement; if (!a || a === document.body || a.classList.contains("soc-search")) search.focus(); }, 0);
+  const conflicts = Object.entries(S.societies.conflicts || {});
+  return [head,   // filtered below: replaceChildren would print a null as text
+    h("div", { class: "card note", style: "margin-bottom:14px" },
+      "Popis udruga i nazive daje CroSpeleo; kratice i druge zapise vodi ", h("code", {}, "societies.json"),
+      ". Sastavnica u Istražili piše naziv kako je zapisan, a kraticu samo kad puni naziv ne stane. ",
+      "Dodavanje ili ispravak: README (gumb gore desno)."),
+    conflicts.length ? h("div", { class: "card note warnline", style: "margin-bottom:14px" },
+      "Isti zapis traže dvije udruge: ", conflicts.map(([k, v]) => `${k} (${v.join(" / ")})`).join("; ")) : null,
+    h("div", { class: "card" },
+      h("div", { class: "row soc-bar" }, search, all, h("span", { class: "spacer" }), count),
+      h("table", { class: "files societies" },
+        h("thead", {}, h("tr", {}, ...["Kratko", "Naziv", "CroSpeleo naziv", "Drugi zapisi", "Pločice"].map(t => h("th", {}, t)))),
+        tbody))].filter(Boolean);
 }
 
 // ── documentation viewer ─────────────────────────────────────────────

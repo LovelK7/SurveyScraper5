@@ -66,14 +66,24 @@ def test_izmjera_writes_the_cells_and_keeps_the_rest(intake_settings, run_dir):
                          "visinska_razlika": "10", "sirina_ulaza": "0,6",
                          "visina_duljina_ulaza": "1,4", "broj_ulaza": "1"}
     assert r.entrance_kind == "horizontal"   # no Vrsta objekta ticked -> the geometric guess
-    assert r.backup and r.backup.startswith("SB_0001_OSZ_stari_")
+    assert r.backup is None                  # overwritten in place by default
     assert any("zapisano '7'" in n for n in r.notes)
     assert r.osz_mtime_before is not None and r.osz_mtime_after is not None
     content = read_osz_content(path)
     assert content.fields["dubina"] == "5" and content.fields["sirina_ulaza"] == "0,6"
     assert content.fields["ime_objekta"] == "Špilja Testovka" and content.fields["opis"] == "Ulaz je nizak."
-    assert (leaf / r.backup).exists()
+    assert sorted(p.name for p in leaf.iterdir()) == ["SB_0001_OSZ.docx", "SB_1_test_dimenzije.json"]
     assert outcome.sidecar_path.exists() and backfill.last_write(1)["written"]["dubina"] == "5"
+
+
+def test_keep_old_leaves_the_previous_zapisnik_beside_the_new_one(intake_settings, run_dir):
+    leaf = _leaf(intake_settings)
+    path = _osz(leaf, ime_objekta="X", dubina="7")
+    _dims(leaf)
+    r = backfill.run_backfill(intake_settings, 1, keep_old=True).result
+    assert r.backup and r.backup.startswith("SB_0001_OSZ_stari_")
+    assert read_osz_content(leaf / r.backup).fields["dubina"] == "7"
+    assert read_osz_content(path).fields["dubina"] == "5"
 
 
 def test_izmjera_second_run_changes_nothing(intake_settings, run_dir):

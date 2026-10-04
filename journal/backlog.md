@@ -422,6 +422,6 @@ when an idea's time comes. Nothing here is a commitment.
   Istražile udruge entry that resolves only through a *wrong* alias (SB 1328's "SO Sv. Jakov Bitelić" for a
   Speleo sekcija) and suggest the CroSpeleo canonical; 2B's Liburnija `OWN_SOCIETY` prefix test could go through `find`.
 - 2026-10-04 — registar udruga: confirm the short forms the HPS rule could not settle (SO Kamenar, SO Sv. Mihovil,
-  SOŽ Gospić, SD Veles, SK Had …) and whether HPS "Speleo 8" (Karlovac, code 080) is CroSpeleo's "Osmica" društvo.
-- 2026-10-04 — registar udruga: a dashboard page (0P) to look a society up and edit `societies.json` without a text editor.
+  SOŽ Gospić, SD Veles …).
+- 2026-10-04 — registar udruga: editing from the dashboard's Udruge page (today read-only; `societies.json` by hand).
 - 2026-10-04 — `ARCHITECTURE.md` bridge catalog has two rows labelled **B12** (`osz backfill` and `people list/check`) — renumber one.

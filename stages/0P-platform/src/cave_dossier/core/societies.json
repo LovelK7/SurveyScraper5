@@ -76,12 +76,15 @@
     {"canonical": "Speleološka udruga \"Pula\", Pula", "name": "SU Pula", "short": "SUP", "plaque": ["SUP"]},
     {"canonical": "Udruga za promicanje zaštite prirodne i kulturne baštine Neretve \"Baštinik\", Metković", "name": "Baštinik",
      "short": "Baštinik", "plaque": ["B20"]},
-    {"canonical": "Speleoklub \"Had\", Poreč", "name": "SK Had", "short": "SK Had", "aliases": ["SD Had"], "plaque": ["HAD"]},
+    {"canonical": "Speleoklub \"Had\", Poreč", "name": "SK Had", "short": "SKH", "aliases": ["SD Had", "Speleoklub Had"], "plaque": ["HAD"]},
     {"canonical": "Speleološko društvo \"Buje\", Buje", "name": "SD Buje", "short": "SDB", "plaque": ["SDB"]},
     {"canonical": "Speleološko društvo \"Veles\", Rakovica", "name": "SD Veles", "short": "SD Veles", "plaque": ["V"]},
     {"canonical": "Speleološko društvo Meandar, Tučepi", "name": "SD Meandar", "short": "SDM", "plaque": ["SDM"]},
     {"canonical": "Speleološko društvo Underground, Umag", "name": "SD Underground", "short": "SDU", "plaque": ["SDU"]},
     {"canonical": "Speleološki odsjek HPD \"Kozjak\", Kaštel Sućurac", "name": "SO HPD Kozjak", "short": "SOK", "plaque": ["SOK"]},
+    {"canonical": "\"Osmica\" društvo za planinarenje, istraživanje i očuvanje prirodoslovnih vrijednosti, Karlovac",
+     "name": "Osmica", "short": "Osmica", "aliases": ["Speleo 8", "Društvo Osmica", "Osmica društvo"],
+     "_note": "HPS lists it as Speleo 8 (plaque 080); the same society (user, 2026-10-04).", "plaque": ["080"]},
     {"canonical": "Speleološko društvo Hrvatske, Zagreb", "name": "SD Hrvatske", "short": "SDH"},
 
     {"name": "SO PD Klen", "place": "Vodice", "short": "SO Klen", "plaque": ["011"]},
@@ -91,7 +94,6 @@
      "_note": "CroSpeleo credits only the parent, Hrvatsko planinarsko društvo \"Sv. Jere\", Skradin.", "plaque": ["030"]},
     {"name": "Cave Monsters", "place": "Zagvozd", "short": "Cave Monsters",
      "aliases": ["Cave Monsters - HPD Sv. Jure", "Cave Monsters – HPD Sv. Jure"], "plaque": ["031"]},
-    {"name": "Speleo 8", "place": "Karlovac", "short": "Speleo 8", "plaque": ["080"]},
     {"name": "SD Gračišće", "place": "Gračišće", "short": "SDG", "plaque": ["SDG"]}
   ]
 }

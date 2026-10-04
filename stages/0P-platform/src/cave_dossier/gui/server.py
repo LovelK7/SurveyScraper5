@@ -415,6 +415,9 @@ def make_handler(app: App):
                     return app.layouts(query)
                 if head == "mapping-catalog" or (head == "mapping" and len(parts) == 2):
                     return app.mapping_api("GET", parts)
+                if head == "societies":
+                    from cave_dossier.core import societies
+                    return societies.registry().to_json()
                 if head == "jobs":
                     return {"jobs": [j.to_json(since=10**9) for j in app.jobs.list()]}
                 if head == "job" and len(parts) == 2:

@@ -14,12 +14,18 @@ into the leaf, downsizes them (~1920 px / ~1.5 MB) and names them
 
 ```powershell
 cavedossier photos pull-staged 1220   # queue -> the cave's intake leaf (creates it)
-cavedossier photos process 1220       # downsize + rename, as COPIES
+cavedossier photos process 1220       # downsize + rename; the result replaces the original
+cavedossier photos process 1220 --keep-originals   # ...or keep the originals beside the copies
 cavedossier photos check-flag         # staged photos whose cave already has a SUE number
 cavedossier photos match-queued       # one-off 2026-08 staging sweep; finished, not run
 ```
 
-`process` makes **copies** and leaves the originals alone. Each run also checks
+`process` **replaces** each original with its processed file (user, 2026-10-04):
+the original is deleted once its own copy is written, so the leaf holds only the
+archive-ready photos; Google Drive's trash keeps the original for 30 days. A copy
+that already existed and was skipped never costs its original. `--keep-originals`
+(a checkbox on the dashboard) keeps the originals beside the copies, as every run
+did before. Each run also checks
 the queue and prints the `pull-staged` command when this cave still has photos
 waiting there — the leak that otherwise leaves old photos queued forever.
 

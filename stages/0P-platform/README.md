@@ -126,7 +126,7 @@ How it is built, for whoever turns it into the real GUI:
 | `gui/layouts.py` | KORAK 3a's sheet thumbnails: runs `nacrt_finish.py --layouts-json` (a dry run, writes nothing) as a script, so the picture and the run read the same menu; caches per (path, mtime, size). |
 | `gui/media.py` | Photo thumbnails and the recoverable delete (shell "allow undo"). |
 | `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. `start_sequence` runs a recipe's steps one after another as a single job (stop on exit 2+ unless `keep_going`; 0/1 are the CLI's "done / not ready"). |
-| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, `/mapping/<broj>` (GET, POST, POST `…/reset`), `/mapping-catalog`, `/layouts?broj=&path=` (KORAK 3a's sheets; only the cave's own `_postp` files), and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
+| `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, `/mapping/<broj>` (GET, POST, POST `…/reset`), `/mapping-catalog`, `/societies` (the registar udruga for the Udruge page), `/layouts?broj=&path=` (KORAK 3a's sheets; only the cave's own `_postp` files), and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
 | `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`, `mapping.js` (the 3N mapping page). Plain JS, no build step. |
 
 Only standard library in the base install; Pillow (the `photos` extra) makes
@@ -157,6 +157,13 @@ cavedossier societies list [--all]                        # curated societies (-
 cavedossier societies check                               # conflicts, shared short forms, canonicals CroSpeleo lacks
 cavedossier societies build "C:\…\CroSpeleo - objekti.xlsx"  # regenerate the ground truth from a fresh export
 ```
+
+**On the dashboard: Udruge**, under Osobe in the sidebar: the same registry as
+a table — short form, working name and seat, CroSpeleo name, other spellings,
+plaque codes — with a search box over every spelling (diacritic- and
+punctuation-insensitive: `sv jakov`, `biteli`, `051`, `speleo 8`). The curated
+societies show by default; a tick adds the other CroSpeleo organisations.
+Read-only.
 
 **Adding or fixing a society** — edit `societies.json`: put the exact
 CroSpeleo `canonical` (copy it from `societies list --all`), then `name`,

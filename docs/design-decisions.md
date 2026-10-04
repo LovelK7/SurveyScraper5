@@ -53,6 +53,8 @@ keeps the chronology.
 - [3N file suffixes renamed (2026-10-04)](#3n-file-suffixes-renamed-2026-10-04)
 - [3N KORAK 3a: the layout menu drawn as sheets (2026-10-04)](#3n-korak-3a-the-layout-menu-drawn-as-sheets-2026-10-04)
 - [4O OSZ provjera: the obligatory fields, before 3N (2026-10-04)](#4o-osz-provjera-the-obligatory-fields-before-3n-2026-10-04)
+- [3N KORAK 4 overwrites the OSZ in place (2026-10-04)](#3n-korak-4-overwrites-the-osz-in-place-2026-10-04)
+- [4F: the processed photo replaces the original (2026-10-04)](#4f-the-processed-photo-replaces-the-original-2026-10-04)
 - [Registar udruga: CroSpeleo is the ground truth (2026-10-04)](#registar-udruga-crospeleo-is-the-ground-truth-2026-10-04)
 
 ---
@@ -1652,9 +1654,11 @@ society aliases, not from a pattern.
   the working name, the `short` form, and aliases. It was seeded from
   crospeleo's curated registry and the HPS plaque list (the only complete
   society list in that repo), and every canonical was re-checked against the
-  export. A curated canonical CroSpeleo does not know fails a test. Seven
+  export. A curated canonical CroSpeleo does not know fails a test. Six
   HPS-listed societies CroSpeleo has never credited stay in the overlay
-  without a canonical; `societies check` lists them.
+  without a canonical; `societies check` lists them. HPS "Speleo 8"
+  (Karlovac, 080) is CroSpeleo's "Osmica" društvo, one entry (user); `SK
+  Had`'s short form is `SKH`, as cavers write it (user).
 - **Aliases include wrong spellings documents really carry.** The Bitelić
   society is a Speleo *sekcija* (CroSpeleo: `Speleološka sekcija PD "Sv.
   Jakov", Gornji Bitelić`), so its short form is `SS Sv. JB` (user). The
@@ -1682,6 +1686,49 @@ society aliases, not from a pattern.
   now becomes its working name (`SU Estavela`), not its acronym. Without a
   font to measure with, the 2026-09-20 rule still applies.
 
+- **Searchable in the dashboard, beside Osobe (user).** The *Udruge* page
+  (`/api/societies`) tabulates the registry and filters on a folded key of
+  every spelling, so whatever form a document carries finds its society. It
+  is a sidebar item, not a stage: the data belongs to 0P. It is read-only, and
+  `societies.json` stays the place to edit.
+
 Validated on SB 1328 live (`sastavnica 1328 --offline --local`): Istražili
 `SKOL, SS Sv. JB` at 9 pt, with no overflow note. The four 2026-09-20 test
 cases are unchanged.
+
+## 3N KORAK 4 overwrites the OSZ in place (2026-10-04)
+
+**User:** the backfill is not dangerous enough to need a `_stari_<datum>` copy every
+time. It writes only the measured cells, and Google Drive keeps the file's versions.
+
+- **Default: write into the same `SB_<broj>_OSZ.docx`.** The document is saved to
+  `runs/osz/<broj>/` first and then copied over the original, so the file keeps its
+  name and its Drive history, and the leaf collects no backups. A failed copy points
+  at the run-dir copy and at Drive's version history.
+- **`--keep-old` brings back the earlier behaviour.** The previous file is renamed to
+  `_stari_<datum>.docx` and the new one takes its name. It is a checkbox on the
+  dashboard's KORAK 4 card. The kit's `csurvey_4_upisi_osz.bat` runs the default.
+- **`osz prefill` is unchanged.** It still keeps the `_stari` copy, because it
+  rebuilds the whole document from the template and migrates the old content into
+  it. That is a much bigger change than seven cells.
+- The sidecar's mtime-before/after pair is recorded in both modes, so a KORAK 4
+  write still does not make 3c stale.
+
+## 4F: the processed photo replaces the original (2026-10-04)
+
+**User:** like KORAK 4, `photos process` should overwrite by default, with copies as
+an option. This reverses the 2026-09-01 rule "copies, never in-place edits". That
+rule was there to keep re-runs with other targets free while the output size was
+unsettled.
+
+- **Default: the original is deleted once ITS copy is written in this run.** The
+  leaf then holds only `SB_<broj>_…_<n>.jpg`. On the Drive mount a delete goes to
+  Drive's trash, which keeps the file for 30 days, and the run's summary says so.
+- **A skipped copy (`exists`) never costs its original.** Copy indices follow the
+  sorted originals, so after a photo is added an existing `_1.jpg` may belong to
+  another source. The run says how many originals stayed for this reason, and
+  `--overwrite` re-cuts them and then replaces them.
+- **`--keep-originals`** (a dashboard checkbox) is the old copies-only behaviour.
+- The dashboard's *Fotografije ulaza* step is unaffected: processed files present
+  means done, with or without the originals.
+
