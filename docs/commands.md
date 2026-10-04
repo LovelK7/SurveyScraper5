@@ -232,6 +232,9 @@ cavedossier osz prefill 1234               # SB + finders -> prefilled DOCX + pr
 cavedossier osz prefill 1234 --force-karta # re-fetch the excerpt first (server-side save)
 cavedossier osz prefill 1234 --offline     # never touch the network; an already-collected
                                            #   excerpt is still embedded, georef.hr is skipped
+cavedossier osz izmjera 1234               # 3N KORAK 4: Duljina/Dubina/... + Broj/Sirina/Visina ulaza
+                                           #   from <ime>_dimenzije.json INTO the existing OSZ in the
+                                           #   leaf; nothing else touched, old file kept as _stari_<datum>
 # After KORAK 3 the cave's <name>_dimenzije.json also fills Duljina / Horizontalna
 # duljina / Dubina / Visinska razlika AND Broj / Širina / Visina-duljina ulaza
 # (project 0005): re-run `osz prefill <broj>` once the nacrt exists; the old OSZ

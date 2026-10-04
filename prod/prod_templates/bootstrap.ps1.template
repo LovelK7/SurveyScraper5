@@ -182,6 +182,10 @@ try {
             $cliVerb = @('nacrt')
             $label = 'Nacrt - slozi tlocrt i profil na sastavnicu (cSurvey ruta)'
         }
+        'osz_izmjera' {
+            $cliVerb = @('osz', 'izmjera')
+            $label = 'KORAK 4 - upisi duljine, dubinu i dimenzije ulaza iz nacrta u postojeci OSZ'
+        }
         default {
             W "GRESKA: nepoznata naredba '$Command'."
             Pause-Exit 1

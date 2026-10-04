@@ -201,6 +201,17 @@ ACTIONS: tuple[Action, ...] = (
         writes="isporučuje SB_<broj>_nacrt.pdf u mapu objekta",
         step="KORAK 3c",
     ),
+    Action(
+        "3n-k4", "3N", "Upiši izmjeru u OSZ",
+        "Duljina, horizontalna duljina, dubina, visinska razlika te broj, širina i "
+        "visina/duljina ulaza iz <ime>_dimenzije.json upisuju se u postojeći "
+        "SB_<broj>_OSZ.docx u mapi objekta. Sve ostalo u zapisniku ostaje; stari "
+        "primjerak čuva se kao _stari_<datum>. Izmjera pobjeđuje drukčiji upisani broj, "
+        "isti broj ostaje kako je zapisan; zapisnik ne smije biti otvoren u Wordu.",
+        "cli", ("osz", "izmjera", "{broj}"),
+        writes="mijenja SB_<broj>_OSZ.docx u mapi objekta (stari primjerak ostaje)",
+        step="KORAK 4",
+    ),
     Action("3n-inspect", "3N", "Statistika datoteke",
            "Samo čitanje: statistika bilo koje .csz/.csx datoteke.",
            "inspect_survey.py", ("{file}",), file_kind="survey",

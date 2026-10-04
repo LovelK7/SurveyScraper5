@@ -47,8 +47,22 @@ registry) as a review CSV. It never writes to SB.
 
 ```powershell
 cavedossier osz prefill 1220     # SB + finders + excerpt -> SB_1220_OSZ.docx
+cavedossier osz izmjera 1220     # 3N KORAK 4: the nacrt's numbers into the EXISTING OSZ
 cavedossier osz backfill 1220    # filled zapisnik -> dopune-sb-iz-osz.csv
 ```
+
+**Izmjera** — 3N's KORAK 4 (user, 2026-10-04). Once KORAK 3b has produced
+`<ime>_dimenzije.json`, `osz izmjera <broj>` writes the measured cells — Duljina,
+Horizontalna duljina, Dubina, Visinska razlika, Broj / Širina / Visina-duljina
+ulaza — into the zapisnik already in the leaf. Nothing else is touched: no SB,
+no finders, no excerpt, no new document. Same precedence as the prefill (the
+measurement wins over a different recorded number, the same measurement keeps
+the recorder's text), the entrance reading follows the zapisnik's own *Vrsta
+objekta* ticks, nothing to change leaves the file alone, a document open in
+Word is refused, the old file survives as `…_stari_<datum>.docx`. A legacy
+zapisnik is not edited in place: run `osz prefill` first, which migrates it.
+The dashboard's 3N page carries it as KORAK 4; the Drive kit as
+`csurvey_4_upisi_osz.bat`.
 
 Prefill runs [4I-isjecak](../4I-isjecak/README.md) itself when the excerpt is
 missing or stale, so one command is enough to produce a field-ready zapisnik.

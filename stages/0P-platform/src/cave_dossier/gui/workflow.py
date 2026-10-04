@@ -105,7 +105,7 @@ def _number(text: str | None) -> float | None:
 
 
 def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
-          dims: dict | None = None) -> list[Step]:
+          dims: dict | None = None, izmjera: dict | None = None) -> list[Step]:
     """The cave's steps in working order, each with a status and its action."""
     files = detail.get("files", [])
     has_leaf = bool(detail.get("leaves"))
@@ -126,6 +126,14 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
              action="karta"))
 
     osz = _newest(files, "osz")
+    # KORAK 4 rewrote only the measured cells (its sidecar says when): for the
+    # compose steps the OSZ is as old as before it, else every KORAK 4 would
+    # make 3c stale and 3c would make 4 look needed again.
+    osz_for_compose = osz
+    if (osz and isinstance(izmjera, dict) and izmjera.get("osz_mtime_after")
+            and izmjera.get("osz_mtime_before")
+            and abs(osz["modified"] - float(izmjera["osz_mtime_after"])) <= 2):
+        osz_for_compose = dict(osz, modified=float(izmjera["osz_mtime_before"]))
     add(Step("osz-prefill", "auto", "OSZ pripremljen (SB + geo + karta)", "4O",
              "done" if osz else "todo",
              action="osz-prefill", files=_names(osz)))
@@ -189,12 +197,29 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
                  "" if fin else "Prvo KORAK 3a.", action="3n-k3b"))
 
     # ── spajanje ────────────────────────────────────────────────────
+    nacrt = _newest(files, "nacrt")
+    if not all(printed):
+        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N", "blocked",
+                 "Treba KORAK 3b.", action="3n-k3c", files=_names(nacrt)))
+    elif nacrt is None:
+        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N", "todo",
+                 "" if osz else "Bez OSZ-a sastavnica ostaje djelomična – složi ponovno kad ga popuniš.",
+                 action="3n-k3c"))
+    else:
+        moved = _older(nacrt, plan, profile, dimenzije, osz_for_compose)
+        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N",
+                 "stale" if moved else "done",
+                 ("Noviji: " + ", ".join(_names(*moved)) + " – složi ponovno") if moved else "",
+                 action="3n-k3c", files=_names(nacrt)))
+
+    # ── KORAK 4 after 3c: the compose reads the same numbers from the
+    # dimensions file, so it does not wait for the OSZ to carry them.
     if osz is None or dimenzije is None:
-        add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "blocked",
-                 "Treba OSZ i KORAK 3b (dimenzije).", action="osz-prefill"))
+        add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "blocked",
+                 "Treba OSZ (Pripremi OSZ) i KORAK 3b (dimenzije).", action="3n-k4"))
     elif osz_fields is None:
-        add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "unknown",
-                 osz_note, action="osz-prefill"))
+        add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "unknown",
+                 osz_note, action="3n-k4"))
     else:
         expected = list(MEASURED_OSZ_FIELDS)
         entrance = dims.get("entrance_size") if isinstance(dims, dict) else None
@@ -209,37 +234,22 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
         differs = (measured is not None and recorded is not None
                    and round(measured) != round(recorded))
         if empty:
-            add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "todo",
-                     "Ponovno pokreni Pripremi OSZ: upisuje izmjerene vrijednosti, "
-                     "popunjeni sadržaj ostaje.", action="osz-prefill"))
+            add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "todo",
+                     "Upisuje duljine, dubinu i ulaz iz nacrta u postojeći OSZ; "
+                     "sve ostalo u zapisniku ostaje.", action="3n-k4"))
         elif differs:
-            add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "stale",
+            add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "stale",
                      f"OSZ kaže {osz_fields.get('duljina')}, izmjera {dims.get('l')} m.",
-                     action="osz-prefill"))
+                     action="3n-k4"))
         else:
-            add(Step("osz-dims", "spajanje", "OSZ ← duljina, dubina i ulaz iz izmjere", "4O", "done"))
-
-    nacrt = _newest(files, "nacrt")
-    if not all(printed):
-        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N", "blocked",
-                 "Treba KORAK 3b.", action="3n-k3c", files=_names(nacrt)))
-    elif nacrt is None:
-        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N", "todo",
-                 "" if osz else "Bez OSZ-a sastavnica ostaje djelomična – složi ponovno kad ga popuniš.",
-                 action="3n-k3c"))
-    else:
-        moved = _older(nacrt, plan, profile, dimenzije, osz)
-        add(Step("3n-k3c", "spajanje", "KORAK 3c – Nacrt na sastavnici", "3N",
-                 "stale" if moved else "done",
-                 ("Noviji: " + ", ".join(_names(*moved)) + " – složi ponovno") if moved else "",
-                 action="3n-k3c", files=_names(nacrt)))
+            add(Step("3n-k4", "spajanje", "KORAK 4 – izmjera u OSZ", "3N", "done"))
 
     sastavnica = _newest(files, "sastavnica")
     if sastavnica is None:
         add(Step("sastavnica", "spajanje", "Sastavnica za Illustrator (ruta B)", "4S",
                  "optional", "Samo ako se nacrt crta u Illustratoru.", action="sastavnica"))
     else:
-        moved = _older(sastavnica, osz, dimenzije)
+        moved = _older(sastavnica, osz_for_compose, dimenzije)
         add(Step("sastavnica", "spajanje", "Sastavnica za Illustrator (ruta B)", "4S",
                  "stale" if moved else "done",
                  ("Noviji: " + ", ".join(_names(*moved))) if moved else "",
@@ -291,12 +301,25 @@ def read_dims(path: str | None) -> dict | None:
         return None
 
 
+def last_izmjera(broj) -> dict | None:
+    """KORAK 4's last sidecar for this cave (runs/osz/<broj>/izmjera.json), or None."""
+    if broj in (None, ""):
+        return None
+    try:
+        from cave_dossier.osz import izmjera as izmjera_mod
+
+        return izmjera_mod.last_write(int(broj))
+    except Exception:  # noqa: BLE001 — lxml missing, odd broj: the page still draws
+        return None
+
+
 def for_detail(detail: dict) -> dict:
     """The JSON the page draws: phases + steps, the OSZ read once."""
     osz = _newest(detail.get("files", []), "osz")
     fields, note = read_osz(osz["path"] if osz else None)
     dims_file = _newest(detail.get("files", []), "dimenzije")
-    steps = build(detail, fields, note, read_dims(dims_file["path"] if dims_file else None))
+    steps = build(detail, fields, note, read_dims(dims_file["path"] if dims_file else None),
+                  izmjera=last_izmjera(detail.get("broj")))
     return {
         "phases": [{"id": key, "label": label} for key, label in PHASES],
         "steps": [asdict(step) for step in steps],

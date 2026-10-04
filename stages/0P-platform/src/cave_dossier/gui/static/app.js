@@ -318,7 +318,7 @@ function renderNav() {
     const open = S.tab === s.label || children.some(c => c.label === S.tab) || (s.label === "3N" && S.tab === "map3n");
     if (!open) continue;
     if (s.label === "3N") kids.push(item("map3n", "3N", "Mapiranje simbola", null, true));
-    for (const c of children) kids.push(item(c.label, c.label, c.title, c.status, true));
+    for (const c of children) kids.push(item(c.label, s.label, c.title, null, true));   // drawn like Mapiranje: indented, the parent's chip
   }
   kids.push(h("div", { class: "nav-group" }, "Dokumentacija"));
   const docItem = (path, title) => h("button", {

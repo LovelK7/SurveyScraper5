@@ -348,7 +348,7 @@ def test_workflow_survey_change_makes_downstream_stale():
     detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
     osz = {"opis": "Ulaz je…", "duljina": "18", "dubina": "5"}
     states = _states(workflow.build(detail, osz, dims={"l": 18}))
-    assert states["3n-k3c"] == "done" and states["osz-dims"] == "done"
+    assert states["3n-k3c"] == "done" and states["3n-k4"] == "done"
     # The sketch is corrected again after finishing: 3a and everything after it moves.
     files[2] = _f("lt", "a_pp_lt.csx", 450)
     states = _states(workflow.build(detail, osz, dims={"l": 18}))
@@ -364,9 +364,9 @@ def test_workflow_osz_waits_for_measured_lengths():
     files = [_f("osz", "SB_1220_OSZ.docx", 50), _f("dimenzije", "a_dimenzije.json", 60)]
     detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
     states = _states(workflow.build(detail, {"opis": "x"}, dims={"l": 18}))
-    assert states["osz-dims"] == "todo"
+    assert states["3n-k4"] == "todo"
     states = _states(workflow.build(detail, {"opis": "x", "duljina": "40", "dubina": "5"}, dims={"l": 18}))
-    assert states["osz-dims"] == "stale"  # the OSZ disagrees with the survey
+    assert states["3n-k4"] == "stale"  # the OSZ disagrees with the survey
     assert _states(workflow.build(detail, None, "nečitljiv"))["osz-filled"] == "unknown"
 
 
@@ -378,14 +378,14 @@ def test_workflow_osz_waits_for_the_entrance_cells_too():
     lengths = {"opis": "x", "duljina": "18", "dubina": "5"}
     witnessed = {"l": 18, "entrance_size": {"witnessed": True, "count": 1}}
     # lengths in, entrance cells empty -> run the prefill again
-    assert _states(workflow.build(detail, lengths, dims=witnessed))["osz-dims"] == "todo"
+    assert _states(workflow.build(detail, lengths, dims=witnessed))["3n-k4"] == "todo"
     filled = dict(lengths, broj_ulaza="1", sirina_ulaza="0,6", visina_duljina_ulaza="1,4")
-    assert _states(workflow.build(detail, filled, dims=witnessed))["osz-dims"] == "done"
+    assert _states(workflow.build(detail, filled, dims=witnessed))["3n-k4"] == "done"
     # an unmarked entrance never fills the size cells: lengths alone are done
     unmarked = {"l": 18, "entrance_size": {"witnessed": False, "count": None}}
-    assert _states(workflow.build(detail, lengths, dims=unmarked))["osz-dims"] == "done"
+    assert _states(workflow.build(detail, lengths, dims=unmarked))["3n-k4"] == "done"
     # a dimensions file from before project 0005 (no block) behaves as before
-    assert _states(workflow.build(detail, lengths, dims={"l": 18}))["osz-dims"] == "done"
+    assert _states(workflow.build(detail, lengths, dims={"l": 18}))["3n-k4"] == "done"
 
 
 # ── queue, karta, docs (2026-10-02, round 3) ────────────────────────
@@ -584,3 +584,21 @@ def test_catalog_nests_the_sastavnica_under_the_nacrt():
     stages = {s["label"]: s for s in catalog.catalog_json()["stages"]}
     assert stages["4S"]["parent"] == "3N"
     assert stages["3N"]["parent"] == "" and stages["4O"]["parent"] == ""
+
+def test_workflow_korak4_touching_the_osz_does_not_stale_3c():
+    """KORAK 4 rewrote the measured cells after the nacrt was composed: with its
+    sidecar the OSZ counts as old as before, so 3c stays done; a later hand edit
+    (another mtime) still makes 3c stale."""
+    files = [_f("raw", "a.csx", 100), _f("pp", "a_pp.csx", 200), _f("lt", "a_pp_lt.csx", 300),
+             _f("fin", "a_pp_lt_fin.csx", 400), _f("plan", "a_plan.pdf", 500),
+             _f("profile", "a_profile.pdf", 500), _f("dimenzije", "a_dimenzije.json", 500),
+             _f("nacrt", "SB_1220_nacrt.pdf", 600), _f("osz", "SB_1220_OSZ.docx", 700)]
+    detail = {"leaves": [{}], "files": files, "karta": {"exists": True}}
+    osz = {"opis": "x", "duljina": "18", "dubina": "5"}
+    assert _states(workflow.build(detail, osz, dims={"l": 18}))["3n-k3c"] == "stale"
+    sidecar = {"osz_mtime_before": 50.0, "osz_mtime_after": 700.0}
+    states = _states(workflow.build(detail, osz, dims={"l": 18}, izmjera=sidecar))
+    assert states["3n-k3c"] == "done" and states["3n-k4"] == "done"
+    files[8] = _f("osz", "SB_1220_OSZ.docx", 900)        # edited by hand afterwards
+    assert _states(workflow.build(detail, osz, dims={"l": 18}, izmjera=sidecar))["3n-k3c"] == "stale"
+    assert workflow.last_izmjera(None) is None

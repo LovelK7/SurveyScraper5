@@ -74,6 +74,9 @@ PROD_COMMANDS = {
     # calls this launcher by name from the same Drive folder, so it must be
     # published there for the kit's third step to finish.
     "nacrt": ("nacrt",),
+    # 3N KORAK 4 (project 0005, 2026-10-04): the kit's csurvey_4_upisi_osz.bat
+    # calls this launcher by name from the same Drive folder.
+    "osz_izmjera": ("osz", "izmjera"),
 }
 
 # What the code bundle carries: everything the prod commands stand on at

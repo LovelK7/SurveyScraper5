@@ -1212,6 +1212,31 @@ def cmd_nacrt(settings: Settings, serial: int, offline: bool,
     return 0
 
 
+def cmd_osz_izmjera(settings: Settings, serial: int) -> int:
+    """3N KORAK 4: the survey's measurements into the cave's existing OSZ."""
+    from cave_dossier.osz import izmjera
+
+    try:
+        outcome = izmjera.run_izmjera(settings, serial)
+    except izmjera.IzmjeraError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    r = outcome.result
+    print(f"Redni broj {serial}: {r.osz}  ←  {r.dimensions}"
+          + (f"  (ulaz: {r.entrance_kind})" if r.entrance_kind else ""))
+    for key, value in r.written.items():
+        print(f"  {key:<22} {value}  [upisano]")
+    for key, value in r.kept.items():
+        print(f"  {key:<22} {value}  [ostaje]")
+    for note in r.notes:
+        print(f"  ! {note}")
+    print()
+    if r.written:
+        print(f"Upisano u: {outcome.osz_path}")
+    print(f"Run dir:   {outcome.sidecar_path.parent}")
+    return 0
+
+
 def cmd_osz_backfill(settings: Settings, serial: int, osz_path_arg: str | None,
                   osz_dir_arg: str | None) -> int:
     """Part 2.1b, the reverse of `osz prefill`: read a FILLED OSZ and
@@ -1811,6 +1836,17 @@ def build_parser() -> argparse.ArgumentParser:
              "and the georef.hr flow is skipped (an already-collected excerpt "
              "is still embedded)",
     )
+    osz_izmjera = osz_sub.add_parser(
+        "izmjera",
+        help="3N KORAK 4: write the survey's measurements (Duljina/Dubina/..., "
+             "Broj/Širina/Visina ulaza) from <ime>_dimenzije.json into the cave's "
+             "EXISTING OSZ in the intake leaf; nothing else is touched",
+    )
+    osz_izmjera.add_argument(
+        "redni_broj",
+        type=int,
+        help="SB Redni broj of the cave (the only input)",
+    )
     osz_backfill = osz_sub.add_parser(
         "backfill",
         help="The reverse of prefill: read a FILLED OSZ and propose the SB "
@@ -2035,6 +2071,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.osz_command == "prefill":
                 return cmd_osz_prefill(settings, args.redni_broj, args.debug,
                                        args.force_karta, args.offline)
+            if args.osz_command == "izmjera":
+                return cmd_osz_izmjera(settings, args.redni_broj)
             if args.osz_command == "backfill":
                 return cmd_osz_backfill(settings, args.redni_broj, args.osz_path, args.osz_dir)
         if args.command == "report":
