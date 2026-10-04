@@ -193,7 +193,9 @@ cavedossier photos check-flag              # staged photos vs SB's "Fotografija 
 # old copies-only behaviour; a skipped copy never costs its original), and nothing is
 # moved into !!Fotografije ulaza (that, and the
 # SB_<broj> → katastarski broj rename, is the later filing step). A JPEG that is
-# already small enough is copied verbatim rather than re-encoded, and images
+# already small enough (within the budget and ≤ 1.1 × the long edge, e.g. WhatsApp's
+# 2000 px) is copied verbatim rather than re-encoded, a resized JPEG never comes out
+# bigger than its source, and images
 # listed in `photos.ignore_filenames` (STATS.png) are skipped and reported.
 # It writes straight away — no --apply. An existing copy is skipped rather than
 # overwritten (use --overwrite to re-cut).

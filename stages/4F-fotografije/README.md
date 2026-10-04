@@ -25,7 +25,10 @@ the original is deleted once its own copy is written, so the leaf holds only the
 archive-ready photos; Google Drive's trash keeps the original for 30 days. A copy
 that already existed and was skipped never costs its original. `--keep-originals`
 (a checkbox on the dashboard) keeps the originals beside the copies, as every run
-did before. Each run also checks
+did before. Because the result replaces the original, it never comes out bigger:
+a JPEG within the size budget and at most 10 % over the long edge (WhatsApp's
+2000 px against 1920) is kept byte for byte, and a resized JPEG takes its source's
+size as a ceiling on the quality ladder. Each run also checks
 the queue and prints the `pull-staged` command when this cave still has photos
 waiting there — the leak that otherwise leaves old photos queued forever.
 

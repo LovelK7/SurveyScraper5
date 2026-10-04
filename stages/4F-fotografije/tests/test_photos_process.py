@@ -524,3 +524,36 @@ def test_a_skipped_copy_never_costs_its_original(drive_settings: Settings, leaf:
 
     assert [o.status for o in outcomes] == ["exists", "written"]
     assert job.plans[0].source.exists() and not job.plans[1].source.exists()
+
+
+def test_a_jpeg_just_over_the_pixel_target_is_kept_as_it_is(leaf: Path) -> None:
+    """SB 1328 (2026-10-04): WhatsApp's 2000 px photos grew ~60 % when cut to
+    1920 px. Within LONG_EDGE_TOLERANCE and the budget, the bytes stay."""
+    source = _write_photo(leaf / "WhatsApp Image.jpeg", (2000, 1500))
+    plan = process_mod.PhotoPlan(source=source, target=leaf / "kept.jpg")
+
+    outcome = process_mod.process_photo(plan, long_edge_px=1920, max_bytes=50_000_000)
+
+    assert outcome.target_px == (2000, 1500)
+    assert plan.target.read_bytes() == source.read_bytes()
+
+
+def test_a_resized_jpeg_never_comes_out_bigger_than_its_source(leaf: Path) -> None:
+    source = _write_photo(leaf / "camera.jpg", (2400, 1800))
+    plan = process_mod.PhotoPlan(source=source, target=leaf / "smaller.jpg")
+
+    outcome = process_mod.process_photo(plan, long_edge_px=1920, max_bytes=50_000_000)
+
+    assert outcome.target_px == (1920, 1440)
+    assert outcome.target_bytes <= outcome.source_bytes
+
+
+def test_a_decompression_bomb_is_an_error_line_not_a_crash(leaf: Path, monkeypatch) -> None:
+    source = _write_photo(leaf / "panorama.jpg", (400, 300))
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 1000)   # 120 000 px > 2 × limit
+    plan = process_mod.PhotoPlan(source=source, target=leaf / "pano_out.jpg")
+
+    outcome = process_mod.process_photo(plan, long_edge_px=1920, max_bytes=1_500_000)
+
+    assert outcome.status == "error" and "179 MP" in outcome.detail
+    assert source.exists()

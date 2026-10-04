@@ -55,6 +55,7 @@ keeps the chronology.
 - [4O OSZ provjera: the obligatory fields, before 3N (2026-10-04)](#4o-osz-provjera-the-obligatory-fields-before-3n-2026-10-04)
 - [3N KORAK 4 overwrites the OSZ in place (2026-10-04)](#3n-korak-4-overwrites-the-osz-in-place-2026-10-04)
 - [4F: the processed photo replaces the original (2026-10-04)](#4f-the-processed-photo-replaces-the-original-2026-10-04)
+- [4F: a processed photo is never bigger than its original (2026-10-04)](#4f-a-processed-photo-is-never-bigger-than-its-original-2026-10-04)
 - [Registar udruga: CroSpeleo is the ground truth (2026-10-04)](#registar-udruga-crospeleo-is-the-ground-truth-2026-10-04)
 
 ---
@@ -1731,4 +1732,26 @@ unsettled.
 - **`--keep-originals`** (a dashboard checkbox) is the old copies-only behaviour.
 - The dashboard's *Fotografije ulaza* step is unaffected: processed files present
   means done, with or without the originals.
+
+## 4F: a processed photo is never bigger than its original (2026-10-04)
+
+**Found on SB 1328:** WhatsApp's 2000 × 1500 photos were cut to 1920 px and
+re-encoded at quality 92, and every one grew by about 60 % (0.53 → 0.84 MB). That
+was harmless while the originals stayed. Now that the result replaces the original,
+it is a loss in both size and quality.
+
+- **`LONG_EDGE_TOLERANCE = 1.10`.** A JPEG within the size budget whose long edge is
+  at most 10 % over the target is kept byte for byte. A 4 % downscale is invisible,
+  and the re-encode is not free. A 2400 px or 4128 px camera photo is still resized.
+- **A JPEG source's own size is a ceiling on the quality ladder.** The resize steps
+  down until the file is no bigger than the source. If no rung gets there, the
+  highest quality within the budget is kept: not growing is a preference, the budget
+  is the rule.
+- **A >179 MP image is now an `error` line, not a crash.** Pillow's
+  `DecompressionBombError` is not an `OSError`, and a live sweep of the intake tree
+  hit one. Like every failed file, it keeps its original.
+
+Validated without writing to the leaf (outputs went to a scratch folder): SB 1328's
+five photos now come out byte-identical, and real camera photos in the intake tree
+shrink as before (4128 px 3.14 MB → 1920 px 0.63 MB).
 

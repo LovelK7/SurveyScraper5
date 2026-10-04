@@ -64,6 +64,13 @@ OUTPUT_SUFFIX = ".jpg"
 #: Sources that can be copied byte-for-byte when nothing needs doing to them.
 _JPEG_SUFFIXES = {".jpg", ".jpeg"}
 
+#: A JPEG this close to the long-edge target (and within the size budget) is
+#: kept as it is: resizing 2000 px to 1920 px is invisible, but the re-encode
+#: GREW every photo of SB 1328 by ~60 % (0.53 → 0.84 MB, 2026-10-04) — and the
+#: processed file now replaces the original. 1.10 lets WhatsApp's 2000 px
+#: through and still shrinks a 2400 px or a 4000 px camera photo.
+LONG_EDGE_TOLERANCE = 1.10
+
 #: Formats Pillow opens without an extra plugin. `.heic` needs `pillow-heif`,
 #: which is not a dependency — such a file is reported, never silently dropped.
 _UNSUPPORTED_SUFFIXES = {".heic", ".heif"}
@@ -487,7 +494,17 @@ def process_photo(
                 resized = resized.convert("RGB")
             target_px = resized.size
             exif = resized.info.get("exif") or image.info.get("exif")
-            _save_within_budget(resized, plan.target, max_bytes, exif)
+            # A JPEG source is never replaced by a BIGGER JPEG: its own size is
+            # the ceiling too (a re-encode cannot add detail the source lost).
+            ceiling = (min(max_bytes, source_bytes)
+                       if plan.source.suffix.lower() in _JPEG_SUFFIXES and source_bytes
+                       else max_bytes)
+            _save_within_budget(resized, plan.target, max_bytes, exif, ceiling=ceiling)
+    except Image.DecompressionBombError:
+        # Pillow refuses >179 MP (a stitched panorama or a scan, not an
+        # entrance photo) — a note for that file, never a crash of the run.
+        return ProcessedPhoto(plan, "error", "prevelika slika (>179 MP) – obradi ručno",
+                              source_bytes)
     except OSError as exc:
         return ProcessedPhoto(plan, "error", str(exc), source_bytes)
 
@@ -511,12 +528,13 @@ def _nothing_to_do(
 ) -> bool:
     """Is this source already exactly what the copy should be?
 
-    A JPEG within the long-edge target and within the size budget needs no
-    work: every re-encode is generational loss, and gains nothing.
+    A JPEG within the long-edge target (give or take ``LONG_EDGE_TOLERANCE``)
+    and within the size budget needs no work: every re-encode is generational
+    loss, and gains nothing.
     """
     return (
         source.suffix.lower() in _JPEG_SUFFIXES
-        and max(source_px) <= long_edge_px
+        and max(source_px) <= long_edge_px * LONG_EDGE_TOLERANCE
         and source_bytes is not None
         and source_bytes <= max_bytes
     )
@@ -535,19 +553,31 @@ def _fit_long_edge(image, long_edge_px: int):
     return image.resize(size, Image.LANCZOS)
 
 
-def _save_within_budget(image, target: Path, max_bytes: int, exif: bytes | None) -> None:
-    """Save descending the quality ladder until the file fits the budget.
+def _save_within_budget(image, target: Path, max_bytes: int, exif: bytes | None,
+                        ceiling: int | None = None) -> None:
+    """Save descending the quality ladder until the file fits ``ceiling``
+    (the budget, or the JPEG source's own size when that is smaller).
 
-    The last rung is kept even when it still misses: an oversized honest copy
-    is a visible fact the gate already warns about
+    When no rung reaches a source-size ceiling, the highest quality that fits
+    the budget is kept: not growing is a preference, the budget is the rule.
+    The last rung is kept even when it misses the budget too: an oversized
+    honest copy is a visible fact the gate already warns about
     (`gating.MAX_ENTRANCE_PHOTO_BYTES`), whereas a mushy one is a silent loss.
     """
+    ceiling = max_bytes if ceiling is None else min(ceiling, max_bytes)
     kwargs = {"exif": exif} if exif else {}
+    within_budget = None
     for quality in _QUALITY_LADDER:
         image.save(target, "JPEG", quality=quality, optimize=True,
                    progressive=True, **kwargs)
-        if target.stat().st_size <= max_bytes:
+        size = target.stat().st_size
+        if size <= ceiling:
             return
+        if within_budget is None and size <= max_bytes:
+            within_budget = quality
+    if within_budget is not None and within_budget != _QUALITY_LADDER[-1]:
+        image.save(target, "JPEG", quality=within_budget, optimize=True,
+                   progressive=True, **kwargs)
 
 
 def process_job(
