@@ -56,7 +56,7 @@ stages:
     was: "(unlabelled)"
     status: operational
     modules: [core, cli, gui]
-    commands: [gui]
+    commands: [gui, societies]
 
   - id: teren
     label: "1T"

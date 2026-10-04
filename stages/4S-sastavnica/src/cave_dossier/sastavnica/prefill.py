@@ -34,7 +34,12 @@ from cave_dossier import georef
 from cave_dossier.core.config import Settings
 from cave_dossier.core.paths import workspace
 from cave_dossier.core.normalization import normalize_lookup_key, parse_optional_float
-from cave_dossier.core.people import society_shorthand, split_authors
+from cave_dossier.core.people import split_authors
+from cave_dossier.core.societies import (
+    fit_societies,
+    recognised_count,
+    society_ladder,
+)
 from cave_dossier.core.person_aliases import to_sb_shorthand
 from cave_dossier.geo import elevation as elevation_mod
 from cave_dossier.geo import locality as locality_mod
@@ -261,10 +266,11 @@ def _resolve_fields(settings: Settings, cave: CaveRow, result: SastavnicaResult,
         (_people(osz.get("nacrt_uredio")), "osz"),
     ])
     # Istražili: whatever the OSZ names, else this society (user, 2026-09-19).
+    face = _measuring_font(font_path)
     _set_first(fields, "istrazili", [
         (_societies(_join(osz.get("istrazile_udruge"),
-                          osz.get("istrazile_udruge_2"))), "osz"),
-        (_societies(settings.sastavnica_society), "default"),
+                          osz.get("istrazile_udruge_2")), face), "osz"),
+        (_societies(settings.sastavnica_society, face), "default"),
     ])
     _set_first(fields, "datum", [
         (osz.get("datum_istrazivanja"), "osz"),
@@ -702,25 +708,33 @@ def _strict_float(text: str) -> float | None:
 _SHORTHAND_SPACING = re.compile(r"(?<=\.)(?=[^\W\d_])", re.UNICODE)
 
 
-def _societies(raw: str | None) -> str | None:
-    """The Istražili cell: one society written out, several abbreviated.
+def _societies(raw: str | None, font=None) -> str | None:
+    """The Istražili cell: as written when it fits, shorter forms when not.
 
-    The cell is 55 pt wide and holds ``SU Estavela`` comfortably; a second
-    society written out does not fit at any readable size, and the abbreviation
-    (``SUE``, ``SOV``) is the form a caver writes anyway (user, 2026-09-20).
-    Abbreviating a lone society would only make the common case harder to read,
-    so the short form is used **only when two or more** entries are recognisable
-    societies. Anything the rule does not recognise is left exactly as written —
-    including the ``, <Grad>`` tail of a canonical name, which is why a single
-    canonical does not trip the count.
+    The cell is ~76 pt wide at an authored 9 pt. The candidates come from the
+    registar udruga (``core/societies.py``), longest first: as written → each
+    society's working name → each society's short form (``SKOL, SO Sv. Jakov
+    Bitelić`` → ``SKOL, SS Sv. JB``, SB 1328, user 2026-10-04). The first that
+    fits **at the authored size** wins — two societies written out at 7 pt
+    were already judged too small (user, 2026-09-20), and the short form is
+    what a caver writes anyway. If none does, the shortest is used and the
+    renderer shrinks it.
+
+    Without a font to measure with, the 2026-09-20 rule stands: a lone society
+    stays as written, a list of two or more goes to its short forms.
     """
     if not raw:
         return None
-    parts = [part.strip() for part in raw.split(",") if part.strip()]
-    shorthands = [society_shorthand(part) for part in parts]
-    if sum(1 for short in shorthands if short) < 2:
-        return raw
-    return ", ".join(short or part for short, part in zip(shorthands, parts))
+    if font is None:
+        ladder = society_ladder(raw)
+        return ladder[-1] if recognised_count(raw) >= 2 else raw
+    cell = addresses.V2["istrazili"]
+
+    def fits(text: str) -> bool:
+        size, _width, overflowed = render_mod.fit_size(font, text, cell)
+        return not overflowed and size >= cell.size
+
+    return fit_societies(raw, fits)
 
 
 def _people(raw: str | None, exclude: list[str] | None = None) -> str | None:

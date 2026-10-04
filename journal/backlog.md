@@ -418,3 +418,10 @@ when an idea's time comes. Nothing here is a commitment.
   end of `osz prefill` as well.
 - 2026-10-04 — `osz/provjera.py` REQUIREMENTS mirrors the OSZ-sourced rules of `dossier/gating.py` by
   hand; once 5D reads the OSZ through `osz/reader.py`, derive one from the other so they cannot drift.
+- 2026-10-04 — registar udruga: use it beyond 4S Istražili — `osz prefill`/`osz provjera` could flag an
+  Istražile udruge entry that resolves only through a *wrong* alias (SB 1328's "SO Sv. Jakov Bitelić" for a
+  Speleo sekcija) and suggest the CroSpeleo canonical; 2B's Liburnija `OWN_SOCIETY` prefix test could go through `find`.
+- 2026-10-04 — registar udruga: confirm the short forms the HPS rule could not settle (SO Kamenar, SO Sv. Mihovil,
+  SOŽ Gospić, SD Veles, SK Had …) and whether HPS "Speleo 8" (Karlovac, code 080) is CroSpeleo's "Osmica" društvo.
+- 2026-10-04 — registar udruga: a dashboard page (0P) to look a society up and edit `societies.json` without a text editor.
+- 2026-10-04 — `ARCHITECTURE.md` bridge catalog has two rows labelled **B12** (`osz backfill` and `people list/check`) — renumber one.

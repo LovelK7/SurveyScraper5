@@ -103,8 +103,13 @@ the machine, with system fallbacks after it. A `STAMP` in the PDF metadata
 marks files this tool produced, so an edited one is refused rather than
 silently overwritten.
 
-**Istražili holds one society written out and several abbreviated** —
-`SU Estavela` alone, but `SUE, SOV` for two — the form a caver writes anyway.
+**Istražili is written out when it fits at the authored 9 pt, shortened when
+not**, through the [registar udruga](../0P-platform/README.md#registar-udruga--cavedossier-societies):
+as written → each society's working name → each society's short form, the
+first that fits. `SU Estavela` stays; `SU Estavela, SO Velebit` becomes `SUE,
+SOV`; SB 1328's `SKOL, SO Sv. Jakov Bitelić` becomes `SKOL, SS Sv. JB`. A
+society the registry lacks falls back to the `SO/SD/SK/SU + initial` rule.
+`cavedossier societies find "<text>"` shows the candidates.
 
 **No cell goes out empty**: what no source could fill carries `?`, or `/` for
 Broj pločice and Ekipa, where there may be nothing to record (a cave with no

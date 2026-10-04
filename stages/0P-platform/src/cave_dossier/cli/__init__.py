@@ -1350,6 +1350,109 @@ def cmd_osz_dopune(settings: Settings, serial: int, osz_path_arg: str | None,
     return EXIT_NOT_READY
 
 
+def cmd_societies_find(texts: list[str]) -> int:
+    """Resolve each written society; show its forms and the fit ladder."""
+    from cave_dossier.core import societies
+
+    registry = societies.registry()
+    raw = ", ".join(texts)
+    found_all = True
+    for part, society in registry.split(raw):
+        if society is None:
+            found_all = False
+            print(f"  ✗ {part}  — nije u registru")
+            continue
+        print(f"  ✓ {part}")
+        _print_society(society, indent="      ")
+    ladder = societies.society_ladder(raw, registry)
+    if len(ladder) > 1:
+        print("  Kraće, redom (Sastavnica uzima prvo što stane):")
+        for text in ladder:
+            print(f"      {text}")
+    return 0 if found_all else EXIT_NOT_READY
+
+
+def _print_society(society, indent: str) -> None:
+    print(f"{indent}naziv:     {society.name}"
+          + (f"  ({society.place})" if society.place else ""))
+    print(f"{indent}kratko:    {society.shortest}")
+    if society.canonical:
+        print(f"{indent}CroSpeleo: {society.canonical}  "
+              f"[{society.crospeleo_uses}× u izvozu]" if society.in_crospeleo
+              else f"{indent}CroSpeleo: {society.canonical}  [NIJE u izvozu]")
+    else:
+        print(f"{indent}CroSpeleo: —  (samo HPS popis)")
+    if society.aliases:
+        print(f"{indent}alias:     {', '.join(society.aliases)}")
+    if society.plaque:
+        print(f"{indent}pločice:   {', '.join(society.plaque)}")
+
+
+def cmd_societies_list(show_all: bool) -> int:
+    """The registry: curated societies, or every CroSpeleo organisation too."""
+    from cave_dossier.core import societies
+
+    registry = societies.registry()
+    curated = [s for s in registry.societies if s.curated]
+    print(f"Registar udruga: {len(registry.societies)} udruga "
+          f"({len(curated)} uređenih, {len(registry.societies) - len(curated)} "
+          f"samo iz CroSpeleo izvoza)")
+    shown = registry.societies if show_all else curated
+    for society in sorted(shown, key=lambda s: s.name.casefold()):
+        mark = "✓" if society.in_crospeleo else "·"
+        print(f"  {mark} {society.shortest:<14} {society.name:<28} "
+              f"{society.place or '':<16} {society.canonical or '(samo HPS)'}")
+    if not show_all:
+        print("  (--all za sve CroSpeleo organizacije)")
+    return 0
+
+
+def cmd_societies_check() -> int:
+    """Data audit of the two registry files."""
+    from cave_dossier.core import societies
+
+    registry = societies.registry()
+    problems = 0
+    for key, owners in registry.conflicts.items():
+        problems += 1
+        print(f"  ✗ ključ '{key}' traže: {', '.join(owners)}")
+    shorts: dict[str, list[str]] = {}
+    for society in registry.societies:
+        if society.short:
+            shorts.setdefault(society.short, []).append(society.name)
+    for short, names in shorts.items():
+        if len(names) > 1:
+            problems += 1
+            print(f"  ✗ kratko '{short}' dijele: {', '.join(names)}")
+    for society in registry.societies:
+        if society.curated and society.canonical and not society.in_crospeleo:
+            problems += 1
+            print(f"  ✗ {society.name}: canonical nije u CroSpeleo izvozu "
+                  f"— '{society.canonical}'")
+    hps_only = [s.name for s in registry.societies if s.curated and not s.canonical]
+    if hps_only:
+        print(f"  · samo HPS popis, CroSpeleo ih ne vodi: {', '.join(hps_only)}")
+    print("  ✓ registar je dosljedan" if not problems else f"  {problems} problema")
+    return 0 if not problems else EXIT_NOT_READY
+
+
+def cmd_societies_build(export: Path) -> int:
+    """Regenerate crospeleo_organizations.json from a CroSpeleo objects export."""
+    from cave_dossier.core import societies
+
+    if not export.exists():
+        print(f"Nema datoteke: {export}", file=sys.stderr)
+        return EXIT_NOT_READY
+    try:
+        payload = societies.build_from_export(export)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_NOT_READY
+    path = societies.write_crospeleo(payload)
+    print(f"{len(payload['organizations'])} CroSpeleo organizacija → {path}")
+    return cmd_societies_check()
+
+
 def cmd_people_list(settings: Settings) -> int:
     """The people registry, each person with their aliases and linked izjave."""
     from cave_dossier.people.registry import PersonRegistry
@@ -1922,6 +2025,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exact filled OSZ DOCX, skipping the dir search entirely",
     )
 
+    societies_cmd = subparsers.add_parser(
+        "societies",
+        help="Registar udruga — caving societies, their CroSpeleo names, aliases "
+             "and short forms",
+    )
+    societies_sub = societies_cmd.add_subparsers(dest="societies_command",
+                                                 required=True)
+    societies_find = societies_sub.add_parser(
+        "find",
+        help="Resolve a society (or a comma list): its forms and the shorter "
+             "renderings the Sastavnica would try",
+    )
+    societies_find.add_argument("text", nargs="+", help='e.g. "SKOL, SO Sv. Jakov Bitelić"')
+    societies_list = societies_sub.add_parser("list", help="The curated societies")
+    societies_list.add_argument("--all", action="store_true", dest="show_all",
+                                help="Every CroSpeleo organisation, not just the curated")
+    societies_sub.add_parser(
+        "check", help="Audit the registry: key conflicts, shared short forms, "
+                      "curated names CroSpeleo does not know")
+    societies_build = societies_sub.add_parser(
+        "build",
+        help="Regenerate the CroSpeleo ground truth from an objects export (xlsx)",
+    )
+    societies_build.add_argument("export", type=Path, help='"CroSpeleo - objekti.xlsx"')
+
     people = subparsers.add_parser(
         "people",
         help="Registar osoba — authors, their aliases, and their izjave",
@@ -2055,6 +2183,17 @@ def main(argv: list[str] | None = None) -> int:
         from cave_dossier.gui.server import serve
 
         return serve(port=args.port, open_browser=not args.no_browser)
+
+    if args.command == "societies":
+        # Registry data only — no settings, no SB, no Drive.
+        if args.societies_command == "find":
+            return cmd_societies_find(args.text)
+        if args.societies_command == "list":
+            return cmd_societies_list(args.show_all)
+        if args.societies_command == "check":
+            return cmd_societies_check()
+        if args.societies_command == "build":
+            return cmd_societies_build(args.export)
 
     try:
         settings = load_settings()

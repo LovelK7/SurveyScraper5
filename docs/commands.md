@@ -129,6 +129,15 @@ cavedossier sb audit-authors --limit 40    # author cells the splitter cannot re
 cavedossier sb unclassified                # rows in none of SB's views
 
 # ── Registar osoba — authors, aliases, izjave (part 2.1) ───────────────
+# ── Registar udruga (0P) — society names, aliases, short forms ───────
+cavedossier societies find "SKOL, SO Sv. Jakov Bitelić"   # each society: name, short, CroSpeleo canonical,
+                                           #   aliases; then the shorter renderings the Sastavnica tries
+cavedossier societies list [--all]         # curated societies (--all: every CroSpeleo organisation)
+cavedossier societies check                # registry audit; exit 0 = a problem to fix
+cavedossier societies build "C:\…\CroSpeleo - objekti.xlsx"
+                                           # regenerate core/crospeleo_organizations.json (the ground
+                                           #   truth) from a fresh CroSpeleo objects export, then check
+
 cavedossier people list                    # every registry person + aliases + linked izjave
 cavedossier people check                   # audit: people without an izjava · izjave whose
                                            #   signer is not in the registry · SB author names

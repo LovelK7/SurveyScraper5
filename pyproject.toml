@@ -116,6 +116,7 @@ packages = [
 # install prod actually uses, but set so a real wheel is never silently
 # missing the OSZ template or the georef selectors.
 [tool.setuptools.package-data]
+"cave_dossier.core"       = ["societies.json", "crospeleo_organizations.json"]
 "cave_dossier.georef"     = ["selectors.yaml"]
 "cave_dossier.gui"        = ["static/*"]
 "cave_dossier.osz"        = ["pristupi.yaml", "templates/*.docx"]

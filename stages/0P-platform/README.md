@@ -11,6 +11,7 @@
 | `core/normalization.py` | Diacritic folding, whitespace cleanup, optional-float parsing. Imported by 21 modules. |
 | `core/matching.py` | The weighted-evidence matcher: a free-form folder or filename → an SB row. |
 | `core/people.py`, `core/person_aliases.py` | Split an author cell into people; generate the abbreviation spellings (`L.Kukuljan` ↔ `Lovel Kukuljan`). |
+| `core/societies.py` (+ `societies.json`, `crospeleo_organizations.json`) | **Registar udruga** — every caving society, its CroSpeleo name, aliases and short form; resolve a written name, shorten a list to fit. `cavedossier societies`. See [Registar udruga](#registar-udruga--cavedossier-societies). |
 | `cli/` | The single `argparse` entry point. Every `cavedossier` subcommand is parsed and dispatched here; the work happens in the stage modules. |
 | `gui/` | The local dashboard, `cavedossier gui` — the current cave's workflow (done / next / stale), every stage's commands behind buttons, "open SB", photos, the dossier. A mockup of the future GUI that already runs things. See [The dashboard](#the-dashboard--cavedossier-gui). |
 
@@ -133,6 +134,36 @@ the gallery faster, and lxml (the `osz` extra) lets the workflow read the OSZ.
 Why it is built this way:
 [design decisions §The dashboard](../../docs/design-decisions.md#the-dashboard--cavedossier-gui-2026-09-24).
 
+## Registar udruga — `cavedossier societies`
+
+Society names turn up everywhere — the OSZ's *Istražile udruge*, the Nacrt's
+*Istražili*, SB, izjave — in every spelling from `Speleološka udruga
+"Estavela", Kastav` to `SUE`. The registry resolves any of them to one society
+and knows its short form for tight spaces.
+
+| File | What | Who edits it |
+|---|---|---|
+| [`crospeleo_organizations.json`](src/cave_dossier/core/crospeleo_organizations.json) | **Ground truth**: every organisation CroSpeleo credits, canonical name + how often. 226 from the March 2026 export. | Nobody — `societies build` regenerates it |
+| [`societies.json`](src/cave_dossier/core/societies.json) | Curated overlay, joined on the CroSpeleo canonical: working name (`SO HPD Mosor`), `short` (`SOM`), `aliases` (including wrong spellings OSZs really carry), HPS plaque codes. Seeded from crospeleo-automation's curated registry + the HPS plaque list. | By hand |
+
+A CroSpeleo organisation with no overlay entry still resolves: its working
+name is derived from the canonical (`Speleološko društvo "Pauk", Fužine` → `SD
+Pauk`). Lookup is exact on a diacritic/case/punctuation-folded key — never
+fuzzy.
+
+```powershell
+cavedossier societies find "SKOL, SO Sv. Jakov Bitelić"   # each society, its forms, the shorter renderings
+cavedossier societies list [--all]                        # curated societies (--all: every CroSpeleo one)
+cavedossier societies check                               # conflicts, shared short forms, canonicals CroSpeleo lacks
+cavedossier societies build "C:\…\CroSpeleo - objekti.xlsx"  # regenerate the ground truth from a fresh export
+```
+
+**Adding or fixing a society** — edit `societies.json`: put the exact
+CroSpeleo `canonical` (copy it from `societies list --all`), then `name`,
+`short`, `aliases`; run `societies check` and the tests. Used today by 4S's
+Istražili cell ([4S README](../4S-sastavnica/README.md)). Why it is built this
+way: [design decisions §Registar udruga](../../docs/design-decisions.md#registar-udruga-crospeleo-is-the-ground-truth-2026-10-04).
+
 ## Why this stage exists
 
 It is not a design preference — it is what the dependency graph says.
@@ -160,5 +191,5 @@ three different things and broke whenever the package moved:
 - Cross-cutting records: [`docs/PORTING.md`](docs/PORTING.md) (every file copied from
   `../crospeleo-automation`), [`docs/EXCEL_WORKBOOK_SAFETY.md`](docs/EXCEL_WORKBOOK_SAFETY.md)
   (why reads are openpyxl and writes are Excel COM only)
-- Tests: [`tests/test_gui.py`](tests/test_gui.py); the repo-root [`conftest.py`](../../conftest.py) and [`tests/fixtures/`](../../tests/fixtures/)
+- Tests: [`tests/test_gui.py`](tests/test_gui.py), [`tests/test_societies.py`](tests/test_societies.py); the repo-root [`conftest.py`](../../conftest.py) and [`tests/fixtures/`](../../tests/fixtures/)
 - Why: [`docs/design-decisions.md`](../../docs/design-decisions.md)

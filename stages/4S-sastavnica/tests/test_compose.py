@@ -671,6 +671,24 @@ def test_two_societies_fit_the_cell_once_abbreviated(font):
     assert short_size == pytest.approx(cell.size)
 
 
+@pytest.mark.parametrize("raw, expected", [
+    # SB 1328: SKOL is already short, the second society goes to its registry
+    # short form — and to its real name, a Speleo sekcija (user, 2026-10-04)
+    ("SKOL, SO Sv. Jakov Bitelić", "SKOL, SS Sv. JB"),
+    # what fits at the authored size is left alone
+    ("SU Estavela", "SU Estavela"),
+    ("SUE, SKOL", "SUE, SKOL"),
+    # a lone canonical that would shrink gets its working name, not its acronym
+    ('Speleološka udruga "Estavela", Kastav', "SU Estavela"),
+    ("SU Estavela, SO Velebit", "SUE, SOV"),
+])
+def test_the_istrazili_cell_shortens_only_what_does_not_fit(font, raw, expected):
+    face = pymupdf.Font(fontfile=str(font.path))
+    assert prefill._societies(raw, face) == expected
+    size, _w, overflowed = render_mod.fit_size(face, expected, addresses.V2["istrazili"])
+    assert not overflowed and size == pytest.approx(addresses.V2["istrazili"].size)
+
+
 # ── the embedded font Illustrator has to resolve ─────────────────────
 
 def test_the_inserted_font_carries_its_postscript_name(font):
