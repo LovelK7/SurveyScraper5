@@ -112,10 +112,10 @@ relative size. All glyphs come out the same size unless `csurvey:scale` says oth
 **Illustrator recipe (settled 2026-10-04).** The user's set is many symbols on **one artboard in one
 file**, so the workflow keeps it that way: no re-layout into artboards.
 
-1. **One group per symbol, not one layer per symbol.** All symbols can stay on a single layer
-   (e.g. `Simboli`). Select one symbol's shapes, press `Ctrl+G`, and in the *Layers* panel rename
+1. **One group per symbol, not one layer per symbol.** All signs can stay on a single layer
+   `Znakovi` (line units go on `Linije`, area tiles on `Plohe`; see below). Select one symbol's shapes, press `Ctrl+G`, and in the *Layers* panel rename
    the resulting `<Group>` (double-click its name) to its theme key, i.e. the cSurvey sign name as
-   the mapping page shows it (`water-flow`, `danger`, …). A symbol that is already one group only
+   the mapping page shows it (`waterflow`, `entrance`, …; the exact names are in §3.7). A symbol that is already one group only
    needs renaming. Anything not meant to be a symbol (labels, frames, notes) goes on a layer whose name starts
    with `_`, and that layer is skipped. (Putting a symbol on its own sublayer named the same way
    also works, because it exports the same `<g id>`; it's just more clicks.)
@@ -132,6 +132,70 @@ file**, so the workflow keeps it that way: no re-layout into artboards.
 Illustrator mangles some names in IDs (spaces become `_`, a duplicate gets `_1`, leading digits are
 escaped as `_x31_…`). T1 decodes these and rejects duplicates. Fallback with no tooling: drag each
 symbol into *Window › Asset Export*, name it, and export all as SVG (one file per asset).
+
+**Areas and lines (phase 2, recipe settled 2026-10-04): export the repeating unit, never the
+expanded result.** cSurvey builds fills and decorated lines itself from one small clipart, so the
+artwork is a *tile*, not a finished pattern:
+
+- **Area = one scatter tile.**
+  - The custom brush (`hatchtype=2`) scatters one clipart over the area, controlled by `clipartdensity`,
+    `clipartzoomfactor`, random or fixed angle, and random or fixed position.
+  - The stock tiles in `C:\csurvey64\Objects\Cliparts\Brushes\` are small clusters: `pebbles1.svg` has
+    5 shapes, `sand.svg` has 9 and `debrits1.svg` has 21.
+  - So for gravel or soil you export *one cluster of a few grains/stones*, not a filled rectangle and not
+    an Illustrator pattern swatch.
+  - Variety comes from cSurvey's random rotation and placement. There is one tile per brush, so you cannot mix variants.
+  - Pure line hatching (e.g. diagonal lines for clay) needs no artwork: `hatchtype=3` is cSurvey's
+    parametric pattern.
+- **Line = base stroke + one decoration unit.**
+  - The custom pen draws the continuous line itself (colour, width, dash pattern) and repeats a single
+    decoration clipart along it, controlled by spacing %, alignment (outer, centre or inner), scale and above/below.
+  - The stock units in `Objects\Cliparts\Pens\` are a single tick, triangle or arrow. `arrowdown.svg` is a
+    vertical line from y=0 to y=15 with the head at the bottom. So you export *one tick*, not the line.
+  - Illustrator *pattern brush*: drag its side tile out of the Brushes panel onto the artboard, outline it,
+    group it and name it. Corner/start/end tiles have no equivalent in cSurvey.
+  - Illustrator *art brush* (art stretched along the path): no equivalent. It cannot be reproduced.
+  - **Do not** apply a brush to a path and expand it. That freezes the decoration onto one specific
+    shape, and cSurvey needs it to follow every cave's own lines.
+  - Orientation convention (which way is "along the line" and which is "outward") is *unverified*. Derive it
+    from the stock `Pens/*.svg` plus a T0-style oracle before authoring many units.
+- **Kind by layer.** Sign, line and area names collide (`water`, `pebbles`, `sand`, `clay`, `ice` are
+  both signs and areas). So the Illustrator file gets three layers, **`Znakovi`**, **`Linije`** and
+  **`Plohe`**, and the splitter routes each group by its layer into `signs/`, `lines/` and `areas/`.
+
+**Tuning density, size and spacing: numbers, not artwork (verified in source 2026-10-04).** One
+tile or unit per kind. Everything about *how* it repeats is a parameter on the brush or pen, applied
+in three multiplying layers:
+
+1. **Per brush or pen** (stored in `theme.json`, written into the csx):
+   - brushes: `clipartdensity`, `clipartzoomfactor`, angle and position mode;
+   - pens: `decorationspacepercentage`, `decorationscale`, `width`, `decorationalignment`.
+2. **Per design property** (global multipliers):
+   - area cliparts: `cBrush.GetPaintZoomFactor` (`cBrush.vb:1671-1686`) multiplies both density and
+     zoom by `DesignSoilScaleFactor` (`:1809,1874`);
+   - pens: `DesignTerrainLevelScaleFactor` (`cPen.vb:824-832`);
+   - signs: `DesignSignScaleFactor`.
+3. **Per print scale:** `GetCurrentDesignPropertiesValue` (`cOptions.vb:1336-1338`) resolves a name as
+   design options → **the current scale rule** (`<scalerules><scalerule scale="…">`, `cScaleRules.vb:131,410`)
+   → the survey's design properties. So "pebbles smaller at 1:500" or "overhang ticks denser at
+   1:100" is one scale-rule entry, **not a second piece of artwork**. SB 1103 already carries
+   `scalerule` elements, cSurvey's defaults.
+
+Consequences:
+
+- **Never draw size or density variants.** One overhang unit and one pebble cluster serve every scale.
+- **Tune in cSurvey, then harvest** (T7, phase 2). Tuning by eye in a JSON file is blind, and the mapping
+  page's previews are not real cSurvey rendering. The loop is:
+  1. a tool generates a **sample sheet** `.csx`: one test area per theme area and one test line per theme
+     line, at a realistic size, with the theme already applied;
+  2. the user opens it in cSurvey and adjusts density, zoom and spacing in the brush and pen property
+     panels with a live preview, checks print preview at 1:100 / 1:200 / 1:500, and saves;
+  3. `theme_harvest.py` reads the tuned values back from the saved file into `theme.json`, including any
+     per-scale `scalerule` overrides.
+
+  The artwork stays in Illustrator; the numbers come from cSurvey.
+- Redraw the tile itself only when its *shape* is wrong. Examples: stones too uniform, or a cluster
+  with a visible edge when scattered. Density is never a reason to redraw.
 
 Relative size: because cSurvey normalises every glyph to a unit box, the splitter computes
 `csurvey:scale` from each group's size relative to a reference symbol. That way, sizes drawn in one
@@ -154,8 +218,8 @@ Sketch of `theme.json` (phase 1, signs only):
 ```json
 { "name": "Boja", "extends": null,
   "default_color": "#000000",
-  "signs": { "water-flow": {"svg": "signs/water-flow.svg", "color": "#1F6FD1"},
-             "danger":     {"svg": "signs/danger.svg",     "color": "#D12F1F"},
+  "signs": { "waterflow":  {"svg": "signs/waterflow.svg", "color": "#1F6FD1"},
+             "entrance":   {"svg": "signs/entrance.svg",   "color": "#D12F1F"},
              "stalagmite": {"svg": "signs/stalagmite.svg"} },
   "centerline": { "…": "…" } }
 ```
@@ -284,6 +348,161 @@ bumped, and a dry-run build lists the theme files.
 - *Agent:* run T1, write `themes/boja/theme.json` (colours agreed with the user) and
   `themes/crno-bijelo/theme.json`.
 - *Accept:* the user signs off on SB 1103 printed in both themes.
+
+**T7 — sample sheet + harvest (phase 2, lines and areas).**
+
+- `theme_sample.py <theme>` writes `uzorak_<theme>.csx`: one rectangle-ish area per theme area key,
+  one line per theme line key (straight and curved), labelled, on a dummy survey, with the theme applied.
+- `theme_harvest.py <saved.csx> <theme>` writes the tuned brush and pen parameters and any per-scale
+  `scalerule` design properties back into `theme.json`, and prints a diff.
+- *Accept:* sample → tune one value in cSurvey → harvest → regenerate gives the tuned look.
+
+### 3.7 Drawing checklist (the Illustrator to-do list)
+
+**How to read it.**
+
+- **Group name** is the exact name to give the group in Illustrator. It is the catalog's target id
+  (`tdx-mapping-catalog.json`), so it has no dashes: `waterflow`, not `water-flow`.
+- Tick **Nacrtati** only for what you will draw. Anything left unticked keeps cSurvey's own glyph,
+  recoloured by the theme.
+- **Stock** shows whether cSurvey's installed glyph is usable:
+  - ✅ usable;
+  - ❌ **X-box**: the install has no artwork, so this is drawn first;
+  - — not applicable.
+- **Reached from** lists the TopoDroid symbols that land on this target under the current shared mapping
+  (2026-10-04). `*` means it arrives by the same name, with no mapping entry. "—" means nothing reaches it
+  today: draw it only if you plan to map something to it.
+
+The list was generated from the catalog and `tdx-mapping.json` on 2026-10-04. If the mapping changes, the
+"Reached from" column can drift; the group names cannot.
+
+#### Znakovi (signs) — phase 1, layer `Znakovi`
+
+**Priority: the X-boxes.** These render as an error box today, so they come first:
+
+| Nacrtati | Group name | cSurvey label | Stock | Reached from |
+|---|---|---|---|---|
+| [ ] | `water` | Water | ❌ | water* |
+| [ ] | `sand` | Sand | ❌ | sand*, clay |
+| [ ] | `clay` | Clay | ❌ | flowstone, mud |
+| [ ] | `ice` | Ice | ❌ | ice* |
+| [ ] | `snow` | Snow | ❌ | snow* |
+| [ ] | `gradient` | Gradient | ❌ | gradient* |
+| [ ] | `archeomaterial` | ArcheoMaterial | ❌ | archeo-material* |
+| [ ] | `anchor` | Anchor | ❌ | — (TopoDroid `anchor` is mapped to the text label "f") |
+
+**Morphology and passage ends**
+
+| Nacrtati | Group name | cSurvey label | Stock | Reached from |
+|---|---|---|---|---|
+| [ ] | `entrance` | Entrance | ✅ | entrance* |
+| [ ] | `continuation` | Continuation | ✅ | continuation* |
+| [ ] | `narrowend` | NarrowEnd | ✅ | narrow-end* |
+| [ ] | `lowend` | LowEnd | ✅ | low-end* |
+| [ ] | `breakdownchoke` | BreakdownChoke | ✅ | breakdown-choke*, debris |
+| [ ] | `flowstonechoke` | FlowstoneChoke | ✅ | flowstone-choke* |
+| [ ] | `blocks` | Blocks | ✅ | blocks* |
+| [ ] | `pebbles` | Pebbles | ✅ | pebbles* |
+| [ ] | `anastomosis` | Anastomosis | ✅ | anastomosis* |
+| [ ] | `karren` | Karren | ✅ | karren* |
+| [ ] | `scallop` | Scallop | ✅ | scallop* |
+| [ ] | `flute` | Flute | ✅ | flute* |
+| [ ] | `dig` | Dig | ✅ | dig* |
+
+**Speleothems**
+
+| Nacrtati | Group name | cSurvey label | Stock | Reached from |
+|---|---|---|---|---|
+| [ ] | `stalactite` | Stalactite | ✅ | stalactite*, stalactites |
+| [ ] | `stalagmite` | Stalagmite | ✅ | stalagmite*, stalagmites |
+| [ ] | `pillar` | Pillar | ✅ | pillar* |
+| [ ] | `curtain` | Curtain | ✅ | curtain* |
+| [ ] | `sodastraw` | SodaStraw | ✅ | soda-straw* |
+| [ ] | `helictite` | Helictite | ✅ | helictite* |
+| [ ] | `flowstone` | FlowStone | ✅ | — (TopoDroid `flowstone` is mapped to `clay`) |
+| [ ] | `wallcalcite` | WallCalcite | ✅ | wall-calcite* |
+| [ ] | `moonmilk` | Moonmilk | ✅ | moonmilk* |
+| [ ] | `popcorn` | Popcorn | ✅ | popcorn* |
+| [ ] | `cavepearl` | CavePearl | ✅ | cave-pearl* |
+| [ ] | `disk` | Disk | ✅ | disk* |
+| [ ] | `aragonite` | Aragonite | ✅ | aragonite* |
+| [ ] | `crystal` | Crystal | ✅ | crystal* |
+| [ ] | `gypsum` | Gypsum | ✅ | gypsum* |
+| [ ] | `gypsumflower` | GypsumFlower | ✅ | gypsum-flower* |
+| [ ] | `raft` | Raft | ✅ | raft* |
+| [ ] | `raftcone` | RaftCone | ✅ | raft-cone* |
+| [ ] | `rimstonepool` | RimstonePool | ✅ | rimstone-pool* |
+| [ ] | `rimstonedam` | RimstoneDam | ✅ | rimstone-dam* |
+| [ ] | `claytree` | ClayTree | ✅ | clay-tree* |
+
+**Water and air**
+
+| Nacrtati | Group name | cSurvey label | Stock | Reached from |
+|---|---|---|---|---|
+| [ ] | `waterflow` | WaterFlow | ✅ | water-flow*, water-flow:intermittent |
+| [ ] | `waterflowpaleo` | WaterFlowPaleo | ✅ | — |
+| [ ] | `waterfall` | Waterfall | ✅ | — (TopoDroid `water-drip` goes to `waterflow` turned 180°) |
+| [ ] | `spring` | Spring | ✅ | spring* |
+| [ ] | `sink` | Sink | ✅ | sink* |
+| [ ] | `airdraught` | AirDraught | ✅ | air-draught* |
+
+**Organic, finds, people**
+
+| Nacrtati | Group name | cSurvey label | Stock | Reached from |
+|---|---|---|---|---|
+| [ ] | `guano` | Guano | ✅ | guano* |
+| [ ] | `root` | Root | ✅ | root* |
+| [ ] | `vegetabledebris` | VegetableDebris | ✅ | vegetable-debris*, tree-trunk |
+| [ ] | `paleomaterial` | PaleoMaterial | ✅ | paleo-material* |
+| [ ] | `camp` | Camp | ✅ | camp* |
+
+**Text labels today; a glyph needs a carrier sign (phase 2, §3.1).** These TopoDroid points
+currently become a text label, because cSurvey has no sign for them. Draw them now if you like, named
+by the TopoDroid name. They will only be used once each is mapped to a free carrier sign:
+
+| Nacrtati | Group name | Today | Note |
+|---|---|---|---|
+| [ ] | `danger` | label "!" | |
+| [ ] | `plus` | label "+" | |
+| [ ] | `minus` | label "-" | |
+| [ ] | `plus-minus` | label "+/-" | |
+| [ ] | `anchor` | label "f" | could use the `anchor` glyph above instead of a carrier, by mapping TopoDroid `anchor`→`anchor` |
+
+The backlog also names a further speleo-2 set without a proper cSurvey sign (29 points,
+`journal/backlog.md:389-390`). Its first-pass mapping is still to be drafted. Extend this table when
+that draft exists.
+
+#### Linije (line decoration units) — phase 2, layer `Linije`
+
+Draw **one repeating unit** per line (§2.4), not the line itself. Plain lines need no artwork; their
+look is width, dash and colour in `theme.json`.
+
+| Nacrtati | Group name | Unit needed? | Reached from |
+|---|---|---|---|
+| [ ] | `overhang` | yes | overhang*, chimney, abyss-entrance, pit-chimney |
+| [ ] | `pit` | yes | pit, floor-step |
+| [ ] | `chimney` | yes | ceiling-step |
+| [ ] | `slope` | yes | slope*, slope:shallow*, slope:sheer*, slope:steep* |
+| [ ] | `floor-meander` | yes | floor-meander* |
+| [ ] | `ceiling-meander` | yes | ceiling-meander* |
+| [ ] | `rock-border` | check the stock pen first | rock-border* |
+| [ ] | `water-flow` | check the stock pen first (arrows?) | water-flow:intermittent* |
+| — | `wall`, `wall:presumed`, `presumed`, `border`, `section` | no, plain line (style only) | wall + its subtypes, border + ~35 generic lines, … |
+
+#### Plohe (area scatter tiles) — phase 2, layer `Plohe`
+
+Draw **one small cluster** per area (§2.4).
+
+| Nacrtati | Group name | Stock | Reached from |
+|---|---|---|---|
+| [ ] | `pebbles` | ✅ `pebbles1.svg` (5 stones) | pebbles* |
+| [ ] | `debris` | ✅ `debrits1.svg` (21 pieces) | debris* |
+| [ ] | `sand` | ✅ `sand.svg` (9 grains) | sand*, sand-area* |
+| [ ] | `clay` | ⚠ drawn with the sand brush today, so this is the first area to draw | clay*, clay-area |
+| [ ] | `blocks` | ✅ | blocks* |
+| — | `water` | solid fill, no tile (a colour in `theme.json`) | water* |
+| [ ] | `ice` | ❌ no cSurvey area type; falls back to generic soil | needs a carrier area type (phase 2 question) |
+| [ ] | `snow` | ❌ no cSurvey area type; falls back to generic soil | needs a carrier area type (phase 2 question) |
 
 ## 4. Definition of done
 
