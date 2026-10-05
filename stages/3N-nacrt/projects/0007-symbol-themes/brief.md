@@ -169,6 +169,29 @@ artwork is a *tile*, not a finished pattern:
     - So **never pad the unit with invisible shapes** (e.g. a mirrored blank triangle to push the
       baseline down). The bbox is computed from all geometry, and a no-fill shape is still outlined by
       the pen, so it would print. Draw the triangle alone and use alignment Outer.
+  - **Double-line symbols** (two parallel rails with ticks; user sketch 2026-10-05):
+    - cSurvey has no double-line pen. The 18 built-in decorations (`DecorationStylesEnum`, `cPen.vb:1261`)
+      are ticks, triangles and arrows, and the base stroke always runs along the path centre
+      (`cPen.vb:1102-1103`).
+    - **Chosen build (user, 2026-10-05): centred.** A meander marks a narrow passage, so the
+      symbol must straddle the drawn line rather than sit beside it.
+      - The unit is **both rails plus the ticks**, alignment Center, `decorationspacepercentage` 0, so
+        the rail segments butt into continuous rails.
+      - The base stroke is **switched off natively**: pen `style` = None (`PenStylesEnum.None = 98`)
+        makes `pRender` set `oPen = Nothing` (`cPen.vb:865-867`), and the decoration is still drawn.
+        No transparent-colour hack is needed.
+      - The decoration then needs its own paint: `clipartpenmode` = Custom (`cPen.vb:917`) for the outline,
+        or its style None for fill-only artwork, which also removes the thin outline around filled
+        shapes, plus `clipartbrushmode` = Custom for the fill colour.
+    - Known artefacts, all *unverified* (to be checked on curved lines in the T7 sample sheet):
+      - both rails are chains of straight chords, so they kink at tight bends;
+      - the rails stop up to one unit short of the line's ends, because units are placed only where
+        they fit whole (`cClipartOnPath.vb:91-98`);
+      - possible gaps at vertices on non-spline lines.
+    - **Shorter units bend better.** Draw one rhythm period: one tick up, one tick down, as short as
+      the design allows.
+    - Rejected alternative: the base pen as one rail with the unit beside it (alignment Outer). It is
+      smoother, but it offsets the symbol by its width.
   - **Size variants of the same unit are one drawing.** The user's three triangle rows (abyss-entrance,
     overhang, slope:sheer) are one triangle with three `decorationscale` values. That needs keys finer
     than the cSurvey target (§3.1 addendum).
@@ -188,6 +211,9 @@ artwork is a *tile*, not a finished pattern:
 - **Kind by layer.** Sign, line and area names collide (`water`, `pebbles`, `sand`, `clay`, `ice` are
   both signs and areas). So the Illustrator file gets three layers, **`Znakovi`**, **`Linije`** and
   **`Plohe`**, and the splitter routes each group by its layer into `signs/`, `lines/` and `areas/`.
+  The user's file names the area layer **`Površine`**; the splitter accepts `Plohe` and `Površine` alike.
+  Because SVG ids must be unique, Illustrator suffixes a repeated name (`debris` sign + `debris` area →
+  `debris-2`). The splitter strips a trailing `-<n>` when the layer already fixes the kind.
 
 **Tuning density, size and spacing: numbers, not artwork (verified in source 2026-10-04).** One
 tile or unit per kind. Everything about *how* it repeats is a parameter on the brush or pen, applied
@@ -351,6 +377,9 @@ XML. This replaces guessing (§2.2) with ground truth.
   flattened to black/white, `xmlns:csurvey` + `csurvey:sign` (from the catalog's name→enum) + a relative
   `csurvey:scale`. Also a report: per symbol, what was fixed and what was rejected, plus any unknown keys
   (group ids that are not a cSurvey sign name) and catalog signs with no glyph.
+- *Real fixture:* `drawing_catalogue.svg` in this folder, the user's first export (2026-10-05, 28 groups),
+  reviewed in [findings/drawing-catalogue-review.md](findings/drawing-catalogue-review.md). It needs arc conversion,
+  ellipse conversion, stroke outlining, invisible-rect removal and translate baking.
 - *Accept:* every SVG in `C:\csurvey64\Objects\Cliparts\Signs` passes `check` unchanged. A hand-made
   test export (three groups: one with an ellipse, one with a gradient, one with a stroke-only path,
   plus a `_notes` layer) splits into exactly three files with the right fixes and reports. Stdlib only
