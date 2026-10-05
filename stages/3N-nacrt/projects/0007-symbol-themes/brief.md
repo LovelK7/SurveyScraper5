@@ -155,6 +155,32 @@ artwork is a *tile*, not a finished pattern:
   - Illustrator *pattern brush*: drag its side tile out of the Brushes panel onto the artboard, outline it,
     group it and name it. Corner/start/end tiles have no equivalent in cSurvey.
   - Illustrator *art brush* (art stretched along the path): no equivalent. It cannot be reproduced.
+  - **How units are placed** (`cClipartOnPath.vb`, compiled):
+    - The unit is drawn with the line running **horizontally** through it, rotated to follow the line.
+      Its geometry bbox width is along the line and its height is across it.
+    - Units are **centred** at steps of `pitch = width × (1 + space%/100)` (`pDrawClipart:122`; the
+      straight-segment variant `pDrawClipartOnLines:83` scales space% differently, so tune by eye in T7).
+      The default `decorationspacepercentage` is 100, i.e. a gap equal to the unit's width.
+    - Across the line, `decorationalignment` decides the placement (`pDrawRotatedClipart:160-167`):
+      - Outer: the unit's **bottom edge sits on the line**, so the unit is on one side;
+      - Center: the unit is centred on the line;
+      - Inner: the unit's top edge sits on the line, on the other side.
+    - `decorationdistancepercentage` pushes it further off, as a share of its height.
+    - So **never pad the unit with invisible shapes** (e.g. a mirrored blank triangle to push the
+      baseline down). The bbox is computed from all geometry, and a no-fill shape is still outlined by
+      the pen, so it would print. Draw the triangle alone and use alignment Outer.
+  - **Size variants of the same unit are one drawing.** The user's three triangle rows (abyss-entrance,
+    overhang, slope:sheer) are one triangle with three `decorationscale` values. That needs keys finer
+    than the cSurvey target (§3.1 addendum).
+  - **Dashes are a pen setting, never artwork.**
+    - `cPen` has `style` (`PenStylesEnum`, `cPen.vb:1241`: Solid, Dash, Dot, DashDot, DashDotDot, three
+      LargeDash variants, Custom) and, for Custom, `stylepattern`. This is the GDI+ dash pattern: alternating
+      dash and gap lengths in multiples of the pen width, saved via `PenStylePatternToString` (`cPen.vb:496-497`).
+    - The decoration's own outline has the same pair, `clipartpenstyle`/`clipartstylepattern`.
+    - So a dashed wall is `"style": "custom", "dash": [4, 2]` in `theme.json`.
+    - Do not draw dash + blank-rectangle units. A shape with no fill is still outlined by the pen, so a
+      "blank" rectangle would print as a box. Gaps between decoration units come from
+      `decorationspacepercentage`.
   - **Do not** apply a brush to a path and expand it. That freezes the decoration onto one specific
     shape, and cSurvey needs it to follow every cave's own lines.
   - Orientation convention (which way is "along the line" and which is "outward") is *unverified*. Derive it
@@ -237,6 +263,23 @@ import**. Ten post-import files in `example/` (`finishing/`, `csx_entrances/`) c
 without a cSurvey sign: to get its own glyph, such a symbol must be mapped to a **distinct carrier
 `SignEnum`** that is otherwise unused, and the theme then draws the club's glyph on it. Choosing those
 carriers is a mapping question for phase 2, not for this brief.
+
+**Addendum (2026-10-05): the TopoDroid name may be recoverable after all.** The user wants different
+looks for TopoDroid lines that share one cSurvey target: abyss-entrance and overhang both become
+`overhang`, and slope:sheer becomes `slope` like every slope subtype. A theme keyed only by target cannot
+tell them apart. Evidence for recovering the name by **matching geometry against the KORAK 1 output**
+(`…_pp.csx`, which still carries `tdxpp:`), from the symbol-zoo run
+`projects/0002-…/runs/2026-07-19-symbol-zoo/` (`step-03-zoo-v3.csx` → `step-04-after-import.csx`):
+
+- the import keeps the item count (155 → 155);
+- **every point item matches 1:1 by its exact coordinates** (121/121, no duplicate keys);
+- lines and areas do *not* match exactly, because the import re-encodes their point lists (control
+  points, the `BS<guid>` sequence markers). They need a tolerant match, e.g. on the sorted set of
+  anchor points or on bbox + point count. *Unverified.*
+
+If the spike (T8) works, keys become **TopoDroid name first, cSurvey target as the fallback**. That brings
+back per-subtype looks and gives the speleo-2 points their own glyphs without carrier signs. Until
+then, the target-name key stands, and §3.7 keeps target names for signs.
 
 ### 3.2 What `apply_theme` writes (post-import, idempotent)
 
@@ -503,6 +546,15 @@ Draw **one small cluster** per area (§2.4).
 | — | `water` | solid fill, no tile (a colour in `theme.json`) | water* |
 | [ ] | `ice` | ❌ no cSurvey area type; falls back to generic soil | needs a carrier area type (phase 2 question) |
 | [ ] | `snow` | ❌ no cSurvey area type; falls back to generic soil | needs a carrier area type (phase 2 question) |
+
+**T8 — spike: recover TopoDroid names after import.**
+
+- *Input:* the symbol-zoo pair above, plus one real cave's `_pp.csx` / `_lt.csx`.
+- *Output:* `tdx_name_recover.py` mapping each post-import item to its `tdxpp:` / TopoDroid name.
+  Points match by exact coordinates; lines and areas use a tolerant match.
+- *Accept:* 100 % of points and ≥ 95 % of lines and areas recovered on both files, with every
+  ambiguity reported, never guessed.
+- If it passes, switch the theme key to TopoDroid-first (§3.1 addendum) and add TopoDroid-name rows to §3.7.
 
 ## 4. Definition of done
 
