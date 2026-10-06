@@ -6,6 +6,5 @@
   "pit": "pit.svg",
   "slope": "slope.svg",
   "slope:sheer": "slope@sheer.svg",
-  "slope:steep": "slope@steep.svg",
-  "water-flow": "water-flow.svg"
+  "slope:steep": "slope@steep.svg"
 }

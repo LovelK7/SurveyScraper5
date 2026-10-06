@@ -195,3 +195,20 @@ Brief: [brief.md](brief.md)
 - **Evidence:** [runs/2026-10-07-mockup-r4/RUNLOG.md](runs/2026-10-07-mockup-r4/RUNLOG.md). `pytest stages/3N-nacrt`
   347 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
 - **Next:** the user judges r4; meander decision; T7.
+
+### 2026-10-07 — Round 5: tuning from the user's r4 review; area tiles redrawn (agent) ✅
+
+- **Did:** `theme.json` values plus a re-split, no code. boja: `ceiling-step` `distance_pct` 40 → 0 (ticks back on
+  the line), `spacing_pct` 3000 → 4500 ("T T T T", sparser than pit); `overhang` `spacing_pct` 3000 → 1700;
+  `slope:steep` = `slope:sheer` (its svg, scale 2, inner + flip, spacing 5000). Re-split the 21:37
+  `drawing_catalogue.svg` into `findings/t1-split/` and `themes/boja/`: all six area tiles changed (smaller, sparser),
+  colours the same; the `water-flow` line piece is gone from the drawing (unused anyway). Area densities to about the
+  new tile size: blocks 1.8 → 0.9, clay 0.6 → 0.45, debris 1.0 → 0.75, pebbles 0.75 → 0.6, stalagmite 0.7 → 0.6,
+  ice 0.6 kept — judged on four placement seeds. `test_themes`: unused svg is now `lines/slope@steep.svg`.
+- **Result:** on the full-resolution crops ceiling-step ticks sit on the line, 6 vs pit's 9 (straight); overhang ≈ 1.8×
+  the triangles, no overlap; steep prints identical to sheer; clay/debris/pebbles/ice/stalagmite even on all seeds.
+- **Odd:** blocks stays uneven on some seeds (large tile turned at random; denser only overlaps). `ice` and
+  `stalagmite` mockup items have no `<seed>`, so their placement changes on every load.
+- **Evidence:** [runs/2026-10-07-mockup-r5/RUNLOG.md](runs/2026-10-07-mockup-r5/RUNLOG.md). `pytest stages/3N-nacrt`
+  347 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
+- **Next:** the user judges r5 (blocks evenness, B/W blocks weight); meander decision; T7.

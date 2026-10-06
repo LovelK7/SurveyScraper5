@@ -1150,39 +1150,16 @@
       "warnings": []
     },
     {
-      "kind": "lines",
-      "key": "water-flow",
-      "id": "water-flow-2",
-      "file": "lines/water-flow.svg",
-      "bbox": [
-        28.053,
-        1.069
-      ],
-      "paths_out": 1,
-      "points_in": 4,
-      "fixed": {
-        "rect converted to path": 1,
-        "fills flattened": 1
-      },
-      "colours_flattened": [
-        "#42b4c0"
-      ],
-      "rejected": [],
-      "warnings": [
-        "id 'water-flow-2': uniqueness suffix -2 stripped (layer fixes the kind)"
-      ]
-    },
-    {
       "kind": "areas",
       "key": "pebbles",
       "id": "pebbles",
       "file": "areas/pebbles.svg",
       "bbox": [
-        11.972,
-        10.758
+        17.476,
+        15.288
       ],
       "paths_out": 41,
-      "points_in": 689,
+      "points_in": 704,
       "fixed": {
         "circle converted to path": 22,
         "fills flattened": 41,
@@ -1201,15 +1178,15 @@
       "id": "clay",
       "file": "areas/clay.svg",
       "bbox": [
-        7.698,
-        7.985
+        10.461,
+        12.334
       ],
-      "paths_out": 28,
-      "points_in": 412,
+      "paths_out": 30,
+      "points_in": 432,
       "fixed": {
         "invisible shapes dropped": 1,
-        "circle converted to path": 14,
-        "fills flattened": 28,
+        "circle converted to path": 16,
+        "fills flattened": 30,
         "transforms baked": 14,
         "arcs converted": 28
       },
@@ -1225,16 +1202,16 @@
       "id": "debris-2",
       "file": "areas/debris.svg",
       "bbox": [
-        46.958,
-        26.657
+        30.91,
+        17.547
       ],
       "paths_out": 30,
-      "points_in": 353,
+      "points_in": 351,
       "fixed": {
         "transforms baked": 24,
         "fills flattened": 30,
         "polygon converted to path": 4,
-        "arcs converted": 19,
+        "arcs converted": 18,
         "rect converted to path": 3,
         "invisible shapes dropped": 1
       },
@@ -1252,17 +1229,17 @@
       "id": "blocks-2",
       "file": "areas/blocks.svg",
       "bbox": [
-        43.234,
-        22.983
+        30.305,
+        16.1
       ],
-      "paths_out": 496,
-      "points_in": 275,
+      "paths_out": 489,
+      "points_in": 273,
       "fixed": {
         "polyline converted to path": 26,
         "strokes outlined": 54,
         "line converted to path": 12,
         "transforms baked": 16,
-        "arcs converted": 8
+        "arcs converted": 9
       },
       "colours_flattened": [
         "#616262",
@@ -1271,273 +1248,273 @@
       "strokes": [
         {
           "element": "polyline",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "polyline",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "polyline",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "polyline",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "polyline",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "polyline",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "line",
-          "stroke_width": 0.3,
-          "effective_width": 0.3
+          "stroke_width": 0.199,
+          "effective_width": 0.199
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "polyline",
-          "stroke_width": 0.5,
-          "effective_width": 0.5
+          "stroke_width": 0.332,
+          "effective_width": 0.332
         },
         {
           "element": "path",
-          "stroke_width": 0.2,
-          "effective_width": 0.2
+          "stroke_width": 0.133,
+          "effective_width": 0.133
         }
       ],
       "rejected": [],
@@ -1551,14 +1528,14 @@
       "id": "stalagmite",
       "file": "areas/stalagmite.svg",
       "bbox": [
-        12.292,
-        2.593
+        13.926,
+        10.512
       ],
-      "paths_out": 6,
-      "points_in": 24,
+      "paths_out": 11,
+      "points_in": 44,
       "fixed": {
-        "rect converted to path": 6,
-        "fills flattened": 6
+        "rect converted to path": 11,
+        "fills flattened": 11
       },
       "colours_flattened": [
         "#231f20"
@@ -1572,8 +1549,8 @@
       "id": "ice",
       "file": "areas/ice.svg",
       "bbox": [
-        11.01,
-        5.915
+        16.26,
+        8.731
       ],
       "paths_out": 4,
       "points_in": 72,
@@ -1648,7 +1625,7 @@
   ],
   "counts": {
     "signs": 13,
-    "lines": 9,
+    "lines": 8,
     "areas": 6
   }
 }

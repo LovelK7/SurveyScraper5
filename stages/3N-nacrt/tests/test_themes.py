@@ -234,7 +234,7 @@ def test_starter_themes_content():
     assert set(bw.signs) == set(boja.signs) and set(bw.areas) == set(boja.areas) | {"water"}
     assert all(s["color"] == BLACK for s in bw.lines.values())
     assert bw.centerline["PlotPenColor"] == BLACK
-    assert th.unused_svgs(boja) == ["lines/water-flow.svg"]     # read as a dash pattern
+    assert th.unused_svgs(boja) == ["lines/slope@steep.svg"]   # steep reuses the sheer unit (r5)
     assert bw.areas["water"]["pattern"]["angle"] == 45 and bw.areas["water"]["svg"] is None
     assert boja.signs["water-drip"]["svg"] == boja.signs["water-flow:intermittent"]["svg"]
 
