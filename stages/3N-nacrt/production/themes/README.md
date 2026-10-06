@@ -31,8 +31,8 @@ python tools/themes.py show ID [--kind signs|lines|areas|centerline|scale_rules]
 
 | Id | Name | What |
 |---|---|---|
-| `boja` | Boja | The user's drawing (`drawing_catalogue.svg`, split by `theme_svg.py`): 14 signs (`water-drip` reuses the `water-flow:intermittent` glyph), 10 lines (8 with a decoration unit, `water-flow` as a blue dash pen, the plain red `rope`), 6 area tiles. Colours are the artwork's own colours, one per piece |
-| `crno-bijelo` | Crno-bijelo | `boja` with every colour, the centerline and the station labels forced to black, plus `water` as cSurvey's own 45° line pattern (brief §3.8) |
+| `boja` | Boja | The user's drawing (`drawing_catalogue.svg`, split by `theme_svg.py`): 14 signs (`water-drip` reuses the `water-flow:intermittent` glyph), 10 lines (8 with a decoration unit, `water-flow` as a blue dash pen, the plain red `rope`), 6 area tiles, and `water` as cSurvey's own 45° line pattern in the water-flow blue `#24A9D1`. Colours are the artwork's own colours, one per piece |
+| `crno-bijelo` | Crno-bijelo | `boja` with every colour, the centerline and the station labels forced to black; `water` inherits boja's 45° line pattern, so it prints as black lines (brief §3.8) |
 
 ## Folder layout
 
@@ -74,7 +74,7 @@ parent's files.
 **Lines.** The base stroke is `color`, `width` (left out = keep the item's width) and `style`.
 `style` is `solid`, `dash`, `dot`, `dashdot`, `dashdotdot`, `custom` (requires `dash`) or `none`.
 `dash` is `[dash, gap, …]` in multiples of the pen width. `none` switches the base stroke off and
-draws only the decoration; this is the double-line meander. The decoration needs an `svg`, and
+draws only the decoration; this is the double-line meander, and `ceiling-step`'s row of ⊤ units (`lines/ceiling-step@T.svg`: the split tick with a bar along its foot, hand-built in r7 — a re-split does not touch it). The decoration needs an `svg`, and
 missing fields take cSurvey's defaults:
 
 | `decoration` field | Default | cSurvey attribute |
@@ -128,6 +128,7 @@ cSurvey's own arrows are drawn pointing left for that reason.
   pool entry `…_r270.svg`). Without `--pre`, signs 774/777 are assumed to have had it.
 - So `water-drip` (KORAK 1: → `water-flow`, orientation +180) points down in a real cave, and
   `water-flow:intermittent` (→ `waterflow`, no +90°) points up — with the same glyph and no `rotate`.
+- **Settled (user, r6):** arrows are drawn pointing up and the automatic −90° stays; no `rotate` in `boja`.
 - `rotate` stays for art drawn some other way. `csurvey:rotationangledelta` does **not** turn anything (no render
   path reads it, run r2).
 
@@ -197,5 +198,8 @@ print.
   `BaseMediumLinesScaleFactor` scale rule no longer reaches it; `BaseLineWidthScaleFactor` and
   `DesignTerrainLevelScaleFactor` still do (the latter also changes decoration spacing).
 - `monochrome` turns a `solid` area such as water into solid black, and leaves KORAK 2's light-blue
-  non-standard water alone if the theme does not list `water`; `crno-bijelo` overrides it with a pattern.
+  non-standard water alone if the theme does not list `water`. Both shipped themes list it as a line pattern
+  (blue in `boja`, black in `crno-bijelo` through `monochrome`; run r6).
+- **`vegetable-debris` prints its fills only** (settled, user r6): its 117 stroke-only hairlines do not print with
+  the pen off (`outline_pen` auto = off, reported by `theme_apply`); kept that way, no outline pen.
 - Numbers (density, zoom, spacing, scale) are cSurvey's defaults until T7 harvests tuned values.

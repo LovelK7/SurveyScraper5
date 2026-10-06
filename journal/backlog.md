@@ -425,3 +425,11 @@ when an idea's time comes. Nothing here is a commitment.
   SOŽ Gospić, SD Veles …).
 - 2026-10-04 — registar udruga: editing from the dashboard's Udruge page (today read-only; `societies.json` by hand).
 - 2026-10-04 — `ARCHITECTURE.md` bridge catalog has two rows labelled **B12** (`osz backfill` and `people list/check`) — renumber one.
+- 2026-10-07 — 3N import: cSurvey gallery SVGs declare the w3.org DTD and .NET fetches it during import → "(429) Too Many Requests" (seen in headless runs). Check whether operators hit it in the GUI; a KORAK 0 fix could disable DTD resolution or point the install at a DTD-stripped copy of the gallery.
+- 2026-10-07 — 3N themes: guard against item transparency on themed signs/meander (style-None pen + transparency crashes cSurvey, `cPen.vb:1018-1023`): warn in KORAK 2/3 or fall back to an invisible-colour pen.
+- 2026-10-07 — 3N themes: `preprocess_tdx_csx.py` built-in fallbacks/docstring still say debris→blocks and water-drip→waterfall while `tdx-mapping.json` says breakdownchoke / water-flow +180°.
+- 2026-10-07 — 3N themes: `blocks` area tile is large and rotates at random, so its scatter is uneven on some seeds; a smaller tile (few stones) or fixed angle.
+- 2026-10-07 — 3N themes: themed line pens write fixed widths, so per-scale `Base*LinesScaleFactor` rules no longer reach them; consider leaving width 0 where cSurvey's built-in width logic suffices.
+- 2026-10-07 — 3N themes: mockup `ice`/`stalagmite` items have no `<seed>`, so every print scatters differently; give the generator seeds.
+- 2026-10-07 — 3N themes: cSurvey's TopoDroid mapping sends `water-flow:intermittent` to `waterflow`; consider keeping its own name in `tdx-mapping.json` (the theme already handles it by TopoDroid name).
+

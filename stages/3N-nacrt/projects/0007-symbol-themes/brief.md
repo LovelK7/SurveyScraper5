@@ -1,7 +1,7 @@
 # Task brief: Symbol themes — custom SVG signs, pens and brushes, chosen per cave in Mapiranje simbola
 
 - **ID:** 0007-symbol-themes
-- **Status:** `proposal` — viable without a cSurvey build, as a post-import step in KORAK 2. Signs first; one colour per symbol. **T8 done 2026-10-06: TopoDroid names are recovered 100 % after import, so theme keys are TopoDroid-name first.** The user's drawing catalogue has been through three review passes and is ready as the T1 fixture. In progress: T1 (splitter, agent) and T0 (the user's oracle file).
+- **Status:** `validation` — signs, lines and areas are themed end to end on the mockup (`boja` + `crno-bijelo`), tuned with the user over rounds r1–r7 (2026-10-07). TopoDroid-name keys work (T8). Next: T4 (Tema dropdown), T5 (kit + KORAK 2 launcher), T9 (labels → glyphs). See "State at session end" in §3.6.
 - **Owner:** both
 - **Opened:** 2026-10-04 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [backlog/custom-sign-palette.md](../../backlog/custom-sign-palette.md) (the parked predecessor idea), [production/tdx-symbol-matrix.md](../../production/tdx-symbol-matrix.md), [reference/data-model-and-file-format.md](../../reference/data-model-and-file-format.md), [.claude/skills/csurvey-defaults/SKILL.md](../../../../.claude/skills/csurvey-defaults/SKILL.md)
@@ -663,6 +663,30 @@ Proposed per-piece B/W treatment (**awaiting the user's call**; to be judged on 
 never in JSON. T3 prints SB 1103 in both themes and T7 adds a synthetic sheet with every piece. The user
 then adjusts colours either in Illustrator (re-export → T1 picks the dominant colour again) or directly
 in `theme.json`.
+
+**T9 — labels → themed signs in the theme step (user decision 2026-10-07, option b).**
+
+- The shared mapping keeps `danger`, `plus`, `minus` and `plus-minus` as **text labels** (`!`, `+`, `-`,
+  `+/-`), so they are readable right away with no theme. `anchor` stays the label `f` and is never themed.
+- `theme_apply` converts such a label into a sign item carrying the theme glyph, but only when the active
+  theme has a glyph for it. Without a theme, the label stays.
+- The label's TopoDroid name is recovered by T8 (the `tdxpp:` marker / raw export name).
+- Undo restores the label.
+- *Accept:* on the mockup run through KORAK 1, the four print as club glyphs in `boja` and `crno-bijelo`,
+  and as labels with no theme.
+
+**State at session end (2026-10-07).**
+
+- Done: T0 (oracle), T1, T2, T3 (signs + lines + areas), T8, the mockup generator, and tuning rounds r1–r7
+  (`runs/`).
+- Next session: **T4** (the Tema dropdown on Mapiranje simbola), **T5** (themes in the kit + the theme step
+  in the KORAK 2 launcher, then `/publish`), **T9**, then T7 (tune in cSurvey + harvest) if more tuning is
+  wanted.
+- Known risks:
+  - the HTTP 429 DTD fetch on import (cSurvey gallery SVGs reference w3.org);
+  - a style-None pen plus item transparency crashes cSurvey;
+  - the meander rails break on curves (accepted);
+  - `blocks` scatter is uneven on some seeds.
 
 ## 4. Definition of done
 

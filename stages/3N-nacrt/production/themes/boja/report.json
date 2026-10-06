@@ -1156,15 +1156,15 @@
       "file": "areas/pebbles.svg",
       "bbox": [
         17.476,
-        15.288
+        15.571
       ],
-      "paths_out": 41,
-      "points_in": 704,
+      "paths_out": 30,
+      "points_in": 546,
       "fixed": {
-        "circle converted to path": 22,
-        "fills flattened": 41,
-        "transforms baked": 19,
-        "arcs converted": 70
+        "circle converted to path": 15,
+        "fills flattened": 30,
+        "transforms baked": 15,
+        "arcs converted": 62
       },
       "colours_flattened": [
         "#ad7e2f"
@@ -1178,17 +1178,16 @@
       "id": "clay",
       "file": "areas/clay.svg",
       "bbox": [
-        10.461,
-        12.334
+        9.33,
+        11.382
       ],
-      "paths_out": 30,
-      "points_in": 432,
+      "paths_out": 12,
+      "points_in": 165,
       "fixed": {
-        "invisible shapes dropped": 1,
-        "circle converted to path": 16,
-        "fills flattened": 30,
-        "transforms baked": 14,
-        "arcs converted": 28
+        "circle converted to path": 6,
+        "fills flattened": 12,
+        "transforms baked": 6,
+        "arcs converted": 12
       },
       "colours_flattened": [
         "#ac7e2e"
@@ -1202,16 +1201,16 @@
       "id": "debris-2",
       "file": "areas/debris.svg",
       "bbox": [
-        30.91,
-        17.547
+        49.673,
+        28.196
       ],
       "paths_out": 30,
-      "points_in": 351,
+      "points_in": 353,
       "fixed": {
         "transforms baked": 24,
         "fills flattened": 30,
         "polygon converted to path": 4,
-        "arcs converted": 18,
+        "arcs converted": 19,
         "rect converted to path": 3,
         "invisible shapes dropped": 1
       },
@@ -1229,8 +1228,8 @@
       "id": "blocks-2",
       "file": "areas/blocks.svg",
       "bbox": [
-        30.305,
-        16.1
+        57.338,
+        30.289
       ],
       "paths_out": 489,
       "points_in": 273,
@@ -1528,8 +1527,8 @@
       "id": "stalagmite",
       "file": "areas/stalagmite.svg",
       "bbox": [
-        13.926,
-        10.512
+        15.123,
+        10.366
       ],
       "paths_out": 11,
       "points_in": 44,
@@ -1549,8 +1548,8 @@
       "id": "ice",
       "file": "areas/ice.svg",
       "bbox": [
-        16.26,
-        8.731
+        19.463,
+        11.805
       ],
       "paths_out": 4,
       "points_in": 72,

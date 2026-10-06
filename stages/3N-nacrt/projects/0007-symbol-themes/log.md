@@ -212,3 +212,41 @@ Brief: [brief.md](brief.md)
 - **Evidence:** [runs/2026-10-07-mockup-r5/RUNLOG.md](runs/2026-10-07-mockup-r5/RUNLOG.md). `pytest stages/3N-nacrt`
   347 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
 - **Next:** the user judges r5 (blocks evenness, B/W blocks weight); meander decision; T7.
+
+### 2026-10-07 — Round 6: tuning from the user's r5 review; area tiles sparser (agent) ✅
+
+- **Did:** `theme.json` values plus a re-split, no code. boja: `ceiling-step` solid → custom dash [4, 2] (× width 3;
+  [10, 5] read as hooks), alignment auto (inner + flipped, pit's side) → `outer`, `flip` false (inverted T), spacing
+  4500 kept; new area `water` = 45° line pattern, density 0.33, `#24A9D1`. crno-bijelo: own `water` entry removed —
+  it inherits boja's pattern and `monochrome` blacks it. Re-split the 22:03 `drawing_catalogue.svg` into
+  `findings/t1-split/` and `themes/boja/`: all six area tiles changed (clay 30 → 12 shapes, pebbles 41 → 30, blocks
+  and debris spread over larger tiles). Densities relaxed toward cSurvey's own coverage, judged on four seeds:
+  blocks 0.9 → 1.8, clay 0.45 → 0.5, debris 0.75 → 1.25, ice 0.6 → 0.85, pebbles 0.6 → 0.7, stalagmite 0.6 → 0.72.
+  Recorded (no behaviour change): arrows drawn up with the automatic −90° stay; `vegetable-debris` stays
+  fills-only. `test_themes`: water in both themes, black in crno-bijelo; ceiling-step custom + outer.
+- **Result:** on the full-resolution crops ceiling-step is dashed with ticks hanging on the side opposite pit's;
+  area ink cover roughly halved against r5 (e.g. pebbles 50 % → 27–30 %, clay 46 % → 14–16 %), close to izvorno
+  where cSurvey has a pattern; boja water prints as blue 45° lines, crno-bijelo as black.
+- **Odd:** blocks stays seed-dependent (2.9 × 1.5 m tile: one seed has a bare quarter); `ice` / `stalagmite` mockup
+  items still have no `<seed>`.
+- **Evidence:** [runs/2026-10-07-mockup-r6/RUNLOG.md](runs/2026-10-07-mockup-r6/RUNLOG.md). `pytest stages/3N-nacrt`
+  347 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
+- **Next:** the user judges r6 (ceiling-step dash, area densities, blue water); meander decision; T7.
+
+### 2026-10-07 — Round 7: ceiling-step as a row of ⊤ units (agent) ✅
+
+- **Did:** user on r6: every dash must carry its own tick ("⊤ ⊤ ⊤ ⊤"), not a dash pattern with independently spaced
+  ticks. New unit `production/themes/boja/lines/ceiling-step@T.svg`: the split tick (0.829 × 5.083) with a bar
+  12.707 × 0.829 along its foot, one fill-only path, normalised and checked with `theme_svg.py`. boja
+  `ceiling-step`: `svg` → that unit, `style` custom dash [4, 2] → **none** (base off, like floor-meander),
+  `scale` 2 → **1.5**, `spacing_pct` 4500 → **1400**, `outer` + `flip` false kept. crno-bijelo inherits; pit unchanged.
+  `test_themes`: ceiling-step style none + the T svg; `lines/ceiling-step.svg` now unused (kept as split output).
+- **Result:** every T has its bar on the line path and its stem on the side opposite pit's ticks; gaps 0.5–0.7 bar
+  lengths; 4 T's on the straight, 2 on the curve (boja and crno-bijelo identical). Scale 2 gave a 0.64 m bar and only
+  2 T's on the straight; spacings 1200/1280 left gaps under half a bar, 1500 fewer T's.
+- **Odd:** on the mockup's short sine only 2 T's land (units are straight chords; placement quantised). The r7 boja
+  PDF was locked by another process on the final print; the identical scratch print (same `.csx`, byte-compared) was
+  copied in.
+- **Evidence:** [runs/2026-10-07-mockup-r7/RUNLOG.md](runs/2026-10-07-mockup-r7/RUNLOG.md). `pytest stages/3N-nacrt`
+  347 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
+- **Next:** the user judges r7 (T size / density); meander decision; T7.

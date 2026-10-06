@@ -56,6 +56,7 @@ keeps the chronology.
 - [3N KORAK 4 overwrites the OSZ in place (2026-10-04)](#3n-korak-4-overwrites-the-osz-in-place-2026-10-04)
 - [4F: the processed photo replaces the original (2026-10-04)](#4f-the-processed-photo-replaces-the-original-2026-10-04)
 - [4F: a processed photo is never bigger than its original (2026-10-04)](#4f-a-processed-photo-is-never-bigger-than-its-original-2026-10-04)
+- [3N symbol themes: applied after import, keyed by TopoDroid name (2026-10-07)](#3n-symbol-themes-applied-after-import-keyed-by-topodroid-name-2026-10-07)
 - [Registar udruga: CroSpeleo is the ground truth (2026-10-04)](#registar-udruga-crospeleo-is-the-ground-truth-2026-10-04)
 
 ---
@@ -1754,4 +1755,29 @@ it is a loss in both size and quality.
 Validated without writing to the leaf (outputs went to a scratch folder): SB 1328's
 five photos now come out byte-identical, and real camera photos in the intake tree
 shrink as before (4128 px 3.14 MB → 1920 px 0.63 MB).
+
+## 3N symbol themes: applied after import, keyed by TopoDroid name (2026-10-07)
+
+Record: [project 0007](../stages/3N-nacrt/projects/0007-symbol-themes/brief.md).
+
+- **Post-import (KORAK 2 onwards), not the cSurvey install folder.** Glyphs are spliced into each csx's
+  sign pool, and lines and areas get library pens and brushes (`type="98"`). Nothing is installed into
+  `C:\csurvey64`, so a theme survives cSurvey upgrades and is chosen per cave.
+- **Keys are the TopoDroid name first, the cSurvey target second.** cSurvey's import drops the names. They are
+  recovered by matching coordinates against the pre-import file, which needs KORAK 1's output or the raw
+  export beside the `_lt`. This lets subtypes (`slope:steep`, `abyss-entrance`, `rope`) and symbols with no
+  cSurvey sign look different.
+- **One colour per symbol, plus white.** cSurvey paints every non-white fill in the item colour and ignores
+  the SVG's colours. Themes therefore set colour per piece.
+- **B/W is its own design** (`crno-bijelo` extends `boja`). Per piece it is recolour, a different render
+  (pattern hatch, dash, outline mode for solid shapes only), or new artwork; water becomes 45° lines.
+- **Artwork conventions:**
+  - one Illustrator file; layers `Znakovi`/`Linije`/`Površine`; one named group per piece;
+  - fills only;
+  - line units are the repeating piece, with no baseline and no padding shapes;
+  - area tiles are small scatter clusters;
+  - arrows are drawn pointing up.
+- **The rest is numbers in `theme.json`:** dashes, spacing, density, size, alignment.
+- **Labels stay labels** (`danger`, `plus`, `minus`, `plus-minus`, `anchor` `f`), so they are readable
+  without a theme. The theme step converts them to glyphs (T9, open).
 

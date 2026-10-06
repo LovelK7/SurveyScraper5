@@ -12,6 +12,45 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-04…07 — 3N symbol themes: custom SVG signs, lines and areas, colour and B/W (agent) ◐
+
+- **Did:** Researched viability (cSurvey clipart/pen/brush code + the 3N pipeline) and opened
+  [project 0007](../stages/3N-nacrt/projects/0007-symbol-themes/brief.md). Then orchestrated
+  background agents through these tasks:
+  - **T1** `theme_svg.py split|normalize|check`: Illustrator export → cSurvey-safe SVGs (arcs → cubics,
+    transforms baked, invisible shapes dropped, strokes outlined for units/tiles, real SignEnum numbers);
+  - **T8** `tdx_name_recover.py`: TopoDroid names back after import, 100 % on every pair incl. a real cave;
+  - **T2** `themes.py` + `production/themes/{boja,crno-bijelo}`: schema with extends/monochrome/render/
+    pattern/rotate, validated by `check_defaults.py`;
+  - **T3** `theme_apply.py`: signs (glyph pool + colour, pen off), lines (library pens, decorations,
+    dashes, style-None meander/T units), areas (scatter tiles, solid, pattern), byte-exact undo/switch;
+  - `make_theme_mockup.py`: a mockup survey with every symbol, imported headlessly.
+
+  The user drew the art in Illustrator (`drawing_catalogue.svg`, reviewed over three passes), and we tuned
+  it together over print rounds r1–r7 (`projects/0007-symbol-themes/runs/`). The compass splice in
+  `nacrt_finish.py` was factored into shared helpers, fixing its hash.
+- **Result:** Both themes print correctly from the installed cSurvey on the mockup. Confirmed on the
+  prints: rope red, ice teal, blue/black 45° water, ceiling-step `⊤ ⊤ ⊤`, slope triangles on the line,
+  sparser tiles. 347 3N tests green; the doctor shows 0 fail. Limits:
+  - not in the kit and no dashboard selector yet;
+  - meander rails break on curves (accepted);
+  - `blocks` scatter is uneven on some seeds;
+  - labels (danger/plus/minus) are still labels in real caves (T9).
+- **Learned:**
+  - cSurvey keeps only SVG geometry: any non-white fill takes the item colour and strokes take the item
+    pen. Decorations and tiles paint fills only.
+  - Clipart ids are SHA-1 written as unpadded uppercase hex.
+  - Decoration spacing is in rasterised points, not metres, and 0 is read as 100.
+  - Style None (98) switches the base stroke off natively.
+  - The importer keeps coordinates (only the order may reverse), so names are recoverable.
+  - The importer adds +90° to `air-draught`/`water-flow`.
+  - `csurvey:rotationangledelta` is never read.
+  - cSurvey's *Replace with…* crashes (NullReference) in 2.15.2858.
+  - Imports can fail with HTTP 429 because gallery SVGs reference the w3.org DTD.
+  - A style-None pen plus item transparency would crash rendering.
+- **Next:** T4 (Tema dropdown on Mapiranje simbola), T5 (kit + theme step in KORAK 2 → `/publish`),
+  T9 (labels → glyphs), then T7 (tune in cSurvey + harvest) if wanted.
+
 ### 2026-10-04 — 4O `osz provjera`: the obligatory OSZ fields, before 3N (agent) ✅
 
 - **Did:** new `osz/provjera.py` + `cavedossier osz provjera <broj> [--json]`. It reads the leaf's

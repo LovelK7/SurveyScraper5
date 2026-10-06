@@ -108,7 +108,7 @@ python tools/theme_apply.py apply SB_..._postp.csx --theme boja --pre SB_..._tdx
   painted by its fill only (`clipartpenstyle` None); `alignment: auto` puts it on the side the built-in pen uses
   (flipped for an Inner pen; a plain pen takes its KORAK 1 target's side). A hand-set pen is skipped.
 - **Areas** (phase 2): one **library brush** per (key, built-in brush type) in `<brushes>` — scatter tile
-  (`hatchtype 2`), solid, or parametric pattern (`hatchtype 3`, the B/W water) — and the item's brush becomes
+  (`hatchtype 2`), solid, or parametric pattern (`hatchtype 3`, the water lines) — and the item's brush becomes
   `<brush type="98" id="…">`, keeping its own `<seed>`. Areas cSurvey has no brush for (ice, snow, stalagmite, user:
   blank soil) are reached by TopoDroid name like the rest.
 - **Order:** after KORAK 2. A KORAK 2 re-run on a themed file leaves `type="98"` references alone (it only changes

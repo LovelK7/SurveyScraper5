@@ -1,10 +1,6 @@
 {
-  "_readme": "Black-and-white theme: boja with every colour forced to black (monochrome), plus per-piece B/W encodings where colour carried the meaning (brief 3.8). Schema: ../README.md",
+  "_readme": "Black-and-white theme: boja with every colour forced to black (monochrome), plus per-piece B/W encodings where colour carried the meaning (brief 3.8). Water: boja's blue 45-degree line pattern, inherited and turned black by monochrome (r6; until r5 this theme held the pattern itself). Schema: ../README.md",
   "name": "Crno-bijelo",
   "extends": "boja",
-  "monochrome": "#000000",
-  "areas": {
-    "water": {"_note": "cSurvey's own water look: parallel lines at 45 degrees (brief 3.8); density = line spacing in m (basepatterns.xml Lines: Step Painter.Density = density x zoom), 0.33 = 3x cSurvey's 1 (user, r4)",
-              "pattern": {"type": "lines", "angle": 45, "density": 0.33}}
-  }
+  "monochrome": "#000000"
 }

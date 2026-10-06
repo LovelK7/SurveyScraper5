@@ -231,11 +231,18 @@ def test_starter_themes_content():
     meander = boja.lines["floor-meander"]
     assert meander["style"] == "none" and meander["decoration"]["alignment"] == "center"
     assert meander["decoration"]["spacing_pct"] == 990          # butted on a spline (README)
-    assert set(bw.signs) == set(boja.signs) and set(bw.areas) == set(boja.areas) | {"water"}
+    assert set(bw.signs) == set(boja.signs) and set(bw.areas) == set(boja.areas)
     assert all(s["color"] == BLACK for s in bw.lines.values())
     assert bw.centerline["PlotPenColor"] == BLACK
-    assert th.unused_svgs(boja) == ["lines/slope@steep.svg"]   # steep reuses the sheer unit (r5)
+    # steep reuses the sheer unit (r5); ceiling-step uses its T unit, not the split tick (r7)
+    assert th.unused_svgs(boja) == ["lines/ceiling-step.svg", "lines/slope@steep.svg"]
+    # water: boja's blue 45-degree line pattern, inherited and turned black by monochrome (r6)
+    assert boja.areas["water"]["color"] == th.to_argb("#24A9D1")
     assert bw.areas["water"]["pattern"]["angle"] == 45 and bw.areas["water"]["svg"] is None
+    assert bw.areas["water"]["color"] == BLACK
+    step = boja.lines["ceiling-step"]                           # a row of T units, base off (r7)
+    assert step["style"] == "none" and step["decoration"]["alignment"] == "outer"
+    assert step["svg"].replace("\\", "/").endswith("lines/ceiling-step@T.svg")
     assert boja.signs["water-drip"]["svg"] == boja.signs["water-flow:intermittent"]["svg"]
 
 
