@@ -150,6 +150,10 @@ sizes, registry app settings — which file, value formats, how to find an
 unknown key in `../cSurvey`, `check_defaults.py`, docs, commit. One cave only
 is the dashboard's 3N › Mapiranje page instead.
 
+**Tuning the 3N symbol themes goes through `/theme-round`** (`.claude/skills/theme-round/SKILL.md`):
+the user's feedback on the printed mockup or a re-exported drawing → `theme.json` edits → one
+`theme_round.py` command (≈15 s, cached) → crops to show. No subagents per round.
+
 **End every working session with `/wrap-up`** (`.claude/skills/wrap-up/SKILL.md`):
 it updates [STATUS.md](STATUS.md), appends a block to
 [journal/SESSIONS.md](journal/SESSIONS.md), captures ideas into

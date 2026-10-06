@@ -168,6 +168,9 @@ How cSurvey lays units along a line (`cClipartOnPath.vb`; every imported line is
   filled paths paint (a stroke would not — `split` outlines them). `crop subitems` (default) keeps only whole
   shapes, `none` clips at the area edge (used for the outlined `blocks` stones), `full` keeps only whole tiles.
 - The placement seed lives on the item (`<seed>` under its brush); an area with none gets a random one at each load.
+  cSurvey's importer seeds only areas whose built-in brush is a clipart, so the theme mockup gets fixed seeds
+  after import (`make_theme_mockup.py --seed-imported`, done by `theme_round.py`): every round prints the same
+  placement, and `theme_round.py --seeds N` adds N alternatives.
 - `pattern` is cSurvey's parametric hatch: spacing `density` m, angle in degrees, a hairline pen.
 
 The theme mockup (`tools/make_theme_mockup.py`) has every themed sign, at orientation 0, for checking this on a

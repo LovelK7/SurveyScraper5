@@ -35,10 +35,21 @@ line `section` gets the `-scrap` option as in v3.
 
 Usage:
   python make_theme_mockup.py OUTDIR [--name theme-mockup] [--themes-root DIR]
+  python make_theme_mockup.py --seed-imported IMPORTED.csx [-o OUT.csx] [--seed-variant K]
 
 Writes OUTDIR/<name>.csx (raw TopoDroid, import it into cSurvey),
 OUTDIR/<name>-key.md (slot table) and OUTDIR/<name>-layout.json (world
 coordinates of every slot and section, for cropping prints).
+
+Area seeds: a raw TopoDroid file has no brush seeds; cSurvey's importer gives
+one only to areas whose built-in brush is a clipart (blank-soil `ice`,
+`stalagmite`, `snow`, `user` got none, so every load drew a new random
+placement - runs r5/r6). `--seed-imported` writes a fixed
+`<seed base= increment=/>` into every area item of an imported (or themed)
+file - seed_areas() - so prints are reproducible; `--seed-variant K` (K >= 1)
+gives the K-th alternative placement for checking tile evenness. cSurvey reads
+the seed from the item's `<brush>` whatever the brush type (cBrush.vb:3077).
+theme_apply.py keeps the item's seed when it swaps the brush.
 
 Stdlib only.
 """
@@ -47,6 +58,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 
 sys.dont_write_bytecode = True
@@ -308,12 +320,91 @@ def build(themes_root=None):
     return xml, key, layout, warnings
 
 
+# --------------------------------------------------------------------------
+# fixed area seeds (post-import)
+
+AREA_ITEM = "3"
+_ITEM_RE = re.compile(r"<item\b[^>]*(?<!/)>.*?</item>", re.S)   # not self-closing
+_TYPE_RE = re.compile(r'\stype="([^"]*)"')
+_BRUSH_SELF = re.compile(r"(?P<indent>[ \t]*)<brush\b(?P<attrs>[^>]*?)\s*/>")
+_BRUSH_OPEN = re.compile(r"<brush\b[^>]*?(?<!/)>")
+_SEED_RE = re.compile(r"<seed\b[^>]*/>")
+
+
+def area_seed(index, variant=0):
+    """(base, increment) for the index-th area item: deterministic, inside
+    cSurvey's own ranges (cBrushSeed.Reseed: base 0-100, increment 0-30).
+    variant 0 is the mockup's fixed seed, 1.. the alternatives."""
+    base = (17 + 23 * index + 41 * variant) % 100
+    inc = (5 + 7 * index + 11 * variant) % 29 + 1
+    return float(base), float(inc)
+
+
+def seed_element(base, inc):
+    return '<seed base="%.2f" increment="%.2f" />' % (base, inc)
+
+
+def seed_areas(text, variant=0):
+    """Give every area item (type 3) of a cSurvey file text a fixed seed.
+
+    Text in, text out, the rest of the file byte for byte: an existing
+    `<seed>` is replaced, a self-closing `<brush .../>` is opened to hold one.
+    -> (text, number of area items seeded)."""
+    count = [0]
+
+    def one(m):
+        item = m.group(0)
+        head = item[:item.index(">") + 1]
+        t = _TYPE_RE.search(head)
+        if not t or t.group(1) != AREA_ITEM:
+            return item
+        seed = seed_element(*area_seed(count[0], variant))
+        if _SEED_RE.search(item):
+            new = _SEED_RE.sub(seed, item, count=1)
+        else:
+            b = _BRUSH_SELF.search(item)
+            if b:
+                ind = b.group("indent")
+                new = (item[:b.start()] + "%s<brush%s>\n%s  %s\n%s</brush>"
+                       % (ind, b.group("attrs"), ind, seed, ind) + item[b.end():])
+            else:
+                o = _BRUSH_OPEN.search(item)
+                if not o:
+                    return item
+                new = item[:o.end()] + seed + item[o.end():]
+        count[0] += 1
+        return new
+
+    out = _ITEM_RE.sub(one, text)
+    return out, count[0]
+
+
+def seed_file(src, dst=None, variant=0):
+    with open(src, encoding="utf-8", newline="") as f:
+        text = f.read()
+    text, n = seed_areas(text, variant)
+    with open(dst or src, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    return n
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("outdir")
+    ap.add_argument("outdir", nargs="?")
     ap.add_argument("--name", default="theme-mockup")
     ap.add_argument("--themes-root")
+    ap.add_argument("--seed-imported", metavar="CSX",
+                    help="write fixed area seeds into an imported/themed file instead")
+    ap.add_argument("-o", "--out", help="with --seed-imported: output (default: in place)")
+    ap.add_argument("--seed-variant", type=int, default=0)
     args = ap.parse_args(argv)
+    if args.seed_imported:
+        n = seed_file(args.seed_imported, args.out, args.seed_variant)
+        print("seeded %d area item(s) (variant %d) -> %s"
+              % (n, args.seed_variant, args.out or args.seed_imported))
+        return 0
+    if not args.outdir:
+        ap.error("OUTDIR is required")
     xml, key, layout, warnings = build(args.themes_root)
     os.makedirs(args.outdir, exist_ok=True)
     base = os.path.join(args.outdir, args.name)

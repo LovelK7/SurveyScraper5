@@ -250,3 +250,26 @@ Brief: [brief.md](brief.md)
 - **Evidence:** [runs/2026-10-07-mockup-r7/RUNLOG.md](runs/2026-10-07-mockup-r7/RUNLOG.md). `pytest stages/3N-nacrt`
   347 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
 - **Next:** the user judges r7 (T size / density); meander decision; T7.
+
+### 2026-10-06 — theme_round.py: one tuning round in one command (agent) ✅
+
+- **Did:** `production/tools/theme_round.py LABEL [--split] [--themes] [--focus] [--seeds N] [--fresh-mockup] [--no-print]`
+  replaces the hand procedure of r2–r7 and the scratchpad helpers (compose3 sheets, crop/zoom details, seedrun,
+  measure.py ink cover, harvested into the tool). `--split` re-splits the drawing into `findings/t1-split/` and
+  refreshes `themes/boja/` artwork (never `theme.json`, never deletes), with a change summary and loud `!!` warnings
+  (unnamed groups, `_x3C_Group` ids, duplicates, stroke-only pieces, new keys without an entry). The mockup import
+  (DTD-free cSurvey copy, KORAK 2, fixed seeds, izvorno print) is cached in the gitignored
+  `<workspace>/runs/theme-round/` keyed by the symbol lists + generator/KORAK 2/mapping/cSurvey hashes. Prints run in
+  parallel. Each run folder gets comparison sheets per kind (izvorno · themes, per-slot crops at fixed dpi), focus
+  details at 2000 dpi, a seed sheet + ink-cover table, `pregled.png`, theme.json copies (diffed against the previous
+  round) and an auto-written `RUNLOG.md` with an empty "Feedback → change" table.
+  `make_theme_mockup.py`: `seed_areas` / `--seed-imported` give every area item a fixed seed after import (fixes the
+  ice/stalagmite random placement of r5/r6). New `production/tools/theme_tuning_cheatsheet.md` (feedback → field →
+  direction, limits, artwork rules). `tests/test_theme_round.py` (7 tests).
+- **Result:** [r8-baseline](runs/2026-10-06-r8-baseline/RUNLOG.md) (`--fresh-mockup --focus ceiling-step,water
+  --seeds 2`): 33.6 s (42 s the very first time, with the 175 MB cSurvey copy); [r8-repeat](runs/2026-10-06-r8-repeat/RUNLOG.md)
+  from cache: 15.1 s, theme.json "no change" against r8-baseline, all 20 area crops pixel-identical between the two
+  rounds (ice and stalagmite included). Name recovery and themed counts equal r7's. `--split` on the 22:03 drawing:
+  0 changes (no-op on tracked files).
+- **Evidence:** `pytest stages/3N-nacrt` 354 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
+- **Next:** drive rounds from a skill with the cheatsheet; T7.
