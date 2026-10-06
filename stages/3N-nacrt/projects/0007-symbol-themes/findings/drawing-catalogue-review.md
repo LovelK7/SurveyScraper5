@@ -82,3 +82,17 @@ The file is checked against the cSurvey SVG subset (brief §2.3–§2.4). This i
 | `rope` | unchanged: a single red rectangle (decision pending) |
 
 Arcs remain everywhere. That is expected: T1 converts them, and they are not for the user to fix.
+
+## Decisions (user, 2026-10-06)
+
+- **`vegetable-debris`: kept as is.** The user will judge the one-colour result in print. All 45 gradient
+  fills count as non-`none`, so they paint in the item colour, and the 117 strokes take the pen width.
+  Expect a dense one-colour silhouette.
+- **`rope`: no artwork.** A thin red line is a plain pen: `color` (ARGB) + `width`, decoration None. In
+  `theme.json` it is `"rope": {"color": "#EF5553", "width": …}`, and the red rectangle moves to a `_` layer
+  as a colour reference. TopoDroid `rope` falls back to `border` today, so a rope-only colour needs the
+  TopoDroid key (T8).
+- **Stone faces in areas:** two allowed looks. Solid (face = outline colour, so a silhouette) or
+  outlined (face pure white `#FFFFFF`). A white face is opaque: it hides whatever is beneath it.
+  Grey faces are possible only if the brush's decoration pen can take its own colour for *strokes*
+  (unverified, T0/T7).
