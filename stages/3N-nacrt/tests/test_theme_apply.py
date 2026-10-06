@@ -1,0 +1,279 @@
+"""theme_apply — symbol themes written into a post-import cSurvey file (project 0007, T3)."""
+
+import base64
+import hashlib
+import json
+import sys
+import zipfile
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+import pytest
+
+TOOLS = Path(__file__).resolve().parents[1] / "production" / "tools"
+sys.path.insert(0, str(TOOLS))
+
+import nacrt_finish  # noqa: E402
+import theme_apply as ta  # noqa: E402
+
+FIX = Path(__file__).resolve().parents[1] / "example" / "finishing"
+LT_FIN = FIX / "SB_1103_golobreska_lt_fin.csx"
+TDX_RAW = FIX / "SB_1103_golobreska_tdx_raw.csx"
+
+OLD_GLYPH = b'<svg xmlns="http://www.w3.org/2000/svg"><path d="M 0 0 L 1 1" fill="#000"/></svg>'
+OLD_ID = nacrt_finish.clipart_hash(OLD_GLYPH)
+THEME_SVG = ('<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" '
+             'xmlns:csurvey="http://www.csurvey.it" viewBox="0 0 2 2" csurvey:scale="1.2">'
+             '<path d="M 0 0 L 2 0 L 2 2 Z" fill="#000000"/></svg>\n')
+
+# A tiny post-import survey: two `blocks` signs (1290) - one imported (TopoDroid
+# datarow, recoverable by name), one drawn in cSurvey (native, target fallback) -
+# and an entrance (263) that no theme lists.
+CSX = """<csurvey version="1.14" id="x">
+  <properties name="t">
+    <designproperties>
+      <item name="PlotPenColor" type="color">-65536</item>
+    </designproperties>
+  </properties>
+  <plan>
+    <layers>
+      <layer type="6">
+        <items>
+          <item layer="6" type="6" category="80" data="{old}" dataformat="2" sign="1290">
+            <pen type="10" />
+            <brush type="7" />
+            <points data="1.00 2.00 " />
+            <datarow>TopoDroid|x</datarow>
+          </item>
+          <item layer="6" type="6" category="80" data="{old}" dataformat="2" sign="1290">
+            <pen type="10" />
+            <brush type="7" />
+            <points data="5.00 5.00 " />
+          </item>
+          <item layer="6" type="6" category="80" data="{old}" dataformat="2" sign="263">
+            <pen type="10" />
+            <brush type="7" />
+            <points data="7.00 7.00 " />
+            <datarow>TopoDroid|x</datarow>
+          </item>
+        </items>
+      </layer>
+    </layers>
+  </plan>
+  <signs>
+    <cliparts>
+      <clipart id="{old}" name="old.svg" data="{b64}" />
+    </cliparts>
+  </signs>
+</csurvey>
+""".format(old=OLD_ID, b64=base64.b64encode(OLD_GLYPH).decode())
+
+PRE = """<csurvey><properties creatid="TopoDroid" /><plan>
+  <item type="point" name="blocks"><points data="1.00 2.00 " /></item>
+  <item type="point" name="entrance"><points data="7.00 7.00 " /></item>
+</plan></csurvey>"""
+
+GREY = -8882054        # #78787A
+
+
+@pytest.fixture
+def env(tmp_path):
+    root = tmp_path / "themes"
+    (root / "t" / "signs").mkdir(parents=True)
+    (root / "t" / "signs" / "blocks.svg").write_bytes(THEME_SVG.encode())
+    (root / "t" / "theme.json").write_text(json.dumps(
+        {"name": "T", "signs": {"blocks": {"svg": "signs/blocks.svg", "color": "#78787A"}}}))
+    (root / "mono").mkdir()
+    (root / "mono" / "theme.json").write_text(json.dumps(
+        {"name": "M", "extends": "t", "monochrome": "#000000"}))
+    (root / "line").mkdir()
+    (root / "line" / "theme.json").write_text(json.dumps(
+        {"name": "L", "extends": "t", "monochrome": "#000000",
+         "signs": {"blocks": {"render": "outline", "size": 2}}}))
+    csx = tmp_path / "in.csx"
+    csx.write_text(CSX, encoding="utf-8")
+    pre = tmp_path / "pre.csx"
+    pre.write_text(PRE, encoding="utf-8")
+    return tmp_path, root, csx, pre
+
+
+def _run(env, src, theme, out_name, pre=True):
+    tmp, root, _csx, prefile = env
+    out = tmp / out_name
+    rep = ta.theme_file(str(src), theme, str(prefile) if pre else None, str(out),
+                        themes_root=str(root))
+    return out, rep
+
+
+def _signs(path):
+    r = ET.parse(path).getroot()
+    return [it for it in r.iter("item") if it.get("type") == "6"], r
+
+
+def test_hash_is_csurvey_unpadded_sha1():
+    blob = b"abc"
+    digest = hashlib.sha1(blob).digest()
+    assert nacrt_finish.clipart_hash(blob) == "".join("%X" % b for b in digest)
+    # a byte < 0x10 shortens the id: cSurvey's {0:X1}
+    assert any(b < 16 for b in digest) and len(nacrt_finish.clipart_hash(blob)) < 40
+
+
+def test_pool_add_and_repoint(env):
+    out, rep = _run(env, env[2], "t", "o.csx")
+    items, root = _signs(out)
+    new_id = nacrt_finish.clipart_hash(THEME_SVG.encode())
+    pool = {c.get("id"): c for c in root.find("signs/cliparts")}
+    assert new_id in pool and OLD_ID in pool                 # old entry left in place
+    assert base64.b64decode(pool[new_id].get("data")) == THEME_SVG.encode()
+    assert pool[new_id].get("name") == "tema-t_blocks.svg"   # not cSurvey's own blocks.svg
+    assert [i.get("data") for i in items] == [new_id, new_id, OLD_ID]
+    assert [i.get("sign") for i in items] == ["1290", "1290", "263"]   # sign= kept
+    assert rep["glyph"] == 2 and rep["themed"] == 2
+
+
+def test_fallback_lookup(env):
+    _out, rep = _run(env, env[2], "t", "o.csx")
+    assert rep["lookup"] == {"tdx (recovered)": 1, "target (native)": 1,
+                             "none (recovered)": 1}
+    _out, rep = _run(env, env[2], "t", "o2.csx", pre=False)
+    assert rep["lookup"] == {"target (no-pre)": 2, "none (no-pre)": 1}
+
+
+def test_colour_brush_and_pen_xml(env):
+    out, _ = _run(env, env[2], "t", "o.csx")
+    it = _signs(out)[0][0]
+    assert it.find("brush").attrib == {"type": "99", "name": "tema:t", "color": str(GREY),
+                                       "backgroundcolor": "0", "hatchtype": "1"}
+    pen = it.find("pen")                                    # outline_pen off: style None
+    assert pen.attrib == {"type": "99", "name": "tema:t", "color": str(GREY), "style": "98",
+                          "width": "0.00", "decorationstyle": "0",
+                          "decorationspacepercentage": "100.0", "decorationalignment": "0",
+                          "decorationscale": "1.00"}
+    assert pen.find("clipart").get("data") == ""
+
+
+def test_outline_pen_true_keeps_the_tightpen_look(env):
+    tmp, root, csx, _pre = env
+    (root / "pen").mkdir()
+    (root / "pen" / "theme.json").write_text(json.dumps(
+        {"name": "P", "extends": "t", "signs": {"blocks": {"outline_pen": True}}}))
+    (root / "monopen").mkdir()
+    (root / "monopen" / "theme.json").write_text(json.dumps(
+        {"name": "MP", "extends": "pen", "monochrome": "#000000"}))
+    out, rep = _run(env, csx, "pen", "p.csx")
+    pen = _signs(out)[0][0].find("pen")
+    assert pen.get("style") == "0" and pen.get("color") == str(GREY)
+    assert rep["pen_off"] == 0 and rep["colour"] == 2
+    out, rep = _run(env, csx, "monopen", "mp.csx")
+    it = _signs(out)[0][0]
+    assert it.find("pen").attrib == {"type": "10"} and it.find("brush").attrib == {"type": "7"}
+    assert rep["black_builtin"] == 2
+
+
+def test_black_pen_off_and_centerline(env):
+    out, rep = _run(env, env[2], "mono", "o.csx")
+    items, root = _signs(out)
+    pen = items[0].find("pen")
+    assert pen.get("type") == "99" and pen.get("style") == "98"     # no built-in TightPen
+    assert items[0].find("brush").attrib == {"type": "7"}           # black: built-in brush
+    assert items[2].find("pen").attrib == {"type": "10"}            # entrance: not themed
+    dp = {i.get("name"): i.text for i in root.find("properties/designproperties")}
+    assert dp["PlotPenColor"] == "-16777216" and dp["CaveDossierTheme"] == "mono"
+    assert rep["pen_off"] == 2 and rep["black_builtin"] == 0 and rep["colour"] == 0
+
+
+def test_rotate_and_stroke_only_note(env):
+    tmp, root, csx, _pre = env
+    (root / "t" / "signs" / "blocks.svg").write_bytes(THEME_SVG.replace(
+        '</svg>', '<path d="M 0 2 L 2 2" fill="none" stroke="#000000"/></svg>').encode())
+    (root / "rot").mkdir()
+    (root / "rot" / "theme.json").write_text(json.dumps(
+        {"name": "R", "extends": "t", "signs": {"blocks": {"rotate": 90}}}))
+    out, rep = _run(env, csx, "rot", "r.csx")
+    items, r = _signs(out)
+    pool = {c.get("id"): c for c in r.find("signs/cliparts")}
+    svg = base64.b64decode(pool[items[0].get("data")].get("data"))
+    assert b'd="M 2 0 L 2 2 L 0 2 Z"' in svg                 # turned 90 deg clockwise
+    assert any("stroke-only" in n for n in rep["notes"])
+    back, _ = _run(env, out, "t", "back.csx")
+    plain, _ = _run(env, csx, "t", "plain.csx")
+    assert back.read_bytes() == plain.read_bytes()           # undo leaves no trace
+
+
+def test_outline_and_size(env):
+    out, _ = _run(env, env[2], "line", "o.csx")
+    items, root = _signs(out)
+    it = items[0]
+    assert it.find("brush").get("color") == "-1"            # white
+    assert it.find("pen").get("color") == "-16777216"
+    pool = {c.get("id"): c for c in root.find("signs/cliparts")}
+    svg = base64.b64decode(pool[it.get("data")].get("data"))
+    assert b'csurvey:scale="2.4"' in svg                    # 1.2 x size 2
+
+
+def test_idempotent_and_switch(env):
+    a, _ = _run(env, env[2], "t", "a.csx")
+    a2, _ = _run(env, a, "t", "a2.csx")
+    assert a.read_bytes() == a2.read_bytes()
+    m, _ = _run(env, env[2], "mono", "m.csx")
+    am, rep = _run(env, a, "mono", "am.csx")
+    assert am.read_bytes() == m.read_bytes() and rep["previous_theme"] == "t"
+    names = {c.get("name") for c in _signs(am)[1].find("signs/cliparts")}
+    assert "tema-mono_blocks.svg" in names and "tema-t_blocks.svg" not in names   # renamed, not stacked
+    ma, _ = _run(env, m, "t", "ma.csx")
+    assert ma.read_bytes() == a.read_bytes()             # centerline restored too
+    ol, _ = _run(env, env[2], "line", "l.csx")
+    lt, rep = _run(env, ol, "t", "lt.csx")
+    assert lt.read_bytes() == a.read_bytes()             # outline glyph removed from pool
+    assert len(rep["pool_removed"]) == 1
+
+
+def test_hand_customised_sign_is_left_alone(env):
+    tmp, _root, csx, _pre = env
+    src = tmp / "custom.csx"
+    src.write_text(CSX.replace('<brush type="7" />',
+                               '<brush type="99" color="-1" backgroundcolor="0" hatchtype="1" />', 1),
+                   encoding="utf-8")
+    out, rep = _run(env, src, "t", "o.csx")
+    assert rep["skipped_custom"] == 1 and rep["themed"] == 1
+    assert _signs(out)[0][0].get("data") == OLD_ID
+
+
+def test_csz_writes_zip_entry(env):
+    tmp, _root, csx, _pre = env
+    data = CSX.replace('data="%s" />' % base64.b64encode(OLD_GLYPH).decode(),
+                       'data="_data\\cliparts\\%s.svg" />' % OLD_ID)
+    src = tmp / "in.csz"
+    with zipfile.ZipFile(src, "w") as z:
+        z.writestr("_data.xml", data)
+        z.writestr("_data/cliparts/%s.svg" % OLD_ID, OLD_GLYPH)
+    out, _ = _run(env, src, "t", "o.csz")
+    new_id = nacrt_finish.clipart_hash(THEME_SVG.encode())
+    with zipfile.ZipFile(out) as z:
+        assert z.read("_data/cliparts/%s.svg" % new_id) == THEME_SVG.encode()
+        assert ("_data\\cliparts\\%s.svg" % new_id).encode() in z.read("_data.xml")
+    out2, _ = _run(env, out, "line", "o2.csz")
+    out3, _ = _run(env, out2, "t", "o3.csz")
+    with zipfile.ZipFile(out) as a, zipfile.ZipFile(out3) as b:
+        assert sorted(a.namelist()) == sorted(b.namelist())
+        assert all(a.read(n) == b.read(n) for n in a.namelist())
+
+
+def test_default_out_replaces_theme_suffix(tmp_path):
+    root = Path(TOOLS).parent / "themes"
+    assert ta.default_out("x/SB_1_lt.csx", "boja", str(root)) == "x/SB_1_lt_boja.csx"
+    assert ta.default_out("x/SB_1_lt_boja.csz", "crno-bijelo", str(root)) \
+        == "x/SB_1_lt_crno-bijelo.csz"
+
+
+@pytest.mark.skipif(not (LT_FIN.exists() and TDX_RAW.exists()), reason="SB 1103 fixture absent")
+def test_real_fixture_both_themes(tmp_path):
+    outs = {}
+    for t in ("boja", "crno-bijelo"):
+        out = tmp_path / ("%s.csx" % t)
+        rep = ta.theme_file(str(LT_FIN), t, str(TDX_RAW), str(out))
+        assert rep["themed"] == 2 and rep["glyph"] == 2      # the two profile blocks
+        outs[t] = out
+    again = tmp_path / "again.csx"
+    ta.theme_file(str(outs["boja"]), "crno-bijelo", str(TDX_RAW), str(again))
+    assert again.read_bytes() == outs["crno-bijelo"].read_bytes()

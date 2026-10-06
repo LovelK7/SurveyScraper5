@@ -2,7 +2,7 @@
 
 A theme decides how cSurvey draws the club's signs, lines and areas: which SVG glyph, tile or
 decoration unit each one uses, in which colour, and with which pen and brush numbers. It is
-applied after import, in KORAK 2 (`apply_theme`, project 0007 T3, not built yet). The design is in
+applied after import, in KORAK 2, by `../tools/theme_apply.py` (project 0007 T3; phase 1 = signs and the centerline, see [the production README](../README.md#applying-a-theme)). The design is in
 [project 0007's brief](../../projects/0007-symbol-themes/brief.md) §2.3–§3.3.
 
 `../tools/themes.py` loads and validates themes. `check_defaults.py` (the `/csurvey-defaults`
@@ -20,6 +20,7 @@ python tools/themes.py show ID [--kind signs|lines|areas|centerline|scale_rules]
 - [Folder layout](#folder-layout)
 - [theme.json](#themejson)
 - [Keys and lookup](#keys-and-lookup)
+- [Directional signs](#directional-signs)
 - [Adding a theme](#adding-a-theme)
 - [Known limits](#known-limits)
 
@@ -52,7 +53,7 @@ Keys that start with `_` are comments, at any level.
 | `extends` | Another theme id. The two are deep-merged and the child wins. A cycle is an error |
 | `monochrome` | A colour forced on every sign, line, decoration and area colour, and on every centerline colour (centerline, station points, labels, notes) |
 | `default_color` | Colour of an entry that names none. Default black |
-| `signs` | key → `{svg, color, size}` |
+| `signs` | key → `{svg, color, size, render, outline_pen, rotate}`. `size` multiplies the glyph's `csurvey:scale` (baked in by `theme_apply.py`; the item's `signsize` is left alone). `render` is `fill` (default) or `outline`: the brush white and the pen in the colour, so a filled shape reads as its outline (brief §3.8). `outline_pen` (default `false` for fill, always `true` for outline): whether cSurvey's pen is traced round every path of the glyph; off, only the fills paint. `rotate`: degrees clockwise as drawn, baked into the glyph's coordinates — see [Directional signs](#directional-signs) |
 | `lines` | key → `{svg, color, width, style, dash, decoration, decoration_color}` |
 | `areas` | key → `{svg, color, background_color, density, zoom, angle_mode, angle, position}`, or `{solid: true, color}` for a plain fill such as water |
 | `centerline` | Overrides merged over `tdx-mapping.json` `postimport.centerline`. Names from `fix_imported_linetypes.CENTERLINE_TYPES` |
@@ -104,6 +105,27 @@ Per item, `themes.resolve(theme, kind, tdx_name, target_name)` tries:
 
 So `slope:sheer` can look different from the other slopes, and an item drawn in cSurvey, which has
 no TopoDroid name, still takes the target's look.
+
+## Directional signs
+
+cSurvey has no anchor point in a sign glyph: it centres the glyph's **bounding box** on the item's point and then
+turns it by the item's angle (`cItemSign.vb:276-331`). The angle is TopoDroid's `orientation`, and for the exact
+point names `air-draught` and `water-flow` the importer adds **+90°** (`cImportTopoDroidHelper.vb:331-333`).
+cSurvey's own arrows (`corrente d'aria.svg`, `acqua.svg`) are therefore drawn **pointing left (−x), horizontal**,
+and come out pointing up (north) at orientation 0, as in TopoDroid.
+
+- **Draw arrow glyphs pointing left**, head on the left, tail on the right, centred: the middle of the bounding
+  box lands on the station point.
+- `csurvey:rotationangledelta` (which cSurvey's stock glyphs carry) does **not** turn anything: cSurvey keeps it
+  as clipart metadata and no render path reads it (checked on a print, run r2).
+- Art drawn another way is fixed with the sign's `rotate`, which `theme_apply.py` bakes into the coordinates.
+  `boja` uses `rotate: 180` on `air-draught` (drawn pointing right).
+- `water-flow:intermittent` reaches cSurvey as `waterflow` (KORAK 1 mapping) or unchanged; neither gets the
+  +90°, so a left-pointing glyph points left. `boja` uses `rotate: 90` for it; drop that if the mapping is changed
+  to `water-flow`.
+
+The theme mockup (`tools/make_theme_mockup.py`) has every themed sign, at orientation 0, for checking this on a
+print.
 
 ## Adding a theme
 

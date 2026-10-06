@@ -242,3 +242,29 @@ def test_cli_check_and_show(capsys):
     assert th.main(["show", "crno-bijelo", "--kind", "centerline"]) == 0
     out = capsys.readouterr().out
     assert '"PlotPenColor": "#FF000000"' in out
+
+
+def test_sign_render_field(tmp_path):
+    _theme(tmp_path, "r", {"name": "R", "signs": {"bones": {"render": "outline"}, "danger": {}}})
+    t = th.load_theme("r", tmp_path)
+    assert t.signs["bones"]["render"] == "outline"
+    assert t.signs["danger"]["render"] == "fill"            # default
+    _theme(tmp_path, "bad", {"name": "B", "signs": {"bones": {"render": "hatch"}}})
+    assert any("render" in e for e in th.validate("bad", tmp_path))
+
+
+def test_sign_outline_pen_and_rotate_fields(tmp_path):
+    _theme(tmp_path, "p", {"name": "P", "signs": {
+        "bones": {}, "danger": {"render": "outline"}, "plus": {"outline_pen": True},
+        "minus": {"rotate": -90}, "blocks": {"rotate": 360}}})
+    t = th.load_theme("p", tmp_path)
+    assert t.signs["bones"]["outline_pen"] is False          # fill: pen off by default
+    assert t.signs["danger"]["outline_pen"] is True          # outline implies the pen
+    assert t.signs["plus"]["outline_pen"] is True
+    assert t.signs["minus"]["rotate"] == 270.0               # normalised to 0..360
+    assert t.signs["blocks"]["rotate"] is None and t.signs["bones"]["rotate"] is None
+    _theme(tmp_path, "bad", {"name": "B", "signs": {
+        "bones": {"render": "outline", "outline_pen": False},
+        "plus": {"outline_pen": "yes"}, "minus": {"rotate": "90"}}})
+    errs = th.validate("bad", tmp_path)
+    assert sum("outline_pen" in e for e in errs) == 2 and any("rotate" in e for e in errs)

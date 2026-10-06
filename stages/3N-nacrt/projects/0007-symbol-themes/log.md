@@ -45,3 +45,108 @@ Brief: [brief.md](brief.md)
 - **Result:** both themes check clean: 12 signs, 10 lines, 6 areas each. `crno-bijelo` also forces 6 centerline colours. Found: cSurvey reads a stored `decorationspacepercentage` of 0 as 100 (`cPen.vb:434-435`) and saves it with one decimal, so T3 must write ≥ 0.1 for the meander's butted rails (in the themes README under Known limits).
 - **Evidence:** `python -m pytest stages/3N-nacrt -q` 314 passed; `check_defaults.py` OK (2 themes); pipeline doctor 0 fail (3 old link warnings). No `pyproject.toml`/`pipeline.yaml` change: only tool scripts and data under `production/`.
 - **Next:** T3 `apply_theme` consumes `themes.load_theme` + `themes.resolve` with the names from `tdx_name_recover.py`. The user confirms the colours in `boja/theme.json`.
+
+### 2026-10-06 — T3 phase 1: `theme_apply.py` (signs + centerline) (agent) ✅
+
+- **Did:**
+  - Built `production/tools/theme_apply.py apply IN.csx|.csz --theme ID --pre PRE [-o] [--dry-run] [--json]` (stdlib).
+  - **Lookup:** recovered TopoDroid name (`tdx_name_recover.recover`), then the target of `sign=` (catalog SignEnum → `to`), then untouched.
+  - **Glyph:** spliced into `<signs><cliparts>` with the item's `data` repointed. For this, `nacrt_finish.py` gained `clipart_hash`, `clipart_data_path` and `splice_sign_clipart`, which the compass now uses too.
+  - **Colour:** an inline custom solid brush plus a TightPen-like custom pen, named `tema:<id>`. Black keeps the built-ins `10`/`7`.
+  - **Outline mode:** added `render: fill|outline` to `themes.py` and the themes README.
+  - **Size:** a theme `size` is baked into the glyph's `csurvey:scale`. `signsize` is untouched, because cSurvey normalises every glyph to `csurvey:scale` × 1 unit (`cCliparts.vb:80-91`) and `signsize` is a discrete operator enum.
+  - **Centerline:** written via `fix_imported_linetypes.apply_centerline`.
+  - **Idempotency:** the design properties `CaveDossierTheme` and `CaveDossierThemeState` (JSON: glyphs added, each sign's original glyph, overwritten centerline values) let a re-run undo the previous theme first.
+  - **Tests:** `tests/test_theme_apply.py` (11) and a `render` test in `test_themes.py`.
+- **Result:**
+  - **Hash** = SHA-1 with each byte as *unpadded* uppercase hex (`modMain.CalculateHash` `{0:X1}`). It was verified on all 4 pool entries of SB 1103; ingresso's id has 38 characters. `nacrt_finish`'s old `hexdigest().upper()` was only right by luck for compass3.
+  - **SB 1103:** 2 profile blocks themed by TopoDroid name. The 2 entrances are not in the themes; one is a moved-item miss that fell back to its target.
+  - **Byte-identical:** boja×2, crno-bijelo×2, boja→crno-bijelo = crno-bijelo, crno-bijelo→boja = boja (centerline restored) and outline→boja = boja. The `.csz` re-apply is also identical.
+  - **cSurvey round trip:** a headless load + save keeps the markers, pens, brushes and pool. It only adds the pen's `<clipart data=""/>`, which we now write as well.
+  - **Prints:** cSurvey prints all variants with the club glyph, grey in boja, black in crno-bijelo (centerline and labels too), outline as white with an outline, and no clipart_error.
+  - **T1 bug:** the theme SVGs carry `csurvey:sign="53"` for blocks, which is the catalog/TopoDroid `num`, not the SignEnum 1290. It is harmless here because the item's `sign=` wins on load (`cItemSign.vb:385`), but it would mis-type the glyph if it were ever added through the gallery.
+- **Evidence:** [runs/2026-10-06-t3/RUNLOG.md](runs/2026-10-06-t3/RUNLOG.md) with the PDFs and PNGs (comparison strip `SB_1103_profile_znakovi_usporedba.png`). `pytest stages/3N-nacrt` 326 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
+- **Next:**
+  - The user judges the prints.
+  - T1: fix `csurvey:sign` to emit the SignEnum.
+  - Decide whether to keep the pool name as the bare file name (`blocks.svg`, the same as cSurvey's own entry; the id differs).
+  - Hook into KORAK 2 / the kit (T5).
+  - Phase 2: lines and areas.
+
+### 2026-10-06 — T1 sign-number fix, pool names, zoo sample sheet (agent) ✅
+
+- **Did:**
+  - **A. `csurvey:sign` is now the SignEnum value.**
+    - `make_signs_catalog.py` writes a `sign` field on every point target in `tdx-mapping-catalog.json`. The value
+      comes from its static `SIGN_NAMES` table, so prod needs no cSurvey source.
+    - The catalog was regenerated: it is identical apart from that field, and the HTML pages are unchanged.
+    - `theme_svg.SignResolver` returns `sign` and maps the `natural` menu numbers through it.
+    - Tests: stalagmite 517, blocks 1290, debris→breakdownchoke 261, air-draught 774, plus a check that every
+      catalog `sign` equals its gallery SVG's `csurvey:sign`.
+    - Re-split `drawing_catalogue.svg` into `findings/t1-split/` and copied the result into `production/themes/boja/`.
+      The diff is only `csurvey:sign` (7 signs) and `report.json`. `theme.json` is untouched.
+  - **B. Pool naming.** Glyphs that `theme_apply.py` adds to the pool are named `tema-<theme>_<file>.svg` (`pool_name`).
+    Switching theme renames the entry rather than stacking it (test added). Production README updated.
+  - **C. Zoo sample sheet.** Ran the zoo v3 pair through KORAK 2, then boja and crno-bijelo, and printed the plan
+    headless.
+- **Result:**
+  - 43/43 zoo signs were recovered by name. 8 of the 12 theme signs are in the zoo, and all 8 are themed by
+    TopoDroid name. 5 of them replace X-boxes (danger, debris, minus, plus, plus-minus).
+  - Not in the zoo: bones, tree-trunk, vegetable-debris and water-flow:intermittent.
+  - On the zoo, boja↔crno-bijelo and boja→boja give byte-identical files.
+  - Odd: `water-flow:intermittent` resolves to 777 (WaterFlow), because the gallery has no 778 glyph and so the
+    catalog has no 778 target. The club glyphs print larger than cSurvey's own. The air-draught arrow hangs below
+    its station.
+- **Evidence:** [runs/2026-10-06-zoo-sheet/RUNLOG.md](runs/2026-10-06-zoo-sheet/RUNLOG.md) (start with
+  `zoo_znakovi_usporedba.png`). `pytest stages/3N-nacrt` 327 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
+- **Next:**
+  - The user judges the colours on the sheet.
+  - Build a zoo v4 with bones, tree-trunk, vegetable-debris and a water-flow:intermittent subtype.
+  - Phase 2: lines and areas.
+
+### 2026-10-07 — Round 2: outline pen off, theme mockup (zoo v4), arrow direction (agent) ✅
+
+- **Did:**
+  - **Outline pen off.** For fill signs, `theme_apply.py` now writes an inline custom pen with style None (98):
+    `<pen type="99" name="tema:<id>" color="…" style="98" width="0.00" …><clipart data=""/></pen>`. This applies to
+    black signs too.
+    - Verified in cSurvey: `cCustomPen.pRender` sets no GDI pen (`cPen.vb:865-867`), `Render` adds the path with
+      `Nothing`, and the sign path goes through `cDrawPaths.Render` → `Item.Pen.Render`.
+    - The pen survives a headless load + save unchanged.
+    - A new sign field `outline_pen` (default false for fill, forced true for outline) brings back the old look.
+      Glyph paths with no fill vanish with the pen off, and the report notes them.
+  - **`rotate`.** A new sign field `rotate`, in degrees clockwise, is baked into the glyph coordinates by
+    `theme_svg.rotate_svg`. `csurvey:rotationangledelta` was tested and does nothing: no render path reads it.
+  - **Theme mockup.** The new `production/tools/make_theme_mockup.py` generates zoo v4. It contains everything in
+    zoo v3 plus every key of every theme (read at run time); lines are drawn straight and as a curve, and areas are
+    2 × 1.5 m. The line and area rows are walled. The file is imported headlessly through `csurvey_driver recalc`,
+    with no GUI step.
+  - `boja`: `air-draught` gets `rotate 180` and `water-flow:intermittent` gets `rotate 90`; a `_rotate` note says why.
+  - Docs: the production README, plus a "Directional signs" section in `themes/README.md`.
+- **Result:**
+  - All 12 theme signs are themed on the mockup. The 4 new ones (bones, tree-trunk, vegetable-debris,
+    water-flow:intermittent) print with the club glyph; 3 of them replace X-boxes.
+  - Name recovery is 47/47 for signs and 154/154 for other items.
+  - All 4 theme switches are byte-identical to a single apply, and so is old-pen→boja.
+  - The arrows now point north at orientation 0, like cSurvey's own.
+- **Odd:**
+  - Headless import against `C:\csurvey64` fails with HTTP 429. The cause: 101 gallery SVGs have a w3.org DTD
+    DOCTYPE that .NET fetches, and w3.org rate-limits it. Run r2 used a scratch copy with the DOCTYPEs stripped. A GUI
+    import may hit the same 429.
+  - vegetable-debris loses its 117 stroke-only hairlines with the pen off.
+  - With the pen off, a sign whose item transparency is set in cSurvey would throw a NullReference
+    (`cPen.vb:1018-1020` reads `oPen.Color` when transparency ≠ 0). Untested; the default transparency is 0.
+  - The importer adds +90° only to the exact names `air-draught` and `water-flow`. KORAK 1 maps
+    `water-flow:intermittent` to `waterflow`, so cSurvey's own glyph for it points left too.
+  - KORAK 1 converts danger, minus, plus, plus-minus and anchor to text labels, so in the real pipeline the theme
+    entries for the first four never fire. Round 1 and 2 both skip KORAK 1.
+- **Evidence:** [runs/2026-10-07-zoo-sheet-r2/RUNLOG.md](runs/2026-10-07-zoo-sheet-r2/RUNLOG.md) (start with
+  `theme-mockup_znakovi_usporedba.png`). `pytest stages/3N-nacrt` 334 passed; `check_defaults.py` OK; pipeline doctor
+  0 fail.
+- **Next:**
+  - The user judges the pen-off look and the colours.
+  - Decide whether to map `water-flow:intermittent` → `water-flow` in KORAK 1 (through `/csurvey-defaults`); if so,
+    drop its `rotate`.
+  - Decide what KORAK 1 does with danger, minus, plus and plus-minus now that they have club glyphs.
+  - vegetable-debris: set `outline_pen: true` or redraw the strokes as fills.
+  - Phase 2: lines and areas.

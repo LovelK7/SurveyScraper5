@@ -50,7 +50,7 @@
       "kind": "signs",
       "key": "blocks",
       "id": "blocks",
-      "sign": 53,
+      "sign": 1290,
       "sign_via": "cSurvey sign name",
       "scale": 1.308,
       "file": "signs/blocks.svg",
@@ -160,7 +160,7 @@
       "kind": "signs",
       "key": "air-draught",
       "id": "air-draught",
-      "sign": 36,
+      "sign": 774,
       "sign_via": "TopoDroid air-draught, natural import",
       "scale": 1.053,
       "file": "signs/air-draught.svg",
@@ -186,7 +186,7 @@
       "kind": "signs",
       "key": "debris",
       "id": "debris",
-      "sign": 5,
+      "sign": 261,
       "sign_via": "TopoDroid debris -> breakdownchoke (tdx-mapping.json)",
       "scale": 0.985,
       "file": "signs/debris.svg",
@@ -237,7 +237,7 @@
       "kind": "signs",
       "key": "tree-trunk",
       "id": "tree-trunk",
-      "sign": 33,
+      "sign": 771,
       "sign_via": "TopoDroid tree-trunk -> vegetabledebris (tdx-mapping.json)",
       "scale": 1.075,
       "file": "signs/tree-trunk.svg",
@@ -257,14 +257,14 @@
       ],
       "rejected": [],
       "warnings": [
-        "csurvey:sign 33 is also claimed by vegetable-debris (one glyph per cSurvey sign)"
+        "csurvey:sign 771 is also claimed by vegetable-debris (one glyph per cSurvey sign)"
       ]
     },
     {
       "kind": "signs",
       "key": "vegetable-debris",
       "id": "vegetable-debris",
-      "sign": 33,
+      "sign": 771,
       "sign_via": "TopoDroid vegetable-debris, natural import",
       "scale": 1.143,
       "file": "signs/vegetable-debris.svg",
@@ -892,14 +892,14 @@
       ],
       "rejected": [],
       "warnings": [
-        "csurvey:sign 33 is also claimed by tree-trunk (one glyph per cSurvey sign)"
+        "csurvey:sign 771 is also claimed by tree-trunk (one glyph per cSurvey sign)"
       ]
     },
     {
       "kind": "signs",
       "key": "water-flow:intermittent",
       "id": "water-flow:intermittent",
-      "sign": 37,
+      "sign": 777,
       "sign_via": "TopoDroid water-flow:intermittent -> waterflow (tdx-mapping.json)",
       "scale": 0.988,
       "file": "signs/water-flow@intermittent.svg",
@@ -925,7 +925,7 @@
       "kind": "signs",
       "key": "continuation",
       "id": "continuation",
-      "sign": 1,
+      "sign": 257,
       "sign_via": "cSurvey sign name",
       "scale": 0.753,
       "file": "signs/continuation.svg",

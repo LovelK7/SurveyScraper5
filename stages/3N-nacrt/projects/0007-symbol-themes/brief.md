@@ -621,6 +621,9 @@ with one of three tools, cheapest first:
 2. **A different render, same artwork.** No drawing needed:
    - **outline mode for signs:** the item brush becomes white and the pen stays black. cSurvey's pen
      outlines every path of the glyph (§2.3), so a filled shape reads as its outline;
+     **only for solid shapes** (seen in the T3 print, 2026-10-06): a line-drawing glyph whose lines are thin
+     outlined fills, like `blocks`, turns into double lines, because both edges of every stroke get traced. Fine for
+     `tree-trunk`, wrong for `blocks`/`debris`;
    - **pattern hatch for areas:** `hatchtype="3"`, `patterntype` 0 = parallel lines or 1 = crossed lines,
      `patternangle`, `patterndensity`, `patternzoomfactor`, `patternpenstyle` (`cBrush.vb:2649-2664`). The
      T0 oracle shows the exact XML on a sign brush:

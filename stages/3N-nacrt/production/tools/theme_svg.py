@@ -914,6 +914,42 @@ def render_svg(piece, sign=None, scale=None, title=None):
     return "\n".join(lines) + "\n"
 
 
+_D_ATTR = re.compile(rb'(<path\b[^>]*?\sd=")([^"]*)(")')
+_VIEWBOX = re.compile(rb'viewBox="[^"]*"')
+
+
+def rotate_svg(blob, degrees):
+    """Rotate a normalised glyph (render_svg output) by `degrees`, clockwise as
+    drawn (SVG rotate(), y down), baked into the path coordinates; geometry
+    moved back to the origin and the viewBox refitted. Everything else in the
+    file is left byte for byte.
+
+    cSurvey centres a sign glyph's bounding box on the item's point
+    (cItemSign.vb:310-318) and only then turns it by the item's angle, so a
+    rotation here is a pure change of direction. It cannot be done with
+    csurvey:rotationangledelta: cSurvey keeps that attribute as clipart
+    metadata (cItemSign.vb:73-80) but no render path reads it."""
+    if not degrees or abs(degrees % 360.0) < 1e-9:
+        return blob
+    rot, _names, _skew = parse_transform("rotate(%r)" % float(degrees))
+    found = [(m, parse_path(m.group(2).decode("ascii"))) for m in _D_ATTR.finditer(blob)]
+    if not found:
+        raise ValueError("no <path d=...> in the glyph")
+    turned = [transform_segs(segs, rot) for _m, segs in found]
+    box = None
+    for segs in turned:
+        box = union(box, bbox(segs))
+    shift = (1, 0, 0, 1, -box[0], -box[1])
+    out, pos = [], 0
+    for (m, _segs), segs in zip(found, turned):
+        out += [blob[pos:m.start(2)], segs_to_d(transform_segs(segs, shift)).encode("ascii")]
+        pos = m.end(2)
+    out.append(blob[pos:])
+    blob = b"".join(out)
+    vb = ('viewBox="0 0 %s %s"' % (fmt(box[2] - box[0]), fmt(box[3] - box[1]))).encode("ascii")
+    return _VIEWBOX.sub(lambda _m: vb, blob, count=1)
+
+
 # --------------------------------------------------------------------------
 # sign number resolution
 
@@ -926,7 +962,12 @@ class SignResolver:
     def __init__(self, catalog=None, mapping=None):
         catalog = catalog if catalog is not None else load_json(CATALOG)
         mapping = mapping if mapping is not None else load_json(MAPPING)
-        self.targets = {t["to"]: t["num"] for t in catalog["targets"]["point"]}
+        # The catalog's point targets carry both the menu number ("num",
+        # 1..N, what tdx-mapping.json and "natural" use) and cSurvey's
+        # SignEnum value ("sign", cIItemSign.vb, what csurvey:sign must hold;
+        # written by make_signs_catalog.py from its static SIGN_NAMES table).
+        self.targets = {t["to"]: t["sign"] for t in catalog["targets"]["point"]}
+        self.num_to_sign = {t["num"]: t["sign"] for t in catalog["targets"]["point"]}
         self.kind_names = {}
         for t in catalog.get("tdx", []):
             self.kind_names.setdefault(t["kind"], {})[t["name"]] = t
@@ -936,7 +977,7 @@ class SignResolver:
         self.points = mapping.get("points", {})
 
     def resolve(self, key):
-        """-> (num or None, how)."""
+        """-> (SignEnum value or None, how)."""
         if key in self.targets:
             return self.targets[key], "cSurvey sign name"
         tdx = self.kind_names.get("point", {}).get(key)
@@ -948,8 +989,8 @@ class SignResolver:
                     return self.targets[to], "TopoDroid %s -> %s (tdx-mapping.json)" % (key, to)
                 return None, "TopoDroid %s maps to %s, which is no cSurvey sign" % (key, to)
             num = (tdx.get("natural") or {}).get("num")
-            if num is not None:
-                return num, "TopoDroid %s, natural import" % key
+            if num in self.num_to_sign:
+                return self.num_to_sign[num], "TopoDroid %s, natural import" % key
             return None, "TopoDroid %s has no cSurvey sign (X-box)" % key
         return None, "not a cSurvey sign or TopoDroid point name"
 

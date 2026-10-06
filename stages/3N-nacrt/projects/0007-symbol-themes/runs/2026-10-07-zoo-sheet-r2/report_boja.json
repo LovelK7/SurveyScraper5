@@ -1,0 +1,66 @@
+{
+ "theme": "boja",
+ "signs": 47,
+ "lookup": {
+  "tdx (recovered)": 12,
+  "none (recovered)": 35
+ },
+ "themed": 12,
+ "glyph": 12,
+ "colour": 5,
+ "outline": 0,
+ "black_builtin": 0,
+ "pen_off": 12,
+ "skipped_custom": 0,
+ "size_ignored": 0,
+ "pool_added": [
+  "3148098A0BC5DEB3E729262E9DE595895FCC85 tema-boja_air-draught.svg",
+  "6E2451BAB332CF265F7B64D4DA9F31362F978 tema-boja_blocks.svg",
+  "6D7040E5F3B5BD6337DD9DCA70EE539F6CF6416 tema-boja_bones.svg",
+  "5198B6E7D329405DF36C80785C621593D49378 tema-boja_continuation.svg",
+  "909DB183CE8F749FAC5BC7BDF86ACD74C5C7B2 tema-boja_danger.svg",
+  "4A1DE577104CC4E6149F598787F94D7E2AC9161D tema-boja_debris.svg",
+  "B667DFB02EEA1D3951E135495FA32B0EF9CA9CB tema-boja_minus.svg",
+  "19F7F351EC5C65A3F621E7B89E1FE7B6814B28C tema-boja_plus.svg",
+  "47C68425686196E9858486E06ECB76A19A60E344 tema-boja_plus-minus.svg",
+  "EF9E415B5514D0223EB023D56A11B6C9FD4653EF tema-boja_tree-trunk.svg",
+  "CE934651A7277BC136351B1FDD91BFEC63655 tema-boja_vegetable-debris.svg",
+  "D4702E9CCF93B76CC2C6B3C739D4DA78D39F4813 tema-boja_water-flow@intermittent.svg"
+ ],
+ "pool_reused": [],
+ "phase2": {
+  "lines": {
+   "floor-meander": 2,
+   "overhang": 2,
+   "pit": 2,
+   "slope": 2,
+   "water-flow": 2,
+   "abyss-entrance": 2,
+   "ceiling-step": 2,
+   "rope": 2,
+   "slope:sheer": 2,
+   "slope:steep": 2
+  },
+  "areas": {
+   "blocks": 1,
+   "clay": 1,
+   "debris": 1,
+   "ice": 1,
+   "pebbles": 1,
+   "stalagmite": 1
+  }
+ },
+ "notes": [
+  "vegetable-debris: 117 stroke-only path(s) in the glyph do not print with the pen off (outline_pen false)"
+ ],
+ "centerline": 0,
+ "input": "projects/0007-symbol-themes/runs/2026-10-07-zoo-sheet-r2/theme-mockup_izvorno.csx",
+ "output": "projects/0007-symbol-themes/runs/2026-10-07-zoo-sheet-r2/theme-mockup_boja.csx",
+ "previous_theme": null,
+ "undone_items": 0,
+ "pool_removed": [],
+ "recovery": {
+  "other recovered": 154,
+  "sign recovered": 47
+ }
+}

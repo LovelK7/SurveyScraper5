@@ -428,7 +428,10 @@ def write_catalog_json(cs_points, tool_info, tdx_rows, sign_to_num, glyphs,
     files) exist only on a developer machine; the json ships with the kit."""
     targets = {"point": [], "line": [], "area": []}
     for n, sign, ename, app, svg in cs_points:
-        targets["point"].append({"num": n, "to": SIGN_NAMES[sign].lower(),
+        # "num" is the menu number (1..N); "sign" is cSurvey's SignEnum value
+        # (cIItemSign.vb), what an item's sign= and an SVG's csurvey:sign hold.
+        targets["point"].append({"num": n, "sign": sign,
+                                 "to": SIGN_NAMES[sign].lower(),
                                  "label": ename, "app": app, "svg": svg})
     for i, (name, desc, toolname) in enumerate(LINE_TARGETS):
         svg, label = tool_info(toolname, LINE_PREVIEWS[name])

@@ -1044,19 +1044,27 @@ def add_scale_bar(root, bbox, plan_scale, warn, place="beside"):
             "for_scale": plan_scale}
 
 
+def clipart_hash(blob):
+    """The id cSurvey gives a clipart: SHA-1 of its bytes, each byte as
+    uppercase hex WITHOUT zero padding (modMain.CalculateHash formats with
+    "{0:X1}", modMain.vb:435-454) - so 0x0A is "A" and an id can be shorter
+    than 40 characters (SB 1103's ingresso.svg id has 38)."""
+    return "".join("%X" % b for b in hashlib.sha1(blob).digest())
+
+
 def load_compass_clipart():
     """The `<clipart>` element for compass3.svg, and its decoded SVG bytes.
 
     Shipped as an asset beside this tool rather than read out of the SB 1103
     fixture at runtime — the fixture is gitignored and is not on an operator
-    machine. The id is the uppercase SHA-1 of the SVG bytes
-    (modMain.CalculateHash, cCliparts.vb:463), so a corrupted asset fails here
-    instead of writing a clipart id nothing resolves.
+    machine. The id is cSurvey's hash of the SVG bytes (clipart_hash,
+    cCliparts.vb:463), so a corrupted asset fails here instead of writing a
+    clipart id nothing resolves.
     """
     el = ET.parse(COMPASS_ASSET).getroot()
     blob = base64.b64decode("".join((el.get("data") or "").split()))
     cid = el.get("id") or ""
-    if hashlib.sha1(blob).hexdigest().upper() != cid:
+    if clipart_hash(blob) != cid:
         raise ValueError("%s: id %s is not the SHA-1 of its data"
                          % (COMPASS_ASSET, cid))
     return cid, el.get("name") or "compass3.svg", blob
@@ -1070,6 +1078,53 @@ def _cliparts_element(root):
     return signs.find("cliparts")
 
 
+def clipart_data_path(cliparts, cid):
+    """@data of a .csz clipart: the zip path, with cSurvey's backslashes.
+
+    cSurvey stores a .csz clipart as a zip entry and puts the *path* in @data,
+    with backslashes (cCliparts.vb:495-497) — the zip entry itself uses forward
+    slashes, and the loader normalizes them back to the platform separator
+    before looking the path up (cFile.vb:388). A forward-slash @data would
+    therefore resolve to nothing on Windows and take cSurvey down on load, so
+    backslash is the default; only a clipart path already in this file
+    overrides it. The test is "looks like a path", not "contains a slash":
+    base64 @data (a .csx's XML, rezipped) is full of forward slashes.
+    """
+    sep = "\\"
+    for other in cliparts.findall("clipart"):
+        data = other.get("data") or ""
+        if data.lower().endswith(".svg"):
+            sep = "/" if ("/" in data and "\\" not in data) else "\\"
+            break
+    return "_data%scliparts%s%s.svg" % (sep, sep, cid)
+
+
+def splice_sign_clipart(root, is_csz, cid, name, blob):
+    """Put one SVG into the `<signs><cliparts>` pool under id `cid`.
+
+    -> (added, extra_zip_entries); added is False when the id is already in
+    the pool (nothing written). A .csx carries the bytes as base64 in @data, a
+    .csz as the zip entry `_data/cliparts/<id>.svg` (returned in the extra
+    entries for write_root) with the backslash path in @data. Raises
+    ValueError when the file has no `<signs><cliparts>`.
+    """
+    cliparts = _cliparts_element(root)
+    if cliparts is None:
+        raise ValueError("no <signs><cliparts> in the file")
+    for clipart in cliparts.findall("clipart"):
+        if clipart.get("id") == cid:
+            return False, {}
+    el = ET.Element("clipart", {"id": cid, "name": name})
+    extra = {}
+    if is_csz:
+        el.set("data", clipart_data_path(cliparts, cid))
+        extra["_data/cliparts/%s.svg" % cid] = blob
+    else:
+        el.set("data", base64.b64encode(blob).decode("ascii"))
+    pretty_append(cliparts, el)
+    return True, extra
+
+
 def ensure_compass_clipart(root, is_csz, warn):
     """Return (clipart_id, extra_zip_entries, added_name_or_None)."""
     cliparts = _cliparts_element(root)
@@ -1081,30 +1136,8 @@ def ensure_compass_clipart(root, is_csz, warn):
     if cliparts is None:
         warn("nema <signs><cliparts> - ne mogu dodati clipart busole")
         return None, {}, None
-    el = ET.Element("clipart", {"id": cid, "name": name})
-    extra = {}
-    if is_csz:
-        # cSurvey stores a .csz clipart as a zip entry and puts the *path* in
-        # @data, with backslashes (cCliparts.vb:495-497) — the zip entry itself
-        # uses forward slashes, and the loader normalizes them back to the
-        # platform separator before looking the path up (cFile.vb:388). A
-        # forward-slash @data would therefore resolve to nothing on Windows and
-        # take cSurvey down on load, so backslash is the default; only a clipart
-        # path already in this file overrides it. The test is "looks like a
-        # path", not "contains a slash": base64 @data (a .csx's XML, rezipped)
-        # is full of forward slashes.
-        sep = "\\"
-        for other in cliparts.findall("clipart"):
-            data = other.get("data") or ""
-            if data.lower().endswith(".svg"):
-                sep = "/" if ("/" in data and "\\" not in data) else "\\"
-                break
-        el.set("data", "_data%scliparts%s%s.svg" % (sep, sep, cid))
-        extra["_data/cliparts/%s.svg" % cid] = blob
-    else:
-        el.set("data", base64.b64encode(blob).decode("ascii"))
-    pretty_append(cliparts, el)
-    return cid, extra, name
+    added, extra = splice_sign_clipart(root, is_csz, cid, name, blob)
+    return cid, extra, (name if added else None)
 
 
 def add_compass(root, bbox, scale_bar, is_csz, warn):

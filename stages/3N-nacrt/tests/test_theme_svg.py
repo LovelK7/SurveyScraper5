@@ -170,13 +170,24 @@ def resolver():
 
 
 def test_sign_resolution(resolver):
-    assert resolver.resolve("stalagmite")[0] == 10
-    assert resolver.resolve("blocks")[0] == 53
+    # csurvey:sign is cSurvey's SignEnum value (cIItemSign.vb), never the
+    # catalog's menu number (stalagmite 10, blocks 53, breakdownchoke 5).
+    assert resolver.resolve("stalagmite")[0] == 517
+    assert resolver.resolve("blocks")[0] == 1290
     num, how = resolver.resolve("debris")         # TopoDroid -> breakdownchoke
-    assert num == 5 and "breakdownchoke" in how
-    assert resolver.resolve("air-draught")[0] == 36   # TopoDroid natural import
+    assert num == 261 and "breakdownchoke" in how
+    assert resolver.resolve("air-draught")[0] == 774  # TopoDroid natural import
     assert resolver.resolve("no-such-symbol")[0] is None
     assert resolver.resolve("bones")[0] is None
+
+
+def test_sign_values_match_gallery_svgs(resolver):
+    """Every catalog "sign" equals the csurvey:sign of that target's gallery SVG."""
+    import re
+    cat = json.loads((TOOLS / "tdx-mapping-catalog.json").read_text(encoding="utf-8"))
+    for t in cat["targets"]["point"]:
+        m = re.search(r'csurvey:sign="(\d+)"', t["svg"])
+        assert m and int(m.group(1)) == t["sign"] == resolver.targets[t["to"]], t["to"]
 
 
 # --- split end-to-end ------------------------------------------------------
@@ -206,7 +217,7 @@ def test_split(tmp_path):
     assert json.loads((out / "lines" / "index.json").read_text())["slope:steep"] == "slope@steep.svg"
     assert (out / "areas" / "debris.svg").exists()
     stal = (out / "signs" / "stalagmite.svg").read_text()
-    assert 'csurvey:sign="10"' in stal and 'xmlns:csurvey="http://www.csurvey.it"' in stal
+    assert 'csurvey:sign="517"' in stal and 'xmlns:csurvey="http://www.csurvey.it"' in stal
     assert "csurvey:scale=" in stal
     unknown = (out / "signs" / "no-such-symbol.svg").read_text()
     assert "csurvey:sign" not in unknown
@@ -234,3 +245,16 @@ def test_check_flags_cs_problems(tmp_path):
     assert "arc" in errs and "ellipse" in errs and "spaces" in errs
     assert "invisible" in warns
     assert ts.check(str(f)) == 1
+
+
+def test_rotate_svg_bakes_rotation_and_refits_viewbox():
+    blob = (b'<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" '
+            b'xmlns:csurvey="http://www.csurvey.it" viewBox="0 0 4 1" csurvey:sign="774" '
+            b'csurvey:scale="1.2">\n  <title>t</title>\n'
+            b'  <path d="M 0 0 L 4 0 L 4 1 Z" fill="#000000"/>\n</svg>\n')
+    r90 = ts.rotate_svg(blob, 90)                       # clockwise as drawn (y down)
+    assert b'viewBox="0 0 1 4"' in r90
+    assert b'd="M 1 0 L 1 4 L 0 4 Z"' in r90
+    assert b'csurvey:sign="774" csurvey:scale="1.2"' in r90 and b"<title>t</title>" in r90
+    assert ts.rotate_svg(ts.rotate_svg(blob, 180), 180) == blob
+    assert ts.rotate_svg(blob, 0) is blob and ts.rotate_svg(blob, 360) is blob

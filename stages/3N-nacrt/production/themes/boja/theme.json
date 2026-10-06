@@ -4,7 +4,8 @@
   "extends": null,
   "default_color": "#000000",
   "signs": {
-    "air-draught":             {"color": "#000000"},
+    "_rotate": "cSurvey draws a directional sign pointing LEFT (-x) and turns it by the TopoDroid orientation; for the exact names air-draught and water-flow its importer adds +90, so they point up (north) at orientation 0. The club air-draught is drawn pointing right, hence rotate 180. water-flow:intermittent reaches cSurvey as 'waterflow' (KORAK 1 mapping), which gets no +90, hence rotate 90; drop it if the mapping becomes 'water-flow'. Redrawn art pointing left needs no rotate (run r2, 2026-10-07)",
+    "air-draught":             {"color": "#000000", "rotate": 180},
     "blocks":                  {"color": "#78787A"},
     "bones":                   {"color": "#000000"},
     "continuation":            {"color": "#000000"},
@@ -15,7 +16,7 @@
     "plus-minus":              {"color": "#000000"},
     "tree-trunk":              {"color": "#453625"},
     "vegetable-debris":        {"color": "#463524"},
-    "water-flow:intermittent": {"color": "#24A9D1"}
+    "water-flow:intermittent": {"color": "#24A9D1", "rotate": 90}
   },
   "lines": {
     "abyss-entrance": {"color": "#000000", "style": "solid"},

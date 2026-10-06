@@ -3,7 +3,7 @@
 
 A theme is a folder of content files, applied after import (KORAK 2, brief
 section 3.2). This module only *reads* themes; writing them into a survey is
-`apply_theme` (T3).
+`theme_apply.py` (T3).
 
 Layout::
 
@@ -25,7 +25,16 @@ theme.json (keys starting with `_` are comments, everywhere)::
           "svg": "signs/x.svg" | null, path relative to this theme's folder; omitted ->
                                        signs/index.json[KEY] if listed; null -> built-in glyph
           "color": COLOUR,
-          "size": 1.0 } },             optional factor on the sign size
+          "size": 1.0,                 optional factor on the glyph size (baked into
+                                       the glyph's csurvey:scale by theme_apply.py)
+          "render": "fill",            fill (default) | outline: brush white, the pen in
+                                       the colour, so a filled shape reads as its outline
+          "outline_pen": false,        optional; cSurvey's pen traced round every path of the
+                                       glyph. Default false for fill (only the fills paint:
+                                       a style-None pen), true for outline (required there)
+          "rotate": 0 } },             optional degrees, clockwise as drawn; baked into the
+                                       glyph's coordinates by theme_apply.py (cSurvey never
+                                       reads csurvey:rotationangledelta when rendering)
 
       "lines": { KEY: {
           "svg": "lines/x.svg" | null, the decoration unit; null -> no decoration
@@ -91,7 +100,8 @@ KIND_ALIASES = {"sign": "signs", "point": "signs", "points": "signs",
 
 TOP_FIELDS = {"name", "extends", "monochrome", "default_color", "description",
               "signs", "lines", "areas", "centerline", "scale_rules"}
-SIGN_FIELDS = {"svg", "color", "size"}
+SIGN_FIELDS = {"svg", "color", "size", "render", "outline_pen", "rotate"}
+SIGN_RENDERS = ("fill", "outline")    # outline: white brush, pen in the colour (brief 3.8)
 LINE_FIELDS = {"svg", "color", "width", "style", "dash", "decoration", "decoration_color"}
 DECORATION_FIELDS = {"spacing_pct", "scale", "alignment", "distance_pct", "position"}
 AREA_FIELDS = {"svg", "color", "background_color", "density", "zoom", "angle_mode",
@@ -392,9 +402,26 @@ def _svg(entry, where, errors):
 
 def _sign_spec(key, entry, default_color, where, errors):
     _unknown_fields(entry, SIGN_FIELDS, where, errors)
+    render = _enum(entry, "render", SIGN_RENDERS, where, errors, "fill")
+    pen = entry.get("outline_pen")
+    if pen is None:
+        pen = render == "outline"
+    elif not isinstance(pen, bool):
+        errors.append("%s.outline_pen: must be true or false" % where)
+        pen = render == "outline"
+    elif render == "outline" and not pen:
+        errors.append("%s.outline_pen: render outline draws only the pen - it cannot be false"
+                      % where)
+        pen = True
+    rotate = _num(entry, "rotate", where, errors)
+    if rotate is not None:
+        rotate %= 360.0
+        if abs(rotate) < 1e-9 or abs(rotate - 360.0) < 1e-9:
+            rotate = None
     return {"key": key, "svg": _svg(entry, where, errors),
             "color": _colour(entry, "color", where, errors, default_color),
-            "size": _num(entry, "size", where, errors, positive=True)}
+            "size": _num(entry, "size", where, errors, positive=True),
+            "render": render, "outline_pen": pen, "rotate": rotate}
 
 
 def _line_spec(key, entry, default_color, where, errors):
