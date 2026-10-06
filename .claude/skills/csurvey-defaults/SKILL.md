@@ -96,7 +96,8 @@ Cite the `path:line` in the entry's `source`, or in the commit message for file 
 ## 4 · Do it
 
 1. Edit the JSON. Keep the formatting: 2-space indent, `ensure_ascii=False`. For `tdx-mapping.json`, `json.load` → change → `json.dumps(d, indent=2, ensure_ascii=False) + "\n"` round-trips byte-exactly.
-2. `python .claude/skills/csurvey-defaults/check_defaults.py` must print `OK`.
+2. `python .claude/skills/csurvey-defaults/check_defaults.py` must print `OK`. It also validates every
+   symbol theme under `stages/3N-nacrt/production/themes/` (schema: that folder's README).
 3. `python -m pytest -q stages/3N-nacrt/tests prod/tests` must be green.
 4. Docs, same commit:
    - `csurvey-settings.md` › "What is predefined now": update the row for the changed setting (app table or file table).

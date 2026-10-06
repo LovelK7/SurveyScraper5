@@ -20,6 +20,7 @@ sys.dont_write_bytecode = True
 import csurvey_app_settings as app  # noqa: E402
 import fix_imported_linetypes as fixer  # noqa: E402
 import preprocess_tdx_csx as pp  # noqa: E402
+import themes  # noqa: E402
 
 problems = []
 mapping_path = os.path.join(TOOLS, "tdx-mapping.json")
@@ -101,6 +102,17 @@ for key, size in post.get("label_sizes", {}).items():
     if str(size).lower() not in fixer.SIZES:
         problems.append("postimport.label_sizes.%r: size %r not in %s" % (key, size, sorted(fixer.SIZES)))
 
+# Symbol themes (project 0007): every theme folder, plus the default theme if one is named
+theme_ids = themes.list_themes()
+for tid in theme_ids:
+    for e in themes.validate(tid):
+        problems.append("themes/%s: %s" % (tid, e))
+if "theme" in mapping:
+    default_theme = mapping["theme"]
+    if default_theme is not None and (not isinstance(default_theme, str) or default_theme not in theme_ids):
+        problems.append("theme: %r is not a theme folder under production/themes (%s)"
+                        % (default_theme, ", ".join(theme_ids) or "none"))
+
 # KORAK 0: app settings
 try:
     _key, app_settings = app.load_profile(app.DEFAULT_PROFILE)
@@ -115,8 +127,9 @@ if problems:
     sys.exit(1)
 cl = post.get("centerline", {})
 print("OK: %d point / %d line / %d area mappings, %d centerline, %d designproperties, "
-      "%d viewoptions, %d sign sizes, %d label sizes, %d app settings"
+      "%d viewoptions, %d sign sizes, %d label sizes, %d app settings, %d themes%s"
       % (len(mapping.get("points", {})), len(mapping.get("lines", {})), len(mapping.get("areas", {})),
          len(cl), len([k for k in post.get("designproperties", {}) if not k.startswith("_")]),
          len([k for k in post.get("viewoptions", {}) if not k.startswith("_")]),
-         len(post.get("sign_sizes", {})), len(post.get("label_sizes", {})), len(app_settings)))
+         len(post.get("sign_sizes", {})), len(post.get("label_sizes", {})), len(app_settings),
+         len(theme_ids), " (default %s)" % mapping["theme"] if mapping.get("theme") else ""))

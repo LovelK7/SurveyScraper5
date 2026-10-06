@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:csurvey="http://www.csurvey.it" viewBox="0 0 12.292 2.593">
+  <title>stalagmite</title>
+  <path d="M 8 0 L 10 0 L 10 0.3 L 8 0.3 Z" fill="#000000"/>
+  <path d="M 4 0 L 6 0 L 6 0.3 L 4 0.3 Z" fill="#000000"/>
+  <path d="M 0 0 L 2 0 L 2 0.3 L 0 0.3 Z" fill="#000000"/>
+  <path d="M 10.292 2.293 L 12.292 2.293 L 12.292 2.593 L 10.292 2.593 Z" fill="#000000"/>
+  <path d="M 6.292 2.293 L 8.292 2.293 L 8.292 2.593 L 6.292 2.593 Z" fill="#000000"/>
+  <path d="M 2.292 2.293 L 4.292 2.293 L 4.292 2.593 L 2.292 2.593 Z" fill="#000000"/>
+</svg>

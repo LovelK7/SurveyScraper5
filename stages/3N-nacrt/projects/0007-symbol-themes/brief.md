@@ -610,6 +610,52 @@ Draw **one small cluster** per area (§2.4).
   ambiguity reported, never guessed.
 - If it passes, switch the theme key to TopoDroid-first (§3.1 addendum) and add TopoDroid-name rows to §3.7.
 
+### 3.8 The black-and-white theme is its own design, not "colour → black" (user, 2026-10-06)
+
+`monochrome` alone is wrong. A B/W map needs different *encodings* where colour carried the meaning:
+water becomes 45° parallel lines (as cSurvey's own water already is), and a solid brown tree-trunk becomes an
+outline. So `crno-bijelo` stays `extends: boja` + `monochrome: #000000`, but it **overrides per piece**
+with one of three tools, cheapest first:
+
+1. **Recolour only.** The default for everything not overridden: monochrome forces black.
+2. **A different render, same artwork.** No drawing needed:
+   - **outline mode for signs:** the item brush becomes white and the pen stays black. cSurvey's pen
+     outlines every path of the glyph (§2.3), so a filled shape reads as its outline;
+   - **pattern hatch for areas:** `hatchtype="3"`, `patterntype` 0 = parallel lines or 1 = crossed lines,
+     `patternangle`, `patterndensity`, `patternzoomfactor`, `patternpenstyle` (`cBrush.vb:2649-2664`). The
+     T0 oracle shows the exact XML on a sign brush:
+     `<brush type="99" color="…" backgroundcolor="…" hatchtype="3" patterntype="1" patternpenstyle="0"
+     patterndensity="1.00" patternzoomfactor="1.0000" patternanglemode="0" patternangle="0.00"><parameters/></brush>`;
+   - **a pen dash for lines,** e.g. rope as a black dashed line instead of red.
+3. **New artwork,** only where 1 and 2 fail. It goes on a **second artboard in the same Illustrator
+   document**, with the same three layers and only the pieces that differ, exported with *Use Artboards*
+   into `drawing_catalogue_cb.svg`. T1 splits it into `themes/crno-bijelo/`, and anything missing is
+   inherited from `boja`.
+
+Schema additions for T2/T3: signs `render: "fill"|"outline"`; areas `pattern: {type: lines|crossed,
+angle, density, zoom, pen_style}` (mutually exclusive with `svg` tile / `solid`).
+
+Proposed per-piece B/W treatment (**awaiting the user's call**; to be judged on the printed sample sheet):
+
+| Kind | Piece | boja | crno-bijelo proposal |
+|---|---|---|---|
+| sign | tree-trunk | brown fill + white cracks | outline mode (test); new art if the cracks get messy |
+| sign | vegetable-debris | many colours | outline mode (test) |
+| sign | water-flow:intermittent | blue | recolour |
+| sign | blocks, debris (grey) | grey | recolour |
+| sign | all black ones | black | unchanged |
+| line | water-flow (blue unit) | blue | recolour; or a dashed base stroke if it clashes with walls |
+| line | rope | red plain line | black, dashed |
+| area | water (not drawn yet) | blue solid | **pattern: lines, 45°** |
+| area | ice (teal) | teal tile | recolour, or a pattern if it reads as debris |
+| area | pebbles, clay, debris | ochre/grey tiles | recolour; maybe a lower density |
+| area | blocks, stalagmite | black | unchanged |
+
+**Colour iteration for `boja`** (user: the colours are not right yet): judged on a printed **sample sheet**,
+never in JSON. T3 prints SB 1103 in both themes and T7 adds a synthetic sheet with every piece. The user
+then adjusts colours either in Illustrator (re-export → T1 picks the dominant colour again) or directly
+in `theme.json`.
+
 ## 4. Definition of done
 
 - [ ] T0 oracle captured, and §2.2 corrected wherever it disagrees.
