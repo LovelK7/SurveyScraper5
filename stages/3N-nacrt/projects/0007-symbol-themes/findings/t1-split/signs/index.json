@@ -1,0 +1,14 @@
+{
+  "air-draught": "air-draught.svg",
+  "blocks": "blocks.svg",
+  "bones": "bones.svg",
+  "continuation": "continuation.svg",
+  "danger": "danger.svg",
+  "debris": "debris.svg",
+  "minus": "minus.svg",
+  "plus": "plus.svg",
+  "plus-minus": "plus-minus.svg",
+  "tree-trunk": "tree-trunk.svg",
+  "vegetable-debris": "vegetable-debris.svg",
+  "water-flow:intermittent": "water-flow@intermittent.svg"
+}

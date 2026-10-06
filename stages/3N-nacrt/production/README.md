@@ -28,7 +28,36 @@ survey processing.
 | [`tdx-mapping.json`](tools/tdx-mapping.json) | **the user-owned mapping** the pre/post-processors read; its `postimport` section also holds the cSurvey **file settings** KORAK 2 writes into every `_postp` (red centerline, sizes, any typed `designproperties`) — see [csurvey-settings.md](csurvey-settings.md) | edit to change how symbols map, or a predefined file setting |
 | [`csurvey_app_settings.py`](tools/csurvey_app_settings.py) + [`csurvey-app-settings.json`](tools/csurvey-app-settings.json) (double-click: `csurvey_0_postavi_csurvey.bat`) | KORAK 0: primes cSurvey's **app settings** (registry, per user per computer — e.g. pen smoothing off); refuses while cSurvey is open; `check` is KORAK 2's warning, `show` compares profile vs this computer — see [csurvey-settings.md](csurvey-settings.md) | once per computer, before the first survey; again when KORAK 2 warns |
 | [`sb_select.py`](tools/sb_select.py) | turns the Redni broj an operator types into that cave's `SB_<broj>_…` intake leaf and picks the file at that step by itself — the `_postp` for KORAK 3, the file cSurvey saved for KORAK 2; cSurvey's `_backup` copies are never offered — asking only when a cave has none or several (`--sb` on all three tools) | whenever a launcher asks which caves, or which file |
+| [`theme_svg.py`](tools/theme_svg.py) | symbol-theme artwork → cSurvey-safe SVGs ([project 0007](../projects/0007-symbol-themes/brief.md), T1) — see [Symbol-theme SVGs](#symbol-theme-svgs) below | after each Illustrator export of the theme drawing |
 | [`signs-pack/`](tools/signs-pack) | 8 SVG glyphs for mapped-but-artwork-less signs; installed into cSurvey's Signs gallery | after a cSurvey upgrade (re-copy) |
+
+## Symbol-theme SVGs
+
+cSurvey's SVG parser reads a narrow subset (no arcs, ellipses, gradients or skew; fragile transforms; stroke
+width and colour ignored; every non-white fill painted in the item colour). `theme_svg.py` turns the user's
+Illustrator drawing into files that parser takes as drawn. Stdlib only.
+
+```text
+python tools/theme_svg.py split  drawing.svg OUT_DIR    # Illustrator "Export As SVG", Object IDs = Layer Names
+python tools/theme_svg.py normalize in.svg out.svg [--sign KEY]
+python tools/theme_svg.py check  FILE_OR_DIR            # report only; exit 1 on an error-level finding
+```
+
+- **split**: layer `Znakovi` → `OUT_DIR/signs/`, `Linije` → `lines/`, `Plohe`/`Površine` → `areas/`; layers
+  named `_…` are skipped. Each named direct child of a layer is one piece. Illustrator id escapes (`_x3A_`)
+  are decoded and a `-2` uniqueness suffix is stripped. Unnamed groups and duplicates are reported, never
+  guessed. Files are named by key with `:` → `@` (`slope@steep.svg`), with a `index.json` (key → file) per
+  kind and a `report.json` for the whole run.
+- **normalisation** of every piece: styles resolved (including `<defs><style>` classes); transforms baked;
+  arcs, circles, ellipses, rects and lines turned into `M L C Q Z` paths; shapes with no fill and no stroke
+  dropped (cSurvey would outline them); fills flattened to `#FFFFFF` / `#000000` / none; strokes kept
+  as geometry and reported with their widths, never outlined; image, use, text, clip, mask and opacity
+  reported. Signs get `csurvey:sign`, resolved from the key through `tdx-mapping-catalog.json` and
+  `tdx-mapping.json`, plus `csurvey:scale`, the piece's size relative to the median sign. Without that
+  scale, cSurvey would draw every sign at the same size.
+- **check** prints, per file, what cSurvey would misread: errors (arcs, ellipses, transforms it misparses,
+  clip/mask, unsupported elements), warnings (invisible shapes, gradients, opacity, text) and info. All 79
+  stock glyphs in `C:\csurvey64\Objects\Cliparts\Signs` pass without errors.
 
 ## Predefined cSurvey settings
 

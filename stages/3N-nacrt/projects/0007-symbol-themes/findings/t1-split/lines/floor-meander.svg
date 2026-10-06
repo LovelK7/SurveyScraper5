@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:csurvey="http://www.csurvey.it" viewBox="0 0 4.009 5.494">
+  <title>floor-meander</title>
+  <path d="M 0 0 L 4.008 0 L 4.008 0.389 L 0 0.389 Z" fill="#000000"/>
+  <path d="M 2.84 0.194 L 3.229 0.194 L 3.229 1.904 L 2.84 1.904 Z" fill="#000000"/>
+  <path d="M 0.779 3.484 L 1.168 3.484 L 1.168 5.299 L 0.779 5.299 Z" fill="#000000"/>
+  <path d="M 0 5.105 L 4.009 5.105 L 4.009 5.494 L 0 5.494 Z" fill="#000000"/>
+</svg>

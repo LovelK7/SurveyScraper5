@@ -1,0 +1,1619 @@
+{
+  "source": "drawing_catalogue.svg",
+  "layers": [
+    {
+      "layer": "Znakovi",
+      "kind": "signs"
+    },
+    {
+      "layer": "Linije",
+      "kind": "lines"
+    },
+    {
+      "layer": "Površine",
+      "kind": "areas"
+    }
+  ],
+  "skipped_layers": [],
+  "unnamed": [],
+  "duplicates": [],
+  "pieces": [
+    {
+      "kind": "signs",
+      "key": "danger",
+      "id": "danger",
+      "sign": null,
+      "sign_via": "TopoDroid danger has no cSurvey sign (X-box)",
+      "scale": 1.015,
+      "file": "signs/danger.svg",
+      "bbox": [
+        37.742,
+        32.805
+      ],
+      "paths_out": 3,
+      "points_in": 49,
+      "fixed": {
+        "transforms baked": 2,
+        "arcs converted": 6,
+        "fills flattened": 3,
+        "polygon converted to path": 1
+      },
+      "colours_flattened": [
+        "#010101"
+      ],
+      "rejected": [],
+      "warnings": [
+        "no csurvey:sign: TopoDroid danger has no cSurvey sign (X-box) (waits for T8)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "blocks",
+      "id": "blocks",
+      "sign": 53,
+      "sign_via": "cSurvey sign name",
+      "scale": 1.272,
+      "file": "signs/blocks.svg",
+      "bbox": [
+        47.291,
+        39.56
+      ],
+      "paths_out": 6,
+      "points_in": 93,
+      "fixed": {
+        "transforms baked": 1,
+        "fills flattened": 6,
+        "polygon converted to path": 5
+      },
+      "colours_flattened": [
+        "#78787a"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "signs",
+      "key": "plus",
+      "id": "plus",
+      "sign": null,
+      "sign_via": "TopoDroid plus has no cSurvey sign (X-box)",
+      "scale": 0.733,
+      "file": "signs/plus.svg",
+      "bbox": [
+        27.238,
+        27.238
+      ],
+      "paths_out": 3,
+      "points_in": 37,
+      "fixed": {
+        "invisible shapes dropped": 1,
+        "rect converted to path": 2,
+        "fills flattened": 3,
+        "transforms baked": 1,
+        "arcs converted": 4
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": [
+        "no csurvey:sign: TopoDroid plus has no cSurvey sign (X-box) (waits for T8)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "minus",
+      "id": "minus",
+      "sign": null,
+      "sign_via": "TopoDroid minus has no cSurvey sign (X-box)",
+      "scale": 0.733,
+      "file": "signs/minus.svg",
+      "bbox": [
+        27.238,
+        27.238
+      ],
+      "paths_out": 2,
+      "points_in": 33,
+      "fixed": {
+        "invisible shapes dropped": 1,
+        "transforms baked": 1,
+        "arcs converted": 4,
+        "fills flattened": 2,
+        "rect converted to path": 1
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": [
+        "no csurvey:sign: TopoDroid minus has no cSurvey sign (X-box) (waits for T8)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "plus-minus",
+      "id": "plus-minus",
+      "sign": null,
+      "sign_via": "TopoDroid plus-minus has no cSurvey sign (X-box)",
+      "scale": 0.985,
+      "file": "signs/plus-minus.svg",
+      "bbox": [
+        36.6,
+        27.237
+      ],
+      "paths_out": 4,
+      "points_in": 38,
+      "fixed": {
+        "rect converted to path": 3,
+        "fills flattened": 4,
+        "transforms baked": 1
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": [
+        "no csurvey:sign: TopoDroid plus-minus has no cSurvey sign (X-box) (waits for T8)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "air-draught",
+      "id": "air-draught",
+      "sign": 36,
+      "sign_via": "TopoDroid air-draught, natural import",
+      "scale": 1.024,
+      "file": "signs/air-draught.svg",
+      "bbox": [
+        38.079,
+        9.237
+      ],
+      "paths_out": 5,
+      "points_in": 20,
+      "fixed": {
+        "transforms baked": 4,
+        "rect converted to path": 4,
+        "fills flattened": 5,
+        "polygon converted to path": 1
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "signs",
+      "key": "continuation",
+      "id": "continuation",
+      "sign": 1,
+      "sign_via": "cSurvey sign name",
+      "scale": 25.175,
+      "file": "signs/continuation.svg",
+      "bbox": [
+        935.772,
+        378.322
+      ],
+      "paths_out": 2,
+      "points_in": 95,
+      "fixed": {
+        "invisible shapes dropped": 1,
+        "transforms baked": 2,
+        "arcs converted": 22,
+        "fills flattened": 2
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": [
+        "size 25.2x the median sign - check the group for stray shapes",
+        "path 1 of 2 lies far from the rest of the piece (stray shape?)",
+        "path 2 of 2 lies far from the rest of the piece (stray shape?)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "debris",
+      "id": "debris",
+      "sign": 5,
+      "sign_via": "TopoDroid debris -> breakdownchoke (tdx-mapping.json)",
+      "scale": 0.958,
+      "file": "signs/debris.svg",
+      "bbox": [
+        35.611,
+        28.889
+      ],
+      "paths_out": 4,
+      "points_in": 71,
+      "fixed": {
+        "transforms baked": 4,
+        "fills flattened": 4
+      },
+      "colours_flattened": [
+        "#78787a"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "signs",
+      "key": "bones",
+      "id": "bones",
+      "sign": null,
+      "sign_via": "TopoDroid bones has no cSurvey sign (X-box)",
+      "scale": 0.842,
+      "file": "signs/bones.svg",
+      "bbox": [
+        31.312,
+        31.282
+      ],
+      "paths_out": 4,
+      "points_in": 542,
+      "fixed": {
+        "transforms baked": 4,
+        "arcs converted": 92,
+        "fills flattened": 2
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": [
+        "no csurvey:sign: TopoDroid bones has no cSurvey sign (X-box) (waits for T8)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "tree-trunk",
+      "id": "tree-trunk",
+      "sign": 33,
+      "sign_via": "TopoDroid tree-trunk -> vegetabledebris (tdx-mapping.json)",
+      "scale": 1.046,
+      "file": "signs/tree-trunk.svg",
+      "bbox": [
+        38.88,
+        26.35
+      ],
+      "paths_out": 8,
+      "points_in": 220,
+      "fixed": {
+        "transforms baked": 8,
+        "arcs converted": 37,
+        "fills flattened": 1
+      },
+      "colours_flattened": [
+        "#453625"
+      ],
+      "rejected": [],
+      "warnings": [
+        "csurvey:sign 33 is also claimed by vegetable-debris (one glyph per cSurvey sign)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "vegetable-debris",
+      "id": "vegetable-debris",
+      "sign": 33,
+      "sign_via": "TopoDroid vegetable-debris, natural import",
+      "scale": 1.112,
+      "file": "signs/vegetable-debris.svg",
+      "bbox": [
+        41.325,
+        27.687
+      ],
+      "paths_out": 277,
+      "points_in": 9542,
+      "fixed": {
+        "transforms baked": 169,
+        "arcs converted": 1292,
+        "fills flattened": 160,
+        "invisible shapes dropped": 1,
+        "polyline converted to path": 8,
+        "line converted to path": 100
+      },
+      "gradients_flattened": 45,
+      "colours_flattened": [
+        "#463524",
+        "#6ebe45",
+        "#8fc73f",
+        "#904b32",
+        "#92412d",
+        "#a8943f",
+        "#b64f31",
+        "#b77032",
+        "#bdd631",
+        "#c2b687",
+        "#cd582f",
+        "#d16831",
+        "#e86824",
+        "#ea7a24",
+        "#eaa222",
+        "#f2bd19",
+        "#f3db0b",
+        "#faef72"
+      ],
+      "strokes": [
+        {
+          "element": "polyline",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.25,
+          "effective_width": 0.25
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.2,
+          "effective_width": 0.2
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.2,
+          "effective_width": 0.2
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.2,
+          "effective_width": 0.2
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.2,
+          "effective_width": 0.2
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.1,
+          "effective_width": 0.1
+        }
+      ],
+      "rejected": [],
+      "warnings": [
+        "csurvey:sign 33 is also claimed by tree-trunk (one glyph per cSurvey sign)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "water-flow:intermittent",
+      "id": "water-flow:intermittent",
+      "sign": 37,
+      "sign_via": "TopoDroid water-flow:intermittent -> waterflow (tdx-mapping.json)",
+      "scale": 0.961,
+      "file": "signs/water-flow@intermittent.svg",
+      "bbox": [
+        35.715,
+        5.259
+      ],
+      "paths_out": 2,
+      "points_in": 79,
+      "fixed": {
+        "polygon converted to path": 1,
+        "fills flattened": 2,
+        "transforms baked": 1,
+        "arcs converted": 10
+      },
+      "colours_flattened": [
+        "#24a9d1"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "abyss-entrance",
+      "id": "abyss-entrance",
+      "file": "lines/abyss-entrance.svg",
+      "bbox": [
+        4.634,
+        7.764
+      ],
+      "paths_out": 1,
+      "points_in": 4,
+      "fixed": {
+        "polygon converted to path": 1,
+        "fills flattened": 1
+      },
+      "colours_flattened": [
+        "#010101"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "overhang",
+      "id": "overhang",
+      "file": "lines/overhang.svg",
+      "bbox": [
+        2.741,
+        4.764
+      ],
+      "paths_out": 1,
+      "points_in": 4,
+      "fixed": {
+        "polygon converted to path": 1,
+        "fills flattened": 1
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "slope:steep",
+      "id": "slope:steep",
+      "file": "lines/slope@steep.svg",
+      "bbox": [
+        1.411,
+        2.313
+      ],
+      "paths_out": 1,
+      "points_in": 4,
+      "fixed": {
+        "polygon converted to path": 1,
+        "fills flattened": 1
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "slope:sheer",
+      "id": "slope:sheer",
+      "file": "lines/slope@sheer.svg",
+      "bbox": [
+        3.158,
+        5.48
+      ],
+      "paths_out": 1,
+      "points_in": 4,
+      "fixed": {
+        "polygon converted to path": 1,
+        "fills flattened": 1
+      },
+      "colours_flattened": [
+        "#030303"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "pit",
+      "id": "pit",
+      "file": "lines/pit.svg",
+      "bbox": [
+        0.567,
+        3.773
+      ],
+      "paths_out": 1,
+      "points_in": 4,
+      "fixed": {
+        "rect converted to path": 1,
+        "fills flattened": 1
+      },
+      "colours_flattened": [
+        "#010101"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "ceiling-step",
+      "id": "ceiling-step",
+      "file": "lines/ceiling-step.svg",
+      "bbox": [
+        0.829,
+        5.083
+      ],
+      "paths_out": 1,
+      "points_in": 4,
+      "fixed": {
+        "rect converted to path": 1,
+        "fills flattened": 1
+      },
+      "colours_flattened": [
+        "#010101"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "floor-meander",
+      "id": "floor-meander",
+      "file": "lines/floor-meander.svg",
+      "bbox": [
+        4.009,
+        5.494
+      ],
+      "paths_out": 4,
+      "points_in": 16,
+      "fixed": {
+        "rect converted to path": 4,
+        "fills flattened": 4
+      },
+      "colours_flattened": [
+        "#221f1f"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "slope",
+      "id": "slope",
+      "file": "lines/slope.svg",
+      "bbox": [
+        5.392,
+        19.945
+      ],
+      "paths_out": 2,
+      "points_in": 9,
+      "fixed": {
+        "transforms baked": 1,
+        "rect converted to path": 1,
+        "fills flattened": 2,
+        "polygon converted to path": 1
+      },
+      "colours_flattened": [
+        "#010101"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "water-flow",
+      "id": "water-flow",
+      "file": "lines/water-flow.svg",
+      "bbox": [
+        28.053,
+        1.069
+      ],
+      "paths_out": 1,
+      "points_in": 4,
+      "fixed": {
+        "rect converted to path": 1,
+        "fills flattened": 1
+      },
+      "colours_flattened": [
+        "#42b4c0"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "areas",
+      "key": "pebbles",
+      "id": "pebbles",
+      "file": "areas/pebbles.svg",
+      "bbox": [
+        11.972,
+        10.758
+      ],
+      "paths_out": 41,
+      "points_in": 689,
+      "fixed": {
+        "circle converted to path": 22,
+        "fills flattened": 41,
+        "transforms baked": 19,
+        "arcs converted": 70
+      },
+      "colours_flattened": [
+        "#ad7e2f"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "areas",
+      "key": "clay",
+      "id": "clay",
+      "file": "areas/clay.svg",
+      "bbox": [
+        7.698,
+        7.985
+      ],
+      "paths_out": 28,
+      "points_in": 412,
+      "fixed": {
+        "invisible shapes dropped": 1,
+        "circle converted to path": 14,
+        "fills flattened": 28,
+        "transforms baked": 14,
+        "arcs converted": 28
+      },
+      "colours_flattened": [
+        "#ac7e2e"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "areas",
+      "key": "debris",
+      "id": "debris-2",
+      "file": "areas/debris.svg",
+      "bbox": [
+        46.958,
+        26.656
+      ],
+      "paths_out": 30,
+      "points_in": 353,
+      "fixed": {
+        "transforms baked": 24,
+        "fills flattened": 30,
+        "polygon converted to path": 4,
+        "arcs converted": 19,
+        "rect converted to path": 3,
+        "invisible shapes dropped": 1
+      },
+      "colours_flattened": [
+        "#616262"
+      ],
+      "rejected": [],
+      "warnings": [
+        "id 'debris-2': uniqueness suffix -2 stripped (layer fixes the kind)"
+      ]
+    },
+    {
+      "kind": "areas",
+      "key": "blocks",
+      "id": "blocks-2",
+      "file": "areas/blocks.svg",
+      "bbox": [
+        42.834,
+        22.487
+      ],
+      "paths_out": 54,
+      "points_in": 275,
+      "fixed": {
+        "polyline converted to path": 26,
+        "line converted to path": 12,
+        "transforms baked": 16,
+        "arcs converted": 8
+      },
+      "strokes": [
+        {
+          "element": "polyline",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "line",
+          "stroke_width": 0.3,
+          "effective_width": 0.3
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "polyline",
+          "stroke_width": 0.5,
+          "effective_width": 0.5
+        },
+        {
+          "element": "path",
+          "stroke_width": 0.2,
+          "effective_width": 0.2
+        }
+      ],
+      "rejected": [],
+      "warnings": [
+        "id 'blocks-2': uniqueness suffix -2 stripped (layer fixes the kind)"
+      ]
+    },
+    {
+      "kind": "areas",
+      "key": "stalagmite",
+      "id": "stalagmite",
+      "file": "areas/stalagmite.svg",
+      "bbox": [
+        12.292,
+        2.593
+      ],
+      "paths_out": 6,
+      "points_in": 24,
+      "fixed": {
+        "rect converted to path": 6,
+        "fills flattened": 6
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "areas",
+      "key": "ice",
+      "id": "ice",
+      "file": "areas/ice.svg",
+      "bbox": [
+        11.01,
+        5.915
+      ],
+      "paths_out": 4,
+      "points_in": 72,
+      "fixed": {
+        "invisible shapes dropped": 1,
+        "transforms baked": 4,
+        "fills flattened": 4
+      },
+      "colours_flattened": [
+        "#468fa0"
+      ],
+      "rejected": [],
+      "warnings": []
+    }
+  ],
+  "sign_median_size": 37.171,
+  "unresolved_signs": [
+    "danger",
+    "plus",
+    "minus",
+    "plus-minus",
+    "bones"
+  ],
+  "targets_without_glyph": [
+    "narrowend",
+    "lowend",
+    "flowstonechoke",
+    "entrance",
+    "flowstone",
+    "moonmilk",
+    "stalactite",
+    "stalagmite",
+    "pillar",
+    "curtain",
+    "sodastraw",
+    "popcorn",
+    "cavepearl",
+    "disk",
+    "helictite",
+    "aragonite",
+    "crystal",
+    "wallcalcite",
+    "gypsum",
+    "gypsumflower",
+    "anastomosis",
+    "karren",
+    "scallop",
+    "flute",
+    "raftcone",
+    "claytree",
+    "rimstonepool",
+    "rimstonedam",
+    "archeomaterial",
+    "paleomaterial",
+    "root",
+    "dig",
+    "waterflowpaleo",
+    "waterfall",
+    "spring",
+    "sink",
+    "gradient",
+    "camp",
+    "anchor",
+    "ice",
+    "snow",
+    "water",
+    "pebbles",
+    "clay",
+    "raft",
+    "guano",
+    "sand"
+  ],
+  "counts": {
+    "signs": 12,
+    "lines": 9,
+    "areas": 6
+  }
+}

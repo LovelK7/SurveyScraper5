@@ -1,0 +1,11 @@
+{
+  "abyss-entrance": "abyss-entrance.svg",
+  "ceiling-step": "ceiling-step.svg",
+  "floor-meander": "floor-meander.svg",
+  "overhang": "overhang.svg",
+  "pit": "pit.svg",
+  "slope": "slope.svg",
+  "slope:sheer": "slope@sheer.svg",
+  "slope:steep": "slope@steep.svg",
+  "water-flow": "water-flow.svg"
+}

@@ -48,6 +48,19 @@ python production/tools/tdx_zip_to_csx.py <project.zip | folder> [more.zip ...] 
   user's own dialog) into `<properties><designproperties>`, so the centerline is visible while
   the sketch is being fixed.
 
+## TopoDroid names after import (`tdx_name_recover.py`) — spike T8
+
+cSurvey's import drops the TopoDroid symbol name (and KORAK 1's `tdxpp:` marker). This
+read-only tool gets it back for every post-import item by matching geometry against the
+pre-import file (raw export or `_prep`): exact coordinate sets first, then a tolerant
+point/polyline match; merged wall items are matched per sequence. Ambiguities, misses and
+items drawn in cSurvey are reported, never guessed. Method and results:
+[projects/0007-symbol-themes/findings/t8-name-recovery.md](../../projects/0007-symbol-themes/findings/t8-name-recovery.md).
+
+```
+python production/tools/tdx_name_recover.py recover PRE.csx POST.csx|.csz [--json out.json] [--quiet]
+```
+
 ---
 
 `inspect_survey.py` is the Stage 0 tool from [reference/mcp-blueprint.md](../../reference/mcp-blueprint.md):

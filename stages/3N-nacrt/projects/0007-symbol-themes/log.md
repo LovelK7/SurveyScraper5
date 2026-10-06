@@ -17,3 +17,24 @@ Brief: [brief.md](brief.md)
 - **Result:** signs first, one colour per symbol, B/W also blackens the centerline. Key = cSurvey sign name, because `tdxpp:` is absent in all 10 post-import files under `example/`. The Illustrator set is one artboard, so the recipe is one named group per symbol + an export with layer-name IDs, and T1 splits it.
 - **Evidence:** brief §2.4, §3.1, §3.5.
 - **Next:** T0 (user) ∥ T1.
+
+### 2026-10-05/06 — user's drawing catalogue reviewed, three passes (both) ✅
+
+- **Did:** reviewed `drawing_catalogue.svg` (27 groups on `Znakovi`/`Linije`/`Površine`) against the cSurvey SVG subset; settled double-line meanders (centred, base pen off), dashes (pen setting), decoration placement (`cClipartOnPath.vb`), and the per-scale tuning (scale rules).
+- **Result:** the file is ready as the T1 fixture. The user decided: `vegetable-debris` kept as is, `rope` = a plain red pen. Points recover their TopoDroid name 1:1 by coordinates (symbol-zoo run), so T8 was added.
+- **Evidence:** [findings/drawing-catalogue-review.md](findings/drawing-catalogue-review.md), brief §2.4, §3.1 addendum, §3.7.
+- **Next:** T0 (user oracle) ∥ T1 (splitter on this fixture) ∥ T8 (name-recovery spike).
+
+### 2026-10-06 — T8 spike: TopoDroid names recovered after import (agent) ✅
+
+- **Did:** read the import code (`cImportTopoDroidHelper.vb` ConvertItem/pConvertItem, `cPoints.vb` Parse) and compared items by hand. Built `production/tools/tdx_name_recover.py` (`recover PRE POST.csx|.csz [--json]`, stdlib). It matches per sequence: an exact coordinate set first, then a tolerant point/polyline coverage match with an ambiguity margin. Misses, ambiguities and cSurvey-drawn items are reported, never guessed. Tests: `tests/test_tdx_name_recover.py` (synthetic inline pair + real pairs skipped when absent). Ran it on every pre/post pair in the repo, plus the KORAK 2 output made from them in scratch, plus simulated edits.
+- **Result:** the import copies coordinates unchanged, reverses the order unless `reversed="1"`, and only re-encodes the flags (`BS<guid>`). KORAK 2 merges walls into one multi-sequence item. **100 % points / lines / areas recovered, all exact, 0 ambiguities, on every pair.** Pairs: zoo ×3, rupe ×6 (real TopoDroid export) and bunker_studena ×2 (real cave). The only items not recovered were 3 drawn in cSurvey, all reported as `native`. Simulated edits degrade to reported misses with 0 wrong names. No real-cave pair with hand edits after KORAK 2 exists in the repo.
+- **Evidence:** [findings/t8-name-recovery.md](findings/t8-name-recovery.md); `python -m pytest stages/3N-nacrt -q` 270 passed; pipeline doctor 0 fail.
+- **Next:** orchestrator/user decides whether to switch the theme key to TopoDroid-first (brief §3.1 addendum) and add TopoDroid-name rows to §3.7. Optionally, the user supplies a real `_prep` + hand-edited `_postp` pair to measure the edit case.
+
+### 2026-10-06 — T1: `theme_svg.py split|normalize|check` (agent) ✅
+
+- **Did:** built `production/tools/theme_svg.py` (stdlib only). It resolves styles, including `<defs><style>` classes; bakes transforms; turns arcs into cubics and circles, ellipses, rects, lines and polys into `M L C Q Z` paths; drops shapes with no fill and no stroke; flattens fills to `#FFFFFF`/`#000000`/none; keeps strokes and reports their widths; reports image, use, text, clip, mask and opacity. Signs get `csurvey:sign` (cSurvey name → `tdx-mapping.json` `to` → TopoDroid natural) and `csurvey:scale` (size ÷ the median sign). `check` mirrors `cDrawPaths.vb`: arcs, ellipses, space-separated or multi-function transforms, transforms lost on grand-parent groups, and the fill-inheritance gap. Tests in `tests/test_theme_svg.py` (18).
+- **Result:** the catalogue splits into 12 signs, 9 lines and 6 areas, every piece written. Converted: 1592 arcs; dropped: 7 invisible rects. The outputs contain 0 arcs, ellipses or transforms. `vegetable-debris`: 45 gradients and 18 colours flattened, 117 strokes (0.1–0.3). Area `blocks`: 54 strokes. No `csurvey:sign` for `danger`, `plus`, `minus`, `plus-minus` and `bones` (T8). Found: `tree-trunk` and `vegetable-debris` both resolve to sign 33. In `continuation`, the "?" sits about 900 units from its circle in the export (scale 25×, flagged as a stray). All 79 stock `Cliparts\Signs` glyphs pass `check` with 0 errors.
+- **Evidence:** [findings/t1-split/](findings/t1-split/) (outputs + `report.json`); `python -m pytest stages/3N-nacrt -q` 288 passed; pipeline doctor 0 fail. A headless-Edge side-by-side (bones, vegetable-debris, floor-meander, slope, pebbles, blocks) shows the geometry identical to the source.
+- **Next:** user moves the "?" back into `continuation` and decides tree-trunk vs vegetable-debris for sign 33; T2 (theme format) can consume `t1-split/*/index.json`.

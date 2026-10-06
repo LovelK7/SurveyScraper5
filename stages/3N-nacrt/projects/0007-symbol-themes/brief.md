@@ -1,7 +1,7 @@
 # Task brief: Symbol themes — custom SVG signs, pens and brushes, chosen per cave in Mapiranje simbola
 
 - **ID:** 0007-symbol-themes
-- **Status:** `proposal` — viability researched 2026-10-04: **viable without a cSurvey build**, as a post-import step in KORAK 2; cSurvey ignores the SVG's own colours (§2.3). The user answered the same day (§3.5): one colour per symbol is fine, **signs first**, B/W blackens the centerline, and the Illustrator set is one artboard. Next: T0 (user's oracle file) and T1 (splitter), in parallel.
+- **Status:** `proposal` — viable without a cSurvey build, as a post-import step in KORAK 2. Signs first; one colour per symbol. **T8 done 2026-10-06: TopoDroid names are recovered 100 % after import, so theme keys are TopoDroid-name first.** The user's drawing catalogue has been through three review passes and is ready as the T1 fixture. In progress: T1 (splitter, agent) and T0 (the user's oracle file).
 - **Owner:** both
 - **Opened:** 2026-10-04 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [backlog/custom-sign-palette.md](../../backlog/custom-sign-palette.md) (the parked predecessor idea), [production/tdx-symbol-matrix.md](../../production/tdx-symbol-matrix.md), [reference/data-model-and-file-format.md](../../reference/data-model-and-file-format.md), [.claude/skills/csurvey-defaults/SKILL.md](../../../../.claude/skills/csurvey-defaults/SKILL.md)
@@ -303,9 +303,26 @@ tell them apart. Evidence for recovering the name by **matching geometry against
   points, the `BS<guid>` sequence markers). They need a tolerant match, e.g. on the sorted set of
   anchor points or on bbox + point count. *Unverified.*
 
-If the spike (T8) works, keys become **TopoDroid name first, cSurvey target as the fallback**. That brings
-back per-subtype looks and gives the speleo-2 points their own glyphs without carrier signs. Until
-then, the target-name key stands, and §3.7 keeps target names for signs.
+**T8 result (2026-10-06): it works. Keys are TopoDroid name first, cSurvey target as the fallback.**
+
+- `production/tools/tdx_name_recover.py` recovered **100 % of points, lines and areas, all exact**, on
+  every pre/post pair in the repo, including a real cave (bunker_studena: 22/22 points, 14/14 lines,
+  3/3 areas). Only items drawn in cSurvey come back unnamed, and they are reported as `native`.
+- Lines looked unmatched only because the import re-flags the `data` string. The coordinates are copied
+  unchanged, and only the order may be reversed.
+- Details and degradation tests: [findings/t8-name-recovery.md](findings/t8-name-recovery.md).
+- **Theme lookup per item:**
+  1. the recovered TopoDroid name (`slope:steep`, `abyss-entrance`, `rope`, `bones`…);
+  2. else the cSurvey target name;
+  3. else built-in.
+- **New precondition for `apply_theme`:** it needs the **pre-import file** (KORAK 1 output, or the raw
+  TopoDroid export) next to the `_lt` file.
+- If the user later reshapes or moves items in cSurvey, those items become reported misses and fall back
+  to the target key. Small edits still match.
+- So the Illustrator group names may be TopoDroid names (the user's file already uses them) or target
+  names (§3.7). Carrier signs for symbols without a cSurvey sign are no longer needed for *looks*; the
+  mapping only decides what cSurvey thinks the item *is*.
+
 
 ### 3.2 What `apply_theme` writes (post-import, idempotent)
 
@@ -355,15 +372,21 @@ cSurvey upgrades and is per-cave.
 
 Fixture: `stages/3N-nacrt/example/finishing/SB_1103_golobreska_lt_raw.csx` (gitignored). Order: T0 ∥ T1 → T2 → T3 → T4 → T5 → T6.
 
-**T0 — oracle file (user, ~5 min in cSurvey).** Open the SB 1103 `_lt` file and:
+**T0 — oracle file (user, ~5 min in cSurvey). Reduced 2026-10-06 to the colour only.**
 
-- (a) on one sign, change its colour to blue (pen and brush);
-- (b) on a second sign, replace its glyph with any SVG via *Replace with…*;
-- (c) on a third sign, change its colour *and* replace its glyph;
-- (d) select all signs once and change their colour together, to see whether cSurvey writes one library entry or N inline ones.
-
-Save as `…_oracle.csx`. *Accept:* the diff against the input shows the exact sign pen/brush/glyph
-XML. This replaces guessing (§2.2) with ground truth.
+- Open the SB 1103 `_lt` file, give **one sign** a custom colour (Properties → pen/brush → **Custom** →
+  colour; the user chose blue), and save it as `…_oracle.csx` in `example/finishing/`.
+- *Accept:* the diff shows the exact inline custom pen/brush XML on a sign.
+- Dropped parts:
+  - **(b) glyph replace.** cSurvey's only route is the Clipart gallery → *Survey* → **Replace with...**, which
+    swaps the shared pool entry for every sign using it. In 2.15.2858 it **crashes** with a
+    NullReferenceException in `cDockClipart.btnReplaceWith_ItemClick` (user, 2026-10-06): `oClipart` is
+    `Nothing` when the survey's clipart list holds no object identical (`Is`) to the gallery item's
+    (`DockControl/cDockClipart.vb:503-520`). It is not needed: the splice route (new pool entry +
+    repointed `data`) is already proven by the KORAK 3 compass.
+  - **(c)** depended on (b).
+  - **(d) multi-select recolour.** A multi-selection exposes no pen or brush (`cItemItems.vb:249-258`), so
+    there is nothing to observe.
 
 **T1 — `theme_svg.py split|check|normalize`.**
 
@@ -431,7 +454,9 @@ bumped, and a dry-run build lists the theme files.
 
 ### 3.7 Drawing checklist (the Illustrator to-do list)
 
-**How to read it.**
+**How to read it.** Since T8, a group may also be named by its **TopoDroid name** (e.g. `slope:steep`), which wins over the target name for items that came from that TopoDroid symbol. The tables below list target names; the "Reached from" column gives the TopoDroid names that can be used instead.
+
+
 
 - **Group name** is the exact name to give the group in Illustrator. It is the catalog's target id
   (`tdx-mapping-catalog.json`), so it has no dashes: `waterflow`, not `water-flow`.

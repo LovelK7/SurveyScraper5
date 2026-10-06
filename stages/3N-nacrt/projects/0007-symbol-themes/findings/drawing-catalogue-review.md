@@ -96,3 +96,13 @@ Arcs remain everywhere. That is expected: T1 converts them, and they are not for
   outlined (face pure white `#FFFFFF`). A white face is opaque: it hides whatever is beneath it.
   Grey faces are possible only if the brush's decoration pen can take its own colour for *strokes*
   (unverified, T0/T7).
+
+## Third pass (re-export 2026-10-06 16:14): ready as the T1 fixture
+
+- Names fixed (`blocks`, `air-draught`). `pit`, `ceiling-step` and `floor-meander` are now fills. `rope`
+  is removed (it becomes a plain red pen). `debris-2` is solid one-colour.
+- `blocks-2` (area) is **strokes only, no fill**, so the stones are outlined with see-through faces. That is a
+  valid third look; the outline width then comes from cSurvey's pen, not from Illustrator.
+- Left for T1 to handle automatically: arcs (12 groups), 7 invisible rects, 1 ellipse, translates.
+- Accepted as is: `vegetable-debris` (gradients/colours, will flatten).
+- `slope` (generic) kept in place of `slope:shallow`.
