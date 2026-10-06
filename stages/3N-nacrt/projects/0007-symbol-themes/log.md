@@ -150,3 +150,34 @@ Brief: [brief.md](brief.md)
   - Decide what KORAK 1 does with danger, minus, plus and plus-minus now that they have club glyphs.
   - vegetable-debris: set `outline_pen: true` or redraw the strokes as fills.
   - Phase 2: lines and areas.
+
+### 2026-10-07 — Round 3: phase 2, lines and areas themed; artwork refresh (agent) ✅
+
+- **Did:**
+  - `theme_apply.py`: lines get **library pens** (`<pens>`, `type="98"`, one per theme key and built-in pen type),
+    areas **library brushes** (`<brushes>`: scatter tile, solid, or parametric pattern), written as cSurvey's
+    `SaveTo` writes them; items are re-pointed in place (`type="98" id=…`, the brush `<seed>` kept). Width written
+    out from the built-in pen; decoration unit inline, fill only, on the built-in pen's side (`alignment: auto`,
+    flipped for Inner pens, the KORAK 1 target's side for a plain pen). Merged items take the majority TopoDroid
+    name (a tie is reported). Undo state extended (library ids + built-in types); `<pens>`/`<brushes>` removed again
+    if we created them. Signs: automatic −90° for points that reached the importer as `air-draught`/`water-flow`;
+    `outline_pen` unset = auto (on for a stroke-only glyph, reported).
+  - `themes.py`: area `pattern` (type, angle, density, zoom, pen_style) and `crop`; one look per area (tile / solid /
+    pattern); decoration `alignment: auto` + `flip`; spacing default 3000.
+  - `theme_svg.py`: strokes outlined into fills in line units and area tiles; even-odd conflict warning;
+    `transform_svg` / `flip_svg` / `compact_svg`.
+  - Re-split the 20:19 `drawing_catalogue.svg` (findings/t1-split, themes/boja). `boja`: rotates dropped, `water-flow`
+    and `water-drip` signs, line scales/spacings, tile zooms/densities, rope red 0.1, water-flow as a dash pen.
+    `crno-bijelo`: water → 45° line pattern.
+  - Docs: themes README (what is written, line decorations, tiles, known limits), production README, brief §3.2.
+- **Result:** on the mockup every theme line (10 keys, 20 items) and area (6 + water) is themed by TopoDroid name;
+  rope prints red, ice teal, pebbles/clay ochre, triangles on the stock side, B/W water as 45° lines. Re-apply and
+  theme switches are byte-identical; a cSurvey load + save keeps all pens and brushes unchanged.
+- **Odd (cSurvey):** User pens with width 0 are hairlines; decoration spacing is counted in rasterised 0.01 m points
+  (direction-dependent); decorations and tiles paint fills only; overlapping units cancel even-odd. The double-line
+  meander therefore cannot be continuous on curves.
+- **Evidence:** [runs/2026-10-07-mockup-r3/RUNLOG.md](runs/2026-10-07-mockup-r3/RUNLOG.md) (start with
+  `theme-mockup_linije_usporedba.png`). `pytest stages/3N-nacrt` 347 passed; `check_defaults.py` OK; pipeline doctor
+  0 fail.
+- **Next:** the user judges lines/areas; decide the meander (gaps on curves vs cSurvey's meander vs another unit);
+  water pattern density; then T7 (tune in cSurvey, harvest).

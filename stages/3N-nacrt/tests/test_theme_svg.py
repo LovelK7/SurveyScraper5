@@ -258,3 +258,36 @@ def test_rotate_svg_bakes_rotation_and_refits_viewbox():
     assert b'csurvey:sign="774" csurvey:scale="1.2"' in r90 and b"<title>t</title>" in r90
     assert ts.rotate_svg(ts.rotate_svg(blob, 180), 180) == blob
     assert ts.rotate_svg(blob, 0) is blob and ts.rotate_svg(blob, 360) is blob
+
+
+# --- phase 2: strokes outlined for lines/areas, even-odd, flip, compact ----
+
+def test_area_and_line_strokes_outlined_into_fills():
+    root = ET.fromstring('<svg %s><polyline points="0 0 10 0 10 10" fill="none" '
+                         'stroke="#616262" stroke-width="2"/></svg>' % SVG)
+    sign = ts.normalize_element(root, ts.StyleSheet(root))
+    assert len(sign.paths) == 1 and sign.paths[0][1] == "none"        # signs keep the stroke
+    area = ts.normalize_element(root, ts.StyleSheet(root), outline_strokes=True)
+    assert area.fixed["strokes outlined"] == 1
+    assert len(area.paths) == 3                       # two segment quads + one round join
+    assert all(f == "#000000" and not st for _s, f, st, _r in area.paths)
+    b = area.bbox()
+    assert b == pytest.approx((0, -1, 11, 10))        # butt caps, width 2
+
+
+def test_evenodd_conflict_reported():
+    same = "M 0 0 L 10 0 L 10 10 L 0 10 Z M 2 2 L 8 2 L 8 8 L 2 8 Z"     # both clockwise
+    opp = "M 0 0 L 10 0 L 10 10 L 0 10 Z M 2 2 L 2 8 L 8 8 L 8 2 Z"      # a proper hole
+    assert ts.evenodd_conflicts(_piece('<path d="%s"/>' % same)) == [0]
+    assert ts.evenodd_conflicts(_piece('<path d="%s"/>' % opp)) == []
+    assert ts.evenodd_conflicts(_piece('<path d="%s" fill-rule="evenodd"/>' % same)) == []
+
+
+def test_flip_and_compact_svg():
+    blob = (b'<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" '
+            b'viewBox="0 0 2 3">\n  <title>t</title>\n  <path d="M 0 3 L 1 0 L 2 3 Z" '
+            b'fill="#000000"/>\n</svg>\n')
+    flipped = ts.flip_svg(blob)
+    assert b'd="M 0 0 L 1 3 L 2 0 Z"' in flipped and b'viewBox="0 0 2 3"' in flipped
+    c = ts.compact_svg(flipped)
+    assert c.startswith("<svg ") and "\n" not in c and "<title>" not in c and "<?xml" not in c

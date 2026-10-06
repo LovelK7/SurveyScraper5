@@ -14,7 +14,9 @@
       "kind": "areas"
     }
   ],
-  "skipped_layers": [],
+  "skipped_layers": [
+    "_rest"
+  ],
   "unnamed": [],
   "duplicates": [],
   "pieces": [
@@ -24,7 +26,7 @@
       "id": "danger",
       "sign": null,
       "sign_via": "TopoDroid danger has no cSurvey sign (X-box)",
-      "scale": 1.044,
+      "scale": 1.057,
       "file": "signs/danger.svg",
       "bbox": [
         37.742,
@@ -48,36 +50,11 @@
     },
     {
       "kind": "signs",
-      "key": "blocks",
-      "id": "blocks",
-      "sign": 1290,
-      "sign_via": "cSurvey sign name",
-      "scale": 1.308,
-      "file": "signs/blocks.svg",
-      "bbox": [
-        47.291,
-        39.56
-      ],
-      "paths_out": 6,
-      "points_in": 93,
-      "fixed": {
-        "transforms baked": 1,
-        "fills flattened": 6,
-        "polygon converted to path": 5
-      },
-      "colours_flattened": [
-        "#78787a"
-      ],
-      "rejected": [],
-      "warnings": []
-    },
-    {
-      "kind": "signs",
       "key": "plus",
       "id": "plus",
       "sign": null,
       "sign_via": "TopoDroid plus has no cSurvey sign (X-box)",
-      "scale": 0.753,
+      "scale": 0.763,
       "file": "signs/plus.svg",
       "bbox": [
         27.238,
@@ -106,7 +83,7 @@
       "id": "minus",
       "sign": null,
       "sign_via": "TopoDroid minus has no cSurvey sign (X-box)",
-      "scale": 0.753,
+      "scale": 0.763,
       "file": "signs/minus.svg",
       "bbox": [
         27.238,
@@ -135,7 +112,7 @@
       "id": "plus-minus",
       "sign": null,
       "sign_via": "TopoDroid plus-minus has no cSurvey sign (X-box)",
-      "scale": 1.012,
+      "scale": 1.025,
       "file": "signs/plus-minus.svg",
       "bbox": [
         36.6,
@@ -158,15 +135,41 @@
     },
     {
       "kind": "signs",
+      "key": "continuation",
+      "id": "continuation",
+      "sign": 257,
+      "sign_via": "cSurvey sign name",
+      "scale": 0.763,
+      "file": "signs/continuation.svg",
+      "bbox": [
+        27.238,
+        27.238
+      ],
+      "paths_out": 2,
+      "points_in": 94,
+      "fixed": {
+        "invisible shapes dropped": 1,
+        "transforms baked": 2,
+        "arcs converted": 21,
+        "fills flattened": 2
+      },
+      "colours_flattened": [
+        "#231f20"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "signs",
       "key": "air-draught",
       "id": "air-draught",
       "sign": 774,
       "sign_via": "TopoDroid air-draught, natural import",
-      "scale": 1.053,
+      "scale": 1.35,
       "file": "signs/air-draught.svg",
       "bbox": [
-        38.079,
-        9.237
+        11.566,
+        48.21
       ],
       "paths_out": 5,
       "points_in": 20,
@@ -188,7 +191,7 @@
       "id": "debris",
       "sign": 261,
       "sign_via": "TopoDroid debris -> breakdownchoke (tdx-mapping.json)",
-      "scale": 0.985,
+      "scale": 0.997,
       "file": "signs/debris.svg",
       "bbox": [
         35.611,
@@ -208,38 +211,11 @@
     },
     {
       "kind": "signs",
-      "key": "bones",
-      "id": "bones",
-      "sign": null,
-      "sign_via": "TopoDroid bones has no cSurvey sign (X-box)",
-      "scale": 0.866,
-      "file": "signs/bones.svg",
-      "bbox": [
-        31.312,
-        31.282
-      ],
-      "paths_out": 4,
-      "points_in": 542,
-      "fixed": {
-        "transforms baked": 4,
-        "arcs converted": 92,
-        "fills flattened": 2
-      },
-      "colours_flattened": [
-        "#231f20"
-      ],
-      "rejected": [],
-      "warnings": [
-        "no csurvey:sign: TopoDroid bones has no cSurvey sign (X-box) (waits for T8)"
-      ]
-    },
-    {
-      "kind": "signs",
       "key": "tree-trunk",
       "id": "tree-trunk",
       "sign": 771,
       "sign_via": "TopoDroid tree-trunk -> vegetabledebris (tdx-mapping.json)",
-      "scale": 1.075,
+      "scale": 1.089,
       "file": "signs/tree-trunk.svg",
       "bbox": [
         38.88,
@@ -266,7 +242,7 @@
       "id": "vegetable-debris",
       "sign": 771,
       "sign_via": "TopoDroid vegetable-debris, natural import",
-      "scale": 1.143,
+      "scale": 1.157,
       "file": "signs/vegetable-debris.svg",
       "bbox": [
         41.325,
@@ -897,18 +873,43 @@
     },
     {
       "kind": "signs",
-      "key": "water-flow:intermittent",
-      "id": "water-flow:intermittent",
-      "sign": 777,
-      "sign_via": "TopoDroid water-flow:intermittent -> waterflow (tdx-mapping.json)",
-      "scale": 0.988,
-      "file": "signs/water-flow@intermittent.svg",
+      "key": "blocks",
+      "id": "blocks",
+      "sign": 1290,
+      "sign_via": "cSurvey sign name",
+      "scale": 1.178,
+      "file": "signs/blocks.svg",
       "bbox": [
-        35.715,
-        5.259
+        42.087,
+        28.975
+      ],
+      "paths_out": 6,
+      "points_in": 162,
+      "fixed": {
+        "transforms baked": 1,
+        "fills flattened": 6,
+        "polygon converted to path": 5
+      },
+      "colours_flattened": [
+        "#78787a"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "signs",
+      "key": "water-flow",
+      "id": "water-flow",
+      "sign": 777,
+      "sign_via": "TopoDroid water-flow, natural import",
+      "scale": 1.0,
+      "file": "signs/water-flow.svg",
+      "bbox": [
+        5.265,
+        35.715
       ],
       "paths_out": 2,
-      "points_in": 79,
+      "points_in": 85,
       "fixed": {
         "polygon converted to path": 1,
         "fills flattened": 2,
@@ -919,33 +920,64 @@
         "#24a9d1"
       ],
       "rejected": [],
-      "warnings": []
+      "warnings": [
+        "csurvey:sign 777 is also claimed by water-flow:intermittent (one glyph per cSurvey sign)"
+      ]
     },
     {
       "kind": "signs",
-      "key": "continuation",
-      "id": "continuation",
-      "sign": 257,
-      "sign_via": "cSurvey sign name",
-      "scale": 0.753,
-      "file": "signs/continuation.svg",
+      "key": "water-flow:intermittent",
+      "id": "water-flow:intermittent",
+      "sign": 777,
+      "sign_via": "TopoDroid water-flow:intermittent -> waterflow (tdx-mapping.json)",
+      "scale": 0.976,
+      "file": "signs/water-flow@intermittent.svg",
       "bbox": [
-        27.238,
-        27.238
+        5.233,
+        34.849
       ],
       "paths_out": 2,
-      "points_in": 94,
+      "points_in": 136,
       "fixed": {
-        "invisible shapes dropped": 1,
-        "transforms baked": 2,
-        "arcs converted": 21,
-        "fills flattened": 2
+        "polygon converted to path": 1,
+        "fills flattened": 2,
+        "transforms baked": 1,
+        "arcs converted": 26
+      },
+      "colours_flattened": [
+        "#24a9d1"
+      ],
+      "rejected": [],
+      "warnings": [
+        "csurvey:sign 777 is also claimed by water-flow (one glyph per cSurvey sign)"
+      ]
+    },
+    {
+      "kind": "signs",
+      "key": "bones",
+      "id": "bones",
+      "sign": null,
+      "sign_via": "TopoDroid bones has no cSurvey sign (X-box)",
+      "scale": 0.969,
+      "file": "signs/bones.svg",
+      "bbox": [
+        34.603,
+        22.509
+      ],
+      "paths_out": 3,
+      "points_in": 434,
+      "fixed": {
+        "transforms baked": 3,
+        "arcs converted": 83,
+        "fills flattened": 3
       },
       "colours_flattened": [
         "#231f20"
       ],
       "rejected": [],
-      "warnings": []
+      "warnings": [
+        "no csurvey:sign: TopoDroid bones has no cSurvey sign (X-box) (waits for T8)"
+      ]
     },
     {
       "kind": "lines",
@@ -1017,7 +1049,7 @@
       "file": "lines/slope@sheer.svg",
       "bbox": [
         3.158,
-        5.48
+        5.481
       ],
       "paths_out": 1,
       "points_in": 4,
@@ -1120,7 +1152,7 @@
     {
       "kind": "lines",
       "key": "water-flow",
-      "id": "water-flow",
+      "id": "water-flow-2",
       "file": "lines/water-flow.svg",
       "bbox": [
         28.053,
@@ -1136,7 +1168,9 @@
         "#42b4c0"
       ],
       "rejected": [],
-      "warnings": []
+      "warnings": [
+        "id 'water-flow-2': uniqueness suffix -2 stripped (layer fixes the kind)"
+      ]
     },
     {
       "kind": "areas",
@@ -1192,7 +1226,7 @@
       "file": "areas/debris.svg",
       "bbox": [
         46.958,
-        26.656
+        26.657
       ],
       "paths_out": 30,
       "points_in": 353,
@@ -1218,17 +1252,22 @@
       "id": "blocks-2",
       "file": "areas/blocks.svg",
       "bbox": [
-        42.834,
-        22.487
+        43.234,
+        22.983
       ],
-      "paths_out": 54,
+      "paths_out": 496,
       "points_in": 275,
       "fixed": {
         "polyline converted to path": 26,
+        "strokes outlined": 54,
         "line converted to path": 12,
         "transforms baked": 16,
         "arcs converted": 8
       },
+      "colours_flattened": [
+        "#616262",
+        "#787879"
+      ],
       "strokes": [
         {
           "element": "polyline",
@@ -1550,7 +1589,7 @@
       "warnings": []
     }
   ],
-  "sign_median_size": 36.158,
+  "sign_median_size": 35.715,
   "unresolved_signs": [
     "danger",
     "plus",
@@ -1608,7 +1647,7 @@
     "sand"
   ],
   "counts": {
-    "signs": 12,
+    "signs": 13,
     "lines": 9,
     "areas": 6
   }

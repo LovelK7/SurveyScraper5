@@ -1,1 +1,10 @@
-{"name": "Crno-bijelo", "extends": "boja", "monochrome": "#000000"}
+{
+  "_readme": "Black-and-white theme: boja with every colour forced to black (monochrome), plus per-piece B/W encodings where colour carried the meaning (brief 3.8). Schema: ../README.md",
+  "name": "Crno-bijelo",
+  "extends": "boja",
+  "monochrome": "#000000",
+  "areas": {
+    "water": {"_note": "cSurvey's own water look: parallel lines at 45 degrees (brief 3.8)",
+              "pattern": {"type": "lines", "angle": 45}}
+  }
+}

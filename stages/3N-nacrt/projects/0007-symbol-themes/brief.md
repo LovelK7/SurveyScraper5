@@ -339,10 +339,15 @@ tell them apart. Evidence for recovering the name by **matching geometry against
 Runs in KORAK 2 after `fix_imported_linetypes.py`'s size step (signsize must not be clobbered).
 The KORAK 3 north arrow is untouched: it is `type="15"`, not a sign.
 
-**Phase 2 (later):** lines become `type="98"` library pens with clipart decorations, and areas become `type="98"`
-library brushes with clipart hatches. `wall_orient.py` copies `<pen>` elements as they are, so the
-order matters. Phase 2 also fixes the matrix's area degradations (clay drawn with the sand brush, ice, snow and user
-drawn as blank soil).
+**Phase 2 (implemented 2026-10-07, run r3):** lines become `type="98"` library pens in the root `<pens>`
+(one per theme key and built-in pen type; width written out from the built-in pen, the decoration unit inline as
+one-line SVG text, painted by fill only, placed on the built-in pen's side), and areas become `type="98"` library
+brushes in `<brushes>` (scatter tile, solid, or the parametric 45° pattern for the B/W water); items keep their own
+`<seed>`. Areas cSurvey draws as blank soil (ice, snow, stalagmite, user) are themed by TopoDroid name, and rope is
+reached the same way. Undo, theme switching and re-applying are byte-identical; a cSurvey load + save keeps every
+pen and brush unchanged. Order: after KORAK 2 (`wall_orient.py` only copies `<pen>` references, and a KORAK 2 re-run
+leaves `type="98"` alone). Known cSurvey limits (meander rails not continuous on curves, even-odd overlaps, item
+transparency with a style-None pen): [themes/README.md](../../production/themes/README.md#known-limits).
 
 ### 3.3 Where the user chooses
 

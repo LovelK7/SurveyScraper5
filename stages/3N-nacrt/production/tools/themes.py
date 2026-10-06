@@ -30,11 +30,13 @@ theme.json (keys starting with `_` are comments, everywhere)::
           "render": "fill",            fill (default) | outline: brush white, the pen in
                                        the colour, so a filled shape reads as its outline
           "outline_pen": false,        optional; cSurvey's pen traced round every path of the
-                                       glyph. Default false for fill (only the fills paint:
-                                       a style-None pen), true for outline (required there)
-          "rotate": 0 } },             optional degrees, clockwise as drawn; baked into the
-                                       glyph's coordinates by theme_apply.py (cSurvey never
-                                       reads csurvey:rotationangledelta when rendering)
+                                       glyph. Unset for fill = auto: off (only the fills
+                                       paint: a style-None pen) unless the glyph has strokes
+                                       and no fills; always true for outline
+          "rotate": 0 } },             optional extra degrees, clockwise as drawn; baked into
+                                       the glyph's coordinates by theme_apply.py, which also
+                                       undoes the importer's +90 for air-draught/water-flow
+                                       (draw every glyph as it looks at orientation 0)
 
       "lines": { KEY: {
           "svg": "lines/x.svg" | null, the decoration unit; null -> no decoration
@@ -43,8 +45,13 @@ theme.json (keys starting with `_` are comments, everywhere)::
           "style": "solid",            solid|dash|dot|dashdot|dashdotdot|custom|none
                                        (none = base stroke off: the double-line meander case)
           "dash": [4, 2],              only and required with style custom (multiples of width)
-          "decoration": {              only with an svg; missing fields = cSurvey defaults
-              "spacing_pct": 100, "scale": 1, "alignment": "outer|center|inner",
+          "decoration": {              only with an svg; the unit is drawn pointing away from
+                                       the line, the line along its bottom edge
+              "spacing_pct": 3000,     cSurvey's decorationspacepercentage (raw; see README)
+              "scale": 1,              decorationscale (unit size: svg units x scale / 40 m)
+              "alignment": "auto",     auto (the side of the item's built-in pen) |
+                                       outer | center | inner
+              "flip": false,           mirror the unit across the line (auto with alignment auto)
               "distance_pct": 0, "position": "behind|above" },
           "decoration_color": COLOUR } },   default: the line colour
 
@@ -52,8 +59,11 @@ theme.json (keys starting with `_` are comments, everywhere)::
           "svg": "areas/x.svg" | null, the scatter tile (clipart hatch)
           "color": COLOUR, "background_color": COLOUR,   background optional
           "density": 1, "zoom": 1, "angle_mode": "random|fixed", "angle": 0,
-          "position": "random|fixed" }
-        | {"solid": true, "color": COLOUR} },           plain fill (water)
+          "position": "random|fixed", "crop": "subitems|full|none" }
+        | {"solid": true, "color": COLOUR}              plain fill
+        | {"pattern": {"type": "lines|crossed", "angle": 45, "density": 1,
+                       "zoom": 1, "pen_style": "solid|dash|dot|dashdot"},
+           "color": COLOUR, "background_color": COLOUR} },  parametric hatch (B/W water)
 
       "centerline": { NAME: value },   merged over tdx-mapping.json postimport.centerline;
                                        NAME from fix_imported_linetypes.CENTERLINE_TYPES
@@ -103,23 +113,34 @@ TOP_FIELDS = {"name", "extends", "monochrome", "default_color", "description",
 SIGN_FIELDS = {"svg", "color", "size", "render", "outline_pen", "rotate"}
 SIGN_RENDERS = ("fill", "outline")    # outline: white brush, pen in the colour (brief 3.8)
 LINE_FIELDS = {"svg", "color", "width", "style", "dash", "decoration", "decoration_color"}
-DECORATION_FIELDS = {"spacing_pct", "scale", "alignment", "distance_pct", "position"}
+DECORATION_FIELDS = {"spacing_pct", "scale", "alignment", "flip", "distance_pct", "position"}
 AREA_FIELDS = {"svg", "color", "background_color", "density", "zoom", "angle_mode",
-               "angle", "position", "solid"}
+               "angle", "position", "crop", "solid", "pattern"}
+PATTERN_FIELDS = {"type", "angle", "density", "zoom", "pen_style"}
 
 # cPen.PenStylesEnum (cPen.vb:1241-1253)
 LINE_STYLES = {"solid": 0, "dash": 1, "dot": 2, "dashdot": 3, "dashdotdot": 4,
                "none": 98, "custom": 99}
 ALIGNMENTS = {"outer": 0, "center": 1, "inner": 2}      # cPen.DecorationAlignmentEnum
+DECORATION_ALIGNMENTS = ("auto",) + tuple(ALIGNMENTS)   # auto: theme_apply.PEN_SIDE
 POSITIONS = {"behind": 0, "above": 1}                   # cPen.DecorationPositionEnum
 ANGLE_MODES = {"random": 0, "fixed": 1}                 # cBrush.ClipartAngleModeEnum
 CLIPART_POSITIONS = {"random": 0, "fixed": 1}           # cBrush.ClipartPositionEnum
+CLIPART_CROPS = {"none": 0, "full": 1, "subitems": 2}   # cBrush.ClipartCropEnum
+PATTERN_TYPES = {"lines": 0, "crossed": 1}              # cBrush.PatternTypeEnum
+PATTERN_PEN_STYLES = {"solid": 0, "dash": 1, "dot": 2, "dashdot": 3}   # cBrush.pRender
 
-# cSurvey's own defaults (cPen.vb:397-399, cBrush.vb:1430-1431)
-DECORATION_DEFAULTS = {"spacing_pct": 100.0, "scale": 1.0, "alignment": "outer",
-                       "distance_pct": 0.0, "position": "behind"}
+# Defaults. spacing 3000 is what cSurvey's own overhang/cliff/meander pens use
+# (cPens.vb:346-430): on a spline it puts ~2 unit widths of gap between units.
+# cPen's bare default of 100 would pile the units on top of each other (README,
+# "Line decorations"). Brush defaults are cSurvey's (cBrush.vb:1430-1431,
+# 731-738); crop subitems is what its Pebbles/Debrits brushes use (cBrushes.vb:97-115).
+DECORATION_DEFAULTS = {"spacing_pct": 3000.0, "scale": 1.0, "alignment": "auto",
+                       "flip": None, "distance_pct": 0.0, "position": "behind"}
 AREA_DEFAULTS = {"density": 1.0, "zoom": 1.0, "angle_mode": "random", "angle": 0.0,
-                 "position": "random"}
+                 "position": "random", "crop": "subitems"}
+PATTERN_DEFAULTS = {"type": "lines", "angle": 45.0, "density": 1.0, "zoom": 1.0,
+                    "pen_style": "solid"}    # = cSurvey's Water brush (cBrushes.vb:55-63)
 
 PRINT_SCALES = {100, 200, 250, 300, 400, 500}
 # design properties a scale rule may override (names as cSurvey reads them)
@@ -311,7 +332,8 @@ def _layer(theme_id, root, errors):
             if "svg" in entry:
                 if entry["svg"] is not None:
                     entry["svg"] = _theme_path(theme_dir, entry["svg"], where, errors)
-            elif key in index:
+            elif key in index and not (kind == "areas" and (entry.get("solid")
+                                                             or entry.get("pattern"))):
                 entry["svg"] = _theme_path(theme_dir, os.path.join(kind, index[key]), where, errors)
             out[key] = entry
         layer[kind] = out
@@ -405,10 +427,10 @@ def _sign_spec(key, entry, default_color, where, errors):
     render = _enum(entry, "render", SIGN_RENDERS, where, errors, "fill")
     pen = entry.get("outline_pen")
     if pen is None:
-        pen = render == "outline"
+        pen = True if render == "outline" else None     # None = auto (theme_apply)
     elif not isinstance(pen, bool):
         errors.append("%s.outline_pen: must be true or false" % where)
-        pen = render == "outline"
+        pen = True if render == "outline" else None
     elif render == "outline" and not pen:
         errors.append("%s.outline_pen: render outline draws only the pen - it cannot be false"
                       % where)
@@ -458,8 +480,9 @@ def _line_spec(key, entry, default_color, where, errors):
                                 default=DECORATION_DEFAULTS["spacing_pct"]),
             "scale": _num(deco, "scale", dw, errors, positive=True,
                           default=DECORATION_DEFAULTS["scale"]),
-            "alignment": _enum(deco, "alignment", ALIGNMENTS, dw, errors,
+            "alignment": _enum(deco, "alignment", DECORATION_ALIGNMENTS, dw, errors,
                                default=DECORATION_DEFAULTS["alignment"]),
+            "flip": _bool(deco, "flip", dw, errors),
             "distance_pct": _num(deco, "distance_pct", dw, errors,
                                  default=DECORATION_DEFAULTS["distance_pct"]),
             "position": _enum(deco, "position", POSITIONS, dw, errors,
@@ -477,20 +500,65 @@ def _line_spec(key, entry, default_color, where, errors):
             "decoration_color": _colour(entry, "decoration_color", where, errors, color)}
 
 
+def _bool(entry, field, where, errors):
+    v = entry.get(field)
+    if v is not None and not isinstance(v, bool):
+        errors.append("%s.%s: must be true or false" % (where, field))
+        return None
+    return v
+
+
+_NO_TILE = {"density": None, "zoom": None, "angle_mode": None, "angle": None,
+            "position": None, "crop": None}
+
+
+def _pattern(pat, where, errors):
+    if not isinstance(pat, dict):
+        errors.append("%s: must be an object {type, angle, density, zoom, pen_style}" % where)
+        return None
+    pat = {k: v for k, v in pat.items() if not _is_comment(k)}
+    _unknown_fields(pat, PATTERN_FIELDS, where, errors)
+    return {"type": _enum(pat, "type", PATTERN_TYPES, where, errors, PATTERN_DEFAULTS["type"]),
+            "angle": _num(pat, "angle", where, errors, default=PATTERN_DEFAULTS["angle"]),
+            "density": _num(pat, "density", where, errors, positive=True,
+                            default=PATTERN_DEFAULTS["density"]),
+            "zoom": _num(pat, "zoom", where, errors, positive=True,
+                         default=PATTERN_DEFAULTS["zoom"]),
+            "pen_style": _enum(pat, "pen_style", PATTERN_PEN_STYLES, where, errors,
+                               PATTERN_DEFAULTS["pen_style"])}
+
+
 def _area_spec(key, entry, default_color, where, errors):
+    """One of three looks: a scatter tile (svg), a solid fill, or a parametric
+    pattern hatch - mutually exclusive (brief 3.8)."""
     _unknown_fields(entry, AREA_FIELDS, where, errors)
     color = _colour(entry, "color", where, errors, default_color)
     solid = entry.get("solid", False)
     if not isinstance(solid, bool):
         errors.append("%s.solid: must be true or false" % where)
         solid = False
+    pattern = entry.get("pattern")
+    looks = [n for n, on in (("svg", entry.get("svg") is not None), ("solid", solid),
+                             ("pattern", pattern is not None)) if on]
+    if len(looks) > 1:
+        errors.append("%s: %s are mutually exclusive (one look per area; a child theme"
+                      " clears the inherited one with null)" % (where, " and ".join(looks)))
+    if pattern is not None:
+        extra = sorted(set(entry) - {"pattern", "color", "background_color", "svg"})
+        if extra:
+            errors.append("%s: a pattern area takes only pattern, color, background_color"
+                          " (not %s)" % (where, ", ".join(extra)))
+        return dict(_NO_TILE, key=key, solid=False, svg=None, color=color,
+                    background_color=_colour(entry, "background_color", where, errors, None),
+                    pattern=_pattern(pattern, where + ".pattern", errors))
     if solid:
-        extra = sorted(set(entry) - {"solid", "color"})
+        extra = sorted(set(entry) - {"solid", "color", "svg"})
         if extra:
             errors.append("%s: a solid area takes only color (not %s)" % (where, ", ".join(extra)))
-        return {"key": key, "solid": True, "svg": None, "color": color, "background_color": None,
-                "density": None, "zoom": None, "angle_mode": None, "angle": None, "position": None}
-    return {"key": key, "solid": False, "svg": _svg(entry, where, errors), "color": color,
+        return dict(_NO_TILE, key=key, solid=True, svg=None, color=color,
+                    background_color=None, pattern=None)
+    return {"key": key, "solid": False, "pattern": None,
+            "svg": _svg(entry, where, errors), "color": color,
             "background_color": _colour(entry, "background_color", where, errors, None),
             "density": _num(entry, "density", where, errors, positive=True,
                             default=AREA_DEFAULTS["density"]),
@@ -500,7 +568,9 @@ def _area_spec(key, entry, default_color, where, errors):
                                 default=AREA_DEFAULTS["angle_mode"]),
             "angle": _num(entry, "angle", where, errors, default=AREA_DEFAULTS["angle"]),
             "position": _enum(entry, "position", CLIPART_POSITIONS, where, errors,
-                              default=AREA_DEFAULTS["position"])}
+                              default=AREA_DEFAULTS["position"]),
+            "crop": _enum(entry, "crop", CLIPART_CROPS, where, errors,
+                          default=AREA_DEFAULTS["crop"])}
 
 
 def _centerline(section, where, errors):

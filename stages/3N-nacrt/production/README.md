@@ -30,7 +30,7 @@ survey processing.
 | [`sb_select.py`](tools/sb_select.py) | turns the Redni broj an operator types into that cave's `SB_<broj>_…` intake leaf and picks the file at that step by itself — the `_postp` for KORAK 3, the file cSurvey saved for KORAK 2; cSurvey's `_backup` copies are never offered — asking only when a cave has none or several (`--sb` on all three tools) | whenever a launcher asks which caves, or which file |
 | [`theme_svg.py`](tools/theme_svg.py) | symbol-theme artwork → cSurvey-safe SVGs ([project 0007](../projects/0007-symbol-themes/brief.md), T1) — see [Symbol-theme SVGs](#symbol-theme-svgs) below | after each Illustrator export of the theme drawing |
 | [`themes.py`](tools/themes.py) + [`themes/`](themes/README.md) | symbol themes ([project 0007](../projects/0007-symbol-themes/brief.md), T2): the `theme.json` format, `extends`/`monochrome`, key validation against the catalog, `resolve()` (TopoDroid name → cSurvey target → built-in); `list` / `check` / `show`. Starter themes `boja` and `crno-bijelo`. `check_defaults.py` validates them all | after editing a theme; read by `theme_apply.py` |
-| [`theme_apply.py`](tools/theme_apply.py) | applies a symbol theme to a post-import `.csx`/`.csz` ([project 0007](../projects/0007-symbol-themes/brief.md), T3 phase 1: signs + centerline) — see [Applying a theme](#applying-a-theme) below | after KORAK 2, per cave; again to switch theme |
+| [`theme_apply.py`](tools/theme_apply.py) | applies a symbol theme to a post-import `.csx`/`.csz` ([project 0007](../projects/0007-symbol-themes/brief.md), T3 + phase 2: signs, lines, areas, centerline) — see [Applying a theme](#applying-a-theme) below | after KORAK 2, per cave; again to switch theme |
 | [`make_theme_mockup.py`](tools/make_theme_mockup.py) | the **theme mockup** (zoo v4): one raw TopoDroid `.csx` with every symbol of the 0002 zoo v3 plus every key of every theme, signs / lines (straight and curved) / areas (2 × 1.5 m) in labelled rows, line and area rows inside a wall loop so they print; writes `<name>.csx`, `<name>-key.md`, `<name>-layout.json`. The permanent test case for themes ([project 0007 run r2](../projects/0007-symbol-themes/runs/2026-10-07-zoo-sheet-r2/RUNLOG.md)) | after adding a symbol to a theme, to re-check the sheet |
 | [`signs-pack/`](tools/signs-pack) | 8 SVG glyphs for mapped-but-artwork-less signs; installed into cSurvey's Signs gallery | after a cSurvey upgrade (re-copy) |
 
@@ -54,7 +54,9 @@ python tools/theme_svg.py check  FILE_OR_DIR            # report only; exit 1 on
 - **normalisation** of every piece: styles resolved (including `<defs><style>` classes); transforms baked;
   arcs, circles, ellipses, rects and lines turned into `M L C Q Z` paths; shapes with no fill and no stroke
   dropped (cSurvey would outline them); fills flattened to `#FFFFFF` / `#000000` / none; strokes kept
-  as geometry and reported with their widths, never outlined; image, use, text, clip, mask and opacity
+  as geometry and reported with their widths in signs, but **outlined into fills** in line units and area tiles
+  (cSurvey paints a pen decoration or brush tile by its fills only); a path whose nested contours wind the same
+  way is reported (cSurvey fills even-odd); image, use, text, clip, mask and opacity
   reported. Signs get `csurvey:sign`, cSurvey's SignEnum value (`blocks` = 1290, not the catalog's menu
   number 53), resolved from the key through `tdx-mapping.json` and the catalog's point targets, whose `sign`
   field `make_signs_catalog.py` writes from its static `SIGN_NAMES` table (no cSurvey source needed at run
@@ -79,7 +81,10 @@ python tools/theme_apply.py apply SB_..._postp.csx --theme boja --pre SB_..._tdx
   `tema-boja_blocks.svg`, so it never looks like a duplicate of cSurvey's own `blocks.svg` in the gallery) —
   and the item's `data` is repointed; `sign=`
   stays. A theme `size` is baked into the glyph's `csurvey:scale`, a theme `rotate` into its coordinates
-  (`theme_svg.rotate_svg`); `signsize` is never touched.
+  (`theme_svg.rotate_svg`); `signsize` is never touched. Glyphs are drawn as they look at TopoDroid orientation 0
+  (arrows pointing up): for points that reached the importer as exactly `air-draught` or `water-flow` (which
+  cSurvey turns +90°, `cImportTopoDroidHelper.vb:331-334`) the glyph is turned −90° per item, from the name
+  recovered out of `--pre`.
 - **Colour:** a coloured sign gets an inline custom solid brush in the theme colour, named `tema:<id>`; black keeps
   the built-in `<brush type="7"/>`.
 - **Pen (outline):** cSurvey traces the item's pen round every path of a glyph, which made club glyphs too heavy
@@ -87,14 +92,28 @@ python tools/theme_apply.py apply SB_..._postp.csx --theme boja --pre SB_..._tdx
   `<pen type="99" name="tema:<id>" color="…" style="98" width="0.00" …><clipart data=""/></pen>`, so only the fills
   paint, black glyphs included. `outline_pen: true` restores the old look (black: built-in `<pen type="10"/>`;
   colour: a TightPen-like custom pen in the colour); `render: outline` makes the brush white and the pen the
-  colour. A stroke-only path in a glyph (fill none) does not print with the pen off; the report notes it.
+  colour. Unset, `outline_pen` is *auto*: off, unless the glyph has strokes and no fills, which then get the pen
+  in the sign's colour (reported). A stroke-only path in a glyph with fills does not print with the pen off; the
+  report notes it.
   Signs whose pen or brush was customised by hand in cSurvey are skipped.
 - **Centerline:** the theme's `centerline` overrides (all colours for `crno-bijelo`) are written with
   `fix_imported_linetypes.apply_centerline`.
 - **Re-runs replace, never stack:** the file records `CaveDossierTheme` and `CaveDossierThemeState` (what to undo)
   as string design properties, which cSurvey keeps through a load + save. A re-run undoes the previous theme first,
   so `boja` → `crno-bijelo` is byte-identical to `crno-bijelo` applied once.
-- Lines and areas (phase 2) are only counted in the report.
+- **Lines** (phase 2): one **library pen** per (theme key, built-in pen type) in the root `<pens>`, written as
+  `cCustomPen.SaveTo` writes it, and the item's `<pen type="12"/>` becomes `<pen type="98" id="tema-boja-line-overhang-12"/>`.
+  Width = the theme's, else the built-in pen's own (`BaseMediumLinesScaleFactor` etc. from the file — a User pen
+  with width 0 would be a hairline); the decoration unit goes inline as one-line SVG text in `<clipart data="…"/>`,
+  painted by its fill only (`clipartpenstyle` None); `alignment: auto` puts it on the side the built-in pen uses
+  (flipped for an Inner pen; a plain pen takes its KORAK 1 target's side). A hand-set pen is skipped.
+- **Areas** (phase 2): one **library brush** per (key, built-in brush type) in `<brushes>` — scatter tile
+  (`hatchtype 2`), solid, or parametric pattern (`hatchtype 3`, the B/W water) — and the item's brush becomes
+  `<brush type="98" id="…">`, keeping its own `<seed>`. Areas cSurvey has no brush for (ice, snow, stalagmite, user:
+  blank soil) are reached by TopoDroid name like the rest.
+- **Order:** after KORAK 2. A KORAK 2 re-run on a themed file leaves `type="98"` references alone (it only changes
+  built-in types), so the theme survives it; re-applying the theme is still the safe step after any KORAK 2 run.
+- Details, the XML and the cSurvey limits: [themes/README.md](themes/README.md).
 
 ## Predefined cSurvey settings
 

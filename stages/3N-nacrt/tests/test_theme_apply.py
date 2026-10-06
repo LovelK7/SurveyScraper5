@@ -277,3 +277,227 @@ def test_real_fixture_both_themes(tmp_path):
     again = tmp_path / "again.csx"
     ta.theme_file(str(outs["boja"]), "crno-bijelo", str(TDX_RAW), str(again))
     assert again.read_bytes() == outs["crno-bijelo"].read_bytes()
+
+
+# --------------------------------------------------------------------------
+# phase 2: lines (library pens) and areas (library brushes)
+
+UNIT = ('<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" '
+        'viewBox="0 0 2 3">\n  <title>u</title>\n  <path d="M 0 3 L 1 0 L 2 3 Z" fill="#000000"/>\n'
+        '</svg>\n')
+TILE = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4">'
+        '<path d="M 0 0 L 4 0 L 4 4 Z" fill="#000000"/></svg>\n')
+
+CSX2 = """<csurvey version="1.14" id="x">
+  <properties name="t">
+    <designproperties>
+      <item name="BaseMediumLinesScaleFactor" type="single">2.5</item>
+    </designproperties>
+  </properties>
+  <pens />
+  <brushes />
+  <plan>
+    <layers>
+      <layer type="2">
+        <items>
+          <item layer="2" type="1" category="3" linetype="1">
+            <pen type="12" />
+            <points data="0.00 0.00 B 3.00 0.00 S 3.00 3.00 S " />
+            <datarow>TopoDroid|x</datarow>
+          </item>
+          <item layer="2" type="1" category="2" linetype="1">
+            <pen type="2" />
+            <points data="10.00 0.00 B 13.00 0.00 S " />
+            <datarow>TopoDroid|x</datarow>
+          </item>
+          <item layer="2" type="1" category="3" linetype="1">
+            <pen type="21" />
+            <points data="20.00 0.00 B 23.00 0.00 S " />
+            <datarow>TopoDroid|x</datarow>
+          </item>
+        </items>
+      </layer>
+      <layer type="1">
+        <items>
+          <item layer="1" type="3" category="48">
+            <pen type="0" />
+            <brush type="4">
+              <seed base="82.00" increment="12.00" />
+            </brush>
+            <points data="0.00 10.00 B 2.00 10.00 S 2.00 12.00 S 0.00 12.00 S " />
+            <datarow>TopoDroid|x</datarow>
+          </item>
+          <item layer="1" type="3" category="64">
+            <pen type="2" />
+            <brush type="6" />
+            <points data="5.00 10.00 B 7.00 10.00 S 7.00 12.00 S 5.00 12.00 S " />
+            <datarow>TopoDroid|x</datarow>
+          </item>
+        </items>
+      </layer>
+    </layers>
+  </plan>
+  <signs>
+    <cliparts />
+  </signs>
+</csurvey>
+"""
+
+PRE2 = """<csurvey><properties creatid="TopoDroid" /><plan>
+  <item type="line" name="overhang"><points data="3.00 3.00 3.00 0.00 0.00 0.00 " /></item>
+  <item type="line" name="rope"><points data="13.00 0.00 10.00 0.00 " /></item>
+  <item type="line" name="floor-meander"><points data="23.00 0.00 20.00 0.00 " /></item>
+  <item type="area" name="pebbles"><points data="0.00 12.00 2.00 12.00 2.00 10.00 0.00 10.00 " /></item>
+  <item type="area" name="water"><points data="5.00 12.00 7.00 12.00 7.00 10.00 5.00 10.00 " /></item>
+</plan></csurvey>"""
+
+
+@pytest.fixture
+def env2(tmp_path):
+    root = tmp_path / "themes"
+    (root / "c" / "lines").mkdir(parents=True)
+    (root / "c" / "areas").mkdir()
+    (root / "c" / "lines" / "u.svg").write_text(UNIT)
+    (root / "c" / "areas" / "t.svg").write_text(TILE)
+    (root / "c" / "theme.json").write_text(json.dumps({"name": "C", "lines": {
+        "overhang": {"svg": "lines/u.svg", "color": "#000000", "decoration": {"scale": 2}},
+        "floor-meander": {"svg": "lines/u.svg", "style": "none",
+                          "decoration": {"alignment": "center", "spacing_pct": 0}},
+        "rope": {"color": "#EF5553", "width": 0.1}},
+        "areas": {"pebbles": {"svg": "areas/t.svg", "color": "#AD7E2F", "density": 0.6,
+                              "zoom": 0.05}}}))
+    (root / "bw").mkdir()
+    (root / "bw" / "theme.json").write_text(json.dumps(
+        {"name": "BW", "extends": "c", "monochrome": "#000000",
+         "areas": {"water": {"pattern": {"type": "lines", "angle": 45}}}}))
+    csx = tmp_path / "in2.csx"
+    csx.write_text(CSX2, encoding="utf-8")
+    pre = tmp_path / "pre2.csx"
+    pre.write_text(PRE2, encoding="utf-8")
+    return tmp_path, root, csx, pre
+
+
+def _items(path):
+    r = ET.parse(path).getroot()
+    return [it for it in r.iter("item") if it.get("type") in ("1", "3")], r
+
+
+def test_line_library_pen_xml(env2):
+    out, rep = _run(env2, env2[2], "c", "o.csx")
+    items, r = _items(out)
+    pens = {p.get("id"): p for p in r.find("pens")}
+    oh = pens["tema-c-line-overhang-12"]
+    assert list(oh.attrib.items())[:5] == [("type", "98"), ("id", "tema-c-line-overhang-12"),
+                                           ("name", "tema:c:overhang/12"),
+                                           ("color", "-16777216"), ("style", "0")]
+    assert oh.get("width") == "2.50"                     # the file's BaseMediumLinesScaleFactor
+    assert oh.get("decorationstyle") == "99" and oh.get("decorationscale") == "2.00"
+    assert oh.get("decorationalignment") == "2"          # OverhangDownPen is Inner ...
+    data = oh.find("clipart").get("data")
+    assert data.startswith("<svg ") and 'd="M 0 0 L 1 3 L 2 0 Z"' in data   # ... so flipped
+    assert oh.get("clipartpenmode") == "1" and oh.get("clipartpenstyle") == "98"
+    assert "clipartbrushmode" not in oh.attrib            # decoration colour = line colour
+    rope = pens["tema-c-line-rope-2"]
+    assert rope.get("color") == str(-1092269) and rope.get("width") == "0.10"
+    assert rope.get("decorationstyle") == "0" and rope.find("clipart").get("data") == ""
+    md = pens["tema-c-line-floor-meander-21"]
+    assert md.get("style") == "98" and md.get("decorationalignment") == "1"
+    assert md.get("decorationspacepercentage") == "0.1"   # 0 would read back as 100
+    assert [it.find("pen").attrib for it in items[:3]] == [
+        {"type": "98", "id": "tema-c-line-overhang-12"}, {"type": "98", "id": "tema-c-line-rope-2"},
+        {"type": "98", "id": "tema-c-line-floor-meander-21"}]
+    assert sum(rep["lines"]["themed"].values()) == 3
+
+
+def test_area_library_brushes_tile_and_pattern(env2):
+    out, rep = _run(env2, env2[2], "bw", "o.csx")
+    items, r = _items(out)
+    br = {b.get("id"): b for b in r.find("brushes")}
+    tile = br["tema-bw-area-pebbles-4"]
+    assert tile.get("hatchtype") == "2" and tile.get("clipartdensity") == "0.60"
+    assert tile.get("clipartzoomfactor") == "0.0500" and tile.get("clipartcrop") == "2"
+    assert tile.get("color") == "-16777216"                       # monochrome
+    assert tile.find("clipart").get("data").startswith("<svg ")
+    pat = br["tema-bw-area-water-6"]
+    assert {k: pat.get(k) for k in ("hatchtype", "patterntype", "patternpenstyle", "patterndensity",
+                                    "patternzoomfactor", "patternanglemode", "patternangle")} == {
+        "hatchtype": "3", "patterntype": "0", "patternpenstyle": "0", "patterndensity": "1.00",
+        "patternzoomfactor": "1.0000", "patternanglemode": "0", "patternangle": "45.00"}
+    assert pat.find("parameters") is not None and len(pat.find("parameters")) == 0
+    peb = items[3].find("brush")
+    assert peb.attrib == {"type": "98", "id": "tema-bw-area-pebbles-4"}
+    assert peb.find("seed").get("base") == "82.00"               # the item seed is kept
+    assert items[3].find("pen").attrib == {"type": "0"}          # area outline untouched
+
+
+def test_phase2_undo_switch_idempotent(env2):
+    tmp, _root, csx, _pre = env2
+    a, _ = _run(env2, csx, "c", "a.csx")
+    a2, _ = _run(env2, a, "c", "a2.csx")
+    assert a.read_bytes() == a2.read_bytes()
+    b, _ = _run(env2, csx, "bw", "b.csx")
+    ab, rep = _run(env2, a, "bw", "ab.csx")
+    assert ab.read_bytes() == b.read_bytes() and rep["previous_theme"] == "c"
+    ba, _ = _run(env2, b, "c", "ba.csx")
+    assert ba.read_bytes() == a.read_bytes()
+    # undoing everything restores the original items and the empty libraries
+    root = ET.parse(a).getroot()
+    _, state = ta.read_state(root)
+    ta.undo(root, state)
+    orig = ET.parse(csx).getroot()
+    assert ET.tostring(root.find("plan")) == ET.tostring(orig.find("plan"))
+    assert len(root.find("pens")) == 0 and len(root.find("brushes")) == 0
+
+
+def test_libraries_created_when_absent_and_removed_on_undo(env2):
+    tmp, _root, csx, _pre = env2
+    src = tmp / "nolib.csx"
+    src.write_text(CSX2.replace("  <pens />\n  <brushes />\n", ""), encoding="utf-8")
+    a, _ = _run(env2, src, "c", "a.csx")
+    r = ET.parse(a).getroot()
+    tags = [c.tag for c in r]
+    assert tags.index("pens") < tags.index("brushes") < tags.index("plan")
+    back, _ = _run(env2, a, "bw", "back.csx")
+    direct, _ = _run(env2, src, "bw", "direct.csx")
+    assert back.read_bytes() == direct.read_bytes()
+    root = ET.parse(a).getroot()
+    ta.undo(root, ta.read_state(root)[1])
+    assert root.find("pens") is None and root.find("brushes") is None
+
+
+def test_hand_set_line_pen_left_alone(env2):
+    tmp, _root, csx, _pre = env2
+    src = tmp / "hand.csx"
+    src.write_text(CSX2.replace('<pen type="12" />',
+                                '<pen type="99" color="-1" style="0" width="1.00" />'),
+                   encoding="utf-8")
+    out, rep = _run(env2, src, "c", "o.csx")
+    assert any("own pen" in s for s in rep["lines"]["skipped"])
+    assert _items(out)[0][0].find("pen").get("type") == "99"
+
+
+def test_importer_turn_and_auto_outline_pen():
+    assert ta.importer_turn("water-flow", "777") == 90 and ta.importer_turn("waterflow", "777") == 0
+    assert ta.importer_turn(None, "774") == 90 and ta.importer_turn(None, "1290") == 0
+    blob = b'<svg><path d="M 0 0 L 1 1" fill="none" stroke="#000000"/></svg>'
+    assert ta.stroke_only_paths(blob) == 1 and ta.filled_paths(blob) == 0
+
+
+def test_stroke_only_sign_gets_the_pen(env):
+    tmp, root, csx, _pre = env
+    (root / "t" / "signs" / "blocks.svg").write_bytes(
+        b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2">'
+        b'<path d="M 0 0 L 2 2" fill="none" stroke="#000000"/></svg>')
+    out, rep = _run(env, csx, "t", "s.csx")
+    pen = _signs(out)[0][0].find("pen")
+    assert pen.get("style") == "0" and pen.get("color") == str(GREY)     # pen on, sign colour
+    assert any("outline pen turned on" in n for n in rep["notes"])
+
+
+def test_majority_name_of_merged_item():
+    def seq(n):
+        return {"status": "exact", "source": {"tdx_name": n, "kind": "line", "prep_name": n}}
+    assert ta._majority([seq("wall"), seq("wall"), seq("pit")])[0] == "wall"
+    name, _k, _p, note = ta._majority([seq("wall"), seq("pit")])
+    assert name is None and "tie" in note
+    assert ta._majority([seq("pit")])[3] is None

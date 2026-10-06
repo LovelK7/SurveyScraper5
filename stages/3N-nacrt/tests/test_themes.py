@@ -230,11 +230,13 @@ def test_starter_themes_content():
     assert boja.lines["rope"]["color"] == th.to_argb("#EF5553")
     meander = boja.lines["floor-meander"]
     assert meander["style"] == "none" and meander["decoration"]["alignment"] == "center"
-    assert meander["decoration"]["spacing_pct"] == 0
-    assert set(bw.signs) == set(boja.signs) and set(bw.areas) == set(boja.areas)
+    assert meander["decoration"]["spacing_pct"] == 990          # butted on a spline (README)
+    assert set(bw.signs) == set(boja.signs) and set(bw.areas) == set(boja.areas) | {"water"}
     assert all(s["color"] == BLACK for s in bw.lines.values())
     assert bw.centerline["PlotPenColor"] == BLACK
-    assert th.unused_svgs(boja) == []
+    assert th.unused_svgs(boja) == ["lines/water-flow.svg"]     # read as a dash pattern
+    assert bw.areas["water"]["pattern"]["angle"] == 45 and bw.areas["water"]["svg"] is None
+    assert boja.signs["water-drip"]["svg"] == boja.signs["water-flow:intermittent"]["svg"]
 
 
 def test_cli_check_and_show(capsys):
@@ -258,7 +260,7 @@ def test_sign_outline_pen_and_rotate_fields(tmp_path):
         "bones": {}, "danger": {"render": "outline"}, "plus": {"outline_pen": True},
         "minus": {"rotate": -90}, "blocks": {"rotate": 360}}})
     t = th.load_theme("p", tmp_path)
-    assert t.signs["bones"]["outline_pen"] is False          # fill: pen off by default
+    assert t.signs["bones"]["outline_pen"] is None           # fill: auto (theme_apply decides)
     assert t.signs["danger"]["outline_pen"] is True          # outline implies the pen
     assert t.signs["plus"]["outline_pen"] is True
     assert t.signs["minus"]["rotate"] == 270.0               # normalised to 0..360
@@ -268,3 +270,35 @@ def test_sign_outline_pen_and_rotate_fields(tmp_path):
         "plus": {"outline_pen": "yes"}, "minus": {"rotate": "90"}}})
     errs = th.validate("bad", tmp_path)
     assert sum("outline_pen" in e for e in errs) == 2 and any("rotate" in e for e in errs)
+
+
+def test_area_pattern_field(tmp_path):
+    _theme(tmp_path, "w", {"name": "W", "areas": {
+        "water": {"pattern": {"type": "crossed", "angle": 30, "density": 0.5}, "color": "#000000"},
+        "clay": {"crop": "none"}}})
+    t = th.load_theme("w", tmp_path)
+    p = t.areas["water"]["pattern"]
+    assert p == {"type": "crossed", "angle": 30.0, "density": 0.5, "zoom": 1.0, "pen_style": "solid"}
+    assert t.areas["water"]["svg"] is None and t.areas["clay"]["crop"] == "none"
+    assert t.areas["clay"]["pattern"] is None
+    _theme(tmp_path, "bad", {"name": "B", "areas": {
+        "water": {"pattern": {"type": "dots"}, "solid": True},
+        "clay": {"pattern": {"angle": 45}, "density": 2},
+        "ice": {"pattern": "lines"}}})
+    errs = th.validate("bad", tmp_path)
+    assert any("mutually exclusive" in e for e in errs)
+    assert any("water.pattern.type" in e for e in errs)
+    assert any("clay" in e and "takes only pattern" in e for e in errs)
+    assert any("ice.pattern" in e for e in errs)
+
+
+def test_decoration_alignment_auto_and_flip(tmp_path):
+    _theme(tmp_path, "d", {"name": "D", "lines": {
+        "pit": {"svg": "lines/u.svg"},
+        "overhang": {"svg": "lines/u.svg", "decoration": {"alignment": "inner", "flip": True}}}},
+        files=["lines/u.svg"])
+    t = th.load_theme("d", tmp_path)
+    assert t.lines["pit"]["decoration"]["alignment"] == "auto"
+    assert t.lines["pit"]["decoration"]["flip"] is None
+    assert t.lines["pit"]["decoration"]["spacing_pct"] == 3000
+    assert t.lines["overhang"]["decoration"]["flip"] is True

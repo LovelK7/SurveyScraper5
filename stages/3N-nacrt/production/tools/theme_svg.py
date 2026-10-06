@@ -31,6 +31,17 @@ absolute M L C Q Z only, 3 decimals, geometry moved to the origin, viewBox =
 the bounding box. Signs also get csurvey:sign (cSurvey SignEnum number, when
 the key resolves) and csurvey:scale (size relative to the median sign).
 
+Line units and area tiles also get their STROKES OUTLINED into filled geometry
+(stroke width as drawn, butt caps, round joins): cSurvey paints a brush tile's
+and a pen decoration's paths only by their fill (cBrush.vb:1821-1840,1982-2001;
+cPen.vb:1096-1098), so a stroke-only path there would never print. Signs keep
+their strokes - cSurvey draws those with the item pen (theme_apply.py turns the
+pen on for a stroke-only glyph).
+
+cSurvey fills every path even-odd (a GraphicsPath's default FillMode; nothing in
+cDrawPaths.vb sets Winding), so the split warns about a path whose nested
+contours wind the same way: the SVG (nonzero) fills such a hole, cSurvey does not.
+
 Stdlib only.
 """
 
@@ -710,7 +721,8 @@ def shape_segs(el, stats):
 class Piece:
     """Result of normalising one subtree."""
 
-    def __init__(self):
+    def __init__(self, outline_strokes=False):
+        self.outline_strokes = outline_strokes   # lines/areas: strokes -> fills
         self.paths = []          # (segs, fill, stroke_bool, fill_rule)
         self.fixed = {}          # counter name -> int
         self.rejected = []       # strings
@@ -857,12 +869,126 @@ def _walk(el, sheet, parent_style, ctm, opacity, piece, nested):
                               "stroke_width": sw,
                               "effective_width": round(sw * mat_scale(ctm), 4)})
     rule = (style.get("fill-rule") or "nonzero").strip()
+    if has_stroke and piece.outline_strokes:
+        ink = "#FFFFFF" if is_white(stroke) else "#000000"
+        if ink == "#000000" and not is_black(stroke):
+            piece.colours.add(stroke.strip().lower())
+        if has_fill:
+            piece.paths.append((segs, out_fill, False, rule))
+        outl = outline_stroke(segs, sw * mat_scale(ctm))
+        piece.paths += [(o, ink, False, "nonzero") for o in outl]
+        piece.count("strokes outlined")
+        return
     piece.paths.append((segs, out_fill, has_stroke, rule))
 
 
-def normalize_element(el, sheet, ancestors=()):
+# --------------------------------------------------------------------------
+# stroke outlining (line units, area tiles) and the even-odd check
+
+def flatten(segs, steps=8):
+    """segs -> [(points, closed)], curves sampled `steps` times."""
+    out, pts, start, cur = [], [], None, None
+    for s in segs:
+        if s[0] == "M":
+            if len(pts) > 1:
+                out.append((pts, False))
+            pts, start, cur = [s[1]], s[1], s[1]
+        elif s[0] == "L":
+            pts.append(s[1])
+            cur = s[1]
+        elif s[0] == "C":
+            p0, (c1, c2, p) = cur, s[1:]
+            for i in range(1, steps + 1):
+                t = i / float(steps)
+                pts.append((_cubic_at(p0[0], c1[0], c2[0], p[0], t),
+                            _cubic_at(p0[1], c1[1], c2[1], p[1], t)))
+            cur = p
+        elif s[0] == "Q":
+            p0, (q, p) = cur, s[1:]
+            for i in range(1, steps + 1):
+                t = i / float(steps)
+                u = 1 - t
+                pts.append((u * u * p0[0] + 2 * u * t * q[0] + t * t * p[0],
+                            u * u * p0[1] + 2 * u * t * q[1] + t * t * p[1]))
+            cur = p
+        elif s[0] == "Z":
+            if pts and start is not None:
+                if math.hypot(pts[-1][0] - start[0], pts[-1][1] - start[1]) > EPS:
+                    pts.append(start)
+                if len(pts) > 2:
+                    out.append((pts, True))
+            pts, cur = [], start
+    if len(pts) > 1:
+        out.append((pts, False))
+    return out
+
+
+def outline_stroke(segs, width):
+    """A stroke as filled polygons: one quad per segment (butt caps) plus a
+    small octagon at every bend (round join). Each is its own path, so the
+    overlaps never cancel under cSurvey's even-odd fill."""
+    h = width / 2.0
+    out = []
+    for pts, closed in flatten(segs):
+        clean = [pts[0]]
+        for p in pts[1:]:
+            if math.hypot(p[0] - clean[-1][0], p[1] - clean[-1][1]) > EPS:
+                clean.append(p)
+        if len(clean) < 2:
+            continue
+        dirs = []
+        for a, b in zip(clean, clean[1:]):
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            n = math.hypot(dx, dy)
+            nx, ny = -dy / n * h, dx / n * h
+            out.append([("M", (a[0] + nx, a[1] + ny)), ("L", (b[0] + nx, b[1] + ny)),
+                        ("L", (b[0] - nx, b[1] - ny)), ("L", (a[0] - nx, a[1] - ny)), ("Z",)])
+            dirs.append((dx / n, dy / n))
+        joins = [(j, dirs[j - 1], dirs[j]) for j in range(1, len(clean) - 1)]
+        if closed and len(dirs) > 1:
+            joins.append((0, dirs[-1], dirs[0]))
+        for j, d0, d1 in joins:
+            if d0[0] * d1[0] + d0[1] * d1[1] > 0.9994:        # < 2 degrees: no gap to fill
+                continue
+            c = clean[j]
+            ring = [(c[0] + h * math.cos(k * math.pi / 4), c[1] + h * math.sin(k * math.pi / 4))
+                    for k in range(8)]
+            out.append([("M", ring[0])] + [("L", q) for q in ring[1:]] + [("Z",)])
+    return out
+
+
+def _signed_area(pts):
+    return sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(pts, pts[1:] + pts[:1])) / 2.0
+
+
+def _poly_box(pts):
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def evenodd_conflicts(piece):
+    """Indices of filled nonzero paths with a contour nested in another that
+    winds the same way: the SVG fills it, cSurvey (even-odd) leaves a hole."""
+    bad = []
+    for i, (segs, fill, _stroke, rule) in enumerate(piece.paths):
+        if is_none(fill) or rule == "evenodd":
+            continue
+        rings = [(_poly_box(p), _signed_area(p)) for p, _c in flatten(segs, 4) if len(p) > 2]
+        hit = False
+        for a, (ba, sa) in enumerate(rings):
+            for b, (bb, sb) in enumerate(rings):
+                if a != b and abs(sa) > EPS and abs(sb) > EPS and (sa > 0) == (sb > 0) \
+                        and ba[0] <= bb[0] and ba[1] <= bb[1] and ba[2] >= bb[2] \
+                        and ba[3] >= bb[3]:
+                    hit = True
+        if hit:
+            bad.append(i)
+    return bad
+
+
+def normalize_element(el, sheet, ancestors=(), outline_strokes=False):
     """Normalise el (with its ancestors' inherited style and transforms)."""
-    piece = Piece()
+    piece = Piece(outline_strokes)
     style = dict(ROOT_STYLE)
     ctm = IDENT
     opacity = 1.0
@@ -918,6 +1044,47 @@ _D_ATTR = re.compile(rb'(<path\b[^>]*?\sd=")([^"]*)(")')
 _VIEWBOX = re.compile(rb'viewBox="[^"]*"')
 
 
+def transform_svg(blob, m):
+    """Apply matrix m to every <path d> of a normalised SVG (render_svg output),
+    move the geometry back to the origin and refit the viewBox; everything else
+    stays byte for byte."""
+    found = [(mt, parse_path(mt.group(2).decode("ascii"))) for mt in _D_ATTR.finditer(blob)]
+    if not found:
+        raise ValueError("no <path d=...> in the glyph")
+    turned = [transform_segs(segs, m) for _m, segs in found]
+    box = None
+    for segs in turned:
+        box = union(box, bbox(segs))
+    shift = (1, 0, 0, 1, -box[0], -box[1])
+    out, pos = [], 0
+    for (mt, _segs), segs in zip(found, turned):
+        out += [blob[pos:mt.start(2)], segs_to_d(transform_segs(segs, shift)).encode("ascii")]
+        pos = mt.end(2)
+    out.append(blob[pos:])
+    blob = b"".join(out)
+    vb = ('viewBox="0 0 %s %s"' % (fmt(box[2] - box[0]), fmt(box[3] - box[1]))).encode("ascii")
+    return _VIEWBOX.sub(lambda _m: vb, blob, count=1)
+
+
+def flip_svg(blob):
+    """Mirror a normalised unit top to bottom (across a horizontal line)."""
+    return transform_svg(blob, (1, 0, 0, -1, 0, 0))
+
+
+_DECL = re.compile(rb"<\?xml[^>]*\?>")
+_TITLE = re.compile(rb"<title>.*?</title>", re.S)
+
+
+def compact_svg(blob):
+    """One-line SVG text for an inline <clipart data="..."/> (pen decoration,
+    brush tile): no XML declaration, no title, no whitespace between tags -
+    what cDrawClipArt keeps of a loaded file (XmlDocument.OuterXml without
+    whitespace nodes, cDrawPaths.vb:153-161) and writes back verbatim
+    (SaveTo, :191-196)."""
+    blob = _TITLE.sub(b"", _DECL.sub(b"", blob))
+    return re.sub(rb">\s+<", b"><", blob).strip().decode("utf-8")
+
+
 def rotate_svg(blob, degrees):
     """Rotate a normalised glyph (render_svg output) by `degrees`, clockwise as
     drawn (SVG rotate(), y down), baked into the path coordinates; geometry
@@ -932,22 +1099,7 @@ def rotate_svg(blob, degrees):
     if not degrees or abs(degrees % 360.0) < 1e-9:
         return blob
     rot, _names, _skew = parse_transform("rotate(%r)" % float(degrees))
-    found = [(m, parse_path(m.group(2).decode("ascii"))) for m in _D_ATTR.finditer(blob)]
-    if not found:
-        raise ValueError("no <path d=...> in the glyph")
-    turned = [transform_segs(segs, rot) for _m, segs in found]
-    box = None
-    for segs in turned:
-        box = union(box, bbox(segs))
-    shift = (1, 0, 0, 1, -box[0], -box[1])
-    out, pos = [], 0
-    for (m, _segs), segs in zip(found, turned):
-        out += [blob[pos:m.start(2)], segs_to_d(transform_segs(segs, shift)).encode("ascii")]
-        pos = m.end(2)
-    out.append(blob[pos:])
-    blob = b"".join(out)
-    vb = ('viewBox="0 0 %s %s"' % (fmt(box[2] - box[0]), fmt(box[3] - box[1]))).encode("ascii")
-    return _VIEWBOX.sub(lambda _m: vb, blob, count=1)
+    return transform_svg(blob, rot)
 
 
 # --------------------------------------------------------------------------
@@ -1071,7 +1223,8 @@ def split(src, out_dir, resolver=None, quiet=False):
                                          "kept": seen[(kind, key)]})
             continue
         seen[(kind, key)] = raw
-        piece = normalize_element(el, sheet, ancestors_of(el, parents))
+        piece = normalize_element(el, sheet, ancestors_of(el, parents),
+                                  outline_strokes=kind in ("lines", "areas"))
         pieces.append((kind, key, raw, suffix, piece))
 
     # relative sign scale
@@ -1120,6 +1273,13 @@ def split(src, out_dir, resolver=None, quiet=False):
         for i in piece.strays():
             warnings.append("path %d of %d lies far from the rest of the piece (stray shape?)"
                             % (i + 1, len(piece.paths)))
+        for i in evenodd_conflicts(piece):
+            warnings.append("path %d: nested contours wind the same way - the SVG fills the"
+                            " inner one (nonzero), cSurvey leaves it a hole (even-odd)" % (i + 1))
+        if kind == "signs" and piece.strokes and not any(
+                not is_none(f) for _s, f, _st, _r in piece.paths):
+            warnings.append("stroke-only glyph (no fills): theme_apply turns the outline pen on"
+                            " for it; outline the strokes in Illustrator for the drawn width")
         b = piece.bbox()
         if not piece.paths:
             piece.rejected.append("nothing drawable left - no file written")
@@ -1200,8 +1360,10 @@ def print_split_report(report):
             print("  flattened: %d colour(s) -> #000000: %s%s"
                   % (len(cols), ", ".join(cols[:8]), " ..." if len(cols) > 8 else ""))
         if e.get("strokes"):
-            print("  strokes:  %d stroked shape(s), stroke-width %s (cSurvey uses its own pen)"
-                  % (len(e["strokes"]), _stroke_summary(e["strokes"])))
+            how = ("outlined into fills" if e["kind"] in ("lines", "areas")
+                   else "cSurvey uses its own pen")
+            print("  strokes:  %d stroked shape(s), stroke-width %s (%s)"
+                  % (len(e["strokes"]), _stroke_summary(e["strokes"]), how))
         for r in _collapse(e["rejected"]):
             print("  REJECTED: " + r)
         for w in _collapse(e["warnings"]):
