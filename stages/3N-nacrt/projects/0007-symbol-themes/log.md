@@ -181,3 +181,17 @@ Brief: [brief.md](brief.md)
   0 fail.
 - **Next:** the user judges lines/areas; decide the meander (gaps on curves vs cSurvey's meander vs another unit);
   water pattern density; then T7 (tune in cSurvey, harvest).
+
+### 2026-10-07 — Round 4: tuning from the user's r3 review (agent) ✅
+
+- **Did:** `theme.json` values only, no code. boja: `ceiling-step` `distance_pct` 0 → 40; `slope:sheer` alignment
+  auto (resolved to slope's centre) → `inner` + `flip`, `spacing_pct` 3000 → 5000; `slope:steep` → `inner` + `flip`,
+  `scale` 2 → 6.5; `water-flow` dash [26, 8] → [6, 3]; area `stalagmite` `angle_mode` fixed, angle 0. crno-bijelo:
+  `water` pattern `density` 1 → 0.33 (basepatterns.xml Lines: spacing = density × zoom, in m).
+- **Result:** all five points hold on the print: ceiling-step ticks stand off the line (pit unchanged), sheer and
+  steep triangles sit on the line on abyss-entrance's side, sheer gaps ≈ 2×, steep triangles ≈ abyss-entrance size,
+  water-flow 6 gaps on the straight sample, stalagmite marks horizontal, B/W water 3× the lines.
+- **Odd:** the first decoration unit starts about one pitch in, so sparse sheer shows an empty lead-in (cSurvey).
+- **Evidence:** [runs/2026-10-07-mockup-r4/RUNLOG.md](runs/2026-10-07-mockup-r4/RUNLOG.md). `pytest stages/3N-nacrt`
+  347 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
+- **Next:** the user judges r4; meander decision; T7.
