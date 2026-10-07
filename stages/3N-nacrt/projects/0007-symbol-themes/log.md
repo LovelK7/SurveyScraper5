@@ -273,3 +273,10 @@ Brief: [brief.md](brief.md)
   0 changes (no-op on tracked files).
 - **Evidence:** `pytest stages/3N-nacrt` 354 passed; `check_defaults.py` OK; pipeline doctor 0 fail.
 - **Next:** drive rounds from a skill with the cheatsheet; T7.
+
+### 2026-10-07 — Round 9: user's r8 feedback (agent) ✅
+
+- **Did:** re-split (vegetable-debris and slope redrawn); `abyss-entrance` spacing 1700; `ceiling-step` 1400 → 1100;
+  `snow` = ice's tile; `wall:presumed` at wall's thickness (width 3.5, dash [14, 5]; r9b–r9f measured 3/5/4/3.5).
+  P01: the anchor → label "f" mapping already exists (KORAK 1); the mockup skips KORAK 1, so it shows the glyph.
+  Evidence: [r9-feedback](runs/2026-10-07-r9-feedback/RUNLOG.md), [r9f-wall](runs/2026-10-07-r9f-wall/RUNLOG.md).

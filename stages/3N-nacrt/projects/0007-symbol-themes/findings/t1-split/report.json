@@ -242,17 +242,17 @@
       "id": "vegetable-debris",
       "sign": 771,
       "sign_via": "TopoDroid vegetable-debris, natural import",
-      "scale": 1.157,
+      "scale": 1.608,
       "file": "signs/vegetable-debris.svg",
       "bbox": [
-        41.325,
-        27.687
+        57.422,
+        41.98
       ],
       "paths_out": 277,
-      "points_in": 9542,
+      "points_in": 9584,
       "fixed": {
         "transforms baked": 169,
-        "arcs converted": 1292,
+        "arcs converted": 1302,
         "fills flattened": 160,
         "invisible shapes dropped": 1,
         "polyline converted to path": 8,
@@ -1132,16 +1132,15 @@
       "id": "slope",
       "file": "lines/slope.svg",
       "bbox": [
-        5.392,
-        19.945
+        5.391,
+        16.776
       ],
       "paths_out": 2,
       "points_in": 9,
       "fixed": {
-        "transforms baked": 1,
-        "rect converted to path": 1,
+        "polygon converted to path": 1,
         "fills flattened": 2,
-        "polygon converted to path": 1
+        "rect converted to path": 1
       },
       "colours_flattened": [
         "#010101"

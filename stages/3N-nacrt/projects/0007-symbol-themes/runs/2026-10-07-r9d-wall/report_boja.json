@@ -1,0 +1,100 @@
+{
+ "theme": "boja",
+ "signs": 47,
+ "lookup": {
+  "tdx (recovered)": 14,
+  "none (recovered)": 33
+ },
+ "themed": 14,
+ "glyph": 14,
+ "colour": 7,
+ "outline": 0,
+ "black_builtin": 0,
+ "pen_off": 14,
+ "skipped_custom": 0,
+ "size_ignored": 0,
+ "pool_added": [
+  "D5D6A2B33AFAC87B4421DD361B96917CE545BE7 tema-boja_air-draught_r270.svg",
+  "E797DB6BCA7C33F4533A6815FE633C02F427D8 tema-boja_blocks.svg",
+  "5FD7F415101C5392FDC01B22A164855C8BEA4A7 tema-boja_bones.svg",
+  "AF2D3141869D85D89AB3FAF9024858E8492F64E tema-boja_continuation.svg",
+  "6C4C99370D319253D5493D85687F6ACFE3CEE tema-boja_danger.svg",
+  "EEC9C25AF482F6938472D38B60192F282FAE5CB3 tema-boja_debris.svg",
+  "F92798251D4ECBCB1FE41D961B85D89325DFEAFE tema-boja_minus.svg",
+  "2387F984FFDEC5DC62FF612DA5331A4611F8E3F tema-boja_plus.svg",
+  "16665D8199B0B2E11FE7437E2AAD44C342545C tema-boja_plus-minus.svg",
+  "FE96558A310565D91D91A4E35D2A1FC578478F tema-boja_tree-trunk.svg",
+  "E5D4AFC490E3878A754CE223C12972A03C439D75 tema-boja_vegetable-debris.svg",
+  "5EFBA5BD765A95DFEBF6D1026465B65B43EC87 tema-boja_water-flow@intermittent.svg",
+  "3D9A9D8EFF16FBC18234F6F879D6E29A14AD7E8 tema-boja_water-flow_r270.svg"
+ ],
+ "pool_reused": [],
+ "lines": {
+  "themed": {
+   "floor-meander (tdx)": 2,
+   "overhang (tdx)": 2,
+   "pit (tdx)": 2,
+   "slope (tdx)": 2,
+   "water-flow (tdx)": 2,
+   "abyss-entrance (tdx)": 2,
+   "ceiling-step (tdx)": 2,
+   "rope (tdx)": 2,
+   "slope:sheer (tdx)": 2,
+   "slope:steep (tdx)": 2,
+   "wall:presumed (tdx)": 2
+  },
+  "skipped": []
+ },
+ "areas": {
+  "themed": {
+   "blocks (tdx, tile)": 1,
+   "clay (tdx, tile)": 1,
+   "debris (tdx, tile)": 1,
+   "ice (tdx, tile)": 1,
+   "pebbles (tdx, tile)": 1,
+   "snow (tdx, tile)": 1,
+   "stalagmite (tdx, tile)": 1,
+   "water (tdx, pattern)": 1
+  },
+  "skipped": []
+ },
+ "library": {
+  "pens": [
+   "tema-boja-line-floor-meander-21",
+   "tema-boja-line-overhang-12",
+   "tema-boja-line-pit-5",
+   "tema-boja-line-slope-7",
+   "tema-boja-line-water-flow-2",
+   "tema-boja-line-abyss-entrance-2",
+   "tema-boja-line-ceiling-step-2",
+   "tema-boja-line-rope-2",
+   "tema-boja-line-slope:sheer-2",
+   "tema-boja-line-slope:steep-2",
+   "tema-boja-line-wall:presumed-8"
+  ],
+  "brushes": [
+   "tema-boja-area-blocks-9",
+   "tema-boja-area-clay-3",
+   "tema-boja-area-debris-8",
+   "tema-boja-area-ice-1",
+   "tema-boja-area-pebbles-4",
+   "tema-boja-area-snow-1",
+   "tema-boja-area-stalagmite-1",
+   "tema-boja-area-water-6"
+  ]
+ },
+ "notes": [
+  "vegetable-debris: 117 stroke-only path(s) in the glyph do not print with the pen off (outline_pen false)"
+ ],
+ "importer_turn": 2,
+ "centerline": 0,
+ "input": "C:\\Users\\Lovel.IZRK-LK-NB\\Programming\\SurveyScraper5\\runs\\theme-round\\mockup-d72b3b3aad1e\\theme-mockup_izvorno.csx",
+ "output": "C:\\Users\\Lovel.IZRK-LK-NB\\Programming\\SurveyScraper5\\stages\\3N-nacrt\\projects\\0007-symbol-themes\\runs\\2026-10-07-r9d-wall\\theme-mockup_boja.csx",
+ "previous_theme": null,
+ "undone_items": 0,
+ "pool_removed": [],
+ "recovery": {
+  "other recovered": 154,
+  "sign recovered": 47
+ }
+}

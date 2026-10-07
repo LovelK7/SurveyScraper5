@@ -1,0 +1,1448 @@
+{
+ "cave": "THEME_MOCKUP",
+ "sections": {
+  "signs": {
+   "heading": "ZNAKOVI – točke (signs)",
+   "box": [
+    -4.0,
+    -3.6,
+    31.0,
+    22.4
+   ],
+   "count": 49
+  },
+  "lines": {
+   "heading": "LINIJE – ravno i krivulja (lines)",
+   "box": [
+    -4.0,
+    26.799999999999997,
+    32.0,
+    54.5
+   ],
+   "count": 25
+  },
+  "areas": {
+   "heading": "PLOHE – površine (areas)",
+   "box": [
+    -4.0,
+    58.9,
+    25.0,
+    72.1
+   ],
+   "count": 10
+  }
+ },
+ "slots": [
+  {
+   "tag": "P00",
+   "kind": "signs",
+   "name": "air-draught",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    0.0,
+    0.0
+   ],
+   "box": [
+    -1.4,
+    -2.6,
+    1.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P01",
+   "kind": "signs",
+   "name": "anchor",
+   "themes": [],
+   "station": [
+    3.0,
+    0.0
+   ],
+   "box": [
+    1.6,
+    -2.6,
+    4.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P02",
+   "kind": "signs",
+   "name": "aragonite",
+   "themes": [],
+   "station": [
+    6.0,
+    0.0
+   ],
+   "box": [
+    4.6,
+    -2.6,
+    7.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P03",
+   "kind": "signs",
+   "name": "archeo-material",
+   "themes": [],
+   "station": [
+    9.0,
+    0.0
+   ],
+   "box": [
+    7.6,
+    -2.6,
+    10.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P04",
+   "kind": "signs",
+   "name": "blocks",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    12.0,
+    0.0
+   ],
+   "box": [
+    10.6,
+    -2.6,
+    13.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P05",
+   "kind": "signs",
+   "name": "bones",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    15.0,
+    0.0
+   ],
+   "box": [
+    13.6,
+    -2.6,
+    16.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P06",
+   "kind": "signs",
+   "name": "clay",
+   "themes": [],
+   "station": [
+    18.0,
+    0.0
+   ],
+   "box": [
+    16.6,
+    -2.6,
+    19.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P07",
+   "kind": "signs",
+   "name": "continuation",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    21.0,
+    0.0
+   ],
+   "box": [
+    19.6,
+    -2.6,
+    22.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P08",
+   "kind": "signs",
+   "name": "crystal",
+   "themes": [],
+   "station": [
+    24.0,
+    0.0
+   ],
+   "box": [
+    22.6,
+    -2.6,
+    25.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P09",
+   "kind": "signs",
+   "name": "curtain",
+   "themes": [],
+   "station": [
+    27.0,
+    0.0
+   ],
+   "box": [
+    25.6,
+    -2.6,
+    28.4,
+    2.2
+   ]
+  },
+  {
+   "tag": "P10",
+   "kind": "signs",
+   "name": "danger",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    0.0,
+    5.0
+   ],
+   "box": [
+    -1.4,
+    2.4,
+    1.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P11",
+   "kind": "signs",
+   "name": "debris",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    3.0,
+    5.0
+   ],
+   "box": [
+    1.6,
+    2.4,
+    4.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P12",
+   "kind": "signs",
+   "name": "dig",
+   "themes": [],
+   "station": [
+    6.0,
+    5.0
+   ],
+   "box": [
+    4.6,
+    2.4,
+    7.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P13",
+   "kind": "signs",
+   "name": "entrance",
+   "themes": [],
+   "station": [
+    9.0,
+    5.0
+   ],
+   "box": [
+    7.6,
+    2.4,
+    10.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P14",
+   "kind": "signs",
+   "name": "flowstone",
+   "themes": [],
+   "station": [
+    12.0,
+    5.0
+   ],
+   "box": [
+    10.6,
+    2.4,
+    13.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P15",
+   "kind": "signs",
+   "name": "gradient",
+   "themes": [],
+   "station": [
+    15.0,
+    5.0
+   ],
+   "box": [
+    13.6,
+    2.4,
+    16.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P16",
+   "kind": "signs",
+   "name": "guano",
+   "themes": [],
+   "station": [
+    18.0,
+    5.0
+   ],
+   "box": [
+    16.6,
+    2.4,
+    19.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P17",
+   "kind": "signs",
+   "name": "gypsum",
+   "themes": [],
+   "station": [
+    21.0,
+    5.0
+   ],
+   "box": [
+    19.6,
+    2.4,
+    22.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P18",
+   "kind": "signs",
+   "name": "helictite",
+   "themes": [],
+   "station": [
+    24.0,
+    5.0
+   ],
+   "box": [
+    22.6,
+    2.4,
+    25.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P19",
+   "kind": "signs",
+   "name": "ice",
+   "themes": [],
+   "station": [
+    27.0,
+    5.0
+   ],
+   "box": [
+    25.6,
+    2.4,
+    28.4,
+    7.2
+   ]
+  },
+  {
+   "tag": "P20",
+   "kind": "signs",
+   "name": "label",
+   "themes": [],
+   "station": [
+    0.0,
+    10.0
+   ],
+   "box": [
+    -1.4,
+    7.4,
+    1.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P21",
+   "kind": "signs",
+   "name": "minus",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    3.0,
+    10.0
+   ],
+   "box": [
+    1.6,
+    7.4,
+    4.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P22",
+   "kind": "signs",
+   "name": "moonmilk",
+   "themes": [],
+   "station": [
+    6.0,
+    10.0
+   ],
+   "box": [
+    4.6,
+    7.4,
+    7.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P23",
+   "kind": "signs",
+   "name": "mud",
+   "themes": [],
+   "station": [
+    9.0,
+    10.0
+   ],
+   "box": [
+    7.6,
+    7.4,
+    10.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P24",
+   "kind": "signs",
+   "name": "narrow-end",
+   "themes": [],
+   "station": [
+    12.0,
+    10.0
+   ],
+   "box": [
+    10.6,
+    7.4,
+    13.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P25",
+   "kind": "signs",
+   "name": "paleo-material",
+   "themes": [],
+   "station": [
+    15.0,
+    10.0
+   ],
+   "box": [
+    13.6,
+    7.4,
+    16.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P26",
+   "kind": "signs",
+   "name": "pebbles",
+   "themes": [],
+   "station": [
+    18.0,
+    10.0
+   ],
+   "box": [
+    16.6,
+    7.4,
+    19.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P27",
+   "kind": "signs",
+   "name": "pillar",
+   "themes": [],
+   "station": [
+    21.0,
+    10.0
+   ],
+   "box": [
+    19.6,
+    7.4,
+    22.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P28",
+   "kind": "signs",
+   "name": "plus",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    24.0,
+    10.0
+   ],
+   "box": [
+    22.6,
+    7.4,
+    25.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P29",
+   "kind": "signs",
+   "name": "plus-minus",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    27.0,
+    10.0
+   ],
+   "box": [
+    25.6,
+    7.4,
+    28.4,
+    12.2
+   ]
+  },
+  {
+   "tag": "P30",
+   "kind": "signs",
+   "name": "popcorn",
+   "themes": [],
+   "station": [
+    0.0,
+    15.0
+   ],
+   "box": [
+    -1.4,
+    12.4,
+    1.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P31",
+   "kind": "signs",
+   "name": "root",
+   "themes": [],
+   "station": [
+    3.0,
+    15.0
+   ],
+   "box": [
+    1.6,
+    12.4,
+    4.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P32",
+   "kind": "signs",
+   "name": "sand",
+   "themes": [],
+   "station": [
+    6.0,
+    15.0
+   ],
+   "box": [
+    4.6,
+    12.4,
+    7.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P33",
+   "kind": "signs",
+   "name": "scallop",
+   "themes": [],
+   "station": [
+    9.0,
+    15.0
+   ],
+   "box": [
+    7.6,
+    12.4,
+    10.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P34",
+   "kind": "signs",
+   "name": "section",
+   "themes": [],
+   "station": [
+    12.0,
+    15.0
+   ],
+   "box": [
+    10.6,
+    12.4,
+    13.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P35",
+   "kind": "signs",
+   "name": "sink",
+   "themes": [],
+   "station": [
+    15.0,
+    15.0
+   ],
+   "box": [
+    13.6,
+    12.4,
+    16.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P36",
+   "kind": "signs",
+   "name": "snow",
+   "themes": [],
+   "station": [
+    18.0,
+    15.0
+   ],
+   "box": [
+    16.6,
+    12.4,
+    19.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P37",
+   "kind": "signs",
+   "name": "soda-straw",
+   "themes": [],
+   "station": [
+    21.0,
+    15.0
+   ],
+   "box": [
+    19.6,
+    12.4,
+    22.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P38",
+   "kind": "signs",
+   "name": "spring",
+   "themes": [],
+   "station": [
+    24.0,
+    15.0
+   ],
+   "box": [
+    22.6,
+    12.4,
+    25.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P39",
+   "kind": "signs",
+   "name": "stalactite",
+   "themes": [],
+   "station": [
+    27.0,
+    15.0
+   ],
+   "box": [
+    25.6,
+    12.4,
+    28.4,
+    17.2
+   ]
+  },
+  {
+   "tag": "P40",
+   "kind": "signs",
+   "name": "stalagmite",
+   "themes": [],
+   "station": [
+    0.0,
+    20.0
+   ],
+   "box": [
+    -1.4,
+    17.4,
+    1.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "P41",
+   "kind": "signs",
+   "name": "tree-trunk",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    3.0,
+    20.0
+   ],
+   "box": [
+    1.6,
+    17.4,
+    4.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "P42",
+   "kind": "signs",
+   "name": "user",
+   "themes": [],
+   "station": [
+    6.0,
+    20.0
+   ],
+   "box": [
+    4.6,
+    17.4,
+    7.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "P43",
+   "kind": "signs",
+   "name": "vegetable-debris",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    9.0,
+    20.0
+   ],
+   "box": [
+    7.6,
+    17.4,
+    10.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "P44",
+   "kind": "signs",
+   "name": "wall-calcite",
+   "themes": [],
+   "station": [
+    12.0,
+    20.0
+   ],
+   "box": [
+    10.6,
+    17.4,
+    13.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "P45",
+   "kind": "signs",
+   "name": "water",
+   "themes": [],
+   "station": [
+    15.0,
+    20.0
+   ],
+   "box": [
+    13.6,
+    17.4,
+    16.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "P46",
+   "kind": "signs",
+   "name": "water-drip",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    18.0,
+    20.0
+   ],
+   "box": [
+    16.6,
+    17.4,
+    19.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "P47",
+   "kind": "signs",
+   "name": "water-flow",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    21.0,
+    20.0
+   ],
+   "box": [
+    19.6,
+    17.4,
+    22.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "P48",
+   "kind": "signs",
+   "name": "water-flow:intermittent",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    24.0,
+    20.0
+   ],
+   "box": [
+    22.6,
+    17.4,
+    25.4,
+    22.2
+   ]
+  },
+  {
+   "tag": "L00",
+   "kind": "lines",
+   "name": "abyss-entrance",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    0.0,
+    30.4
+   ],
+   "box": [
+    -0.3,
+    29.9,
+    3.5,
+    34.8
+   ]
+  },
+  {
+   "tag": "L01",
+   "kind": "lines",
+   "name": "arrow",
+   "themes": [],
+   "station": [
+    4.0,
+    30.4
+   ],
+   "box": [
+    3.7,
+    29.9,
+    7.5,
+    34.8
+   ]
+  },
+  {
+   "tag": "L02",
+   "kind": "lines",
+   "name": "border",
+   "themes": [],
+   "station": [
+    8.0,
+    30.4
+   ],
+   "box": [
+    7.7,
+    29.9,
+    11.5,
+    34.8
+   ]
+  },
+  {
+   "tag": "L03",
+   "kind": "lines",
+   "name": "ceiling-meander",
+   "themes": [],
+   "station": [
+    12.0,
+    30.4
+   ],
+   "box": [
+    11.7,
+    29.9,
+    15.5,
+    34.8
+   ]
+  },
+  {
+   "tag": "L04",
+   "kind": "lines",
+   "name": "ceiling-step",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    16.0,
+    30.4
+   ],
+   "box": [
+    15.7,
+    29.9,
+    19.5,
+    34.8
+   ]
+  },
+  {
+   "tag": "L05",
+   "kind": "lines",
+   "name": "chimney",
+   "themes": [],
+   "station": [
+    20.0,
+    30.4
+   ],
+   "box": [
+    19.7,
+    29.9,
+    23.5,
+    34.8
+   ]
+  },
+  {
+   "tag": "L06",
+   "kind": "lines",
+   "name": "floor-meander",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    24.0,
+    30.4
+   ],
+   "box": [
+    23.7,
+    29.9,
+    27.5,
+    34.8
+   ]
+  },
+  {
+   "tag": "L07",
+   "kind": "lines",
+   "name": "overhang",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    28.0,
+    30.4
+   ],
+   "box": [
+    27.7,
+    29.9,
+    31.5,
+    34.8
+   ]
+  },
+  {
+   "tag": "L08",
+   "kind": "lines",
+   "name": "pit",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    0.0,
+    36.9
+   ],
+   "box": [
+    -0.3,
+    36.4,
+    3.5,
+    41.3
+   ]
+  },
+  {
+   "tag": "L09",
+   "kind": "lines",
+   "name": "presumed",
+   "themes": [],
+   "station": [
+    4.0,
+    36.9
+   ],
+   "box": [
+    3.7,
+    36.4,
+    7.5,
+    41.3
+   ]
+  },
+  {
+   "tag": "L10",
+   "kind": "lines",
+   "name": "rock-border",
+   "themes": [],
+   "station": [
+    8.0,
+    36.9
+   ],
+   "box": [
+    7.7,
+    36.4,
+    11.5,
+    41.3
+   ]
+  },
+  {
+   "tag": "L11",
+   "kind": "lines",
+   "name": "rope",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    12.0,
+    36.9
+   ],
+   "box": [
+    11.7,
+    36.4,
+    15.5,
+    41.3
+   ]
+  },
+  {
+   "tag": "L12",
+   "kind": "lines",
+   "name": "section",
+   "themes": [],
+   "station": [
+    16.0,
+    36.9
+   ],
+   "box": [
+    15.7,
+    36.4,
+    19.5,
+    41.3
+   ]
+  },
+  {
+   "tag": "L13",
+   "kind": "lines",
+   "name": "slope",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    20.0,
+    36.9
+   ],
+   "box": [
+    19.7,
+    36.4,
+    23.5,
+    41.3
+   ]
+  },
+  {
+   "tag": "L14",
+   "kind": "lines",
+   "name": "slope:sheer",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    24.0,
+    36.9
+   ],
+   "box": [
+    23.7,
+    36.4,
+    27.5,
+    41.3
+   ]
+  },
+  {
+   "tag": "L15",
+   "kind": "lines",
+   "name": "slope:steep",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    28.0,
+    36.9
+   ],
+   "box": [
+    27.7,
+    36.4,
+    31.5,
+    41.3
+   ]
+  },
+  {
+   "tag": "L16",
+   "kind": "lines",
+   "name": "user",
+   "themes": [],
+   "station": [
+    0.0,
+    43.4
+   ],
+   "box": [
+    -0.3,
+    42.9,
+    3.5,
+    47.8
+   ]
+  },
+  {
+   "tag": "L17",
+   "kind": "lines",
+   "name": "wall",
+   "themes": [],
+   "station": [
+    4.0,
+    43.4
+   ],
+   "box": [
+    3.7,
+    42.9,
+    7.5,
+    47.8
+   ]
+  },
+  {
+   "tag": "L18",
+   "kind": "lines",
+   "name": "wall:blocks",
+   "themes": [],
+   "station": [
+    8.0,
+    43.4
+   ],
+   "box": [
+    7.7,
+    42.9,
+    11.5,
+    47.8
+   ]
+  },
+  {
+   "tag": "L19",
+   "kind": "lines",
+   "name": "wall:clay",
+   "themes": [],
+   "station": [
+    12.0,
+    43.4
+   ],
+   "box": [
+    11.7,
+    42.9,
+    15.5,
+    47.8
+   ]
+  },
+  {
+   "tag": "L20",
+   "kind": "lines",
+   "name": "wall:debris",
+   "themes": [],
+   "station": [
+    16.0,
+    43.4
+   ],
+   "box": [
+    15.7,
+    42.9,
+    19.5,
+    47.8
+   ]
+  },
+  {
+   "tag": "L21",
+   "kind": "lines",
+   "name": "wall:ice",
+   "themes": [],
+   "station": [
+    20.0,
+    43.4
+   ],
+   "box": [
+    19.7,
+    42.9,
+    23.5,
+    47.8
+   ]
+  },
+  {
+   "tag": "L22",
+   "kind": "lines",
+   "name": "wall:presumed",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    24.0,
+    43.4
+   ],
+   "box": [
+    23.7,
+    42.9,
+    27.5,
+    47.8
+   ]
+  },
+  {
+   "tag": "L23",
+   "kind": "lines",
+   "name": "water",
+   "themes": [],
+   "station": [
+    28.0,
+    43.4
+   ],
+   "box": [
+    27.7,
+    42.9,
+    31.5,
+    47.8
+   ]
+  },
+  {
+   "tag": "L24",
+   "kind": "lines",
+   "name": "water-flow",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    0.0,
+    49.9
+   ],
+   "box": [
+    -0.3,
+    49.4,
+    3.5,
+    54.3
+   ]
+  },
+  {
+   "tag": "A00",
+   "kind": "areas",
+   "name": "blocks",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    0.0,
+    62.5
+   ],
+   "box": [
+    -0.3,
+    62.0,
+    2.5,
+    66.1
+   ]
+  },
+  {
+   "tag": "A01",
+   "kind": "areas",
+   "name": "clay",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    3.0,
+    62.5
+   ],
+   "box": [
+    2.7,
+    62.0,
+    5.5,
+    66.1
+   ]
+  },
+  {
+   "tag": "A02",
+   "kind": "areas",
+   "name": "debris",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    6.0,
+    62.5
+   ],
+   "box": [
+    5.7,
+    62.0,
+    8.5,
+    66.1
+   ]
+  },
+  {
+   "tag": "A03",
+   "kind": "areas",
+   "name": "ice",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    9.0,
+    62.5
+   ],
+   "box": [
+    8.7,
+    62.0,
+    11.5,
+    66.1
+   ]
+  },
+  {
+   "tag": "A04",
+   "kind": "areas",
+   "name": "pebbles",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    12.0,
+    62.5
+   ],
+   "box": [
+    11.7,
+    62.0,
+    14.5,
+    66.1
+   ]
+  },
+  {
+   "tag": "A05",
+   "kind": "areas",
+   "name": "sand",
+   "themes": [],
+   "station": [
+    15.0,
+    62.5
+   ],
+   "box": [
+    14.7,
+    62.0,
+    17.5,
+    66.1
+   ]
+  },
+  {
+   "tag": "A06",
+   "kind": "areas",
+   "name": "snow",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    18.0,
+    62.5
+   ],
+   "box": [
+    17.7,
+    62.0,
+    20.5,
+    66.1
+   ]
+  },
+  {
+   "tag": "A07",
+   "kind": "areas",
+   "name": "stalagmite",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    21.0,
+    62.5
+   ],
+   "box": [
+    20.7,
+    62.0,
+    23.5,
+    66.1
+   ]
+  },
+  {
+   "tag": "A08",
+   "kind": "areas",
+   "name": "user",
+   "themes": [],
+   "station": [
+    0.0,
+    67.5
+   ],
+   "box": [
+    -0.3,
+    67.0,
+    2.5,
+    71.1
+   ]
+  },
+  {
+   "tag": "A09",
+   "kind": "areas",
+   "name": "water",
+   "themes": [
+    "boja"
+   ],
+   "station": [
+    3.0,
+    67.5
+   ],
+   "box": [
+    2.7,
+    67.0,
+    5.5,
+    71.1
+   ]
+  }
+ ],
+ "stations": 84
+}
