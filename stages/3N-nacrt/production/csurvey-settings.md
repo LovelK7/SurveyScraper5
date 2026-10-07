@@ -91,6 +91,10 @@ unintentionally.
 | `spline_linetypes`, `nonstandard_water` | Import fixes (splines so decorations render; the water brush) |
 | `wall_merge`, `wall_orientation`, `wall_reorder` | Walls (`wall_orient.py`, project 0006): merge a fresh import's open wall strokes into one cave border per design; in every merged border reverse the strokes that run against the rest and put the sequences in chain order. All on. |
 
+**Symbol mapping** (`tdx-mapping.json` → `points`/`lines`/`areas`, KORAK 1) is best read on the dashboard's
+Mapiranje simbola. Changes after 2026-10-03: `mud` → **`sand`** (the same sign as TopoDroid's sand; was `clay`,
+user 2026-10-07).
+
 ## Per-cave mapping: the dashboard's Mapiranje page
 
 The mapping in `tdx-mapping.json` (symbols, lines and areas for KORAK 1;
@@ -121,6 +125,7 @@ redo:
 |---|---|---|
 | Symbols, lines, areas, `generic` | KORAK 1, before import | KORAK 1, the import into cSurvey, then KORAK 2 |
 | Centerline, sizes, import switches (`postimport`) | KORAK 2 | KORAK 2 on the file saved from cSurvey |
+| Theme (`"theme"`, the **Tema** card; project 0007) | KORAK 2, its last step | KORAK 2 on the file saved from cSurvey |
 
 **Symbol sets.** TopoDroid ships the basic speleo set and installable extra
 sets (manual, "Additional symbol sets"; Palette menu). The first extra set,

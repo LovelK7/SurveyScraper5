@@ -1374,6 +1374,9 @@ KORAK 2 on a cSurvey-saved file (blue polygon from the override, red stations
 from the default). The page was driven in Edge: edit, preview, dirty state,
 discard.
 
+- 2026-10-07 — shared default: TopoDroid point `mud` → cSurvey `sand` (was `clay`). The user: "let mud (P23) get the
+  same symbol as sand (P32)". Takes effect on a fresh KORAK 1 + import.
+
 Same day, on review of the page: the shared default now also colours **station
 numbers red** (`PlotTextColor` = -65536, matching the red stations and shots)
 and sets the **notes text scale to 1.0** (cSurvey's default 0.5 read too
@@ -1780,4 +1783,20 @@ Record: [project 0007](../stages/3N-nacrt/projects/0007-symbol-themes/brief.md).
 - **The rest is numbers in `theme.json`:** dashes, spacing, density, size, alignment.
 - **Labels stay labels** (`danger`, `plus`, `minus`, `plus-minus`, `anchor` `f`), so they are readable
   without a theme. The theme step converts them to glyphs (T9, open).
+- **The theme is chosen per cave on Mapiranje simbola (T4, 2026-10-07).** It is the top-level `"theme"` of
+  the cave's `tdx-mapping-objekt.json` (`tdx_mapping.diff/merge` carry it; `null` = none). The shared default
+  sets none, so a cave without a choice keeps cSurvey's look. The page previews the theme from its own SVGs
+  (a sketch, not cSurvey's rendering); line sides come from `theme_apply.side_for`, so page and print agree.
+  The theme step that reads it is T5.
+- **The theme step is KORAK 2's last step, inside `fix_imported_linetypes.py` (T5, 2026-10-07)**, not a
+  separate launcher. So the double-click, the drag-and-drop and a dashboard KORAK 2 all theme the `_postp`
+  the operator then draws in, with no new step to learn. The pre-import file for name recovery is found beside
+  the survey (`_prep` first, else the raw export). Fail-soft: a problem is a warning and the `_postp` stays
+  unthemed. Items drawn afterwards in cSurvey keep cSurvey's look. Validated on the real bunker_studena pair
+  (22 signs, 9 lines, 2 areas themed; headless print OK) and from the staged kit.
+- **Tuning rounds r9–r11 (2026-10-07):** `crop: none` merges a tile into one even-odd path, so a shape
+  drawn inside another cancels to a ring (blocks → default crop); the split closes filled open polylines.
+  cSurvey also outlines every tile shape with the brush pen. On the print that is one device pixel (0.375 pt),
+  already the thinnest possible; `BrushLinesScaleFactor` (read only from each view's `<options>`) cannot go
+  below it (r12, 2026-10-07), so no theme field was added. Thin artwork such as ice is thinned in the drawing.
 
