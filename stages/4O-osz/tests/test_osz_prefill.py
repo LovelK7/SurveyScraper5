@@ -571,13 +571,20 @@ def test_dimension_values_mapping():
         {"l": 55.4, "pl": 30.6, "nvr": 9, "pvr": 1, "vr": 10,
          "nvr_m": -8.6, "pvr_m": 0.4})
     # nvr_m (the finisher's own, wall-bounded) beats cSurvey's nvr; unsigned.
+    # The span is the finisher's 8.6 + 0.4, not cSurvey's vr.
     assert values == {"duljina": "55", "horizontalna_duljina": "31",
-                      "dubina": "9", "visinska_razlika": "10"}
+                      "dubina": "9", "visinska_razlika": "9"}
     # No vr -> depth + height; zero = "not surveyed" -> absent.
     assert prefill.dimension_values({"l": 0, "pl": 0, "nvr": 12, "pvr": 3}) == \
         {"dubina": "12", "visinska_razlika": "15"}
     assert prefill.dimension_values({"l": 0, "nvr": 0, "pvr": 0}) == {}
     assert prefill.dimension_values({"l": "nonsense", "pl": True}) == {}
+    # SB 1325: no station above the entrance (pvr_m 0) -> span = depth, not vr 8.
+    assert prefill.dimension_values({"nvr": 8, "vr": 8, "nvr_m": 9.9, "pvr_m": 0}) == \
+        {"dubina": "10", "visinska_razlika": "10"}
+    # Without the finisher's numbers the span is still never less than the depth.
+    assert prefill.dimension_values({"nvr": 9, "vr": 8}) == \
+        {"dubina": "9", "visinska_razlika": "9"}
 
 
 def test_prefill_fills_dimensions_from_nacrt(intake_settings, geo_stubs, run_dir, no_karta):
@@ -810,6 +817,7 @@ def test_same_measurement_understands_one_decimal():
     assert prefill._same_measurement("0.55 m", "0,6")
     assert not prefill._same_measurement("1", "0,6")
     assert prefill._same_measurement("40,3", "40")      # whole-metre cells as before
+    assert not prefill._same_measurement("8,5", "8")     # half up, not half-to-even
 
 
 def test_prefill_fills_the_entrance_from_nacrt(intake_settings, geo_stubs, run_dir, no_karta):

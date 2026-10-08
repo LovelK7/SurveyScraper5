@@ -104,6 +104,60 @@ function toast(msg, isErr) {
   toast._t = setTimeout(() => { t.className = "toast"; }, isErr ? 6000 : 2600);
 }
 
+// ── "?" help: a click opens a short explanation of that part of the page ─
+// (texts in help.js). One popover for the whole page, fixed to the viewport,
+// so a card's overflow never clips it; any click elsewhere, Esc, scrolling or
+// a re-render closes it.
+function helpBtn(key, entry) {
+  entry = entry || HELP[key];
+  if (!entry) return null;
+  return h("button", { class: "qhelp", type: "button", "data-help": key, "aria-label": "Pomoć: " + entry.t, "aria-expanded": "false",
+    onclick: e => { e.stopPropagation(); toggleHelp(e.currentTarget, entry); } }, "?");
+}
+function helpBody(entry) {
+  return [h("b", { class: "qpop-title" }, entry.t),
+    entry.d ? h("p", {}, entry.d) : null,
+    entry.s && entry.s.length ? h("ul", {}, ...entry.s.map(x => h("li", {}, x))) : null,
+    entry.n ? h("p", { class: "qpop-note" }, entry.n) : null];
+}
+function toggleHelp(btn, entry) {
+  const pop = $("#help-pop");
+  const same = helpBtn.open === btn;
+  closeHelp();
+  if (same) return;
+  helpBtn.entry = entry;
+  pop.replaceChildren(...helpBody(entry).filter(Boolean));
+  pop.hidden = false;
+  helpBtn.open = btn;
+  btn.setAttribute("aria-expanded", "true");
+  btn.classList.add("open");
+  const r = btn.getBoundingClientRect(), w = pop.offsetWidth, hgt = pop.offsetHeight;
+  const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+  const below = r.bottom + 8 + hgt <= window.innerHeight - 8;
+  pop.style.left = left + "px";
+  pop.style.top = (below ? r.bottom + 8 : Math.max(8, r.top - 8 - hgt)) + "px";
+  pop.style.setProperty("--arrow", (r.left + r.width / 2 - left) + "px");
+  pop.classList.toggle("above", !below);
+}
+function closeHelp() {
+  const btn = helpBtn.open;
+  if (!btn) return;
+  btn.setAttribute("aria-expanded", "false");
+  btn.classList.remove("open");
+  helpBtn.open = null;
+  $("#help-pop").hidden = true;
+}
+// After a re-render (a cave or a job finished loading) the open popover
+// follows its "?" onto the new page, or closes when that part is gone.
+function keepHelp() {
+  const btn = helpBtn.open;
+  if (!btn || document.contains(btn)) return;
+  const twin = document.querySelector(`.qhelp[data-help="${CSS.escape(btn.dataset.help)}"]`);
+  const entry = helpBtn.entry;
+  closeHelp();
+  if (twin) toggleHelp(twin, entry);
+}
+
 async function api(path, body) {
   const opts = { headers: { "X-Token": TOKEN } };
   if (body !== undefined) {
@@ -365,6 +419,10 @@ function currentStage() {
 
 // ── page ─────────────────────────────────────────────────────────────
 function render() {
+  renderPage();
+  keepHelp();
+}
+function renderPage() {
   const main = $("#main");
   if (!S.summary || !S.catalog) { main.replaceChildren(h("div", { class: "empty" }, "Učitavam…")); return; }
   if (S.tab === "home") return main.replaceChildren(...renderHome());
@@ -385,7 +443,7 @@ function wfStep(id) {
 function renderHome() {
   const sum = S.summary;
   const out = [h("div", { class: "page-head" },
-    h("div", {}, h("h1", {}, "Pregled"),
+    h("div", {}, h("h1", {}, "Pregled", helpBtn("home")),
       h("div", { class: "sub" }, "Trenutni objekt i njegov tijek rada, Speleo baza, mape na Driveu.")))];
   if (sum.settings_error) out.push(h("div", { class: "card note" }, h("b", {}, "Postavke se ne mogu učitati: "), sum.settings_error));
   if (S.noConfirm) out.push(h("p", { class: "help", style: "margin:0 0 10px" },
@@ -395,7 +453,7 @@ function renderHome() {
   const dups = S.sbIndex && S.sbIndex.duplicates ? Object.entries(S.sbIndex.duplicates) : [];
   if (dups.length) {
     out.push(h("div", { class: "card dup", style: "margin-bottom:14px" },
-      h("h2", {}, icon("baza", "lg"), `Redni broj nije jedinstven – ${dups.length}`),
+      h("h2", {}, icon("baza", "lg"), `Redni broj nije jedinstven – ${dups.length}`, helpBtn("dups")),
       h("p", { class: "help" }, "Ove brojeve nosi više SB redova. Broj je identitet objekta (mapa SB_<broj>_, datoteke, sve naredbe), pa se dva objekta stapaju u jedan. Ispravi u SB-u; dotad intake map i intake create odbijaju te brojeve."),
       h("table", { class: "files" }, ...dups.map(([b, names]) => h("tr", {},
         h("td", { class: "kind" }, b), h("td", { class: "name" }, names.join(" · "))))),
@@ -413,7 +471,7 @@ function renderHome() {
     const dirBtn = (ico, label, title, disabled, onclick) => h("button", { class: "dirbtn", title, disabled, onclick },
       h("span", { class: "ico-wrap" }, icon(ico, "lg")), h("span", {}, label));
     grid.append(h("div", { class: "card" },
-      h("h2", {}, icon("drive", "lg"), "Mape na Driveu"),
+      h("h2", {}, icon("drive", "lg"), "Mape na Driveu", helpBtn("drive")),
       sum.drive_ok ? null : h("div", { class: "errline" }, "Drive nije dostupan: " + (sum.drive_root || "LOCAL_DRIVE_ROOT nije postavljen")),
       h("div", { class: "dirgrid" },
         dirBtn("drive", "Speleo baza SUE", sum.drive_root || "", !sum.drive_ok, () => openTarget({ what: "drive-root" })),
@@ -427,7 +485,7 @@ function renderHome() {
   }
 
   grid.append(h("div", { class: "card" },
-    h("h2", {}, icon("terminal", "lg"), "Ovo računalo"),
+    h("h2", {}, icon("terminal", "lg"), "Ovo računalo", helpBtn("machine")),
     h("dl", { class: "kv" },
       h("dt", {}, "Radni prostor"), h("dd", { class: "mono" }, sum.workspace || "–"),
       h("dt", {}, "Drive"), h("dd", { class: "mono" }, sum.drive_root || "–"),
@@ -438,7 +496,7 @@ function renderHome() {
   const queued = Object.entries(S.queue).map(([b, n]) => [parseInt(b, 10), n]).sort((a, b) => a[0] - b[0]);
   if (queued.length) {
     grid.append(h("div", { class: "card hl" },
-      h("h2", {}, icon("foto-red", "lg"), `Fotografije u redu čekanja (${queued.reduce((t, q) => t + q[1], 0)})`),
+      h("h2", {}, icon("foto-red", "lg"), `Fotografije u redu čekanja (${queued.reduce((t, q) => t + q[1], 0)})`, helpBtn("queue")),
       h("p", { class: "help" }, "Fotografije u !!Fotografije ulaza za istražit koje već nose SB_<broj>_. Odaberi objekt i povuci ih u njegovu mapu (4F)."),
       h("table", { class: "files" }, ...queued.map(([b, n]) => {
         const info = S.caves.find(c => c.broj === b);
@@ -452,7 +510,7 @@ function renderHome() {
 
   if (S.unprefixed.length) {
     grid.append(h("div", { class: "card" },
-      h("h2", {}, icon("inbox", "lg"), `Mape bez SB_ prefiksa (${S.unprefixed.length})`),
+      h("h2", {}, icon("inbox", "lg"), `Mape bez SB_ prefiksa (${S.unprefixed.length})`, helpBtn("unprefixed")),
       h("p", { class: "help" }, "Ove mape pod !Za digitalizirat još nisu povezane sa SB redom, pa ih birač objekata ne vidi."),
       h("ul", { class: "muted" }, ...S.unprefixed.slice(0, 8).map(p => h("li", {}, p))),
       h("button", { class: "btn", onclick: () => setTab("1T") }, "Poveži u 1T", icon("arrow")),
@@ -466,7 +524,7 @@ function sbCard() {
   if (!sb) return null;
   const live = sb.versions.find(v => v.path === sb.live) || null;
   return h("div", { class: "card hl" },
-    h("h2", {}, icon("baza", "lg"), "Speleo baza"),
+    h("h2", {}, icon("baza", "lg"), "Speleo baza", helpBtn("sb-card")),
     h("dl", { class: "kv" },
       h("dt", {}, "Živa"), h("dd", {}, sb.live ? fileName(sb.live) : "–"),
       h("dt", {}, "Izmijenjena"), h("dd", {}, live ? fmtTime(live.modified) : "–"),
@@ -489,7 +547,7 @@ function sbCard() {
 // ── the cave workflow (Pregled) ──────────────────────────────────────
 function renderCaveCard() {
   if (S.broj === null) {
-    return h("div", { class: "card hl" }, h("h2", {}, icon("home", "lg"), "Trenutni objekt"),
+    return h("div", { class: "card hl" }, h("h2", {}, icon("home", "lg"), "Trenutni objekt", helpBtn("cave")),
       h("p", { class: "help" }, "Odaberi objekt gore desno (Redni broj ili ime). Ovdje se tada vidi cijeli tijek rada za taj objekt – što je gotovo, što je zastarjelo i što je sljedeće – a sve naredbe na karticama koriste taj broj."),
       h("p", { class: "muted" }, `${S.caves.length} objekata ima mapu SB_<broj>_… pod !Za digitalizirat.`));
   }
@@ -497,7 +555,7 @@ function renderCaveCard() {
   const info = caveInfo();
   const card = h("div", { class: "card hl wide" });
   const head = h("div", { class: "page-head", style: "margin-bottom:6px" },
-    h("div", {}, h("h2", { style: "margin:0" }, icon("home", "lg"), `SB ${S.broj} · ` + (info ? info.name : caveName(S.broj))),
+    h("div", {}, h("h2", { style: "margin:0" }, icon("home", "lg"), `SB ${S.broj} · ` + (info ? info.name : caveName(S.broj)), helpBtn("cave")),
       d && d.leaves.length ? h("div", { class: "muted mono" }, d.leaves.map(l => l.relative).join("  ·  ")) : null),
     h("div", { class: "spacer" }),
     h("button", { class: "btn", onclick: () => setTab("fast") }, icon("star"), "Brze radnje"),
@@ -573,7 +631,7 @@ const STEP_OF_ACTION = {
 function renderFast() {
   const out = [h("div", { class: "page-head" },
     h("span", { class: "stage-chip" }, icon("star", "xl")),
-    h("div", {}, h("h1", {}, "Brze radnje"),
+    h("div", {}, h("h1", {}, "Brze radnje", helpBtn("fast")),
       h("div", { class: "sub" }, "Više koraka za odabrani objekt u jednom potezu – jedan posao u Ispisu, jedna potvrda za sve što piše.")))];
   if (S.broj === null) {
     out.push(h("div", { class: "card note" }, "Odaberi objekt gore desno (Redni broj ili ime). Za novi objekt upiši njegov Redni broj iz SB-a – mapa još ne mora postojati."));
@@ -610,7 +668,7 @@ function recipeCard(r) {
   const run = h("button", { class: "btn primary" }, icon("star"), "Pokreni sve");
   run.addEventListener("click", () => runRecipe(r, skip));
   return h("div", { class: "card hl" },
-    h("h2", {}, icon("star", "lg"), r.title), h("p", { class: "help" }, r.help), list,
+    h("h2", {}, icon("star", "lg"), r.title, helpBtn("recipe:" + r.id)), h("p", { class: "help" }, r.help), list,
     h("div", { class: "row", style: "margin-top:10px" }, run,
       h("span", { class: "muted", style: "font-size:12px" }, "↷ = nastavlja i ako taj korak ne uspije")));
 }
@@ -636,10 +694,18 @@ async function runRecipe(r, skip) {
 }
 
 // ── stage tabs ───────────────────────────────────────────────────────
+// A stage's "?" – its help.js entry, plus how a command card works when the
+// tab has any.
+function stageHelp(stage) {
+  const entry = HELP[stage.label];
+  if (!entry) return null;
+  const runs = S.catalog.actions.some(x => x.stage === stage.label && x.tool !== "manual");
+  return helpBtn(stage.label, runs ? { ...entry, n: [entry.n, HELP_ACTIONS].filter(Boolean).join(" ") } : entry);
+}
 function renderStage(stage) {
   const out = [h("div", { class: "page-head" },
     h("span", { class: "stage-chip" }, icon(STAGE_ICON[stage.label] || "dot", "xl"), h("span", { class: "lbl" }, stage.label)),
-    h("div", {}, h("h1", {}, stage.title), h("div", { class: "sub" }, stage.subtitle)),
+    h("div", {}, h("h1", {}, stage.title, stageHelp(stage)), h("div", { class: "sub" }, stage.subtitle)),
     h("div", { class: "spacer" }),
     h("span", { class: "status-pill" }, stage.status),
     h("button", { class: "btn ghost", onclick: () => setTab("doc:" + stage.readme) }, icon("book"), "README"))];
@@ -775,13 +841,13 @@ function renderDossier() {
         `${u.label} – treba ${u.source_label}`)))) : null,
     !g.blockers.length && !g.warnings.length && !g.unchecked.length ? h("p", { class: "muted" }, "Nema nalaza.") : null))));
   out.push(h("div", { class: "grid", style: "margin-top:14px" },
-    h("div", { class: "card" }, h("h2", {}, icon("dosje", "lg"), "Izvori"),
+    h("div", { class: "card" }, h("h2", {}, icon("dosje", "lg"), "Izvori", helpBtn("dosje-sources")),
       h("div", { class: "chips" }, ...d.sources.map(s => h("span", { class: "chip" + (s.gathered ? " on" : ""), title: s.gathered ? "prikupljeno" : "još nije prikupljeno" }, (s.gathered ? "✓ " : "· ") + s.label))),
       d.survey ? h("dl", { class: "kv", style: "margin-top:10px" },
         h("dt", {}, "Duljina / dubina"), h("dd", {}, `${d.survey.length_m ?? "–"} / ${d.survey.depth_m ?? "–"} m`)) : null,
       d.files.length ? h("ul", { class: "muted mono" }, ...d.files.map(f => h("li", {}, f))) : null),
     peopleCard(d),
-    d.sb.length ? h("div", { class: "card" }, h("h2", {}, icon("baza", "lg"), "SB red"),
+    d.sb.length ? h("div", { class: "card" }, h("h2", {}, icon("baza", "lg"), "SB red", helpBtn("dosje-sb")),
       h("dl", { class: "kv" }, ...d.sb.flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, v)]))) : null));
   out.push(h("h3", { class: "group-title" }, "Naredbe"));
   return out;
@@ -791,11 +857,7 @@ function peopleCard(d) {
   const mark = { ok: "✓", scope: "~", missing: "✗", unknown: "?" };
   const tip = { ok: "izjava pokriva ovaj objekt", scope: "izjava postoji, ali ne pokriva ovaj objekt",
     missing: "nema izjave", unknown: "nije u registru osoba" };
-  return h("div", { class: "card" }, h("h2", {}, icon("osobe", "lg"), "Osobe · izjave",
-      h("span", { class: "tip", tabindex: "0", "aria-label": "Objašnjenje oznaka" }, "?",
-        h("span", { class: "tip-body", role: "tooltip" },
-          h("b", {}, "Oznake"),
-          ...Object.keys(mark).map(k => h("div", {}, h("span", { class: "pstat " + k }, mark[k]), " ", tip[k]))))),
+  return h("div", { class: "card" }, h("h2", {}, icon("osobe", "lg"), "Osobe · izjave", helpBtn("osobe")),
     d.people.length ? h("table", { class: "files" }, ...d.people.map(p => h("tr", { title: tip[p.status] },
       h("td", { class: "pstat " + p.status }, mark[p.status] || "?"),
       h("td", { class: "name" }, p.name), h("td", { class: "kind" }, p.roles.join(", ")),
@@ -818,7 +880,7 @@ const foldKey = t => (t || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLower
 function renderSocieties() {
   const head = h("div", { class: "page-head" },
     h("span", { class: "stage-chip" }, icon("udruge", "xl"), h("span", { class: "lbl" }, "0P")),
-    h("div", {}, h("h1", {}, "Udruge"),
+    h("div", {}, h("h1", {}, "Udruge", helpBtn("udruge")),
       h("div", { class: "sub" }, "Registar udruga – CroSpeleo nazivi, kratice i drugi zapisi koje alati prepoznaju")),
     h("div", { class: "spacer" }),
     h("button", { class: "btn ghost", onclick: () => setTab("doc:stages/0P-platform/README.md") }, icon("book"), "README"));
@@ -1355,6 +1417,14 @@ function parseCave(text) {
 }
 
 function wire() {
+  document.addEventListener("click", e => { if (!e.target.closest("#help-pop")) closeHelp(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeHelp(); });
+  $("#main").addEventListener("scroll", closeHelp);
+  window.addEventListener("resize", closeHelp);
+  const topHelp = (sel, key) => $(sel).append(helpBtn(key));
+  topHelp(".sb-box", "top-sb");
+  topHelp(".cave-box", "top-cave");
+  $(".console-title").after(helpBtn("console"));
   const input = $("#cave-input");
   input.addEventListener("focus", () => { input.select(); openMenu(); });
   input.addEventListener("click", () => { if ($("#cave-menu").hidden) openMenu(); });

@@ -242,6 +242,24 @@ def test_page_carries_token(server):
         assert res.status == 200
 
 
+def test_help_texts_cover_every_question_mark():
+    """Every "?" on the page has its text in help.js, every stage tab and fast
+    action has one, and the Croatian uses the en dash only."""
+    import re
+
+    static = Path(catalog.__file__).parent / "static"
+    help_js = (static / "help.js").read_text(encoding="utf-8")
+    keys = set(re.findall(r'^  "([^"]+)": \{', help_js, flags=re.M))
+    used = set()
+    for name in ("app.js", "mapping.js"):
+        used |= set(re.findall(r'helpBtn\("([^"]+)"[,)]', (static / name).read_text(encoding="utf-8")))
+    assert used and used <= keys, used - keys
+    assert {s.label for s in catalog.STAGES} <= keys
+    assert {"recipe:" + r.id for r in catalog.RECIPES} <= keys
+    assert "—" not in help_js
+    assert '<script src="/static/help.js">' in (static / "index.html").read_text(encoding="utf-8")
+
+
 def test_api_needs_token(server):
     base, _, _ = server
     assert _call(base, "/api/state", token="wrong")[0] == 403
@@ -595,6 +613,7 @@ def test_mapping_page_refuses_bad_input_and_caves_without_a_folder(server):
     status, data = _call(base, "/api/mapping/999", {"effective": {}})
     assert status == 400 and "nema mapu" in data["error"]
     assert not (leaf / "tdx-mapping-objekt.json").exists()
+
 
 def test_mapping_page_theme_round_trips_and_draws_previews(server):
     """T4 (project 0007): the cave's theme is the override's "theme"."""

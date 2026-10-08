@@ -585,8 +585,10 @@ def dimension_values(dims: dict) -> dict[str, str]:
     Mapping as 4S's ``_dimension_values``: ``l`` stvarna duljina, ``pl``
     tlocrtna (horizontalna) duljina; depth below the entrance prefers the
     finisher's own ``nvr_m`` over cSurvey's bounding-box ``nvr`` (a symbol
-    drawn above the entrance inflates the latter); the visinska razlika is
-    cSurvey's ``vr``, else depth + height (``pvr_m``/``pvr``).
+    drawn above the entrance inflates the latter); the visinska razlika is the
+    finisher's depth + height (``nvr_m`` + ``pvr_m``, the height counting only
+    stations above the entrance), else cSurvey's ``vr``, else ``nvr`` + ``pvr``
+    — and never less than the depth.
     """
     def metres(value) -> float | None:
         if value is None or isinstance(value, bool):
@@ -598,9 +600,19 @@ def dimension_values(dims: dict) -> dict[str, str]:
 
     nvr = metres(dims["nvr_m"] if dims.get("nvr_m") is not None else dims.get("nvr"))
     pvr = metres(dims["pvr_m"] if dims.get("pvr_m") is not None else dims.get("pvr"))
-    span = metres(dims.get("vr"))
-    if span is None and (nvr is not None or pvr is not None):
+    # The finisher's own depth + height win over cSurvey's ``vr`` (user,
+    # 2026-10-07): the height above the entrance is only a shot higher than the
+    # entrance station, so a cave that only goes down has the span equal to its
+    # depth (SB 1325: vr 8 beside Dubina 10).
+    if dims.get("nvr_m") is not None or dims.get("pvr_m") is not None:
         span = (nvr or 0.0) + (pvr or 0.0)
+    else:
+        span = metres(dims.get("vr"))
+        if span is None and (nvr is not None or pvr is not None):
+            span = (nvr or 0.0) + (pvr or 0.0)
+    # The span contains the depth, so it is never smaller.
+    if nvr is not None and (span is None or span < nvr):
+        span = nvr
 
     out: dict[str, str] = {}
     for key, number in (("duljina", metres(dims.get("l"))),
@@ -627,7 +639,9 @@ def _same_measurement(recorded: str, measured: str) -> bool:
     if "," in measured or "." in measured:
         # the entrance cells carry one decimal (project 0005)
         return round(number, 1) == round(target, 1)
-    return round(number) == round(target)
+    # Half up, not Python's half-to-even: "8,5" is not the measurement 8
+    # (SB 1325 kept a stale 8,5 that way).
+    return math.floor(number + 0.5) == math.floor(target + 0.5)
 
 
 # ── migration of an older OSZ found in the intake leaf ───────────────

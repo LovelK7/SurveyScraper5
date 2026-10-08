@@ -44,6 +44,12 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   the OSZ filled after the Nacrt was composed turns KORAK 3c amber, and a
   survey measured after the OSZ was made turns "OSZ ← duljina i dubina" gold.
   The 3N tab colours its KORAK cards the same way.
+- **?** beside a heading (the top bar, every tab, card and section) opens a
+  short explanation for someone who has never seen the tools: what that part
+  is, then what to do, in a few lines. A click opens it, a click anywhere else
+  or Esc closes it. The texts are all in `gui/static/help.js`, keyed by stage
+  label, recipe and section; `test_help_texts_cover_every_question_mark`
+  fails when a `?` has no text or a stage or ★ recipe has none.
 - **Pokreni** runs a command. Output streams into the **Ispis** panel at the
   bottom; when a tool asks something (the 3N file menu, the layout menu) you
   answer in the box under the output. Every run is logged to `runs/gui/`.
@@ -131,7 +137,7 @@ How it is built, for whoever turns it into the real GUI:
 | `gui/media.py` | Photo thumbnails and the recoverable delete (shell "allow undo"). |
 | `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. `start_sequence` runs a recipe's steps one after another as a single job (stop on exit 2+ unless `keep_going`; 0/1 are the CLI's "done / not ready"). |
 | `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, `/mapping/<broj>` (GET, POST, POST `…/reset`), `/mapping-catalog`, `/societies` (the registar udruga for the Udruge page), `/layouts?broj=&path=` (KORAK 3a's sheets; only the cave's own `_postp` files), and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
-| `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`, `mapping.js` (the 3N mapping page). Plain JS, no build step. |
+| `gui/static/` | `index.html` (with the SVG icon set), `app.css` (the gold `#EBAF01` palette, light and dark), `app.js`, `mapping.js` (the 3N mapping page), `help.js` (the texts behind every **?**). Plain JS, no build step. |
 
 Only standard library in the base install; Pillow (the `photos` extra) makes
 the gallery faster, and lxml (the `osz` extra) lets the workflow read the OSZ.
