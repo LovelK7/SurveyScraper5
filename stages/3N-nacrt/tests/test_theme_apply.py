@@ -501,3 +501,99 @@ def test_majority_name_of_merged_item():
     name, _k, _p, note = ta._majority([seq("wall"), seq("pit")])
     assert name is None and "tie" in note
     assert ta._majority([seq("pit")])[3] is None
+
+
+# ── KORAK 2's theme step (T5) ────────────────────────────────────────
+
+def test_find_pre_prefers_the_prep_over_the_raw_export(env):
+    tmp, _root, csx, pre = env
+    import os
+    import shutil
+    raw = tmp / "spilja.csx"
+    shutil.copy(pre, raw)
+    prep = tmp / "spilja_prep.csx"
+    shutil.copy(pre, prep)
+    os.utime(prep, (1, 1))                       # older than the raw one, still preferred
+    shutil.copy(csx, tmp / "spilja_backup.csx")  # cSurvey's safety copy: never a pre
+    assert ta.find_pre(str(csx)) == str(prep)
+    prep.unlink()
+    assert ta.find_pre(str(csx)) in (str(raw), str(pre))
+
+
+def test_korak2_step_themes_in_place_and_fails_soft(env, tmp_path):
+    import io
+    _tmp, root, csx, _pre = env
+    before = csx.read_bytes()
+    log = io.StringIO()
+    assert not ta.korak2_step(str(csx), "nema", out=log, themes_root=str(root))
+    assert "ne postoji" in log.getvalue() and csx.read_bytes() == before
+    log = io.StringIO()
+    assert ta.korak2_step(str(csx), "t", out=log, themes_root=str(root))
+    assert "tema t:" in log.getvalue() and "imena iz: pre.csx" in log.getvalue()
+    assert ta.read_state(ET.parse(csx).getroot())[0] == "t"
+
+
+def test_korak2_applies_the_caves_theme_from_its_mapping(tmp_path):
+    """fix_imported_linetypes: the override's "theme" themes the _postp; --no-theme skips it."""
+    import fix_imported_linetypes as fixer
+    leaf = tmp_path / "SB_1_test"
+    leaf.mkdir()
+    (leaf / "spilja.csx").write_text(CSX, encoding="utf-8")
+    (leaf / "spilja_prep.csx").write_text(PRE, encoding="utf-8")
+    (leaf / "tdx-mapping-objekt.json").write_text('{"theme": "boja"}', encoding="utf-8")
+    assert fixer.main([str(leaf / "spilja.csx"), "--force"]) == 0
+    out = leaf / "spilja_postp.csx"
+    assert ta.read_state(ET.parse(out).getroot())[0] == "boja"
+    assert fixer.main([str(leaf / "spilja.csx"), "--force", "--no-theme"]) == 0
+    assert ta.read_state(ET.parse(out).getroot())[0] is None
+
+
+# ── T9: KORAK 1 labels -> theme glyphs ───────────────────────────────
+
+LABELS = """
+          <item layer="6" type="8" category="81" text="!" textrotatemode="1">
+            <brush type="7" />
+            <points data="9.00 9.00 " />
+            <datarow>TopoDroid|x</datarow>
+            <font type="0" />
+          </item>
+          <item layer="6" type="8" category="81" text="f" textrotatemode="1">
+            <brush type="7" />
+            <points data="3.00 3.00 " />
+            <datarow>TopoDroid|x</datarow>
+            <font type="0" />
+          </item>"""
+PRE_LABELS = PRE.replace("</plan>", """  <item type="point" name="label" text="!" options="tdxpp:danger"><points data="9.00 9.00 " /></item>
+  <item type="point" name="label" text="f" options="tdxpp:anchor"><points data="3.00 3.00 " /></item>
+</plan>""")
+
+
+def test_labels_become_theme_signs_and_come_back(env):
+    tmp, root_dir, _csx, _pre = env
+    (root_dir / "t" / "signs" / "danger.svg").write_bytes(THEME_SVG.encode())
+    (root_dir / "t" / "signs" / "anchor.svg").write_bytes(THEME_SVG.encode())
+    (root_dir / "t" / "theme.json").write_text(json.dumps(
+        {"name": "T", "signs": {"blocks": {"svg": "signs/blocks.svg", "color": "#78787A"},
+                                "danger": {"svg": "signs/danger.svg"},
+                                "anchor": {"svg": "signs/anchor.svg"}}}))
+    csx = tmp / "lab.csx"
+    csx.write_text(CSX.replace("        </items>", LABELS.lstrip("\n") + "\n        </items>"),
+                   encoding="utf-8")
+    pre = tmp / "lab_pre.csx"
+    pre.write_text(PRE_LABELS, encoding="utf-8")
+    out = tmp / "lab_t.csx"
+    rep = ta.theme_file(str(csx), "t", str(pre), str(out), themes_root=str(root_dir))
+    assert rep["labels"] == 1
+    r = ET.parse(out).getroot()
+    texts = [it.get("text") for it in r.iter("item") if it.get("type") == "8"]
+    assert texts == ["f"]                                   # anchor is never themed
+    sign = next(it for it in r.iter("item")
+                if it.find("points") is not None and it.find("points").get("data") == "9.00 9.00 ")
+    assert sign.get("type") == "6" and sign.get("category") == "80" and sign.get("sign") is None
+    assert sign.get("data") == nacrt_finish.clipart_hash(THEME_SVG.encode())
+    assert [c.tag for c in sign] == ["pen", "brush", "points", "datarow"]
+    # undo (a re-run with another theme undoes first) restores the label byte for byte
+    root, _is_csz, style = nacrt_finish.load_root(str(out))
+    ta.undo(root, ta.read_state(root)[1])
+    plain_root, _c, plain_style = nacrt_finish.load_root(str(csx))
+    assert style.render(root) == plain_style.render(plain_root)

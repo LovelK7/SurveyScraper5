@@ -159,8 +159,8 @@ class App:
 
     # ── 3N mapping ──────────────────────────────────────────────────
     def mapping_api(self, verb: str, parts: list[str], body: dict | None = None) -> dict:
-        """GET mapping-catalog · GET mapping/<broj> · POST mapping/<broj>
-        {effective} · POST mapping/<broj>/reset (gui/mapping.py)."""
+        """GET mapping-catalog · GET mapping-theme/<id> · GET mapping/<broj> ·
+        POST mapping/<broj> {effective} · POST mapping/<broj>/reset (gui/mapping.py)."""
         tools = tools_dir()
         if tools is None:
             raise ApiError("3N alati nisu pronađeni (nema stages/3N-nacrt/production/"
@@ -168,6 +168,8 @@ class App:
         try:
             if parts[0] == "mapping-catalog":
                 return mapping.catalog(tools)
+            if parts[0] == "mapping-theme":
+                return mapping.theme_view(tools, parts[1])
             broj = _int(parts[1])
             if verb == "GET":
                 return mapping.view(self.ws, broj, tools)
@@ -413,7 +415,7 @@ def make_handler(app: App):
                                                             query.get("kind", ""))}
                 if head == "layouts":
                     return app.layouts(query)
-                if head == "mapping-catalog" or (head == "mapping" and len(parts) == 2):
+                if head == "mapping-catalog" or (head in ("mapping", "mapping-theme") and len(parts) == 2):
                     return app.mapping_api("GET", parts)
                 if head == "societies":
                     from cave_dossier.core import societies

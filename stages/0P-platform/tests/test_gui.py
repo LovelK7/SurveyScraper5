@@ -596,6 +596,42 @@ def test_mapping_page_refuses_bad_input_and_caves_without_a_folder(server):
     assert status == 400 and "nema mapu" in data["error"]
     assert not (leaf / "tdx-mapping-objekt.json").exists()
 
+def test_mapping_page_theme_round_trips_and_draws_previews(server):
+    """T4 (project 0007): the cave's theme is the override's "theme"."""
+    base, _, leaf = server
+    _, view = _call(base, "/api/mapping/1220")
+    ids = [t["id"] for t in view["themes"]]
+    assert "boja" in ids and "crno-bijelo" in ids and "theme" not in view["effective"]
+
+    eff = view["effective"]
+    eff["theme"] = "crno-bijelo"
+    status, saved = _call(base, "/api/mapping/1220", {"effective": eff})
+    assert status == 200 and saved["changed"] == ["theme"] and saved["effective"]["theme"] == "crno-bijelo"
+    written = json.loads((leaf / "tdx-mapping-objekt.json").read_text(encoding="utf-8"))
+    assert {k: v for k, v in written.items() if not k.startswith("_")} == {"theme": "crno-bijelo"}
+    _, again = _call(base, "/api/mapping/1220")
+    assert again["effective"]["theme"] == "crno-bijelo"
+
+    eff["theme"] = "nema-takve"
+    status, data = _call(base, "/api/mapping/1220", {"effective": eff})
+    assert status == 400 and "nema-takve" in data["error"]
+
+    status, pics = _call(base, "/api/mapping-theme/boja")
+    assert status == 200 and pics["name"] == "Boja" and not pics["monochrome"]
+    assert pics["signs"]["water-flow"]["svg"].startswith("<svg") and "#24A9D1" in pics["signs"]["water-flow"]["svg"]
+    assert "<line" in pics["lines"]["wall:ice"]["svg"]          # base line under the units
+    assert "<line" not in pics["lines"]["wall:blocks"]["svg"]   # style none: units only
+    assert "clip-path" in pics["areas"]["ice"]["svg"]
+    status, bw = _call(base, "/api/mapping-theme/crno-bijelo")
+    assert status == 200 and bw["monochrome"] and "#24A9D1" not in bw["signs"]["water-flow"]["svg"]
+    status, data = _call(base, "/api/mapping-theme/nema-takve")
+    assert status == 400
+
+    status, back = _call(base, "/api/mapping/1220/reset", {})
+    assert status == 200 and "theme" not in back["effective"]
+    assert not (leaf / "tdx-mapping-objekt.json").exists()
+
+
 def test_catalog_nests_the_sastavnica_under_the_nacrt():
     """4S is a sub-page of 3N in the nav, like Mapiranje simbola (user, 2026-10-03)."""
     from cave_dossier.gui import catalog

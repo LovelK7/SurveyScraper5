@@ -36,6 +36,12 @@ With --sb the input is the intake folder: the cave's SB_<broj>_... leaf is
 resolved (sb_select.py), its .csz/.csx files are listed with whether each has
 been imported into cSurvey yet, and you pick one by number — the no-typing path
 behind a double-click on csurvey_2_dovrsi_uvoz.bat.
+
+Theme (project 0007, T5): when the cave's mapping names a theme (`"theme"` in
+tdx-mapping-objekt.json, chosen on the dashboard's Mapiranje simbola), the
+_postp is themed as the last step (theme_apply.korak2_step, names recovered
+from the _prep or raw export beside it). Fail-soft: a problem is a warning and
+the _postp stays unthemed. --no-theme skips it.
 """
 
 import argparse
@@ -335,6 +341,7 @@ def load_rules(inp, map_file):
     cfg, override = tdx_mapping.effective_for(inp, map_file)
     rules = {"spline_linetypes": True, "nonstandard_water": False}
     rules.update(cfg.get("postimport", {}))
+    rules["_theme"] = cfg.get("theme")          # the cave's symbol theme, or None
 
     sign_sizes = {}
     for name, size in rules.get("sign_sizes", {}).items():
@@ -370,6 +377,8 @@ def main(argv=None):
                     help="tdx-mapping.json (its `postimport` section drives "
                          "the rules; defaults: spline_linetypes on)")
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--no-theme", action="store_true",
+                    help="do not apply the cave's symbol theme (project 0007)")
     ap.add_argument("--sb", nargs="+", metavar="BROJ",
                     help="with a folder input: pick the file to fix from that "
                          "cave's SB_<broj>_... leaf (asks when there is more "
@@ -500,6 +509,9 @@ def main(argv=None):
                  "y" if centerline_set == 1 else "ies"))
         for line in wall_lines:
             print("    " + line)
+        if rules.get("_theme") and not args.no_theme:
+            import theme_apply          # lazy: KORAK 2 works without the theme tools
+            theme_apply.korak2_step(out, rules["_theme"])
         if imported_seen == 0 and not args.all_lines:
             print("    NOTE: no TopoDroid-imported items found in this file. "
                   "If it wasn't a TopoDroid import, nothing here needed fixing.")

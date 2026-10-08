@@ -132,3 +132,14 @@ def test_korak2_rules_follow_the_cave(intake):
     assert signs[str(fixer.SIGN_VALUES["stalactite"])] == fixer.SIZES["large"]
     rules, _, _, over = fixer.load_rules(str(b / "y.csx"), str(default))
     assert over is None and rules["centerline"]["PlotPenColor"] == -65536
+
+
+def test_theme_is_diffed_and_merged():
+    """The cave's theme (project 0007, T4) is a top-level string; null removes it."""
+    default = {"points": {}, "postimport": {}}
+    eff = dict(default, theme="boja")
+    over = tm.diff(default, eff)
+    assert over == {"theme": "boja"}
+    assert tm.merge(default, over)["theme"] == "boja"
+    assert tm.diff(dict(default, theme="boja"), default) == {"theme": None}
+    assert "theme" not in tm.merge(dict(default, theme="boja"), {"theme": None})

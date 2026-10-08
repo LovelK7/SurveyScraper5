@@ -6,5 +6,9 @@
   "pit": "pit.svg",
   "slope": "slope.svg",
   "slope:sheer": "slope@sheer.svg",
-  "slope:steep": "slope@steep.svg"
+  "slope:steep": "slope@steep.svg",
+  "user": "user.svg",
+  "wall:blocks": "wall@blocks.svg",
+  "wall:debris": "wall@debris.svg",
+  "wall:ice": "wall@ice.svg"
 }

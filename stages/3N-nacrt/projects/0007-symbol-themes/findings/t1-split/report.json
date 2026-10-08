@@ -1149,6 +1149,92 @@
       "warnings": []
     },
     {
+      "kind": "lines",
+      "key": "wall:blocks",
+      "id": "wall:blocks",
+      "file": "lines/wall@blocks.svg",
+      "bbox": [
+        27.941,
+        6.475
+      ],
+      "paths_out": 4,
+      "points_in": 72,
+      "fixed": {
+        "polygon converted to path": 4,
+        "fills flattened": 4
+      },
+      "colours_flattened": [
+        "#ababab"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "wall:debris",
+      "id": "wall:debris",
+      "file": "lines/wall@debris.svg",
+      "bbox": [
+        27.941,
+        3.515
+      ],
+      "paths_out": 8,
+      "points_in": 224,
+      "fixed": {
+        "polygon converted to path": 4,
+        "fills flattened": 8,
+        "transforms baked": 4,
+        "arcs converted": 27
+      },
+      "colours_flattened": [
+        "#ababab"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "user",
+      "id": "user",
+      "file": "lines/user.svg",
+      "bbox": [
+        14.313,
+        5.334
+      ],
+      "paths_out": 11,
+      "points_in": 44,
+      "fixed": {
+        "rect converted to path": 11,
+        "fills flattened": 11
+      },
+      "colours_flattened": [
+        "#c28935"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
+      "kind": "lines",
+      "key": "wall:ice",
+      "id": "wall:ice",
+      "file": "lines/wall@ice.svg",
+      "bbox": [
+        16.384,
+        6.464
+      ],
+      "paths_out": 4,
+      "points_in": 72,
+      "fixed": {
+        "transforms baked": 4,
+        "fills flattened": 4
+      },
+      "colours_flattened": [
+        "#468fa0"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
       "kind": "areas",
       "key": "pebbles",
       "id": "pebbles",
@@ -1204,17 +1290,16 @@
         28.196
       ],
       "paths_out": 30,
-      "points_in": 353,
+      "points_in": 279,
       "fixed": {
-        "transforms baked": 24,
+        "polygon converted to path": 18,
         "fills flattened": 30,
-        "polygon converted to path": 4,
+        "transforms baked": 10,
         "arcs converted": 19,
-        "rect converted to path": 3,
-        "invisible shapes dropped": 1
+        "rect converted to path": 3
       },
       "colours_flattened": [
-        "#616262"
+        "#999"
       ],
       "rejected": [],
       "warnings": [
@@ -1227,293 +1312,21 @@
       "id": "blocks-2",
       "file": "areas/blocks.svg",
       "bbox": [
-        57.338,
-        30.289
+        57.073,
+        29.957
       ],
-      "paths_out": 489,
-      "points_in": 273,
+      "paths_out": 74,
+      "points_in": 554,
       "fixed": {
-        "polyline converted to path": 26,
-        "strokes outlined": 54,
-        "line converted to path": 12,
-        "transforms baked": 16,
-        "arcs converted": 9
+        "polyline converted to path": 48,
+        "fills flattened": 74,
+        "invisible shapes dropped": 4,
+        "transforms baked": 26,
+        "arcs converted": 18
       },
       "colours_flattened": [
-        "#616262",
-        "#787879"
-      ],
-      "strokes": [
-        {
-          "element": "polyline",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "line",
-          "stroke_width": 0.199,
-          "effective_width": 0.199
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "polyline",
-          "stroke_width": 0.332,
-          "effective_width": 0.332
-        },
-        {
-          "element": "path",
-          "stroke_width": 0.133,
-          "effective_width": 0.133
-        }
+        "#999",
+        "#bbbcbc"
       ],
       "rejected": [],
       "warnings": [
@@ -1522,9 +1335,9 @@
     },
     {
       "kind": "areas",
-      "key": "stalagmite",
-      "id": "stalagmite",
-      "file": "areas/stalagmite.svg",
+      "key": "user",
+      "id": "user-2",
+      "file": "areas/user.svg",
       "bbox": [
         15.123,
         10.366
@@ -1536,10 +1349,12 @@
         "fills flattened": 11
       },
       "colours_flattened": [
-        "#231f20"
+        "#c28935"
       ],
       "rejected": [],
-      "warnings": []
+      "warnings": [
+        "id 'user-2': uniqueness suffix -2 stripped (layer fixes the kind)"
+      ]
     },
     {
       "kind": "areas",
@@ -1553,7 +1368,6 @@
       "paths_out": 4,
       "points_in": 72,
       "fixed": {
-        "invisible shapes dropped": 1,
         "transforms baked": 4,
         "fills flattened": 4
       },
@@ -1623,7 +1437,7 @@
   ],
   "counts": {
     "signs": 13,
-    "lines": 8,
+    "lines": 12,
     "areas": 6
   }
 }

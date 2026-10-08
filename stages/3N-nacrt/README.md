@@ -44,7 +44,7 @@ python $T\preprocess_tdx_csx.py $INTAKE --sb 1103 --force
 
 # [cSurvey] open <name>_prep.csx, then File > Save As
 
-# KORAK 2 — the saved file -> <name>_postp.csx (spline linetypes, water brush, sign sizes, walls merged, turned and ordered (wall_orient.py), the file settings in tdx-mapping.json postimport)
+# KORAK 2 — the saved file -> <name>_postp.csx (spline linetypes, water brush, sign sizes, walls merged, turned and ordered (wall_orient.py), the file settings in tdx-mapping.json postimport; last, the cave's symbol theme if its mapping names one — theme_apply.korak2_step, --no-theme skips it)
 python $T\fix_imported_linetypes.py $INTAKE --sb 1103 --force
 #   or: python $T\fix_imported_linetypes.py "path\to\saved.csx" --force
 

@@ -57,6 +57,7 @@ keeps the chronology.
 - [4F: the processed photo replaces the original (2026-10-04)](#4f-the-processed-photo-replaces-the-original-2026-10-04)
 - [4F: a processed photo is never bigger than its original (2026-10-04)](#4f-a-processed-photo-is-never-bigger-than-its-original-2026-10-04)
 - [3N symbol themes: applied after import, keyed by TopoDroid name (2026-10-07)](#3n-symbol-themes-applied-after-import-keyed-by-topodroid-name-2026-10-07)
+- [Dashboard help: a "?" on every part of the page (2026-10-08)](#dashboard-help-a--on-every-part-of-the-page-2026-10-08)
 - [Registar udruga: CroSpeleo is the ground truth (2026-10-04)](#registar-udruga-crospeleo-is-the-ground-truth-2026-10-04)
 
 ---
@@ -688,8 +689,14 @@ cave's intake leaf), so the rule is narrowed, not reversed:
 - `osz prefill` reads the **newest** `*_dimenzije.json` in the leaf (as a file
   artifact — no import of 4S or 3N code) and fills **Duljina** ← `l`,
   **Horizontalna duljina** ← `pl`, **Dubina** ← `nvr_m` else `nvr`, and
-  **Visinska razlika** ← `vr` else depth + height (`pvr_m`/`pvr`) — the same
-  mapping 4S's title block uses, so zapisnik and nacrt agree. Cells hold bare,
+  **Visinska razlika** ← `nvr_m` + `pvr_m` else `vr` else `nvr` + `pvr`,
+  **never less than Dubina** — the same numbers 4S's title block uses, so
+  zapisnik and nacrt agree. **Height above the entrance (`pvr_m`) counts
+  survey stations only** (user, 2026-10-07): the cave gets a `+` value only
+  where a shot is higher than the entrance station; walls drawn above it are
+  the shaft mouth or the doline. SB 1325 printed `-10/+9 m` and kept
+  Visinska razlika 8 beside Dubina 10 before this; a cave that only goes down
+  has the two equal. Cells hold bare,
   unsigned whole metres (the template headers say `(m)`; SB and legacy
   zapisnici record Dubina positive; 4S adds the minus itself). Zero = not
   surveyed → left empty. Source label `nacrt`.
@@ -1782,7 +1789,10 @@ Record: [project 0007](../stages/3N-nacrt/projects/0007-symbol-themes/brief.md).
   - arrows are drawn pointing up.
 - **The rest is numbers in `theme.json`:** dashes, spacing, density, size, alignment.
 - **Labels stay labels** (`danger`, `plus`, `minus`, `plus-minus`, `anchor` `f`), so they are readable
-  without a theme. The theme step converts them to glyphs (T9, open).
+  without a theme. The theme step converts them to glyphs (T9, built 2026-10-07): a label whose recovered
+  TopoDroid name has a theme glyph becomes a sign item (type 6, no `sign=`, as cSurvey imports an unknown
+  point); `anchor` stays the label `f`; undo restores the label byte for byte. Checked on the mockup run
+  through KORAK 1: labels with no theme, club glyphs in both themes.
 - **The theme is chosen per cave on Mapiranje simbola (T4, 2026-10-07).** It is the top-level `"theme"` of
   the cave's `tdx-mapping-objekt.json` (`tdx_mapping.diff/merge` carry it; `null` = none). The shared default
   sets none, so a cave without a choice keeps cSurvey's look. The page previews the theme from its own SVGs
@@ -1800,3 +1810,23 @@ Record: [project 0007](../stages/3N-nacrt/projects/0007-symbol-themes/brief.md).
   already the thinnest possible; `BrushLinesScaleFactor` (read only from each view's `<options>`) cannot go
   below it (r12, 2026-10-07), so no theme field was added. Thin artwork such as ice is thinned in the drawing.
 
+## Dashboard help: a "?" on every part of the page (2026-10-08)
+
+The user asked for a **?** on each segment of the Speleo nadzorna ploča, so that someone who has never
+seen the software understands what the step does and what to do next.
+
+- **A click, not a hover.** The popover opens on click and stays until a click elsewhere or Esc, so it
+  can be read without holding the mouse still and works on touch. It replaces the one earlier hover
+  balloon (the Osobe · izjave legend).
+- **Short and guiding.** Each text is a title, one or two sentences on what the part is, at most four
+  "what to do" lines, and one closing hint. No internals: no file formats beyond what the operator sees,
+  no code names. Croatian, en dash only.
+- **Granularity:** the top bar (SB badge, Objekt, Ispis), every page head (Pregled, Brze radnje, each
+  stage, Mapiranje, Udruge), every Pregled card, every ★ recipe, the dosje cards and the Mapiranje
+  sections. Not on each command card: those already show their own help line, and a stage's **?** ends
+  with one shared line on how a command card works (Pokreni, "piše", Kopiraj).
+- **One file, checked.** All texts live in `gui/static/help.js`; a test fails when a `?` has no text, or
+  a stage or recipe in `catalog.py` has none, so a new tab cannot ship without its explanation.
+- **Survives a reload.** A cave or job finishing in the background re-renders the page; the open popover
+  follows its **?** onto the new page instead of vanishing. Checked in the running dashboard (Chromium,
+  cave 651: Pregled, 3N, Brze radnje, 5D, Ispis).

@@ -2,7 +2,7 @@
 
 A theme decides how cSurvey draws the club's signs, lines and areas: which SVG glyph, tile or
 decoration unit each one uses, in which colour, and with which pen and brush numbers. It is
-applied after import, in KORAK 2, by `../tools/theme_apply.py` (project 0007: signs, lines, areas and the centerline, see [the production README](../README.md#applying-a-theme)). The design is in
+applied after import, as KORAK 2's last step, by `../tools/theme_apply.py` for the theme the cave's mapping names (chosen on the dashboard's Mapiranje simbola; the kit ships these folders as `csurvey_alati/teme/`) (project 0007: signs, lines, areas and the centerline, see [the production README](../README.md#applying-a-theme)). The design is in
 [project 0007's brief](../../projects/0007-symbol-themes/brief.md) §2.3–§3.3.
 
 `../tools/themes.py` loads and validates themes. `check_defaults.py` (the `/csurvey-defaults`

@@ -715,6 +715,22 @@ def shape_segs(el, stats):
     return []
 
 
+def close_subpaths(segs):
+    """Append Z to every subpath that draws something and is not closed."""
+    out, open_ = [], False
+    for s in segs:
+        if s[0] == "M" and open_:
+            out.append(("Z",))
+        out.append(s)
+        if s[0] == "M" or s[0] == "Z":
+            open_ = False
+        else:
+            open_ = True
+    if open_:
+        out.append(("Z",))
+    return out
+
+
 # --------------------------------------------------------------------------
 # normalisation of one piece
 
@@ -850,6 +866,8 @@ def _walk(el, sheet, parent_style, ctm, opacity, piece, nested):
         piece.warnings.append("%s: skewed/sheared transform baked" % element_label(el))
     piece.src_points += point_count(segs)
     segs = transform_segs(segs, ctm)
+    if has_fill and not has_stroke:
+        segs = close_subpaths(segs)     # SVG fills an open subpath as closed; cSurvey's print does not
 
     if has_fill:
         if is_white(fill):

@@ -1,7 +1,7 @@
 # Task brief: Symbol themes — custom SVG signs, pens and brushes, chosen per cave in Mapiranje simbola
 
 - **ID:** 0007-symbol-themes
-- **Status:** `validation` — signs, lines and areas are themed end to end on the mockup (`boja` + `crno-bijelo`), tuned with the user over rounds r1–r7 (2026-10-07). TopoDroid-name keys work (T8). Next: T4 (Tema dropdown), T5 (kit + KORAK 2 launcher), T9 (labels → glyphs). See "State at session end" in §3.6.
+- **Status:** `validation` — signs, lines and areas are themed end to end on the mockup (`boja` + `crno-bijelo`), tuned with the user over rounds r1–r7 (2026-10-07). TopoDroid-name keys work (T8). T4 done 2026-10-07 (Tema card on Mapiranje simbola, saved as `"theme"` in the cave override, theme previews). Tuning rounds r9–r11 done the same day. T5 done 2026-10-07: KORAK 2 themes the `_postp` with the cave's theme (`theme_apply.korak2_step`), the kit (v1.7, not yet published) ships `csurvey_alati/teme/`. T9 done 2026-10-07 (labels → theme glyphs in the theme step; anchor stays `f`). Next: SB 1103 printed in both themes for the user's sign-off (T6), `/publish` csx kit v1.7, close-out. T7 superseded by `/theme-round`. See "State at session end" in §3.6.
 - **Owner:** both
 - **Opened:** 2026-10-04 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [backlog/custom-sign-palette.md](../../backlog/custom-sign-palette.md) (the parked predecessor idea), [production/tdx-symbol-matrix.md](../../production/tdx-symbol-matrix.md), [reference/data-model-and-file-format.md](../../reference/data-model-and-file-format.md), [.claude/skills/csurvey-defaults/SKILL.md](../../../../.claude/skills/csurvey-defaults/SKILL.md)
@@ -674,6 +674,23 @@ in `theme.json`.
 - Undo restores the label.
 - *Accept:* on the mockup run through KORAK 1, the four print as club glyphs in `boja` and `crno-bijelo`,
   and as labels with no theme.
+
+**State at session end (2026-10-08) — read this first in the next session.**
+
+- Done 2026-10-07/08: T4 (Tema card), T5 (KORAK 2 theme step + kit v1.7 staged, **not published**), T9 (labels →
+  glyphs, anchor `f` stays), tuning rounds r9–r12, `mud` → `sand` (shared default, committed), T6 prints of SB 1103
+  ([runs/2026-10-07-t6-sb1103](runs/2026-10-07-t6-sb1103/RUNLOG.md)). The user did **not** sign off: more iteration.
+- **Next (user):** a new, firm test survey drawn for the purpose — as many TopoDroid points, lines and areas as
+  possible — to replace the generated mockup / SB 1103 as the reference for tuning. Expect a TopoDroid export (and
+  later its cSurvey save) dropped into the repo; run it through KORAK 1 → headless import → KORAK 2 (with theme) and
+  print, the way `runs/2026-10-07-t6-sb1103` and the T9 check were made (`csurvey_driver.recalc` with
+  `runs/theme-round/csurvey-nodtd`, then `print_pdfs`). Consider teaching `theme_round.py` to use it as its mockup.
+- **Next (user, drawing):** debris/blocks stones with a white inside — recipe in the cheatsheet ("White-filled
+  pieces"): white fill + coloured stroke → Outline Stroke, keep the compound path. Verified 2026-10-08 with a probe
+  tile (prints as rings, white inside). Ice arms thinner in the drawing (the tile outline is a 1-px floor, r12).
+- **Open findings:** in `crno-bijelo` the dotted shot line on SB 1103 stays orange-brown (not one of the centerline
+  colours `monochrome` blackens) – trace which cSurvey setting draws it; debris may be too heavy in B/W at small scale.
+- **Then:** sign-off on the new survey (T6), `/publish` csx kit v1.7, close-out (§4, §5; T7 superseded by `/theme-round`).
 
 **State at session end (2026-10-07).**
 

@@ -65,6 +65,15 @@ PRILAGODBA ZA JEDAN OBJEKT (po potrebi)
   * Promjena simbola djeluje u KORAKU 1 - poslije nje ponovi KORAK 1,
     uvoz i KORAK 2. Promjena boje poligona ili veličina djeluje u
     KORAKU 2 - ponovi samo KORAK 2.
+  * TEMA (izgled znakova, linija i ispuna): na istoj stranici odaberi
+    temu - Boja ili Crno-bijelo. KORAK 2 je odmah upiše u _postp
+    datoteku: znakovi, linije i ispune dobiju crteže i boje kluba. Bez
+    teme ostaje izgled cSurveya. Za promjenu teme ponovi samo KORAK 2.
+    Tekstne oznake !, +, - i +/- s temom postanu znakovi kluba; oznaka
+    f (sidrište) ostaje slovo.
+    Tema treba _prep datoteku (ili izvornu s mobitela) u mapi objekta,
+    da prepozna svaki simbol; bez nje se tema primijeni samo po
+    cSurveyevim znakovima.
 
 NA MOBITELU (TopoDroid)
   * Nacrtaj skicu.
@@ -190,6 +199,13 @@ preimenovati.
  AKO CRNI PROZOR JAVI...
 ------------------------------------------------------------------
  "OK ... _postp ..."   Uspjeh. Otvori _postp datoteku u cSurveyu i crtaj.
+
+ "tema boja: ..."   (KORAK 2) _postp je dobio odabranu temu. Što
+                    nacrtaš poslije u cSurveyu ima cSurveyev izgled.
+
+ "UPOZORENJE: tema ... nije primijenjena"
+                    (KORAK 2) _postp je napravljen, ali bez teme.
+                    Pročitaj razlog; javi ga ako ga ne razumiješ.
 
  "BLOCKED"          Dao si csurvey_2_dovrsi_uvoz.bat datoteku koja
                     još nije uvezena u cSurvey (npr. _prep). Prvo je

@@ -440,10 +440,26 @@ def test_vertical_extent_ignores_a_symbol_drawn_above_the_entrance(tmp_path):
     stations = nacrt_finish.read_stations(root)
     extent = nacrt_finish.vertical_extent(root, "B", stations)
     # entrance B is at z -5: the wall reaches -6 (1 m above) and -1 (4 m below);
-    # the sign at -9 is 4 m higher still and must not count.
-    assert extent["pvr_m"] == 1.0
+    # the sign at -9 is 4 m higher still and must not count. No station is
+    # above B, so neither does the wall (user, 2026-10-07: only shots count up).
+    assert extent["pvr_m"] == 0.0
     assert extent["nvr_m"] == 4.0
     assert "Borders" in extent["from"]
+
+
+def test_vertical_extent_height_comes_from_stations_only(tmp_path):
+    """SB 1325: a pit wall drawn 8.65 m above the entrance station is not cave
+    above the entrance; a station higher than the entrance is."""
+    root, _csz, _style = nacrt_finish.load_root(str(make_csx(
+        tmp_path / "s.csx",
+        profile_borders="-1.00 -15.00 7.00 -1.00 ",
+        stations=[("A", 0.0, 0.0, -8.0, 0.0), ("B", 3.0, 0.0, -5.0, 3.0),
+                  ("C", 6.0, 0.0, -3.0, 6.0)])))
+    stations = nacrt_finish.read_stations(root)
+    # entrance B at -5: station A 3 m higher counts, the wall at -15 does not
+    assert nacrt_finish.vertical_extent(root, "B", stations)["pvr_m"] == 3.0
+    # entrance A is the highest station: nothing above, whatever the wall says
+    assert nacrt_finish.vertical_extent(root, "A", stations)["pvr_m"] == 0.0
 
 
 def test_vertical_extent_counts_a_shot_outside_the_drawing(tmp_path):

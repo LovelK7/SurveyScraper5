@@ -48,10 +48,11 @@ everything and only blacks the colours (`monochrome`).
 | "uneven: one seed bare, another clumped" | the tile itself | a big tile (≥ the sample) turned at random cannot be even; redraw smaller/evener, or accept | blocks 2.9 × 1.5 m tile (r6) |
 | "don't rotate the marks" | `angle_mode: fixed`, `angle: 0` | – | stalagmite (r4) |
 | "marks bigger / smaller" | `zoom` | m per SVG unit (0.05 everywhere); change `density` in step | – |
-| "stones cut at the edge look wrong" | `crop` `none`·`subitems`·`full` | `subitems` (default) keeps whole shapes; `none` clips at the edge; `full` only whole tiles | blocks `none` (outlined stones) |
+| "stones cut at the edge look wrong" | `crop` `none`·`subitems`·`full` | `subitems` (default) keeps whole shapes; `none` clips at the edge; `full` only whole tiles | blocks `none` (outlined stones) until r11. **`none` merges the whole tile into one even-odd path**: a shape drawn inside another (inner + outer fill) cancels to a ring; use `subitems` then (blocks r11) |
 | "parallel lines instead of a fill" | `pattern: {type: lines, angle: 45, density: m}` | `density` = line spacing in m (min 0.1); `crossed` for a grid | water 0.33 (r4/r6) |
 | "more water lines" | `pattern.density` | ↓ (1/3 = 3× the lines) | 1 → 0.33 (r4) |
 | "plain fill" | `solid: true`, `color` | – | – |
+| "stones outlined with a white inside" | artwork, `crop` subitems (default) | per stone: a **white-filled** shape + its outline as a **compound path** in the colour (Illustrator *Outline Stroke* makes exactly that). cSurvey paints a tile's white shapes first, then the coloured ones, each with a 1-px edge in the theme colour (`cBrush.pRenderClipart`). Never `crop: none` (one even-odd path: inner shapes cancel) | probe 2026-10-08: prints as grey rings, white inside |
 | "background colour under the tile" | `background_color` | not blacked by `monochrome` | – |
 
 ## Signs
@@ -84,6 +85,10 @@ everything and only blacks the colours (`monochrome`).
   straight runs (990) but breaks up on curves. Same reason short curves get few units (ceiling-step: 2 T's on the
   mockup sine).
 - **Overlapping units / tiles print white** (even-odd fill of one path).
+- **Every tile shape gets a one-pixel outline** (cSurvey fills and strokes it with the brush pen). On the print that
+  is 0.375 pt, one device pixel at 192 dpi, already the floor: `BrushLinesScaleFactor` (in each view's
+  `<options>` designproperties, not the survey's) changed nothing at 0.02 (r12). Thin artwork such as ice therefore
+  prints bolder than drawn. The fix is the artwork: draw thinner arms, or a bigger tile with `zoom` adjusted.
 - **Stroke-only artwork does not paint** in line units and area tiles (the split outlines strokes; check the
   split summary for `STROKE-ONLY`).
 - **`spacing_pct` 0** reads back as 100; theme_apply writes ≥ 0.1.
@@ -100,6 +105,12 @@ For the user's Illustrator file (`drawing_catalogue.svg`, Export As SVG, Object 
   width. No gradients, clipping masks, images, text or opacity — they are flattened or dropped.
 - **No padding** around a piece: the bounding box is the size and the centre (signs are centred on their bbox).
 - **Line units**: drawn pointing away from the line, the line along the unit's bottom edge.
+- **White-filled pieces** (stones with a white inside): give the stone a white fill (`#FFFFFF`) and the coloured
+  stroke, then *Object › Path › Outline Stroke*. Illustrator then holds a group of the white shape plus the
+  outline as a compound path (outer + inner contour). Keep it like that: do **not** Unite/Merge (that fills the hole
+  with one colour) and do not *Release* the compound path (the ring becomes a solid stone). Any number of stones
+  per tile; each white shape and each ring is its own path. Only pure white stays white – a light grey turns into
+  the theme colour.
 - **Area tiles small and even**: a tile larger than the area it fills cannot look even; ≲ 1 m at 0.05 m per unit.
 - **Arrows pointing up** (as at TopoDroid orientation 0).
 - Colours: one dominant colour per piece; it becomes the theme `color` (the SVG itself is flattened to black).

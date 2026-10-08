@@ -12,6 +12,41 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-07…08 — 3N symbol themes: rounds r9–r12, Tema on the dashboard, theme step in KORAK 2, labels → glyphs (agent) ◐
+
+- **Did:**
+  - Tuning rounds r9–r12 via `/theme-round`: abyss-entrance denser, ceiling-step 1100, snow = ice, stalagmite =
+    user, wall:presumed width 3.5 + dash [14, 5] (PDF vectors: 0.127 mm = wall), new wall:blocks / wall:debris /
+    wall:ice / user line + area entries (butted, no base line on blocks/debris, ice line in ice blue), user area
+    upright. Blocks: `crop: none` dropped.
+  - `theme_svg.close_subpaths`: the split closes filled open polylines.
+  - **T4:** `gui/mapping.py` `theme_list` / `theme_view` (sign tinted, line strip on the print's side via
+    `theme_apply.side_for`, area sample), `GET /api/mapping-theme/<id>`, a **Tema** card in `mapping.js`. The theme
+    is `"theme"` in `tdx-mapping-objekt.json`; `tdx_mapping.diff/merge` carry it.
+  - **T5:** `theme_apply.korak2_step` + `find_pre`, called last by `fix_imported_linetypes.py` (fail-soft,
+    `--no-theme`). `build_csx_kit.py` v1.7 ships the four theme tools and `csurvey_alati/teme/`. Launcher text and
+    operator guide updated.
+  - **T9:** a KORAK 1 label whose TopoDroid name has a theme glyph becomes a sign item (type 6, no `sign=`); `anchor`
+    stays `f`; undo restores it. Undo now runs before name recovery.
+  - `mud` → `sand` in the shared mapping (`/csurvey-defaults`, d5b76fe).
+  - T6 prints of SB 1103 (`runs/2026-10-07-t6-sb1103`).
+- **Result:** 496 tests green (3N + 0P + prod), doctor 0 fail.
+  - Live checks: bunker_studena KORAK 2 → boja (22 signs, 9 lines, 2 areas) printed headless, also run from the
+    staged kit. Mockup through KORAK 1 prints labels / club glyphs / club glyphs. boja → crno-bijelo → boja is
+    byte-identical. Dashboard checked in Chromium.
+  - Not done: kit v1.7 not published, and the user did not sign off. They want a purpose-drawn test survey first.
+- **Learned:**
+  - `crop: none` merges a tile into one even-odd path, so a shape inside another cancels to a ring.
+  - cSurvey fills an open SVG subpath only if closed.
+  - Every tile shape is edged with the brush pen, read only from each view's `<options>` designproperties. It
+    prints at one device pixel (0.375 pt) and can't be thinner (r12 tried 0.02, reverted).
+  - In a tile cSurvey paints all white shapes first, then the coloured ones. So white-inside stones = white shape
+    + outlined-stroke compound ring (probe verified; cheatsheet "White-filled pieces").
+  - The mockup's `wall` is a medium (pen 2) line; the heavy pen 1 draws the frames.
+- **Next:** the user draws a reference survey with as many symbols as possible. Then: run it through KORAK 1 →
+  import → KORAK 2 + theme, sign-off, `/publish` csx kit v1.7, close 0007. Open: B/W shot line stays orange-brown;
+  debris heavy in B/W.
+
 ### 2026-10-04…07 — 3N symbol themes: custom SVG signs, lines and areas, colour and B/W (agent) ◐
 
 - **Did:** Researched viability (cSurvey clipart/pen/brush code + the 3N pipeline) and opened

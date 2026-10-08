@@ -9,9 +9,11 @@ const M = {
   broj: null, data: null, edit: null, error: null, loading: false,
   cat: null, catError: null,
   kind: "point", filter: "speleo", q: "",
+  themes: {},          // id -> mapping-theme view (preview pictures), loaded on demand
 };
 const SECTION = { point: "points", line: "lines", area: "areas" };
 const KIND_HR = { point: "Točke (znakovi)", line: "Linije", area: "Površine" };
+const THEME_KIND = { point: "signs", line: "lines", area: "areas" };
 
 // Properties › Centerline keys, grouped as the page shows them. The type of
 // each comes from the server (fix_imported_linetypes.CENTERLINE_TYPES).
@@ -57,6 +59,7 @@ async function loadMapping(force) {
       api("mapping/" + broj), M.cat ? Promise.resolve(M.cat) : api("mapping-catalog")]);
     if (S.broj !== broj) return;
     Object.assign(M, { data, edit: clone(data.effective), cat, loading: false });
+    if (data.effective.theme) ensureTheme(data.effective.theme);
   } catch (e) {
     if (S.broj === broj) Object.assign(M, { error: e.message, loading: false });
   }
@@ -103,7 +106,7 @@ async function resetMapping() {
 function renderMapping() {
   const out = [h("div", { class: "page-head" },
     h("span", { class: "stage-chip" }, icon("nacrt", "xl"), h("span", { class: "lbl" }, "3N")),
-    h("div", {}, h("h1", {}, "Mapiranje simbola i poligona"),
+    h("div", {}, h("h1", {}, "Mapiranje simbola i poligona", helpBtn("map3n")),
       h("div", { class: "sub" }, "TopoDroid → cSurvey: koji znak, linija, površina i boja poligona nastaje iz skice. Zadano vrijedi za sve objekte; izmjene ovdje samo za odabrani objekt.")),
     h("div", { class: "spacer" }),
     h("button", { class: "btn ghost", onclick: () => setTab("doc:stages/3N-nacrt/production/csurvey-settings.md") }, icon("book"), "Postavke cSurveya"))];
@@ -115,10 +118,11 @@ function renderMapping() {
   if (M.loading || M.broj !== S.broj) { out.push(h("div", { class: "empty" }, "Učitavam mapiranje…")); return out; }
   if (M.error) { out.push(h("div", { class: "card note" }, M.error)); return out; }
   out.push(statusCard());
+  out.push(h("h3", { class: "group-title" }, "Tema – izgled znakova, linija i površina", helpBtn("map-theme")), themeCard());
   // in working order: KORAK 1 (before the import) first, then KORAK 2
-  out.push(h("h3", { class: "group-title" }, "Simboli, linije i površine – KORAK 1"), symbolsCard());
-  out.push(h("h3", { class: "group-title" }, "Poligon – KORAK 2"), centerlineCard());
-  out.push(h("h3", { class: "group-title" }, "Veličine i uvoz – KORAK 2"), h("div", { class: "grid" }, sizesCard(), importCard()));
+  out.push(h("h3", { class: "group-title" }, "Simboli, linije i površine – KORAK 1", helpBtn("map-symbols")), symbolsCard());
+  out.push(h("h3", { class: "group-title" }, "Poligon – KORAK 2", helpBtn("map-centerline")), centerlineCard());
+  out.push(h("h3", { class: "group-title" }, "Veličine i uvoz – KORAK 2", helpBtn("map-sizes")), h("div", { class: "grid" }, sizesCard(), importCard()));
   requestAnimationFrame(() => autofitIn($("#main")));
   return out;
 }
@@ -148,10 +152,78 @@ function statusCard() {
 }
 
 function sectionHr(s) {
-  return { points: "točke", lines: "linije", areas: "površine", generic: "opće", postimport: "poligon/veličine" }[s] || s;
+  return { points: "točke", lines: "linije", areas: "površine", generic: "opće", postimport: "poligon/veličine", theme: "tema" }[s] || s;
 }
 function changedSections(a, b) {
-  return ["points", "lines", "areas", "generic", "postimport"].filter(s => !same(prune(a[s] || {}), prune(b[s] || {})));
+  return ["points", "lines", "areas", "generic", "postimport", "theme"].filter(s => !same(prune(a[s] || {}), prune(b[s] || {})));
+}
+
+// ── theme (project 0007) ─────────────────────────────────────────────
+// The cave's theme is the override's top-level "theme"; none = cSurvey's own
+// look. The rows below show the theme's artwork wherever it has an entry.
+async function ensureTheme(id) {
+  if (!id || M.themes[id]) return;
+  M.themes[id] = { loading: true };
+  try { M.themes[id] = await api("mapping-theme/" + encodeURIComponent(id)); }
+  catch (e) { M.themes[id] = { error: e.message }; }
+  render();
+}
+function currentTheme() {
+  const t = M.edit && M.edit.theme ? M.themes[M.edit.theme] : null;
+  return t && !t.loading && !t.error ? t : null;
+}
+function themeName(id) {
+  const t = (M.data.themes || []).find(x => x.id === id);
+  return t ? t.name : id;
+}
+
+function themeCard() {
+  const themes = M.data.themes || [];
+  const cur = M.edit.theme || "", def = M.data.default.theme || "";
+  const own = cur !== def;
+  const state = cur ? M.themes[cur] : null;
+  const count = t => ["signs", "lines", "areas"].map(k => Object.keys(t[k] || {}).length);
+  const set = v => {
+    if (v) { M.edit.theme = v; ensureTheme(v); } else delete M.edit.theme;
+    render();
+  };
+  let info;
+  if (!themes.length) info = "Nema tema uz 3N alate (production/themes).";
+  else if (!cur) info = "Bez teme: cSurveyevi ugrađeni znakovi, linije i ispune.";
+  else if (!state || state.loading) info = "Učitavam temu…";
+  else if (state.error) info = state.error;
+  else {
+    const [s, l, a] = count(state);
+    info = `${state.name}: ${s} znakova, ${l} linija, ${a} površina s vlastitim crtežom` +
+      (state.monochrome ? " – sve u crnoj boji." : ".") + " Sličice u popisu ispod pokazuju izgled teme.";
+  }
+  return h("div", { class: "card" + (own ? " hl" : "") },
+    h("div", { class: "row" },
+      h("label", { class: "row", style: "gap:8px" }, h("b", {}, "Tema"),
+        h("select", { id: "theme-select", onchange: e => set(e.target.value) },
+          h("option", { value: "", selected: !cur }, "bez teme (izgled cSurveya)"),
+          ...themes.map(t => h("option", { value: t.id, selected: cur === t.id }, t.name)))),
+      own ? h("span", { class: "tag own" }, "ovaj objekt") : cur ? h("span", { class: "tag def" }, "zadano") : null,
+      own ? h("button", { class: "btn small ghost", title: "Vrati na zadano", onclick: () => set(def) }, "↺") : null),
+    h("div", { class: "help" }, info),
+    h("div", { class: "help" }, "Tema se primjenjuje na nacrt nakon KORAKA 2 (theme_apply). Mapiranje ispod i dalje određuje koji element nastaje; tema mu daje crtež i boju. Tekstne oznake (!, +, -, +/-) tema pretvara u svoj znak; oznaka f (sidrište) ostaje tekst."));
+}
+
+// The theme's picture for a row, resolved like themes.resolve: the TopoDroid
+// name first, then the cSurvey target (points compared without - and _).
+function themedPic(row, tgt) {
+  const t = currentTheme();
+  if (!t) return null;
+  const sec = t[THEME_KIND[row.kind]] || {};
+  let spec = sec[row.name];
+  if (!spec && tgt) {
+    spec = sec[tgt.to];
+    if (!spec && row.kind === "point") {
+      const k = Object.keys(sec).sort().find(k => norm(k) === norm(tgt.to));
+      spec = k ? sec[k] : null;
+    }
+  }
+  return spec && spec.svg ? spec : null;
 }
 
 // A saved override newer than the cave's _prep / _postp means those files were made
@@ -375,7 +447,14 @@ function symbolRow(row) {
   const natTarget = natural.num ? targetsOf(kind).find(t => t.num === natural.num) : null;
 
   let pic, caption, dim = false, bad = false;
-  if (entry && entry.label !== undefined) { pic = h("div", { class: "label-pic" }, entry.label); caption = "tekstna oznaka"; }
+  // a label becomes the theme's glyph in the theme step (T9) - never anchor's "f"
+  const isLabel = !!entry && entry.label !== undefined;
+  const themed = (entry && entry.leave) || (isLabel && row.name === "anchor") ? null : themedPic(row, isLabel ? null : tgt || natTarget);
+  if (themed) {
+    pic = svgTile(themed.svg, "themed");
+    caption = (isLabel ? `oznaka „${entry.label}“ → znak` : (tgt || natTarget || {}).label || row.name) + " · " + currentTheme().name;
+  }
+  else if (entry && entry.label !== undefined) { pic = h("div", { class: "label-pic" }, entry.label); caption = "tekstna oznaka"; }
   else if (entry && entry.leave) { pic = h("div", { class: "label-pic muted" }, "–"); caption = "ostavi kako jest"; }
   else if (tgt) { pic = svgTile(tgt.svg); caption = tgt.label; }
   else if (natTarget) { pic = svgTile(natTarget.svg); caption = natTarget.label; dim = true; }
@@ -440,8 +519,8 @@ function refreshRow(row) {
 }
 
 // ── pictures ─────────────────────────────────────────────────────────
-function svgTile(markup) {
-  const d = h("div", { class: "tile paper" });
+function svgTile(markup, extra) {
+  const d = h("div", { class: "tile paper" + (extra ? " " + extra : "") });
   d.innerHTML = markup || "";
   return d;
 }

@@ -384,6 +384,12 @@ def vertical_extent(root, entrance, stations):
     entrance sign sits 1.4 m above station `2` and cSurvey reported `pvr=1`
     where the cave does not rise above its entrance at all.
 
+    **The height counts stations only** (user, 2026-10-07): the cave rises
+    above its entrance only where a shot reaches higher than the entrance
+    station. A wall drawn above it is the shaft mouth or the doline side — SB
+    1325's pit wall rose 8.65 m above station `0` and printed ``-10/+9 m`` on a
+    cave that only goes down. The depth still takes the wall's floor.
+
     Profile design y and a station's z are the same axis — depth, positive
     downward — so the two sources compare directly.
     """
@@ -396,7 +402,6 @@ def vertical_extent(root, entrance, stations):
     tops = [s.z for s in stations]
     bottoms = list(tops)
     if borders is not None:
-        tops.append(borders[1])
         bottoms.append(borders[3])
     if not tops:
         return None

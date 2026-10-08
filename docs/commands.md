@@ -494,10 +494,10 @@ SurveyScraper5/
 ├─ csurvey_0_PROCITAJ_ME.txt              ← the TDX kit (build_csx_kit.py):
 ├─ csurvey_0_postavi_csurvey.bat          ←   KORAK 0 once per computer: cSurvey app settings
 ├─ csurvey_1_pripremi_csx.bat             ←   KORAK 1 raw csx → _prep
-├─ csurvey_2_dovrsi_uvoz.bat              ←   KORAK 2 after Save As → _postp
+├─ csurvey_2_dovrsi_uvoz.bat              ←   KORAK 2 after Save As → _postp (+ the cave's symbol theme)
 ├─ csurvey_3_dovrsi_nacrt.bat             ←   KORAK 3 corrected _postp → the Nacrt
 ├─ csurvey_9_oporavi_iz_zipa.bat          ←   KORAK 9 rescue (not a step)
-├─ csurvey_alati/                         ←   the Python tools those drive
+├─ csurvey_alati/                         ←   the Python tools those drive; teme/ = the symbol themes
 └─ _arhiva/                               ← superseded versions
 ```
 

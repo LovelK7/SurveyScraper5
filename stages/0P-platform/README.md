@@ -75,7 +75,11 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   `tdx-mapping.json` into the cave's folder as `tdx-mapping-objekt.json`, so
   KORAK 1 and 2 apply it to that cave alone. **Vrati na zadano** deletes that
   file. When `_prep`/`_postp` are older than the saved override, the page says
-  which KORAK to redo. See
+  which KORAK to redo. The **Tema** card picks the cave's symbol theme (`boja`,
+  `crno-bijelo`, or none = cSurvey's own look; project 0007 T4). It is saved as
+  `"theme"` in the same override. With a theme chosen, each row shows the theme's
+  own picture (`GET /api/mapping-theme/<id>`: the sign tinted, a line as a strip of
+  its units on the side the print uses, an area as a 2 × 1.4 m sample). See
   [csurvey-settings.md](../3N-nacrt/production/csurvey-settings.md#per-cave-mapping-the-dashboards-mapiranje-page).
 - **4F** shows the cave's photos as a gallery (Pillow thumbnails cached in
   `runs/gui/thumbs`; without Pillow the originals are served). **Obriši**

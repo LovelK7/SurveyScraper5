@@ -235,7 +235,8 @@ def test_starter_themes_content():
     assert all(s["color"] == BLACK for s in bw.lines.values())
     assert bw.centerline["PlotPenColor"] == BLACK
     # steep reuses the sheer unit (r5); ceiling-step uses its T unit, not the split tick (r7)
-    assert th.unused_svgs(boja) == ["lines/ceiling-step.svg", "lines/slope@steep.svg"]
+    assert th.unused_svgs(boja) == ["lines/ceiling-step.svg", "lines/slope@steep.svg",
+                                    "areas/stalagmite.svg"]    # stalagmite = user (r11)
     # water: boja's blue 45-degree line pattern, inherited and turned black by monochrome (r6)
     assert boja.areas["water"]["color"] == th.to_argb("#24A9D1")
     assert bw.areas["water"]["pattern"]["angle"] == 45 and bw.areas["water"]["svg"] is None

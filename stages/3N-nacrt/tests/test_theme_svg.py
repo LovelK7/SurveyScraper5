@@ -291,3 +291,11 @@ def test_flip_and_compact_svg():
     assert b'd="M 0 0 L 1 3 L 2 0 Z"' in flipped and b'viewBox="0 0 2 3"' in flipped
     c = ts.compact_svg(flipped)
     assert c.startswith("<svg ") and "\n" not in c and "<title>" not in c and "<?xml" not in c
+
+
+def test_filled_polyline_is_closed():
+    # r10: open filled polylines (blocks tile) printed hollow in cSurvey
+    segs = [("M", (0, 0)), ("L", (1, 0)), ("L", (1, 1)), ("M", (5, 5)), ("L", (6, 5)), ("Z",)]
+    out = ts.close_subpaths(segs)
+    assert out == [("M", (0, 0)), ("L", (1, 0)), ("L", (1, 1)), ("Z",),
+                   ("M", (5, 5)), ("L", (6, 5)), ("Z",)]

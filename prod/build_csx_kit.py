@@ -14,6 +14,7 @@ there:
     csurvey_3_dovrsi_nacrt.bat            <- finish the nacrt: PDFs + SB_<broj>_nacrt.pdf
     csurvey_9_oporavi_iz_zipa.bat         <- rescue: rebuild a broken csx from the zip
     csurvey_alati/                        <- the Python tools the .bat files drive
+    csurvey_alati/teme/<id>/              <- the symbol themes KORAK 2 applies (project 0007)
 
 The `csurvey_` prefix keeps the launchers legible in a shared folder they do not
 own, the same way `cavedossier_*` does; the machinery goes one level down so the
@@ -73,7 +74,10 @@ TARGET_REL = Path("!!!Digitalizacija") / "SurveyScraper5"
 # v1.6 (2026-10-03): KORAK 2 merges, turns and orders the cave walls itself (no manual
 # Merge / Revert sequence; check the fill in the _postp); KORAK 0 primes cSurvey's app
 # settings; per-cave mapping (tdx-mapping-objekt.json) picked up by KORAK 1/2.
-KIT_VERSION = "1.6"
+# v1.7 (2026-10-07): symbol themes (project 0007 T5) - KORAK 2 themes the _postp
+# with the cave's theme (chosen on the dashboard's Mapiranje simbola); themes ship
+# in csurvey_alati/teme/; the labels ! + - +/- become the theme's glyphs (T9).
+KIT_VERSION = "1.7"
 # Subfolder holding the machinery, beside the launchers.
 PAYLOAD_DIR = "csurvey_alati"
 
@@ -118,7 +122,20 @@ TOOLS = [
     "nacrt_finish_compass.xml",
     "csurvey_headless.ps1",
     "csurvey_driver.py",
+    # KORAK 2's theme step (project 0007): theme_apply.py imports themes.py,
+    # theme_svg.py and tdx_name_recover.py (plus nacrt_finish.py, above); the
+    # theme folders go to csurvey_alati/teme/ (THEMES_SRC).
+    "theme_apply.py",
+    "themes.py",
+    "theme_svg.py",
+    "tdx_name_recover.py",
 ]
+# production/themes/<id>/ -> csurvey_alati/teme/<id>/: theme.json and the split
+# artwork (signs/lines/areas *.svg + index.json). themes.default_themes_root()
+# finds `teme` beside the tools. Dev leftovers (report.json) stay behind.
+THEMES_SRC = TOOLS_DIR.parent / "themes"
+THEMES_DIR = "teme"
+THEME_KINDS = ("signs", "lines", "areas")
 # Rendered like the launchers, but Croatian with real diacritics: UTF-8 BOM so
 # Notepad is sure, exactly what build_prod.py does for PROCITAJ_ME.txt.
 DOCS = ["csurvey_0_PROCITAJ_ME.txt"]
@@ -205,6 +222,7 @@ def build(out: Path) -> int:
             raise SystemExit(f"kit input missing: {src}")
         shutil.copy2(src, payload / name)
         n += 1
+    n += copy_themes(payload / THEMES_DIR)
     (payload / "KIT_VERSION.txt").write_text(
         f"csurvey TDX kit v{KIT_VERSION}\n"
         f"built: {tokens['DATE']}\ncommit: {tokens['COMMIT']}\n"
@@ -213,6 +231,28 @@ def build(out: Path) -> int:
         f"rename it - the launchers look for it by name.\n",
         encoding="ascii", newline="\r\n")
     return n + 1
+
+
+def copy_themes(dest: Path) -> int:
+    """Every theme folder (one holding a theme.json): theme.json + its artwork."""
+    n = 0
+    for folder in sorted(p for p in THEMES_SRC.iterdir() if (p / "theme.json").is_file()):
+        out = dest / folder.name
+        out.mkdir(parents=True)
+        shutil.copy2(folder / "theme.json", out / "theme.json")
+        n += 1
+        for kind in THEME_KINDS:
+            src = folder / kind
+            if not src.is_dir():
+                continue
+            (out / kind).mkdir()
+            for f in sorted(src.iterdir()):
+                if f.suffix.lower() == ".svg" or f.name == "index.json":
+                    shutil.copy2(f, out / kind / f.name)
+                    n += 1
+    if n == 0:
+        raise SystemExit(f"kit input missing: no themes under {THEMES_SRC}")
+    return n
 
 
 def drive_root() -> Path:

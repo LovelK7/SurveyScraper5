@@ -64,6 +64,12 @@ the item's own `<seed>` child is kept, cSurvey reads it from the item):
           an empty `<parameters/>`, as cPatternBrushes.SaveTo writes it
           (cBrush.vb:551-603; the T0 oracle).
 
+LABELS (T9) - a text label (type 8) whose recovered TopoDroid name has a glyph
+in the theme (danger `!`, plus `+`, minus `-`, plus-minus `+/-`; never anchor
+`f`) becomes a sign item (type 6, category 80, no `sign=` - what cSurvey's
+import gives a point it has no sign for, pen 10, brush 7) and is then themed
+like any sign. The original label is kept in the state and restored on undo.
+
 Undo: everything written is recorded in two string design properties that
 cSurvey keeps through a load + save: CaveDossierTheme = <id> and
 CaveDossierThemeState = JSON (sign glyph ids + originals, the library pen and
@@ -101,6 +107,12 @@ import themes                                                   # noqa: E402
 
 DESIGNS = ("plan", "profile")
 SIGN_ITEM = "6"
+LABEL_ITEM = "8"
+# KORAK 1 turns some points into text labels (tdx-mapping.json "label"), so a
+# survey reads right with no theme. T9 (user, 2026-10-07): the theme step turns
+# such a label back into a sign carrying the theme glyph - only when the theme
+# has a glyph for its TopoDroid name; never `anchor` (the label "f" stays).
+LABEL_NEVER_THEMED = {"anchor"}
 PEN_TIGHT = "10"            # cPen.PenTypeEnum.TightPen
 BRUSH_SIGN = "7"            # cBrush.BrushTypeEnum.SignSolid
 USER = "98"                 # library (User) pen/brush, referenced by id
@@ -608,7 +620,7 @@ def undo(root, state):
     orig = state.get("orig") or {}
     lib = {"pen": state.get("pens") or {}, "brush": state.get("brushes") or {}}
     cl, pool = _pool(root)
-    n = 0
+    n = _restore_labels(root, state.get("labels"))
     for _design, item in iter_items(root):
         touched = False
         for tag in ("pen", "brush"):
@@ -689,6 +701,72 @@ def _builtin(el):
     except (TypeError, ValueError):
         return None
     return None if t in (98, 99) else t
+
+
+def _parents(root):
+    return {c: p for p in root.iter() for c in p}
+
+
+def _points_data(item):
+    pts = item.find("points")
+    return pts.get("data") if pts is not None else None
+
+
+def _label_to_sign(root, theme, row):
+    """T9: a label with a themed TopoDroid name -> a sign item in its place.
+    Returns the undo record {design, points, xml} or None (left a label)."""
+    item, tdx = row["item"], row["tdx"]
+    if item.get("type") != LABEL_ITEM or not tdx or tdx in LABEL_NEVER_THEMED:
+        return None
+    spec = theme.signs.get(tdx)
+    if not spec or not spec.get("svg"):
+        return None
+    parent = _parents(root).get(item)
+    if parent is None:
+        return None
+    tail, item.tail = item.tail, None
+    xml = ET.tostring(item, encoding="unicode")
+    item.tail = tail
+    attrs = {k: v for k, v in item.attrib.items() if not k.startswith("text")}
+    attrs.update({"type": SIGN_ITEM, "category": "80"})
+    new = ET.Element("item", attrs)
+    new.text, new.tail = item.text, tail
+    brush = item.find("brush")
+    kids = [ET.Element("pen", {"type": PEN_TIGHT}),
+            ET.Element("brush", dict(brush.attrib) if brush is not None else {"type": BRUSH_SIGN})]
+    kids += [c for c in item if c.tag in ("points", "datarow")]
+    old_kids = list(item)
+    inner = old_kids[0].tail if old_kids else None
+    last = old_kids[-1].tail if old_kids else None
+    for k in kids:
+        k.tail = inner
+    kids[-1].tail = last
+    new.extend(kids)
+    parent[list(parent).index(item)] = new
+    row["item"] = new
+    return {"design": row["design"], "points": _points_data(new), "xml": xml}
+
+
+def _restore_labels(root, labels):
+    """Undo T9: each converted sign back to the label it was."""
+    if not labels:
+        return 0
+    parents = _parents(root)
+    by_key = {}
+    for design, item in iter_items(root):
+        if item.get("type") == SIGN_ITEM:
+            by_key.setdefault((design, _points_data(item)), item)
+    n = 0
+    for lab in labels:
+        item = by_key.pop((lab["design"], lab["points"]), None)
+        if item is None:
+            continue
+        parent = parents[item]
+        old = ET.fromstring(lab["xml"])
+        old.tail = item.tail
+        parent[list(parent).index(item)] = old
+        n += 1
+    return n
 
 
 def _theme_sign(root, is_csz, theme, row, targets, rep, extra, added, orig):
@@ -851,11 +929,17 @@ def apply_theme(root, is_csz, theme, names, targets, ltargets=None):
            "library": {"pens": [], "brushes": []}, "notes": []}
     extra, added, orig = {}, [], {}
     state = {"pens": {}, "brushes": {}, "pens_created": False, "brushes_created": False}
+    labels = []
+    rep["labels"] = 0
     for row in names:
         if row.get("note"):
             note = "%s %s" % (row["design"], row["note"])
             if note not in rep["notes"]:
                 rep["notes"].append(note)
+        conv = _label_to_sign(root, theme, row)
+        if conv:
+            labels.append(conv)
+            rep["labels"] += 1
         if row["item"].get("type") == SIGN_ITEM:
             _theme_sign(root, is_csz, theme, row, targets, rep, extra, added, orig)
             continue
@@ -873,8 +957,9 @@ def apply_theme(root, is_csz, theme, names, targets, ltargets=None):
         el = _prop(dp, name)
         cl_orig[name] = None if el is None else [el.get("type"), el.text]
     rep["centerline"] = fixer.apply_centerline(root, theme.centerline)
-
     st = {"glyphs": sorted(added), "orig": orig, "centerline": cl_orig}
+    if labels:
+        st["labels"] = labels
     if state["pens"]:
         st.update({"pens": state["pens"], "pens_created": state["pens_created"]})
     if state["brushes"]:
@@ -894,8 +979,10 @@ def theme_file(in_path, theme_id, pre_path=None, out_path=None, dry_run=False,
     if nacrt_finish.not_yet_imported(root):
         raise ValueError("%s has not been imported into cSurvey yet" % in_path)
     prev_id, state = read_state(root)
-    names = recovered_names(pre_path, in_path, root)
+    # undo first: it swaps items (T9 labels back in place of their signs), and
+    # the names must point at the items that are in the tree when theming
     restored, removed = undo(root, state)
+    names = recovered_names(pre_path, in_path, root)
     rep, extra, added = apply_theme(root, is_csz, theme, names, sign_targets())
     rep.update({"input": in_path, "output": None if dry_run else out_path,
                 "previous_theme": prev_id, "undone_items": restored,
@@ -905,6 +992,65 @@ def theme_file(in_path, theme_id, pre_path=None, out_path=None, dry_run=False,
         drop = {"_data/cliparts/%s.svg" % i for i in removed if i not in added}
         write(root, in_path, out_path, is_csz, style, extra, drop)
     return rep
+
+
+def find_pre(post_path):
+    """The pre-import file beside a post-import save, for name recovery.
+
+    The cave folder holds the phone export, KORAK 1's _prep and what cSurvey
+    saved (any name). Candidates are the .csx/.csz there that have not been
+    imported yet; a _prep/_pp is preferred over the raw export, then the
+    newest. None when there is none (every item then falls back to its target).
+    """
+    import sb_select
+    folder = os.path.dirname(os.path.abspath(post_path))
+    best = None
+    for name in os.listdir(folder):
+        path = os.path.join(folder, name)
+        if (os.path.splitext(name)[1].lower() not in (".csx", ".csz")
+                or os.path.abspath(path) == os.path.abspath(post_path)
+                or sb_select.is_backup(path)
+                or sb_select.stem_endswith(path, sb_select.POSTP_ALL + sb_select.RESOLVED_ALL)):
+            continue
+        try:
+            root = nacrt_finish.load_root(path)[0]
+        except (ET.ParseError, ValueError, OSError, zipfile.BadZipFile):
+            continue
+        if not nacrt_finish.not_yet_imported(root):
+            continue
+        rank = (sb_select.stem_endswith(path, sb_select.PREP_ALL), os.path.getmtime(path))
+        if best is None or rank > best[0]:
+            best = (rank, path)
+    return best[1] if best else None
+
+
+def korak2_step(path, theme_id, out=sys.stdout, themes_root=None):
+    """KORAK 2's last step: theme `path` in place with the cave's theme.
+
+    Fail-soft: any problem is a printed warning and the file stays as KORAK 2
+    wrote it (unthemed). Returns True when the theme was applied.
+    """
+    w = out.write
+    try:
+        known = themes.list_themes(themes_root)
+        if theme_id not in known:
+            w("    UPOZORENJE: tema %r ne postoji (ima: %s) - nacrt ostaje bez teme.\n"
+              % (theme_id, ", ".join(known) or "nijedna"))
+            return False
+        pre = find_pre(path)
+        rep = theme_file(path, theme_id, pre, path, themes_root=themes_root)
+    except Exception as e:      # noqa: BLE001 - fail-soft by contract
+        w("    UPOZORENJE: tema %s nije primijenjena (%s) - nacrt ostaje bez teme.\n"
+          % (theme_id, e))
+        return False
+    lines = sum(rep["lines"]["themed"].values())
+    areas = sum(rep["areas"]["themed"].values())
+    w("    tema %s: %d znakova, %d linija, %d povrsina%s\n"
+      % (theme_id, rep["themed"], lines, areas,
+         "" if pre else " (bez _prep datoteke: samo po cSurvey cilju)"))
+    if pre:
+        w("    imena iz: %s\n" % os.path.basename(pre))
+    return True
 
 
 def _recovery_counts(names):
@@ -956,6 +1102,8 @@ def print_report(rep, out=sys.stdout):
       "crno (ugradeno) %d, preskoceno (rucno) %d\n"
       % (rep["themed"], rep["glyph"], rep["colour"], rep["outline"], rep["pen_off"],
          rep["black_builtin"], rep["skipped_custom"]))
+    if rep.get("labels"):
+        w("  oznake -> znak teme: %d\n" % rep["labels"])
     w("  bazen: +%d %s, ponovno %d, uklonjeno %d\n" % (
         len(rep["pool_added"]), "; ".join(rep["pool_added"]),
         len(rep["pool_reused"]), len(rep["pool_removed"])))

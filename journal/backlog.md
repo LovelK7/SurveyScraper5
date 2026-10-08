@@ -433,3 +433,9 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-10-07 — 3N themes: mockup `ice`/`stalagmite` items have no `<seed>`, so every print scatters differently; give the generator seeds.
 - 2026-10-07 — 3N themes: cSurvey's TopoDroid mapping sends `water-flow:intermittent` to `waterflow`; consider keeping its own name in `tdx-mapping.json` (the theme already handles it by TopoDroid name).
 
+- 2026-10-07 — 3N themes: ice prints bolder than drawn because cSurvey outlines each tile shape with a one-device-pixel pen (0.375 pt, already the floor; tried `BrushLinesScaleFactor` in every options profile in r12, no change). Only the artwork can fix it: thinner ice arms.
+- 2026-10-07 — 3N mapping: user asked for mud (P23) to take sand's (P32) symbol — a shared mapping change (mud → sand instead of clay) via `/csurvey-defaults`, not yet done.
+- 2026-10-07 — 3N Mapiranje simbola: the theme previews draw line units on a straight line only; a short curved sample would show the "units on curves" limit before printing.
+- 2026-10-07 — 3N themes: items drawn in cSurvey after KORAK 2 keep cSurvey's look; KORAK 3 (nacrt_finish) could re-run `korak2_step` before printing so they get the theme by target (T5 follow-up).
+- 2026-10-08 — 3N themes: in `crno-bijelo` the dotted shot line on SB 1103 stays orange-brown — find which cSurvey setting draws it (not a `monochrome`-blackened centerline colour) and add it to the theme's centerline overrides.
+- 2026-10-08 — 3N themes: once the user's reference survey exists, let `theme_round.py` print it instead of (or next to) the generated mockup, so every round is judged on the same real drawing.

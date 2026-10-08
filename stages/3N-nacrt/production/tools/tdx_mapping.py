@@ -17,6 +17,8 @@ Override semantics, per section:
   postimport               a dict value (centerline, sign_sizes, label_sizes,
                            designproperties, viewoptions) merges per key, `null` removing
                            one; any other value replaces
+  theme                    the cave's symbol theme id (production/themes/<id>,
+                           project 0007); `null` = none, cSurvey's own look
 Keys starting with "_" are comments and never merged or diffed.
 
   python tdx_mapping.py show FILE      which mapping FILE would be processed with
@@ -97,6 +99,8 @@ def merge(default, override):
                 else:
                     post[k] = copy.deepcopy(v)
             out["postimport"] = post
+        elif value is None:          # e.g. "theme": null = no theme for this cave
+            out.pop(section, None)
         else:
             out[section] = copy.deepcopy(value)
     return out
@@ -139,6 +143,8 @@ def diff(default, effective):
             post[k] = copy.deepcopy(eff[k])
     if post:
         out["postimport"] = post
+    if effective.get("theme") != default.get("theme"):     # the cave's theme (project 0007, T4)
+        out["theme"] = effective.get("theme")
     return out
 
 

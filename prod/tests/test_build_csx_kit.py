@@ -146,3 +146,17 @@ def test_every_sibling_import_of_a_shipped_tool_is_shipped(staged):
             if name in repo_tools and name not in shipped:
                 missing.append(f"{tool.name} -> {name}.py")
     assert not missing, missing
+
+
+def test_kit_carries_the_themes_and_the_theme_step(staged):
+    """Project 0007 T5: KORAK 2 themes the _postp, so the theme tools and the
+    theme folders travel; themes.py finds them as csurvey_alati/teme."""
+    payload = staged / build_csx_kit.PAYLOAD_DIR
+    for name in ("theme_apply.py", "themes.py", "theme_svg.py", "tdx_name_recover.py"):
+        assert (payload / name).is_file(), f"kit misses {name}"
+    teme = payload / build_csx_kit.THEMES_DIR
+    assert (teme / "boja" / "theme.json").is_file() and (teme / "crno-bijelo" / "theme.json").is_file()
+    assert list((teme / "boja" / "signs").glob("*.svg")) and (teme / "boja" / "areas" / "index.json").is_file()
+    assert not (teme / "boja" / "report.json").exists()      # dev leftovers stay behind
+    launcher = (staged / "csurvey_2_dovrsi_uvoz.bat").read_text(encoding="ascii")
+    assert "TEMA" in launcher

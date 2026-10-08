@@ -30,7 +30,7 @@ survey processing.
 | [`sb_select.py`](tools/sb_select.py) | turns the Redni broj an operator types into that cave's `SB_<broj>_…` intake leaf and picks the file at that step by itself — the `_postp` for KORAK 3, the file cSurvey saved for KORAK 2; cSurvey's `_backup` copies are never offered — asking only when a cave has none or several (`--sb` on all three tools) | whenever a launcher asks which caves, or which file |
 | [`theme_svg.py`](tools/theme_svg.py) | symbol-theme artwork → cSurvey-safe SVGs ([project 0007](../projects/0007-symbol-themes/brief.md), T1) — see [Symbol-theme SVGs](#symbol-theme-svgs) below | after each Illustrator export of the theme drawing |
 | [`themes.py`](tools/themes.py) + [`themes/`](themes/README.md) | symbol themes ([project 0007](../projects/0007-symbol-themes/brief.md), T2): the `theme.json` format, `extends`/`monochrome`, key validation against the catalog, `resolve()` (TopoDroid name → cSurvey target → built-in); `list` / `check` / `show`. Starter themes `boja` and `crno-bijelo`. `check_defaults.py` validates them all | after editing a theme; read by `theme_apply.py` |
-| [`theme_apply.py`](tools/theme_apply.py) | applies a symbol theme to a post-import `.csx`/`.csz` ([project 0007](../projects/0007-symbol-themes/brief.md), T3 + phase 2: signs, lines, areas, centerline) — see [Applying a theme](#applying-a-theme) below | after KORAK 2, per cave; again to switch theme |
+| [`theme_apply.py`](tools/theme_apply.py) | applies a symbol theme to a post-import `.csx`/`.csz` ([project 0007](../projects/0007-symbol-themes/brief.md), T3 + phase 2: signs, lines, areas, centerline) — see [Applying a theme](#applying-a-theme) below | inside KORAK 2 when the cave's mapping names a theme (T5: `fix_imported_linetypes.py` calls `korak2_step`, the pre-import file found beside the survey); by hand to switch theme |
 | [`make_theme_mockup.py`](tools/make_theme_mockup.py) | the **theme mockup** (zoo v4): one raw TopoDroid `.csx` with every symbol of the 0002 zoo v3 plus every key of every theme, signs / lines (straight and curved) / areas (2 × 1.5 m) in labelled rows, line and area rows inside a wall loop so they print; writes `<name>.csx`, `<name>-key.md`, `<name>-layout.json`. The permanent test case for themes ([project 0007 run r2](../projects/0007-symbol-themes/runs/2026-10-07-zoo-sheet-r2/RUNLOG.md)). `--seed-imported` gives every area of an imported mockup a fixed brush seed (alternatives with `--seed-variant K`), so prints repeat | after adding a symbol to a theme, to re-check the sheet |
 | [`theme_round.py`](tools/theme_round.py) + [`theme_tuning_cheatsheet.md`](tools/theme_tuning_cheatsheet.md) | **one theme tuning round in one command** ([project 0007](../projects/0007-symbol-themes/brief.md)): optional re-split of the drawing into `themes/boja` (never `theme.json`), `themes.py check`, the mockup imported headless once and cached in the gitignored `<workspace>/runs/theme-round/` (with the DTD-free cSurvey copy), `theme_apply` per theme, parallel headless prints, comparison sheets per kind, focus details, seed sheet + ink cover, `pregled.png` and an auto-written `RUNLOG.md` in `projects/0007-symbol-themes/runs/<date>-<label>/` (theme.json diffed against the previous round's copy). `--no-print` validates only. The cheatsheet maps feedback to `theme.json` fields | every artwork / theme tuning round |
 | [`signs-pack/`](tools/signs-pack) | 8 SVG glyphs for mapped-but-artwork-less signs; installed into cSurvey's Signs gallery | after a cSurvey upgrade (re-copy) |
@@ -69,10 +69,24 @@ python tools/theme_svg.py check  FILE_OR_DIR            # report only; exit 1 on
 
 ## Applying a theme
 
+**In the pipeline (T5, kit v1.7):** the theme is chosen per cave on the dashboard (*3N › Mapiranje simbola*, saved
+as `"theme"` in `tdx-mapping-objekt.json`). KORAK 2 themes the `_postp` it has just written:
+`theme_apply.korak2_step` finds the pre-import file in the same folder (`find_pre`: a `_prep`/`_pp` first, else
+the raw export; never a backup or a step output), applies the theme in place and prints
+`tema <id>: N znakova, N linija, N povrsina`. A missing theme or any error is an `UPOZORENJE` and the
+`_postp` stays unthemed. `--no-theme` skips the step. Items drawn later in cSurvey keep cSurvey's look. The kit
+ships the themes as `csurvey_alati/teme/<id>/`, which `themes.default_themes_root()` finds beside the tools.
+
+By hand:
+
 ```text
 python tools/theme_apply.py apply SB_..._postp.csx --theme boja --pre SB_..._tdx_raw.csx [-o OUT] [--dry-run] [--json REPORT]
 ```
 
+- **Labels (T9):** a text label (`type="8"`) from KORAK 1 whose recovered TopoDroid name has a glyph in the
+  theme (`danger` `!`, `plus` `+`, `minus` `-`, `plus-minus` `+/-`) is turned into a sign item first, then themed
+  like any sign; `anchor` stays the label `f`. Undo (any re-run) puts the label back. The report says
+  `oznake -> znak teme: N`.
 - **Lookup per sign item** (`type="6"`): the TopoDroid name recovered from `--pre` (the raw export or the KORAK 1
   `_pp`/`_prep`) by `tdx_name_recover.py`, else the cSurvey target of `sign=`, else untouched. Without `--pre`
   only targets are used.

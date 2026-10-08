@@ -280,3 +280,30 @@ Brief: [brief.md](brief.md)
   `snow` = ice's tile; `wall:presumed` at wall's thickness (width 3.5, dash [14, 5]; r9b–r9f measured 3/5/4/3.5).
   P01: the anchor → label "f" mapping already exists (KORAK 1); the mockup skips KORAK 1, so it shows the glyph.
   Evidence: [r9-feedback](runs/2026-10-07-r9-feedback/RUNLOG.md), [r9f-wall](runs/2026-10-07-r9f-wall/RUNLOG.md).
+- **r10:** new entries wall:blocks / wall:debris / wall:ice / user (line + area); stalagmite's svg pinned (group left the
+  drawing). wall:presumed verified on PDF vectors (0.127 mm = wall). Open: tile outline = cSurvey's brush pen
+  (`BrushLinesScaleFactor`, needs a theme_apply feature); debris/blocks exported as grey fills (redraw); mud → sand is a
+  mapping change. [r10-new](runs/2026-10-07-r10-new/RUNLOG.md).- **r11:** user area upright; wall:blocks / wall:debris / wall:ice / user units butted (990); wall:blocks and
+  wall:debris with no base line; wall:ice line in ice blue; stalagmite = user's tile. Blocks printed as rings: `crop: none`
+  merges a tile into one even-odd path, and each stone is drawn as outer + inner fill → dropped crop none (r11b, filled).
+  Split fix: `theme_svg.close_subpaths` closes filled open polylines (SVG fills them as closed). [r11-butt](runs/2026-10-07-r11-butt/RUNLOG.md),
+  [r11b-blocks](runs/2026-10-07-r11b-blocks/RUNLOG.md).
+- **r12 (tile outline):** user asked for a thinner tile outline on ice. `BrushLinesScaleFactor` 0.02 written into
+  the survey's and then every `<options>` profile's designproperties: the PDF outline stayed 0.375 pt (one device
+  pixel at 192 dpi, the floor). Change reverted, no theme field. Fix is thinner ice arms in the drawing. Debris stones
+  stay solid (user). [r12b-outline](runs/2026-10-07-r12b-outline/RUNLOG.md).
+
+### 2026-10-07 — T4, T5, T9; mud → sand (agent) ✅
+
+- **T4:** Tema card on Mapiranje simbola; `"theme"` in the cave override (`tdx_mapping.diff/merge`); theme previews
+  served by `GET /api/mapping-theme/<id>`; line sides via `theme_apply.side_for`.
+- **T5:** KORAK 2 themes the `_postp` (`theme_apply.korak2_step`, `find_pre`, fail-soft, `--no-theme`); kit v1.7
+  ships the theme tools and `csurvey_alati/teme/`. Real cave (bunker_studena): 22 signs, 9 lines, 2 areas; headless
+  print OK; run from the staged kit OK.
+- **T9:** labels `!` `+` `-` `+/-` → theme glyphs, `anchor` `f` stays; undo restores byte for byte; theme switch
+  boja → crno-bijelo → boja byte-identical (after moving undo before name recovery). Mockup through KORAK 1 printed
+  three ways: labels / club glyphs / club glyphs.
+- **Mapping:** `mud` → `sand` (shared default, `/csurvey-defaults`, commit d5b76fe).
+- **Next:** SB 1103 in both themes for sign-off (T6), `/publish`, close-out. T7 superseded by `/theme-round`.
+- **T6 prints:** SB 1103 (`example/finishing/…_lt_fin.csx`) themed boja + crno-bijelo and printed plan + profile
+  next to the original: [runs/2026-10-07-t6-sb1103/pregled.png](runs/2026-10-07-t6-sb1103/pregled.png). Awaiting sign-off.

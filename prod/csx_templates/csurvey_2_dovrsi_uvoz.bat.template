@@ -16,6 +16,10 @@ rem
 rem  DOBIVAS: novu datoteku pokraj nje, imena koje zavrsava na _postp
 rem       -> TU _postp datoteku otvori u cSurveyu i u njoj crtaj.
 rem
+rem  TEMA: ako je objektu na nadzornoj ploci (3N > Mapiranje simbola)
+rem  odabrana tema ^(Boja, Crno-bijelo^), _postp odmah dobije znakove,
+rem  linije i ispune te teme. Bez teme ostaje izgled cSurveya.
+rem
 rem  Ako crni prozor javi BLOCKED, odabrao si datoteku koja jos nije
 rem  uvezena u cSurvey - procitaj sto ti pise.
 rem
@@ -85,6 +89,7 @@ echo.
 echo ------------------------------------------------------------------
 echo  Gotovo. Procitaj retke iznad:
 echo    "OK ... _postp ..."   uspjeh: otvori _postp datoteku i u njoj crtaj.
+echo    "tema ..."         _postp je dobio odabranu temu ^(znakovi, linije, ispune^).
 echo    "BLOCKED"          kriva datoteka/korak: napravi sto pise.
 echo    "ERROR"            nesto drugo: procitaj poruku.
 echo    "UPOZORENJE: cSurvey ... nije postavljen"
