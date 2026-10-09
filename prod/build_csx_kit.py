@@ -74,9 +74,11 @@ TARGET_REL = Path("!!!Digitalizacija") / "SurveyScraper5"
 # v1.6 (2026-10-03): KORAK 2 merges, turns and orders the cave walls itself (no manual
 # Merge / Revert sequence; check the fill in the _postp); KORAK 0 primes cSurvey's app
 # settings; per-cave mapping (tdx-mapping-objekt.json) picked up by KORAK 1/2.
-# v1.7 (2026-10-07): symbol themes (project 0007 T5) - KORAK 2 themes the _postp
-# with the cave's theme (chosen on the dashboard's Mapiranje simbola); themes ship
-# in csurvey_alati/teme/; the labels ! + - +/- become the theme's glyphs (T9).
+# v1.7 (2026-10-09): KORAK 4 (csurvey_4_upisi_osz.bat: the nacrt's numbers into the
+# OSZ); symbol themes (project 0007) - KORAK 2 gives the _postp the cave's theme when
+# one is chosen on the dashboard's Mapiranje simbola (none = unchanged look); themes
+# ship in csurvey_alati/teme/; with a theme the labels ! + - +/- become its glyphs;
+# mud now maps to cSurvey's sand.
 KIT_VERSION = "1.7"
 # Subfolder holding the machinery, beside the launchers.
 PAYLOAD_DIR = "csurvey_alati"
