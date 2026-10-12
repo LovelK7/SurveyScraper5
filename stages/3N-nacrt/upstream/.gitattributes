@@ -1,0 +1,2 @@
+# patches must reach cepelabs/cSurvey byte for byte
+*.patch -text

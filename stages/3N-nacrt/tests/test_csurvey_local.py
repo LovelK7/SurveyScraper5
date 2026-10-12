@@ -73,3 +73,65 @@ def test_check_only_warns(tmp_path):
 def test_local_dir_is_beside_the_prod_bundle(monkeypatch, tmp_path):
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
     assert cl.local_dir() == os.path.join(str(tmp_path), "CaveDossier", "csurvey64")
+
+
+def test_ensure_is_silent_when_current_and_copies_when_missing(tmp_path, monkeypatch):
+    src, dest = _drive(tmp_path), tmp_path / "local" / "csurvey64"
+    monkeypatch.setattr(cl, "running_from", lambda d: False)
+    out = io.StringIO()
+    assert cl.cmd_ensure(str(src), str(dest), out, shortcut=False) == 0
+    assert "kopiran" in out.getvalue() and (dest / "cSurveyPC.exe").exists()
+    out = io.StringIO()
+    assert cl.cmd_ensure(str(src), str(dest), out, shortcut=False) == 0
+    assert out.getvalue() == ""                          # current: says nothing
+    (src / "cSurveyPC.exe").write_bytes(b"exe-v2-longer")
+    monkeypatch.setattr(cl, "running_from", lambda d: True)
+    out = io.StringIO()
+    assert cl.cmd_ensure(str(src), str(dest), out, shortcut=False) == 0   # never stops a KORAK
+    assert "NAPOMENA" in out.getvalue() and (dest / "cSurveyPC.exe").read_bytes() == b"exe-v1"
+
+
+class FakeReg:
+    """The few winreg calls associate() makes, over a dict {path: {name: value}}."""
+    HKEY_CURRENT_USER = "HKCU"
+    REG_SZ = 1
+
+    def __init__(self, data=None):
+        self.data = data or {}
+
+    class _Key:
+        def __init__(self, path):
+            self.path = path
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def OpenKey(self, root, path):
+        if path not in self.data:
+            raise OSError("no key")
+        return self._Key(path)
+
+    def CreateKey(self, root, path):
+        self.data.setdefault(path, {})
+        return self._Key(path)
+
+    def QueryValueEx(self, key, name):
+        if name not in self.data[key.path]:
+            raise OSError("no value")
+        return self.data[key.path][name], 1
+
+    def SetValueEx(self, key, name, _r, _t, value):
+        self.data[key.path][name] = value
+
+
+def test_associate_opens_surveys_with_filename_and_leaves_other_programs_alone(tmp_path):
+    reg = FakeReg({r"Software\Classes\.csz": {"": "SomeOtherApp.csz"}})
+    assert cl.associate(str(tmp_path), reg) == [".csx"]
+    assert reg.data[r"Software\Classes\.csx"][""] == cl.PROGID
+    assert reg.data[r"Software\Classes\.csz"][""] == "SomeOtherApp.csz"     # not taken over
+    cmd = reg.data[r"Software\Classes\%s\shell\open\command" % cl.PROGID][""]
+    assert cmd == '"%s" "filename=%%1"' % os.path.join(str(tmp_path), "cSurveyPC.exe")
+    assert cl.associate(str(tmp_path), reg) == [".csx"]                     # ours: refreshed

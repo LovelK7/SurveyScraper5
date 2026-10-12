@@ -1061,7 +1061,20 @@ The user's review of the first dashboard settled these:
   it copies again only when the Drive's `cSurveyPC.exe` changes (size +
   mtime stamp), so updating cSurvey stays "replace it on the Drive". The
   driver and the dashboard prefer the local copy, then the Drive, then
-  `C:\csurvey64`; KORAK 2 warns when the copy is missing or older.
+  `C:\csurvey64`.
+  **The local copy is the standard, not a stopgap (user, 2026-10-12)**, also
+  once cSurvey is fixed upstream ([upstream/0001](../stages/3N-nacrt/upstream/0001-gallery-path-case/PR.md)):
+  it starts without streaming ~600 files from Drive, works offline (field
+  laptop, Drive not running), avoids .NET treating the Drive as a remote
+  zone (the `UnsafeLoadFrom` workaround above), and a cSurvey replaced on
+  the Drive never changes under a running session — the copy is swapped
+  only while it is closed. It is fully automatic: KORAK 1, 2 and 3 run
+  `csurvey_local.py ensure` (silent when current, copies when missing or
+  older); KORAK 0 `install` also adds the desktop shortcut and registers
+  `.csx`/`.csz` (per user, HKCU, never taking them from another program)
+  to open with the local copy as `filename="%1"` — a bare path is
+  lowercased by cSurvey too (`cCommandLineParameters.vb:142`, same report).
+  Cost: ~175 MB per computer.
 - **Bind the port exclusively.** `http.server` sets `SO_REUSEADDR`, which on
   Windows let two dashboards listen on 8790 at once: the old one answered
   and the next-free-port fallback never fired. The server now binds with

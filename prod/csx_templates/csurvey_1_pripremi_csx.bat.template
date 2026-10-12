@@ -41,6 +41,11 @@ if not defined TOOLS (
     pause
     exit /b 1
 )
+rem --- lokalni cSurvey ------------------------------------------------
+rem  cSurvey otvoren rucno s Drivea se srusi (upstream/0001), zato radimo s
+rem  lokalnom kopijom. Kopira se sama kad je nema ili je na Driveu noviji
+rem  cSurvey; inace ovaj redak ne pise nista.
+if exist "%TOOLS%\csurvey_local.py" python "%TOOLS%\csurvey_local.py" ensure
 rem --- gdje su objekti ----------------------------------------------
 rem  Komplet je u !!!Digitalizacija\SurveyScraper5; objekti su u mapama
 rem  pod !Za digitalizirat, jednu razinu iznad.

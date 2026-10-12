@@ -12,7 +12,8 @@ such problem.
 
 Usage:
   python csurvey_local.py install   # KORAK 0: copy (or refresh) + desktop shortcut
-  python csurvey_local.py check     # KORAK 2: say if the copy is missing or old
+  python csurvey_local.py ensure    # KORAK 1-4: the same, but silent when current
+  python csurvey_local.py check     # only say if the copy is missing or old
   python csurvey_local.py where     # print the folder cSurvey should be opened from
 
 The copy goes to %LOCALAPPDATA%\\CaveDossier\\csurvey64, with a stamp of the
@@ -121,6 +122,45 @@ def desktop_shortcut(dest):
     return r.stdout.strip() or None if r.returncode == 0 else None
 
 
+PROGID = "CaveDossier.cSurvey"
+EXTENSIONS = (".csx", ".csz")
+
+
+def associate(dest, reg=None):
+    """Double-click on a .csx/.csz opens the local copy, for this Windows user
+    (HKCU, no admin). The file goes in as `filename="%1"`: a bare path is
+    lowercased by cSurvey (cCommandLineParameters.vb:142, upstream/0001) and a
+    survey under the shared Drive folder is then not found. An extension
+    another program already owns is left alone. -> extensions set."""
+    if reg is None:
+        if os.name != "nt":
+            return []
+        import winreg as reg
+    root = reg.HKEY_CURRENT_USER
+    exe = os.path.join(dest, EXE)
+    done = []
+    for ext in EXTENSIONS:
+        try:
+            with reg.OpenKey(root, r"Software\Classes\%s" % ext) as k:
+                current = reg.QueryValueEx(k, "")[0]
+        except OSError:
+            current = ""
+        if current and current != PROGID:
+            continue
+        with reg.CreateKey(root, r"Software\Classes\%s" % ext) as k:
+            reg.SetValueEx(k, "", 0, reg.REG_SZ, PROGID)
+        done.append(ext)
+    if done:
+        base = r"Software\Classes\%s" % PROGID
+        with reg.CreateKey(root, base) as k:
+            reg.SetValueEx(k, "", 0, reg.REG_SZ, "cSurvey")
+        with reg.CreateKey(root, base + r"\DefaultIcon") as k:
+            reg.SetValueEx(k, "", 0, reg.REG_SZ, '"%s",0' % exe)
+        with reg.CreateKey(root, base + r"\shell\open\command") as k:
+            reg.SetValueEx(k, "", 0, reg.REG_SZ, '"%s" "filename=%%1"' % exe)
+    return done
+
+
 def cmd_install(src, dest, out=sys.stdout, shortcut=True):
     st = state(src, dest)
     if st == "no-source":
@@ -145,6 +185,13 @@ def cmd_install(src, dest, out=sys.stdout, shortcut=True):
         lnk = desktop_shortcut(dest)
         if lnk:
             print("    precac na radnoj povrsini: %s" % lnk, file=out)
+        try:
+            exts = associate(dest)
+        except OSError as e:
+            exts = []
+            print("    (dvoklik na .csx nije postavljen: %s)" % e, file=out)
+        if exts:
+            print("    dvoklik na %s otvara ovaj cSurvey" % "/".join(exts), file=out)
     print("    Otvaraj cSurvey s tog precaca, NE s Drivea (s Drivea se srusi:"
           " 'Could not find a part of the path ...').", file=out)
     return 0
@@ -161,9 +208,23 @@ def cmd_check(src, dest, out=sys.stdout):
     return 0    # a warning, never a stop
 
 
+def cmd_ensure(src, dest, out=sys.stdout, shortcut=True):
+    """Every KORAK runs this: silent when the copy is current, copies when it is
+    missing or the Drive has a newer cSurvey. Never stops the step it runs in."""
+    st = state(src, dest)
+    if st in ("ok", "no-source"):
+        return 0
+    if st == "old" and running_from(dest):
+        print("NAPOMENA: na Driveu je noviji cSurvey; lokalni se osvjezi kad ga zatvoris"
+              " i pokrenes bilo koji KORAK.", file=out)
+        return 0
+    cmd_install(src, dest, out, shortcut=shortcut)
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("command", choices=["install", "check", "where"])
+    ap.add_argument("command", choices=["install", "ensure", "check", "where"])
     ap.add_argument("--source", default=None, help="the shared cSurvey folder (default: the kit's)")
     ap.add_argument("--dest", default=None, help="the local folder (default: %%LOCALAPPDATA%%)")
     ap.add_argument("--no-shortcut", action="store_true")
@@ -171,6 +232,8 @@ def main(argv=None):
     src, dest = a.source or drive_dir(), a.dest or local_dir()
     if a.command == "install":
         return cmd_install(src, dest, shortcut=not a.no_shortcut)
+    if a.command == "ensure":
+        return cmd_ensure(src, dest, shortcut=not a.no_shortcut)
     if a.command == "check":
         return cmd_check(src, dest)
     print(dest)

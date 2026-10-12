@@ -1,0 +1,37 @@
+diff --git a/cSurveyPC/cCliparts.vb b/cSurveyPC/cCliparts.vb
+index 6562582..527ab61 100644
+--- a/cSurveyPC/cCliparts.vb
++++ b/cSurveyPC/cCliparts.vb
+@@ -385,8 +385,11 @@ Namespace cSurvey
+         End Property
+ 
+         Public Sub New(Filename As String)
+-            sFilename = Filename.ToLower
+-            sFolder = IO.Path.GetFileName(IO.Path.GetDirectoryName(sFilename))
++            'keep the path as given: on a case-sensitive file system (e.g. a Google Drive
++            'for desktop shared folder) the lowercased path does not exist, and both the
++            'loader below and cLayerSigns.CreateSign open the file through it
++            sFilename = Filename
++            sFolder = IO.Path.GetFileName(IO.Path.GetDirectoryName(sFilename)).ToLower
+             oUserData = New Drawings.cDrawUserdata
+             Dim oXml As XmlDocument = New XmlDocument
+             oXml.Load(sFilename)
+diff --git a/cSurveyPC/cCommandLineParameters.vb b/cSurveyPC/cCommandLineParameters.vb
+index bb88cd7..51956f7 100644
+--- a/cSurveyPC/cCommandLineParameters.vb
++++ b/cSurveyPC/cCommandLineParameters.vb
+@@ -133,8 +133,12 @@ Public Class cCommandLineParameters
+             Dim sKey As String
+             Dim sValue As String
+             If p < 0 Then
+-                sKey = sParam
+-                sValue = ""
++                'a bare parameter is the file to open (a double-clicked .csx/.csz arrives
++                'so): pass it as filename=, whose value keeps its case - keys are
++                'lowercased, and on a case-sensitive file system (e.g. a Google Drive for
++                'desktop shared folder) the lowercased path does not exist
++                sKey = "filename"
++                sValue = sParam
+             Else
+                 sKey = sParam.Substring(0, p)
+                 sValue = sParam.Substring(p + 1)
