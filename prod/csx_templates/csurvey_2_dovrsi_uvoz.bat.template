@@ -85,6 +85,7 @@ if exist "%TOOLS%\csurvey_app_settings.py" (
     echo.
     python "%TOOLS%\csurvey_app_settings.py" check
 )
+if exist "%TOOLS%\csurvey_local.py" python "%TOOLS%\csurvey_local.py" check
 echo.
 echo ------------------------------------------------------------------
 echo  Gotovo. Procitaj retke iznad:

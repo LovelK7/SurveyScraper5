@@ -175,11 +175,21 @@ def _env_value(key: str) -> str | None:
     return None
 
 
+def local_csurvey_dir() -> Path:
+    """3N KORAK 0's local copy of the Drive's cSurvey. Opened by hand, the
+    Drive copy crashes (case-sensitive G:, cCliparts.vb:388). Mirrors 3N
+    csurvey_driver.local_csurvey_dir - keep the two in step."""
+    base = os.environ.get("LOCALAPPDATA") or str(Path.home())
+    return Path(base) / "CaveDossier" / "csurvey64"
+
+
 def csurvey_exe(drive_root: Path | None = None) -> Path | None:
-    """CSURVEY_DIR, then the Drive copy beside the kit, then C:\csurvey64."""
+    """CSURVEY_DIR, then KORAK 0's local copy, then the Drive copy beside the
+    kit, then C:\csurvey64."""
     candidates = []
     if _env_value("CSURVEY_DIR"):
         candidates.append(Path(_env_value("CSURVEY_DIR")))
+    candidates.append(local_csurvey_dir())
     if drive_root is not None:
         candidates.append(drive_root / KIT_CSURVEY_REL)
     candidates.append(Path(DEFAULT_CSURVEY_DIR))

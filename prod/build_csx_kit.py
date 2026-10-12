@@ -113,6 +113,9 @@ TOOLS = [
     # cSurvey app settings (registry): KORAK 0 applies them, KORAK 2 checks.
     "csurvey_app_settings.py",
     "csurvey-app-settings.json",
+    # KORAK 0 copies the Drive's cSurvey to the local disk (opened by hand
+    # from G: it crashes), KORAK 2 checks the copy; imports csurvey_driver.py.
+    "csurvey_local.py",
     # KORAK 3, the Nacrt finishing chain (project 0004). nacrt_finish.py imports
     # nacrt_layout.py and reads nacrt_finish_compass.xml from beside itself;
     # csurvey_driver.py runs csurvey_headless.ps1 the same way. Miss one and the

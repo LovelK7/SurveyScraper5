@@ -4,6 +4,8 @@ rem  KORAK 0 - POSTAVI cSURVEY (jednom po racunalu)
 rem  Upise u cSurvey postavke programa koje 3N trazi (npr. iskljuceno
 rem  zagladivanje linija olovkom). One se ne spremaju u .csx datoteku nego
 rem  u Windows, za svakog korisnika na svakom racunalu posebno.
+rem  Uz to kopira cSurvey s Drivea na ovo racunalo i stavi precac "cSurvey"
+rem  na radnu povrsinu: cSurvey otvoren rucno s Drivea se srusi.
 rem
 rem  KADA: jednom, prije prvog rada s cSurveyem na ovom racunalu - i
 rem  opet ako KORAK 2 javi "cSurvey ... nije postavljen".
@@ -48,9 +50,13 @@ echo ==================================================================
 echo.
 python "%TOOLS%\csurvey_app_settings.py" apply
 echo.
+if exist "%TOOLS%\csurvey_local.py" python "%TOOLS%\csurvey_local.py" install
+echo.
 echo ------------------------------------------------------------------
 echo  Procitaj retke iznad:
-echo    "OK"        gotovo - ovo vise ne moras pokretati na ovom racunalu.
+echo    "OK"        gotovo - ovo vise ne moras pokretati na ovom racunalu
+echo                ^(osim kad netko zamijeni cSurvey na Driveu^).
+echo                cSurvey OTVARAJ S PRECACA "cSurvey" NA RADNOJ POVRSINI.
 echo    "BLOCKED"   zatvori cSurvey pa dvoklikni ovo ponovo.
 echo    "ERROR"     nesto drugo: procitaj poruku.
 echo.

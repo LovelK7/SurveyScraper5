@@ -435,10 +435,16 @@ def test_csurvey_dir_order(monkeypatch, tmp_path):
     monkeypatch.delenv("CSURVEY_DIR", raising=False)
     monkeypatch.setattr(csurvey_driver, "read_dotenv", lambda: {})
     monkeypatch.setattr(csurvey_driver, "KIT_CSURVEY_DIR", str(kit))
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "appdata"))
     assert csurvey_driver.find_csurvey_dir() == csurvey_driver.DEFAULT_CSURVEY_DIR
     kit.mkdir()
     (kit / "cSurveyPC.exe").write_bytes(b"")
     assert csurvey_driver.find_csurvey_dir() == str(kit)
+    # KORAK 0's local copy wins over the Drive's (opened by hand, G: crashes)
+    local = Path(csurvey_driver.local_csurvey_dir())
+    local.mkdir(parents=True)
+    (local / "cSurveyPC.exe").write_bytes(b"")
+    assert csurvey_driver.find_csurvey_dir() == str(local)
     monkeypatch.setenv("CSURVEY_DIR", "D:\elsewhere")
     assert csurvey_driver.find_csurvey_dir() == "D:\elsewhere"
     assert csurvey_driver.find_csurvey_dir("E:\arg") == "E:\arg"

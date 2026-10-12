@@ -218,12 +218,24 @@ def _powershell():
     return path if os.path.exists(path) else "powershell"
 
 
+def local_csurvey_dir():
+    """KORAK 0's local copy of the Drive's cSurvey (csurvey_local.py):
+    %LOCALAPPDATA%\\CaveDossier\\csurvey64. Opened by hand, the Drive copy
+    crashes (case-sensitive G:, cCliparts.vb:388); the local one does not.
+    Mirrored in 0P gui/state.py - keep the two in step."""
+    base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    return os.path.join(base, "CaveDossier", "csurvey64")
+
+
 def find_csurvey_dir(override=None):
-    """Where cSurvey is: --csurvey-dir, then CSURVEY_DIR (env, .env), then the
-    kit's own cSurvey/ folder on the Drive, then C:\csurvey64."""
+    """Where cSurvey is: --csurvey-dir, then CSURVEY_DIR (env, .env), then
+    KORAK 0's local copy, then the kit's own cSurvey/ folder on the Drive,
+    then C:\csurvey64."""
     explicit = setting("CSURVEY_DIR", None, override)
     if explicit:
         return explicit
+    if os.path.exists(os.path.join(local_csurvey_dir(), "cSurveyPC.exe")):
+        return local_csurvey_dir()
     if os.path.exists(os.path.join(KIT_CSURVEY_DIR, "cSurveyPC.exe")):
         return KIT_CSURVEY_DIR
     return DEFAULT_CSURVEY_DIR

@@ -56,6 +56,12 @@ KORAK 0 - POSTAVI cSURVEY (jednom po računalu, prije prvog objekta)
     ručno promijenio postavke, ili su dodane nove).
   * Boja poligona (crvena), veličine znakova i sl. NISU ovdje - njih
     KORAK 2 upiše u samu _postp datoteku.
+  * Isto tako KOPIRA cSurvey s Drivea na ovo računalo (prvi put traje,
+    ~175 MB) i stavi prečac "cSurvey" na radnu površinu.
+    cSurvey UVIJEK OTVARAJ S TOG PREČACA, ne s Drivea: otvoren s Drivea
+    se sruši ("Could not find a part of the path ...").
+  * Kad netko zamijeni cSurvey na Driveu, KORAK 2 javi da je lokalni
+    stariji - onda zatvori cSurvey i ponovi KORAK 0.
 
 PRILAGODBA ZA JEDAN OBJEKT (po potrebi)
   * Ako u mapi objekta postoji  tdx-mapping-objekt.json , KORAK 1 i
@@ -217,7 +223,15 @@ preimenovati.
                     csurvey_0_postavi_csurvey.bat. _postp datoteka je
                     svejedno napravljena.
 
- "BLOCKED: cSurvey je otvoren"
+ "UPOZORENJE: ... lokalnog cSurveya" / "lokalni cSurvey je stariji"
+                    (KORAK 2) Zatvori cSurvey i dvoklikni
+                    csurvey_0_postavi_csurvey.bat.
+
+ "Could not find a part of the path ... .svg"  (u cSurveyu)
+                    cSurvey je otvoren s Drivea. Zatvori ga i otvori
+                    ga s prečaca "cSurvey" na radnoj površini (KORAK 0).
+
+ "BLOCKED: cSurvey je otvoren" / "lokalni cSurvey je otvoren"
                     (KORAK 0) Spremi rad, zatvori cSurvey i pokreni
                     KORAK 0 ponovo.
 

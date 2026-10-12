@@ -1048,6 +1048,20 @@ The user's review of the first dashboard settled these:
   only that zone check. Verified 2026-10-02: `dimensions` and `print` (plan +
   profile PDFs, 22 s) both run from the Drive copy, and the local copy is
   unaffected.
+  **Opened by hand from `G:`, cSurvey crashes (found 2026-10-12):** the
+  window's sign gallery loads every gallery SVG through a *lowercased* full
+  path (`cCliparts.vb:388`, `sFilename = Filename.ToLower`), and Google
+  Drive's `G:` filesystem is case-sensitive in folder names
+  (`speleo baza sue` ≠ `Speleo baza SUE`; the shortcut id itself resolves
+  either way) → "Could not find a part of the path …\signs\acqua.svg".
+  Headless `print` from the Drive copy is unaffected (ss5 plain + themed,
+  2026-10-12). **Settled (user, 2026-10-12): KORAK 0 copies the Drive's
+  cSurvey to `%LOCALAPPDATA%\CaveDossier\csurvey64`** (`csurvey_local.py
+  install`, ~175 MB, 26 s here) and puts a "cSurvey" shortcut on the desktop;
+  it copies again only when the Drive's `cSurveyPC.exe` changes (size +
+  mtime stamp), so updating cSurvey stays "replace it on the Drive". The
+  driver and the dashboard prefer the local copy, then the Drive, then
+  `C:\csurvey64`; KORAK 2 warns when the copy is missing or older.
 - **Bind the port exclusively.** `http.server` sets `SO_REUSEADDR`, which on
   Windows let two dashboards listen on 8790 at once: the old one answered
   and the next-free-port fallback never fired. The server now binds with
