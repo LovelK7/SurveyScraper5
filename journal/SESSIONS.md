@@ -12,6 +12,39 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-10…12 — 3N symbol themes on the ss5 reference survey; clipping rules in KORAK 2 (agent) ✅
+
+- **Did:**
+  - Ran the user's purpose-drawn survey (`example/ss5_mapiranje/krkuž_uskrs-2p[_v2].csx`, 136 items) through the
+    real chain – KORAK 1, headless import, KORAK 2, both themes, plan + profile prints – as
+    `runs/2026-10-10-ss5-baseline` and round `r13-ss5`; runner kept as `projects/0007-symbol-themes/ss5_round.py`.
+  - r13 from the user's 17 comments: new area field `outline` (`themes._outline`, `theme_apply._theme_area_outline`,
+    a library pen so undo/switch stay byte-identical) – no outline on any area except water (blue); wall:ice width
+    3.5; wall:underlying dash [14, 2.5]; stock spring/sink glyphs normalised into `themes/boja/signs/`, `rotate -90`,
+    `outline_pen`, blue; water-drip/air-draught size 1.5; centerline `PlotPenStyle` Dash → Dot. Re-split the
+    11:16 drawing (new wall:blocks/debris units, blocks sign).
+  - KORAK 2 (`fix_imported_linetypes.py`), three new `postimport` rules with defaults: `borders_unclipped`
+    (Borders-layer lines get `clippingtype="1"`), `unclipped_lines: ["abyss-entrance"]` (by recovered TopoDroid
+    name, `unclip_named_lines`), `label_wrap: 25` (`wrap_label`, line breaks at spaces). 5 new tests.
+  - Docs: `findings/walls-and-clipping.md`; brief restructured with a §0 "Where it stands" and §3.9 history (user:
+    the brief had become hard to read); themes README + cheatsheet rows.
+- **Result:** both themes print on ss5 with every item's name recovered; the user's missing wall:blocks/debris and
+  entrance border are back with clipping off; long label prints on three centred lines (print-checked). 366 3N tests,
+  defaults check and pipeline doctor clean. Not published (kit v1.8). r13 itself not yet judged by the user.
+- **Learned:**
+  - cSurvey's cave area is only the type-4 cave-border items (`cDesign.GetCaveClippingRegions`); with the default
+    clipping every item below the Borders layer **and** every Borders-layer line is cut to it (`cClipping.vb:300`).
+    So KORAK 1's `wall:blocks/debris/ice → border` lines, borders outside the cave and the wider `abyss-entrance`
+    ring (→ overhang, floor layer) were cut. Clipping can't simply go: it trims slope/overhang overshoots at walls
+    (`ClipBorder` = 2 print vs normal, `ss5_plan_odrezano.png`).
+  - cSurvey's stock spring/sink glyphs point right; TopoDroid's point up – hence the user's "turn 90° CCW". The
+    importer keeps spring's orientation (first guess, a dropped angle, was wrong and reverted).
+  - A label never wraps in cSurvey, but a newline in `text=` prints as a centred line break (`GraphicsPath.AddString`).
+  - The user's own `_prep` files were direct imports of the raw export (no KORAK 1) – the operator rule "import the
+    `_prep` KORAK 1 writes" is easy to miss when the user names a save `_prep` too.
+- **Next:** the user's answers on r13 (stalagmite outline? lighter blocks/debris tiles?), the next round; then the
+  all-walls + pit-ring cave area (findings §4), `theme_round.py` on ss5, sign-off, `/publish` kit v1.8.
+
 ### 2026-10-07…08 — 3N symbol themes: rounds r9–r12, Tema on the dashboard, theme step in KORAK 2, labels → glyphs (agent) ◐
 
 - **Did:**

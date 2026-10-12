@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:csurvey="http://www.csurvey.it" viewBox="0 0 11.566 48.21" csurvey:sign="774" csurvey:scale="1.350">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:csurvey="http://www.csurvey.it" viewBox="0 0 11.566 48.209" csurvey:sign="774" csurvey:scale="1.354">
   <title>air-draught</title>
   <path d="M 7.258 44.341 L 7.303 14.14 L 8.372 14.142 L 8.327 44.343 Z" fill="#000000"/>
-  <path d="M 0 47.254 L 7.553 43.492 L 8.029 44.448 L 0.476 48.21 Z" fill="#000000"/>
+  <path d="M 0 47.253 L 7.553 43.491 L 8.029 44.447 L 0.476 48.209 Z" fill="#000000"/>
   <path d="M 4.063 14.14 L 11.566 14.117 L 7.996 0 L 4.063 14.14 Z" fill="#000000"/>
   <path d="M 0.001 41.852 L 7.554 38.084 L 8.031 39.04 L 0.478 42.808 Z" fill="#000000"/>
   <path d="M 0.001 36.044 L 7.557 32.277 L 8.034 33.233 L 0.478 37.001 Z" fill="#000000"/>

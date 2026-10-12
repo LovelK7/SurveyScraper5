@@ -307,3 +307,22 @@ Brief: [brief.md](brief.md)
 - **Next:** SB 1103 in both themes for sign-off (T6), `/publish`, close-out. T7 superseded by `/theme-round`.
 - **T6 prints:** SB 1103 (`example/finishing/…_lt_fin.csx`) themed boja + crno-bijelo and printed plan + profile
   next to the original: [runs/2026-10-07-t6-sb1103/pregled.png](runs/2026-10-07-t6-sb1103/pregled.png). Awaiting sign-off.
+
+### 2026-10-10 — The ss5 reference survey; round r13 (agent) ✅
+
+- **ss5 baseline:** the user's purpose-drawn survey (`example/ss5_mapiranje/`, 136 items) run through KORAK 1 → headless
+  import → KORAK 2 → both themes → prints: [runs/2026-10-10-ss5-baseline](runs/2026-10-10-ss5-baseline/RUNLOG.md).
+  The user's `_prep` files are direct imports of the raw export (no KORAK 1) – not used.
+- **r13:** area `outline` field (false / pen), every area without outline except water (blue); wall:ice 3.5;
+  wall:underlying dashed [14, 2.5]; spring/sink = stock glyphs turned −90 in blue; water-drip and air-draught ×1.5;
+  survey shots dotted. [runs/2026-10-10-r13-ss5](runs/2026-10-10-r13-ss5/RUNLOG.md).
+- **Found:** Borders-layer lines are clipped to the merged wall outline (`cClipping.vb:300`), so wall:blocks/debris/ice
+  (mapped to border) and border lines drawn outside the cave vanish; `clippingtype="1"` brings them back. KORAK 2's
+  wall merge also gives a merged wall + wall:presumed outline one look. Decision with the user.
+- **2026-10-12:** KORAK 2 `borders_unclipped` (user chose option 1) and `label_wrap` (25 characters, automatic,
+  user: no typing of breaks); tests for both; `pytest stages/3N-nacrt` 364 passed. Option 3 (all-walls outline for
+  the cave area) accepted in principle, not built.
+- **2026-10-12:** clipping study (`ClipBorder` = 2 print vs normal, red = what is cut: `ss5_plan_odrezano.png`):
+  abyss-entrance → overhang sits on the floor layer and is cut to the walls-only outline; overshoots at walls are
+  also trimmed, so clipping stays. KORAK 2 `unclipped_lines: ["abyss-entrance"]` via name recovery (1 on ss5; 2
+  tests, 366 passed). Option 3 gains the ring rule (cave area = walls ∪ closed abyss-entrance rings).

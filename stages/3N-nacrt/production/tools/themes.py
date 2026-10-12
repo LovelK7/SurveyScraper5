@@ -115,7 +115,8 @@ SIGN_RENDERS = ("fill", "outline")    # outline: white brush, pen in the colour 
 LINE_FIELDS = {"svg", "color", "width", "style", "dash", "decoration", "decoration_color"}
 DECORATION_FIELDS = {"spacing_pct", "scale", "alignment", "flip", "distance_pct", "position"}
 AREA_FIELDS = {"svg", "color", "background_color", "density", "zoom", "angle_mode",
-               "angle", "position", "crop", "solid", "pattern"}
+               "angle", "position", "crop", "solid", "pattern", "outline"}
+OUTLINE_FIELDS = {"color", "width", "style", "dash"}
 PATTERN_FIELDS = {"type", "angle", "density", "zoom", "pen_style"}
 
 # cPen.PenStylesEnum (cPen.vb:1241-1253)
@@ -528,10 +529,46 @@ def _pattern(pat, where, errors):
                                PATTERN_DEFAULTS["pen_style"])}
 
 
+def _outline(entry, default_color, where, errors):
+    """An area's outline pen: absent = cSurvey's own (None), false = no outline,
+    or {color, width, style, dash} like a plain line (user, 2026-10-10)."""
+    o = entry.get("outline")
+    if o is None:
+        return None
+    if o is False:
+        return {"color": default_color, "width": None, "style": "none", "dash": None}
+    if not isinstance(o, dict):
+        errors.append("%s.outline: must be false or an object {color, width, style, dash}" % where)
+        return None
+    o = {k: v for k, v in o.items() if not _is_comment(k)}
+    w = where + ".outline"
+    _unknown_fields(o, OUTLINE_FIELDS, w, errors)
+    color = _colour(o, "color", w, errors, default_color)
+    style = _enum(o, "style", LINE_STYLES, w, errors, default="solid")
+    if style == "none":
+        errors.append("%s.style: use \"outline\": false for no outline" % w)
+    dash = o.get("dash")
+    if style == "custom":
+        if (not isinstance(dash, list) or len(dash) < 2 or len(dash) % 2
+                or not all(isinstance(d, (int, float)) and not isinstance(d, bool) and d > 0
+                           for d in dash)):
+            errors.append("%s.dash: style custom needs an even-length list of positive numbers" % w)
+            dash = None
+        else:
+            dash = [float(d) for d in dash]
+    elif dash is not None:
+        errors.append("%s.dash: only allowed with style custom" % w)
+        dash = None
+    return {"color": color, "width": _num(o, "width", w, errors, positive=True),
+            "style": style, "dash": dash}
+
+
 def _area_spec(key, entry, default_color, where, errors):
     """One of three looks: a scatter tile (svg), a solid fill, or a parametric
-    pattern hatch - mutually exclusive (brief 3.8)."""
+    pattern hatch - mutually exclusive (brief 3.8) - plus an optional outline."""
     _unknown_fields(entry, AREA_FIELDS, where, errors)
+    outline = _outline(entry, default_color, where, errors)
+    entry = {k: v for k, v in entry.items() if k != "outline"}
     color = _colour(entry, "color", where, errors, default_color)
     solid = entry.get("solid", False)
     if not isinstance(solid, bool):
@@ -550,13 +587,13 @@ def _area_spec(key, entry, default_color, where, errors):
                           " (not %s)" % (where, ", ".join(extra)))
         return dict(_NO_TILE, key=key, solid=False, svg=None, color=color,
                     background_color=_colour(entry, "background_color", where, errors, None),
-                    pattern=_pattern(pattern, where + ".pattern", errors))
+                    pattern=_pattern(pattern, where + ".pattern", errors), outline=outline)
     if solid:
         extra = sorted(set(entry) - {"solid", "color", "svg"})
         if extra:
             errors.append("%s: a solid area takes only color (not %s)" % (where, ", ".join(extra)))
         return dict(_NO_TILE, key=key, solid=True, svg=None, color=color,
-                    background_color=None, pattern=None)
+                    background_color=None, pattern=None, outline=outline)
     return {"key": key, "solid": False, "pattern": None,
             "svg": _svg(entry, where, errors), "color": color,
             "background_color": _colour(entry, "background_color", where, errors, None),
@@ -570,7 +607,8 @@ def _area_spec(key, entry, default_color, where, errors):
             "position": _enum(entry, "position", CLIPART_POSITIONS, where, errors,
                               default=AREA_DEFAULTS["position"]),
             "crop": _enum(entry, "crop", CLIPART_CROPS, where, errors,
-                          default=AREA_DEFAULTS["crop"])}
+                          default=AREA_DEFAULTS["crop"]),
+            "outline": outline}
 
 
 def _centerline(section, where, errors):
@@ -729,6 +767,8 @@ def _load(theme_id, themes_root, errors):
                 spec["color"] = mono
                 if "decoration_color" in spec:
                     spec["decoration_color"] = mono
+                if spec.get("outline"):
+                    spec["outline"] = dict(spec["outline"], color=mono)
             specs[kind][key] = spec
 
     centerline = _centerline(merged.get("centerline"), where, errors)

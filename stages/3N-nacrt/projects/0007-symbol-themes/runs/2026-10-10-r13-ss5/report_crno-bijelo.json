@@ -1,0 +1,119 @@
+{
+ "theme": "crno-bijelo",
+ "signs": 59,
+ "lookup": {
+  "tdx (recovered)": 43,
+  "none (recovered)": 16
+ },
+ "themed": 43,
+ "glyph": 43,
+ "colour": 0,
+ "outline": 0,
+ "black_builtin": 5,
+ "pen_off": 38,
+ "skipped_custom": 0,
+ "size_ignored": 0,
+ "pool_added": [
+  "5CDAD1CC76B6EB6BDE38F16A8BFFE06D4BEDD tema-crno-bijelo_continuation.svg",
+  "B995239D4CE6D73B9435B8A4B2EBE5D1E33C96F tema-crno-bijelo_danger.svg",
+  "4AFB10BAF9E0D1FB171C9E49C2DE8AC64D442AD tema-crno-bijelo_plus.svg",
+  "8EEBA681F546FB57A5D863EEB6765DB71FC2E73 tema-crno-bijelo_plus-minus.svg",
+  "6B9CABA8874A6A9F59C6FBD925EA2613E722383F tema-crno-bijelo_tree-trunk.svg",
+  "82223BD7CCF5BA89DAA7EA238BB67A6BDF4C626 tema-crno-bijelo_vegetable-debris.svg",
+  "491B93C3BAD8086C888025408699DF92FB72FD tema-crno-bijelo_sink.svg",
+  "FF5AB1187D96799F55BA5F79D683C9A4E807C tema-crno-bijelo_spring.svg",
+  "7A4D1B83724788F720E3704246FD9454F7E85C8 tema-crno-bijelo_blocks.svg",
+  "51B3DCF260DFBDF630EB5FA2D94128895EF59F2 tema-crno-bijelo_air-draught_r270.svg",
+  "B1A2B275636D838D8474F8ADCECE2F57A679C2DA tema-crno-bijelo_debris.svg",
+  "66F38F4022A096812BBCF4A973427DBE2EDB7 tema-crno-bijelo_water-flow@intermittent_r270.svg",
+  "944995B1537A264AD5BC31ECA653A5F7BD8E8B tema-crno-bijelo_water-flow_r270.svg"
+ ],
+ "pool_reused": [],
+ "lines": {
+  "themed": {
+   "abyss-entrance (tdx)": 1,
+   "overhang (tdx)": 5,
+   "overhang (target)": 2,
+   "slope (tdx)": 6,
+   "slope:steep (tdx)": 3,
+   "pit (tdx)": 2,
+   "floor-meander (tdx)": 1,
+   "ceiling-step (tdx)": 1,
+   "wall:blocks (tdx)": 3,
+   "wall:debris (tdx)": 2,
+   "wall:ice (tdx)": 2,
+   "water-flow (tdx)": 2,
+   "wall:underlying (tdx)": 2,
+   "user (tdx)": 2,
+   "rope (tdx)": 2
+  },
+  "skipped": []
+ },
+ "areas": {
+  "themed": {
+   "blocks (tdx, tile)": 3,
+   "clay (tdx, tile)": 3,
+   "debris (tdx, tile)": 2,
+   "ice (tdx, tile)": 2,
+   "pebbles (tdx, tile)": 2,
+   "user (tdx, tile)": 1,
+   "water (tdx, pattern)": 2,
+   "stalagmite (tdx, tile)": 1
+  },
+  "skipped": []
+ },
+ "library": {
+  "pens": [
+   "tema-crno-bijelo-outline-blocks-0",
+   "tema-crno-bijelo-outline-clay-0",
+   "tema-crno-bijelo-outline-debris-0",
+   "tema-crno-bijelo-outline-ice-10",
+   "tema-crno-bijelo-outline-pebbles-0",
+   "tema-crno-bijelo-outline-user-10",
+   "tema-crno-bijelo-line-abyss-entrance-12",
+   "tema-crno-bijelo-line-overhang-12",
+   "tema-crno-bijelo-line-slope-7",
+   "tema-crno-bijelo-line-slope:steep-7",
+   "tema-crno-bijelo-line-pit-5",
+   "tema-crno-bijelo-line-floor-meander-21",
+   "tema-crno-bijelo-outline-water-2",
+   "tema-crno-bijelo-line-ceiling-step-14",
+   "tema-crno-bijelo-line-wall:blocks-2",
+   "tema-crno-bijelo-line-wall:debris-2",
+   "tema-crno-bijelo-line-wall:ice-2",
+   "tema-crno-bijelo-line-water-flow-3",
+   "tema-crno-bijelo-line-wall:underlying-2",
+   "tema-crno-bijelo-line-user-2",
+   "tema-crno-bijelo-outline-stalagmite-10",
+   "tema-crno-bijelo-line-rope-2"
+  ],
+  "brushes": [
+   "tema-crno-bijelo-area-blocks-9",
+   "tema-crno-bijelo-area-clay-3",
+   "tema-crno-bijelo-area-debris-8",
+   "tema-crno-bijelo-area-ice-1",
+   "tema-crno-bijelo-area-pebbles-4",
+   "tema-crno-bijelo-area-user-1",
+   "tema-crno-bijelo-area-water-6",
+   "tema-crno-bijelo-area-stalagmite-1"
+  ]
+ },
+ "notes": [
+  "plan mixed wall x3, wall:presumed x2 - majority wall",
+  "vegetable-debris: 117 stroke-only path(s) in the glyph do not print with the pen off (outline_pen false)",
+  "profile mixed wall x4, wall:presumed x4 - tie, not themed"
+ ],
+ "labels": 6,
+ "importer_turn": 9,
+ "centerline": 7,
+ "input": "C:\\Users\\Lovel.IZRK-LK-NB\\Programming\\SurveyScraper5\\stages\\3N-nacrt\\projects\\0007-symbol-themes\\runs\\2026-10-10-r13-ss5\\ss5_izvorno.csx",
+ "output": "C:\\Users\\Lovel.IZRK-LK-NB\\Programming\\SurveyScraper5\\stages\\3N-nacrt\\projects\\0007-symbol-themes\\runs\\2026-10-10-r13-ss5\\ss5_crno-bijelo.csx",
+ "previous_theme": null,
+ "undone_items": 0,
+ "pool_removed": [],
+ "recovery": {
+  "other recovered": 71,
+  "sign recovered": 59,
+  "other exact": 1
+ }
+}

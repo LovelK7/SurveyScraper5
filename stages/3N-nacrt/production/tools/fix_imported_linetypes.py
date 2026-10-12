@@ -48,6 +48,7 @@ import argparse
 import json
 import os
 import sys
+import textwrap
 import zipfile
 import xml.etree.ElementTree as ET
 
@@ -335,11 +336,46 @@ def pick_by_sb(inputs, sb):
                           root=intake, prompt="Koju datoteku dovrsiti? ")
 
 
+def wrap_label(item, width):
+    """Break a long label's text at spaces into lines of about `width`
+    characters. -> True when changed."""
+    text = item.get("text") or ""
+    if len(text) <= width or "\n" in text or "\r" in text:
+        return False
+    lines = textwrap.wrap(text, width, break_long_words=False, break_on_hyphens=False)
+    if len(lines) < 2:
+        return False
+    item.set("text", "\n".join(lines))
+    return True
+
+
+def unclip_named_lines(root, inp, names):
+    """Clipping None on lines whose TopoDroid name is in `names` (recovered
+    from the pre-import file beside `inp`, as the theme step does). An
+    abyss-entrance ring is wider than the bottom's walls, which alone make the
+    cave outline, so cSurvey cut it away (user, 2026-10-12). Must run on the
+    root as loaded: recovery pairs items with the file on disk.
+    -> (lines changed, pre file or None)."""
+    import theme_apply          # lazy, like the theme step
+    pre = theme_apply.find_pre(inp)
+    if not pre:
+        return 0, None
+    n = 0
+    for row in theme_apply.recovered_names(pre, inp, root):
+        item = row["item"]
+        if (row["tdx"] in names and item.get("type") == "1"
+                and item.get("clippingtype") is None):
+            item.set("clippingtype", "1")
+            n += 1
+    return n, pre
+
+
 def load_rules(inp, map_file):
     """(rules, sign_sizes, label_sizes, override) for one input file: the
     `postimport` of the shared mapping plus that cave's tdx-mapping-objekt.json."""
     cfg, override = tdx_mapping.effective_for(inp, map_file)
-    rules = {"spline_linetypes": True, "nonstandard_water": False}
+    rules = {"spline_linetypes": True, "nonstandard_water": False, "borders_unclipped": True,
+             "label_wrap": 25, "unclipped_lines": ["abyss-entrance"]}
     rules.update(cfg.get("postimport", {}))
     rules["_theme"] = cfg.get("theme")          # the cave's symbol theme, or None
 
@@ -444,7 +480,19 @@ def main(argv=None):
             rc = 1
             continue
 
-        fixed_lines = fixed_water = fixed_sizes = imported_seen = 0
+        named_note = None
+        if rules.get("unclipped_lines"):
+            try:                        # fail-soft: needs the pre-import file
+                n, pre = unclip_named_lines(root, inp, set(rules["unclipped_lines"]))
+                if pre is None:
+                    named_note = ("nema izvornog TopoDroid ili _prep fajla uz ovaj: rub ulaza "
+                                  "u jamu (abyss-entrance), ako ga ima, ostaje rezan po obrisu spilje")
+                elif n:
+                    named_note = "rub ulaza u jamu (abyss-entrance) bez rezanja: %d" % n
+            except Exception as e:
+                named_note = "rub ulaza u jamu: preskoceno (%s)" % e
+
+        fixed_lines = fixed_water = fixed_sizes = imported_seen = unclipped = wrapped = 0
         for design in ("plan", "profile"):
             d = root.find(design)
             if d is None:
@@ -464,6 +512,26 @@ def main(argv=None):
                         and item.get("linetype") == "0"):
                     item.set("linetype", "1")
                     fixed_lines += 1
+                # Lines on the Borders layer (border, and wall:blocks/debris/ice
+                # mapped to it) are cut to the merged wall outline by default
+                # (cClipping.vb:300): a line outside the cave, or a wall's
+                # decoration on the outer side, vanishes. Clipping None keeps
+                # them whole; a clippingtype already set is the operator's
+                # (user, 2026-10-10, project 0007 r13).
+                if (rules.get("borders_unclipped")
+                        and item.get("type") == "1"
+                        and item.get("layer") == wall_orient.LAYER_BORDERS
+                        and item.get("clippingtype") is None):
+                    item.set("clippingtype", "1")
+                    unclipped += 1
+                # Long labels: cSurvey never wraps a label, but prints a line
+                # break in `text` as a new line, centred (cItemText.Render ->
+                # GraphicsPath.AddString; ss5 print, 2026-10-10). Break at
+                # spaces to about `label_wrap` characters; text already holding
+                # a break is the operator's.
+                if (item.get("type") == "8" and rules.get("label_wrap")
+                        and wrap_label(item, rules["label_wrap"])):
+                    wrapped += 1
                 if (rules.get("nonstandard_water")
                         and item.get("type") == "3"
                         and item.get("category") == "64"):
@@ -507,6 +575,12 @@ def main(argv=None):
               "non-standard brush, %d size(s) applied, %d design propert%s set"
               % (out, fixed_lines, fixed_water, fixed_sizes, centerline_set,
                  "y" if centerline_set == 1 else "ies"))
+        if wrapped:
+            print("    duge oznake prelomljene u vise redaka: %d" % wrapped)
+        if named_note:
+            print("    " + named_note)
+        if unclipped:
+            print("    rubne linije bez rezanja po obrisu spilje: %d" % unclipped)
         for line in wall_lines:
             print("    " + line)
         if rules.get("_theme") and not args.no_theme:

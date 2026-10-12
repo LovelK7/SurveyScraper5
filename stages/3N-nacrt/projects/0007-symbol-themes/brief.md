@@ -1,7 +1,7 @@
 # Task brief: Symbol themes — custom SVG signs, pens and brushes, chosen per cave in Mapiranje simbola
 
 - **ID:** 0007-symbol-themes
-- **Status:** `validation` — signs, lines and areas are themed end to end on the mockup (`boja` + `crno-bijelo`), tuned with the user over rounds r1–r7 (2026-10-07). TopoDroid-name keys work (T8). T4 done 2026-10-07 (Tema card on Mapiranje simbola, saved as `"theme"` in the cave override, theme previews). Tuning rounds r9–r11 done the same day. T5 done 2026-10-07: KORAK 2 themes the `_postp` with the cave's theme (`theme_apply.korak2_step`), the kit (v1.7, not yet published) ships `csurvey_alati/teme/`. T9 done 2026-10-07 (labels → theme glyphs in the theme step; anchor stays `f`). Next: SB 1103 printed in both themes for the user's sign-off (T6), `/publish` csx kit v1.7, close-out. T7 superseded by `/theme-round`. See "State at session end" in §3.6.
+- **Status:** `validation` — themes work end to end and are being tuned on the ss5 reference survey; the kit v1.7 with the themes was published 2026-10-09; the KORAK 2 rules of 2026-10-10…12 wait for v1.8. **Where it stands and what is next: [§0](#0-where-it-stands-2026-10-12).**
 - **Owner:** both
 - **Opened:** 2026-10-04 · **Closed:** —
 - **Read first:** [the superapp CLAUDE.md](../../../../CLAUDE.md), [README.md](../../README.md), [backlog/custom-sign-palette.md](../../backlog/custom-sign-palette.md) (the parked predecessor idea), [production/tdx-symbol-matrix.md](../../production/tdx-symbol-matrix.md), [reference/data-model-and-file-format.md](../../reference/data-model-and-file-format.md), [.claude/skills/csurvey-defaults/SKILL.md](../../../../.claude/skills/csurvey-defaults/SKILL.md)
@@ -10,6 +10,41 @@
 > and where the work stands, without inheriting any prior conversation.
 
 ---
+
+## 0. Where it stands (2026-10-12)
+
+**Read this section first.** Everything below it is background and the record of how the work got here; the
+dated "state at session end" blocks of earlier sessions are in [§3.9](#39-session-history).
+
+### The reference survey
+
+- `example/ss5_mapiranje/krkuž_uskrs-2p_v2.csx` (gitignored) — drawn by the user to hold as many TopoDroid points,
+  lines and areas as possible. It replaces the generated mockup and SB 1103 as the survey the themes are judged on.
+- One round on it: `python projects/0007-symbol-themes/ss5_round.py <label> example/ss5_mapiranje/krkuž_uskrs-2p_v2.csx`
+  (from `stages/3N-nacrt`). It runs KORAK 1 → headless import (cached) → KORAK 2 → both themes → plan + profile
+  prints, and writes `runs/<date>-<label>/` with `ss5_plan_usporedba.png` / `ss5_profile_usporedba.png`.
+- The user's own `_prep` / `_v2_prep` files there are direct cSurvey imports of the raw export (KORAK 1 never ran),
+  so they are not used.
+- Latest round: [r13](runs/2026-10-10-r13-ss5/RUNLOG.md) — its table lists each piece of feedback and the change.
+
+### Done since the last sign-off attempt (2026-10-10 / 12)
+
+- Theme: area `outline` (false = none; only water has one, in blue); `wall:ice` as thick as wall;
+  `wall:underlying` dashed; spring and sink in blue, turned like in TopoDroid; water-drip and air-draught larger;
+  survey shots dotted. New artwork split in (wall:blocks, wall:debris, the blocks sign).
+- KORAK 2: border-layer lines are no longer cut by the cave outline; `abyss-entrance` rings are not cut either;
+  labels longer than 25 characters are broken into lines automatically. Why: [findings/walls-and-clipping.md](findings/walls-and-clipping.md).
+
+### Open, in order
+
+| # | What | Who | Where it is written |
+|---|---|---|---|
+| 1 | Answer two r13 questions: was the stalagmite comment about its outline? Should the blocks/debris area tiles take the drawing's lighter grey (#C9C9C8)? | user | [r13 RUNLOG](runs/2026-10-10-r13-ss5/RUNLOG.md) |
+| 2 | Next tuning round on ss5 | both | this section |
+| 3 | **The cave area from every wall kind plus the pit-entrance rings** (accepted in principle, not built) | agent, with the user | [findings/walls-and-clipping.md §4](findings/walls-and-clipping.md#4-open-the-cave-area-from-every-wall-kind-and-the-pit-rings) |
+| 4 | Teach `theme_round.py` the ss5 survey (crop sheets, focus); today `ss5_round.py` prints whole pages | agent | this section |
+| 5 | B/W: the dotted shot line stayed orange-brown on SB 1103 (not seen on ss5, where it prints black); debris maybe too heavy in B/W at small scale | agent | [§3.9](#39-session-history) |
+| 6 | Sign-off on ss5 in both themes (T6), then `/publish` csx kit v1.8 (carries the KORAK 2 rules above), then close-out (§4, §5) | user, then agent | §3.6 T6, §4 |
 
 ## 1. Problem — what's wrong / missing, and why it matters
 
@@ -675,7 +710,11 @@ in `theme.json`.
 - *Accept:* on the mockup run through KORAK 1, the four print as club glyphs in `boja` and `crno-bijelo`,
   and as labels with no theme.
 
-**State at session end (2026-10-08) — read this first in the next session.**
+### 3.9 Session history
+
+Superseded by [§0](#0-where-it-stands-2026-10-12); kept as the record of earlier sessions.
+
+**State at session end (2026-10-08).**
 
 - Done 2026-10-07/08: T4 (Tema card), T5 (KORAK 2 theme step + kit v1.7 staged, **not published**), T9 (labels →
   glyphs, anchor `f` stays), tuning rounds r9–r12, `mud` → `sand` (shared default, committed), T6 prints of SB 1103

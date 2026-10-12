@@ -1,0 +1,6 @@
+{
+  "_readme": "Black-and-white theme: boja with every colour forced to black (monochrome), plus per-piece B/W encodings where colour carried the meaning (brief 3.8). Water: boja's blue 45-degree line pattern, inherited and turned black by monochrome (r6; until r5 this theme held the pattern itself). Schema: ../README.md",
+  "name": "Crno-bijelo",
+  "extends": "boja",
+  "monochrome": "#000000"
+}

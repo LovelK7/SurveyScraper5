@@ -1,0 +1,105 @@
+{
+ "theme": "boja",
+ "signs": 59,
+ "lookup": {
+  "tdx (recovered)": 38,
+  "none (recovered)": 21
+ },
+ "themed": 38,
+ "glyph": 38,
+ "colour": 27,
+ "outline": 0,
+ "black_builtin": 0,
+ "pen_off": 38,
+ "skipped_custom": 0,
+ "size_ignored": 0,
+ "pool_added": [
+  "AF2D3141869D85D89AB3FAF9024858E8492F64E tema-boja_continuation.svg",
+  "6C4C99370D319253D5493D85687F6ACFE3CEE tema-boja_danger.svg",
+  "2387F984FFDEC5DC62FF612DA5331A4611F8E3F tema-boja_plus.svg",
+  "16665D8199B0B2E11FE7437E2AAD44C342545C tema-boja_plus-minus.svg",
+  "54DBF38299FA20C7EACC358547FE56ECE3D252 tema-boja_tree-trunk.svg",
+  "96959C18AC2AA4E3283E77EEE24F1A0788176F2 tema-boja_vegetable-debris.svg",
+  "E797DB6BCA7C33F4533A6815FE633C02F427D8 tema-boja_blocks.svg",
+  "D5D6A2B33AFAC87B4421DD361B96917CE545BE7 tema-boja_air-draught_r270.svg",
+  "EEC9C25AF482F6938472D38B60192F282FAE5CB3 tema-boja_debris.svg",
+  "78543F91FED61305776A1F45A57B53F8ABB76A3 tema-boja_water-flow@intermittent_r270.svg",
+  "8E10416FFEC54E2B91189FCEADCDBCFC58D44D4B tema-boja_water-flow_r270.svg"
+ ],
+ "pool_reused": [],
+ "lines": {
+  "themed": {
+   "abyss-entrance (tdx)": 1,
+   "overhang (tdx)": 5,
+   "overhang (target)": 2,
+   "slope (tdx)": 6,
+   "slope:steep (tdx)": 3,
+   "pit (tdx)": 2,
+   "floor-meander (tdx)": 1,
+   "ceiling-step (tdx)": 1,
+   "wall:blocks (tdx)": 3,
+   "wall:debris (tdx)": 2,
+   "wall:ice (tdx)": 2,
+   "water-flow (tdx)": 2,
+   "user (tdx)": 1,
+   "rope (tdx)": 2
+  },
+  "skipped": []
+ },
+ "areas": {
+  "themed": {
+   "blocks (tdx, tile)": 3,
+   "clay (tdx, tile)": 3,
+   "debris (tdx, tile)": 2,
+   "ice (tdx, tile)": 2,
+   "pebbles (tdx, tile)": 2,
+   "water (tdx, pattern)": 2,
+   "stalagmite (tdx, tile)": 1
+  },
+  "skipped": []
+ },
+ "library": {
+  "pens": [
+   "tema-boja-line-abyss-entrance-12",
+   "tema-boja-line-overhang-12",
+   "tema-boja-line-slope-7",
+   "tema-boja-line-slope:steep-7",
+   "tema-boja-line-pit-5",
+   "tema-boja-line-floor-meander-21",
+   "tema-boja-line-ceiling-step-14",
+   "tema-boja-line-wall:blocks-2",
+   "tema-boja-line-wall:debris-2",
+   "tema-boja-line-wall:ice-2",
+   "tema-boja-line-water-flow-3",
+   "tema-boja-line-user-2",
+   "tema-boja-line-rope-2"
+  ],
+  "brushes": [
+   "tema-boja-area-blocks-9",
+   "tema-boja-area-clay-3",
+   "tema-boja-area-debris-8",
+   "tema-boja-area-ice-1",
+   "tema-boja-area-pebbles-4",
+   "tema-boja-area-water-6",
+   "tema-boja-area-stalagmite-1"
+  ]
+ },
+ "notes": [
+  "plan mixed wall x3, wall:presumed x2 - majority wall",
+  "vegetable-debris: 117 stroke-only path(s) in the glyph do not print with the pen off (outline_pen false)",
+  "profile mixed wall x4, wall:presumed x4 - tie, not themed"
+ ],
+ "labels": 6,
+ "importer_turn": 9,
+ "centerline": 0,
+ "input": "projects/0007-symbol-themes/runs/2026-10-10-ss5-baseline/ss5_izvorno.csx",
+ "output": "projects/0007-symbol-themes/runs/2026-10-10-ss5-baseline/ss5_boja.csx",
+ "previous_theme": null,
+ "undone_items": 0,
+ "pool_removed": [],
+ "recovery": {
+  "other recovered": 67,
+  "sign recovered": 59,
+  "other exact": 1
+ }
+}

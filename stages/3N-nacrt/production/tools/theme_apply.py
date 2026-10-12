@@ -914,6 +914,29 @@ def _theme_area(root, theme, row, rep, libs, state):
         libs["brushes"].append(bid)
     brush.set("type", USER)
     brush.set("id", bid)
+    _theme_area_outline(root, theme, item, spec, libs, state)
+
+
+def _theme_area_outline(root, theme, item, spec, libs, state):
+    """The area's outline: a library pen like a plain line's (style None for
+    `outline: false`), so undo and theme switching treat it as any line pen."""
+    o = spec.get("outline")
+    pen = item.find("pen")
+    builtin = _builtin(pen)
+    if o is None or builtin is None:
+        return
+    pid = lib_id(theme.id, "outline", spec["key"], builtin)
+    if pid not in state["pens"]:
+        width = o["width"] if o.get("width") is not None else default_width(root, builtin)
+        lib, created = _library(root, "pens", True)
+        state["pens_created"] = state["pens_created"] or created
+        line = {"color": o["color"], "style": o["style"], "dash": o["dash"], "svg": None}
+        _lib_append(lib, library_pen(pid, "%s%s:%s/outline/%d" % (MARK, theme.id, spec["key"], builtin),
+                                     line, width, builtin, None, {}))
+        state["pens"][pid] = builtin
+        libs["pens"].append(pid)
+    pen.set("type", USER)
+    pen.set("id", pid)
 
 
 def apply_theme(root, is_csz, theme, names, targets, ltargets=None):

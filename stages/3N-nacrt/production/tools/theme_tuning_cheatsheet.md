@@ -53,6 +53,7 @@ everything and only blacks the colours (`monochrome`).
 | "more water lines" | `pattern.density` | ↓ (1/3 = 3× the lines) | 1 → 0.33 (r4) |
 | "plain fill" | `solid: true`, `color` | – | – |
 | "stones outlined with a white inside" | artwork, `crop` subitems (default) | per stone: a **white-filled** shape + its outline as a **compound path** in the colour (Illustrator *Outline Stroke* makes exactly that). cSurvey paints a tile's white shapes first, then the coloured ones, each with a 1-px edge in the theme colour (`cBrush.pRenderClipart`). Never `crop: none` (one even-odd path: inner shapes cancel) | probe 2026-10-08: prints as grey rings, white inside |
+| "no outline round the area" / "coloured outline" | `outline` | `false` = none; `{color, width}` = a pen of its own | every area `false`, water blue (r13) |
 | "background colour under the tile" | `background_color` | not blacked by `monochrome` | – |
 
 ## Signs
@@ -67,6 +68,7 @@ everything and only blacks the colours (`monochrome`).
 | "too heavy / outlined" vs "lost detail" | `outline_pen` false/true | false = fills only (default); true = cSurvey's pen round every path; stroke-only hairlines print only with the pen | vegetable-debris stays fills-only (r6) |
 | "show only the outline" | `render: outline` | brush white, pen in the colour | – |
 | "use cSurvey's own glyph" | `svg: null` | – | – |
+| "cSurvey's own glyph, but turned / recoloured" | normalise the stock SVG (`theme_svg.py normalize --sign KEY C:\csurvey64\Objects\Cliparts\Signs\KEY.svg themes/boja/signs/KEY.svg`), then `rotate` | stock glyphs point **right**, ours up: `rotate: -90`; mostly strokes, so `outline_pen: true` | spring, sink (r13) |
 
 ## Colour and B/W
 

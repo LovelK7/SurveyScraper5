@@ -15,6 +15,7 @@ sys.path.insert(0, str(TOOLS))
 
 import nacrt_finish  # noqa: E402
 import theme_apply as ta  # noqa: E402
+import themes  # noqa: E402
 
 FIX = Path(__file__).resolve().parents[1] / "example" / "finishing"
 LT_FIN = FIX / "SB_1103_golobreska_lt_fin.csx"
@@ -447,6 +448,34 @@ def test_phase2_undo_switch_idempotent(env2):
     orig = ET.parse(csx).getroot()
     assert ET.tostring(root.find("plan")) == ET.tostring(orig.find("plan"))
     assert len(root.find("pens")) == 0 and len(root.find("brushes")) == 0
+
+
+def test_area_outline_off_and_coloured_with_undo(env2):
+    tmp, root, csx, _pre = env2
+    (root / "o").mkdir()
+    (root / "o" / "theme.json").write_text(json.dumps(
+        {"name": "O", "extends": "c",
+         "areas": {"pebbles": {"outline": False},
+                   "water": {"solid": True, "color": "#24A9D1",
+                             "outline": {"color": "#24A9D1", "width": 2}}}}))
+    out, _ = _run(env2, csx, "o", "o.csx")
+    items, r = _items(out)
+    pens = {p.get("id"): p for p in r.find("pens")}
+    off = pens["tema-o-outline-pebbles-0"]
+    assert off.get("style") == "98" and off.get("decorationstyle") == "0"
+    assert items[3].find("pen").attrib == {"type": "98", "id": "tema-o-outline-pebbles-0"}
+    blue = pens["tema-o-outline-water-2"]
+    assert blue.get("style") == "0" and blue.get("width") == "2.00"
+    assert blue.get("color") == str(themes.to_argb("#24A9D1"))
+    # switching away restores the built-in outline pens
+    back, _ = _run(env2, out, "c", "back.csx")
+    direct, _ = _run(env2, csx, "c", "direct.csx")
+    assert back.read_bytes() == direct.read_bytes()
+    errs = themes.validate("o", themes_root=str(root))
+    assert errs == []
+    (root / "o" / "theme.json").write_text(json.dumps(
+        {"name": "O", "areas": {"water": {"solid": True, "outline": {"style": "none"}}}}))
+    assert any("outline" in e for e in themes.validate("o", themes_root=str(root)))
 
 
 def test_libraries_created_when_absent_and_removed_on_undo(env2):

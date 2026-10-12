@@ -26,7 +26,7 @@
       "id": "danger",
       "sign": null,
       "sign_via": "TopoDroid danger has no cSurvey sign (X-box)",
-      "scale": 1.057,
+      "scale": 1.06,
       "file": "signs/danger.svg",
       "bbox": [
         37.742,
@@ -54,7 +54,7 @@
       "id": "plus",
       "sign": null,
       "sign_via": "TopoDroid plus has no cSurvey sign (X-box)",
-      "scale": 0.763,
+      "scale": 0.765,
       "file": "signs/plus.svg",
       "bbox": [
         27.238,
@@ -83,7 +83,7 @@
       "id": "minus",
       "sign": null,
       "sign_via": "TopoDroid minus has no cSurvey sign (X-box)",
-      "scale": 0.763,
+      "scale": 0.765,
       "file": "signs/minus.svg",
       "bbox": [
         27.238,
@@ -112,7 +112,7 @@
       "id": "plus-minus",
       "sign": null,
       "sign_via": "TopoDroid plus-minus has no cSurvey sign (X-box)",
-      "scale": 1.025,
+      "scale": 1.028,
       "file": "signs/plus-minus.svg",
       "bbox": [
         36.6,
@@ -139,7 +139,7 @@
       "id": "continuation",
       "sign": 257,
       "sign_via": "cSurvey sign name",
-      "scale": 0.763,
+      "scale": 0.765,
       "file": "signs/continuation.svg",
       "bbox": [
         27.238,
@@ -165,11 +165,11 @@
       "id": "air-draught",
       "sign": 774,
       "sign_via": "TopoDroid air-draught, natural import",
-      "scale": 1.35,
+      "scale": 1.354,
       "file": "signs/air-draught.svg",
       "bbox": [
         11.566,
-        48.21
+        48.209
       ],
       "paths_out": 5,
       "points_in": 20,
@@ -191,7 +191,7 @@
       "id": "debris",
       "sign": 261,
       "sign_via": "TopoDroid debris -> breakdownchoke (tdx-mapping.json)",
-      "scale": 0.997,
+      "scale": 1.0,
       "file": "signs/debris.svg",
       "bbox": [
         35.611,
@@ -215,7 +215,7 @@
       "id": "tree-trunk",
       "sign": 771,
       "sign_via": "TopoDroid tree-trunk -> vegetabledebris (tdx-mapping.json)",
-      "scale": 1.089,
+      "scale": 1.092,
       "file": "signs/tree-trunk.svg",
       "bbox": [
         38.88,
@@ -242,7 +242,7 @@
       "id": "vegetable-debris",
       "sign": 771,
       "sign_via": "TopoDroid vegetable-debris, natural import",
-      "scale": 1.608,
+      "scale": 1.612,
       "file": "signs/vegetable-debris.svg",
       "bbox": [
         57.422,
@@ -873,36 +873,11 @@
     },
     {
       "kind": "signs",
-      "key": "blocks",
-      "id": "blocks",
-      "sign": 1290,
-      "sign_via": "cSurvey sign name",
-      "scale": 1.178,
-      "file": "signs/blocks.svg",
-      "bbox": [
-        42.087,
-        28.975
-      ],
-      "paths_out": 6,
-      "points_in": 162,
-      "fixed": {
-        "transforms baked": 1,
-        "fills flattened": 6,
-        "polygon converted to path": 5
-      },
-      "colours_flattened": [
-        "#78787a"
-      ],
-      "rejected": [],
-      "warnings": []
-    },
-    {
-      "kind": "signs",
       "key": "water-flow",
       "id": "water-flow",
       "sign": 777,
       "sign_via": "TopoDroid water-flow, natural import",
-      "scale": 1.0,
+      "scale": 1.003,
       "file": "signs/water-flow.svg",
       "bbox": [
         5.265,
@@ -930,7 +905,7 @@
       "id": "water-flow:intermittent",
       "sign": 777,
       "sign_via": "TopoDroid water-flow:intermittent -> waterflow (tdx-mapping.json)",
-      "scale": 0.976,
+      "scale": 0.979,
       "file": "signs/water-flow@intermittent.svg",
       "bbox": [
         5.233,
@@ -958,7 +933,7 @@
       "id": "bones",
       "sign": null,
       "sign_via": "TopoDroid bones has no cSurvey sign (X-box)",
-      "scale": 0.969,
+      "scale": 0.972,
       "file": "signs/bones.svg",
       "bbox": [
         34.603,
@@ -980,13 +955,38 @@
       ]
     },
     {
+      "kind": "signs",
+      "key": "blocks",
+      "id": "blocks",
+      "sign": 1290,
+      "sign_via": "cSurvey sign name",
+      "scale": 0.967,
+      "file": "signs/blocks.svg",
+      "bbox": [
+        34.45,
+        23.961
+      ],
+      "paths_out": 6,
+      "points_in": 148,
+      "fixed": {
+        "transforms baked": 1,
+        "fills flattened": 6,
+        "polygon converted to path": 5
+      },
+      "colours_flattened": [
+        "#78787a"
+      ],
+      "rejected": [],
+      "warnings": []
+    },
+    {
       "kind": "lines",
       "key": "abyss-entrance",
       "id": "abyss-entrance",
       "file": "lines/abyss-entrance.svg",
       "bbox": [
         4.634,
-        7.764
+        7.765
       ],
       "paths_out": 1,
       "points_in": 4,
@@ -1154,14 +1154,14 @@
       "id": "wall:blocks",
       "file": "lines/wall@blocks.svg",
       "bbox": [
-        27.941,
-        6.475
+        6.353,
+        6.735
       ],
-      "paths_out": 4,
-      "points_in": 72,
+      "paths_out": 1,
+      "points_in": 17,
       "fixed": {
-        "polygon converted to path": 4,
-        "fills flattened": 4
+        "polygon converted to path": 1,
+        "fills flattened": 1
       },
       "colours_flattened": [
         "#ababab"
@@ -1175,16 +1175,16 @@
       "id": "wall:debris",
       "file": "lines/wall@debris.svg",
       "bbox": [
-        27.941,
-        3.515
+        6.307,
+        2.688
       ],
-      "paths_out": 8,
-      "points_in": 224,
+      "paths_out": 3,
+      "points_in": 72,
       "fixed": {
-        "polygon converted to path": 4,
-        "fills flattened": 8,
-        "transforms baked": 4,
-        "arcs converted": 27
+        "polygon converted to path": 1,
+        "fills flattened": 3,
+        "transforms baked": 2,
+        "arcs converted": 5
       },
       "colours_flattened": [
         "#ababab"
@@ -1264,7 +1264,7 @@
       "file": "areas/clay.svg",
       "bbox": [
         9.33,
-        11.382
+        11.383
       ],
       "paths_out": 12,
       "points_in": 165,
@@ -1279,59 +1279,6 @@
       ],
       "rejected": [],
       "warnings": []
-    },
-    {
-      "kind": "areas",
-      "key": "debris",
-      "id": "debris-2",
-      "file": "areas/debris.svg",
-      "bbox": [
-        49.673,
-        28.196
-      ],
-      "paths_out": 30,
-      "points_in": 279,
-      "fixed": {
-        "polygon converted to path": 18,
-        "fills flattened": 30,
-        "transforms baked": 10,
-        "arcs converted": 19,
-        "rect converted to path": 3
-      },
-      "colours_flattened": [
-        "#999"
-      ],
-      "rejected": [],
-      "warnings": [
-        "id 'debris-2': uniqueness suffix -2 stripped (layer fixes the kind)"
-      ]
-    },
-    {
-      "kind": "areas",
-      "key": "blocks",
-      "id": "blocks-2",
-      "file": "areas/blocks.svg",
-      "bbox": [
-        57.073,
-        29.957
-      ],
-      "paths_out": 74,
-      "points_in": 554,
-      "fixed": {
-        "polyline converted to path": 48,
-        "fills flattened": 74,
-        "invisible shapes dropped": 4,
-        "transforms baked": 26,
-        "arcs converted": 18
-      },
-      "colours_flattened": [
-        "#999",
-        "#bbbcbc"
-      ],
-      "rejected": [],
-      "warnings": [
-        "id 'blocks-2': uniqueness suffix -2 stripped (layer fixes the kind)"
-      ]
     },
     {
       "kind": "areas",
@@ -1376,9 +1323,59 @@
       ],
       "rejected": [],
       "warnings": []
+    },
+    {
+      "kind": "areas",
+      "key": "debris",
+      "id": "debris-2",
+      "file": "areas/debris.svg",
+      "bbox": [
+        64.335,
+        35.213
+      ],
+      "paths_out": 42,
+      "points_in": 436,
+      "fixed": {
+        "polyline converted to path": 19,
+        "transforms baked": 18,
+        "fills flattened": 21,
+        "polygon converted to path": 5
+      },
+      "colours_flattened": [
+        "#c9c9c8"
+      ],
+      "rejected": [],
+      "warnings": [
+        "id 'debris-2': uniqueness suffix -2 stripped (layer fixes the kind)"
+      ]
+    },
+    {
+      "kind": "areas",
+      "key": "blocks",
+      "id": "blocks-2",
+      "file": "areas/blocks.svg",
+      "bbox": [
+        66.666,
+        35.5
+      ],
+      "paths_out": 64,
+      "points_in": 669,
+      "fixed": {
+        "polyline converted to path": 19,
+        "transforms baked": 29,
+        "fills flattened": 32,
+        "polygon converted to path": 16
+      },
+      "colours_flattened": [
+        "#c9c9c8"
+      ],
+      "rejected": [],
+      "warnings": [
+        "id 'blocks-2': uniqueness suffix -2 stripped (layer fixes the kind)"
+      ]
     }
   ],
-  "sign_median_size": 35.715,
+  "sign_median_size": 35.611,
   "unresolved_signs": [
     "danger",
     "plus",

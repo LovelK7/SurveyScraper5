@@ -80,6 +80,73 @@ def test_a_sign_size_the_operator_set_is_left_alone(tmp_path):
     assert sizes == ["4", "2"]           # the hand-set one kept, the bare one sized
 
 
+def test_border_lines_are_not_clipped_unless_the_operator_chose(tmp_path):
+    src = tmp_path / "cave.csx"
+    src.write_text(CSX.replace(
+        '<plan><layers><layer name="Base" type="0"><items /></layer></layers></plan>',
+        '<plan><layers><layer name="Borders" type="5"><items>'
+        '<item layer="5" type="1" category="2"><pen type="2" /><datarow>TopoDroid|x</datarow></item>'
+        '<item layer="5" type="1" category="2" clippingtype="2"><pen type="2" /><datarow>TopoDroid|x</datarow></item>'
+        '<item layer="2" type="1" category="3"><pen type="12" /><datarow>TopoDroid|x</datarow></item>'
+        '</items></layer></layers></plan>'), encoding="utf-8")
+    assert fixer.main([str(src), "--no-theme"]) == 0
+    root = ET.parse(str(tmp_path / "cave_postp.csx")).getroot()
+    assert [i.get("clippingtype") for i in root.iter("item") if i.get("type") == "1"] == ["1", "2", None]
+
+
+def test_long_labels_are_broken_into_lines_and_short_or_hand_broken_ones_kept(tmp_path):
+    long = "ide al je usko, a tu je jos neki dugi tekst koji mozda prelazi granice"
+    src = tmp_path / "cave.csx"
+    src.write_text(CSX.replace(
+        '<plan><layers><layer name="Base" type="0"><items /></layer></layers></plan>',
+        '<plan><layers><layer name="Signs" type="6"><items>'
+        '<item layer="6" type="8" category="81" text="%s"><datarow>TopoDroid|x</datarow></item>'
+        '<item layer="6" type="8" category="81" text="MES"><datarow>TopoDroid|x</datarow></item>'
+        '<item layer="6" type="8" category="81" text="vec&#10;prelomljeno, ostaje kako je napisano">'
+        '<datarow>TopoDroid|x</datarow></item>'
+        '</items></layer></layers></plan>' % long), encoding="utf-8")
+    assert fixer.main([str(src), "--no-theme"]) == 0
+    texts = [i.get("text") for i in ET.parse(str(tmp_path / "cave_postp.csx")).getroot().iter("item")
+             if i.get("type") == "8"]
+    assert texts[0] == "ide al je usko, a tu je\njos neki dugi tekst koji\nmozda prelazi granice"
+    assert texts[1] == "MES"
+    assert texts[2] == "vec\nprelomljeno, ostaje kako je napisano"
+
+
+ABYSS_POST = CSX.replace(
+    '<plan><layers><layer name="Base" type="0"><items /></layer></layers></plan>',
+    '<plan><layers><layer name="Floor" type="2"><items>'
+    '<item layer="2" type="1" category="3" linetype="1"><pen type="12" />'
+    '<points data="0.00 0.00 B 3.00 0.00 S 3.00 3.00 S " /><datarow>TopoDroid|x</datarow></item>'
+    '<item layer="2" type="1" category="3" linetype="1"><pen type="12" />'
+    '<points data="10.00 0.00 B 13.00 0.00 S " /><datarow>TopoDroid|x</datarow></item>'
+    '</items></layer></layers></plan>')
+ABYSS_PRE = ('<csurvey><properties creatid="TopoDroid" /><plan>'
+             '<item type="line" name="overhang" options="tdxpp:abyss-entrance">'
+             '<points data="3.00 3.00 3.00 0.00 0.00 0.00 " /></item>'
+             '<item type="line" name="overhang"><points data="13.00 0.00 10.00 0.00 " /></item>'
+             '</plan></csurvey>')
+
+
+def test_abyss_entrance_is_not_clipped_when_its_name_is_recovered(tmp_path, capsys):
+    (tmp_path / "cave.csx").write_text(ABYSS_POST, encoding="utf-8")
+    (tmp_path / "cave_prep.csx").write_text(ABYSS_PRE, encoding="utf-8")
+    assert fixer.main([str(tmp_path / "cave.csx"), "-o", str(tmp_path / "out.csx"),
+                       "--no-theme"]) == 0
+    clip = [i.get("clippingtype") for i in ET.parse(str(tmp_path / "out.csx")).getroot().iter("item")
+            if i.get("type") == "1"]
+    assert clip == ["1", None]            # the abyss-entrance ring only; overhang keeps its cut
+    assert "abyss-entrance) bez rezanja: 1" in capsys.readouterr().out
+
+
+def test_abyss_entrance_without_a_pre_file_stays_clipped_and_says_so(tmp_path, capsys):
+    (tmp_path / "cave.csx").write_text(ABYSS_POST, encoding="utf-8")
+    assert fixer.main([str(tmp_path / "cave.csx"), "--no-theme"]) == 0
+    root = ET.parse(str(tmp_path / "cave_postp.csx")).getroot()
+    assert all(i.get("clippingtype") is None for i in root.iter("item"))
+    assert "nema izvornog TopoDroid" in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("given", ["cave_prep.csx", "cave_pp.csx"])
 def test_the_output_replaces_prep_with_postp(tmp_path, given):
     (tmp_path / given).write_text(CSX, encoding="utf-8")
