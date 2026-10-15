@@ -6,7 +6,7 @@ log.
 
 | # | Report | Kind | Status | Workaround meanwhile |
 |---|---|---|---|---|
-| [0001](0001-gallery-path-case/PR.md) | Lowercased file paths: the sign gallery crashes when cSurvey runs from a shared Google Drive folder, and a double-clicked `.csx` there is not found | PR (2 files) | written 2026-10-12, not yet sent | cSurvey runs from a local copy (`production/tools/csurvey_local.py`); the dashboard opens surveys with `filename=` |
+| [0001](0001-gallery-path-case/PR.md) | Lowercased file paths: the sign gallery crashes when cSurvey runs from a shared Google Drive folder, and a double-clicked `.csx` there is not found | PR (2 files) | **sent 2026-10-15: [cepelabs/cSurvey#4](https://github.com/cepelabs/cSurvey/pull/4)**, open | cSurvey runs from a local copy (`production/tools/csurvey_local.py`); the dashboard opens surveys with `filename=` |
 
 ## Where things are
 
