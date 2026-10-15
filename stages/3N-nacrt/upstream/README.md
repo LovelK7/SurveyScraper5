@@ -41,19 +41,31 @@ git diff --no-index a.vb b.vb   # then fix the two path lines to a/cSurveyPC/<fi
 
 ## Sending it (user)
 
-From `../cSurvey` (your fork):
+Rehearsed 2026-10-15. Works from any PowerShell window; it uses a throwaway folder `C:\pr`, never
+`../cSurvey`, and needs only `git` and `gh` (already logged in as LovelK7). Replace `NNNN-short-name`
+and the branch name `fix/short-name`; the title is the first line of `PR.md`.
 
-```bash
-git fetch https://github.com/cepelabs/cSurvey.git master
-git switch -c fix/<short-name> FETCH_HEAD
-git apply --ignore-whitespace ../SurveyScraper5/stages/3N-nacrt/upstream/NNNN-short-name/fix.patch
-# build and test, then:
+```powershell
+# 1. a fresh copy of the AUTHOR's code (your fork's master has your own commits)
+git -c core.autocrlf=false -c core.longpaths=true clone --filter=blob:none https://github.com/cepelabs/cSurvey.git C:\pr\cSurvey
+cd C:\pr\cSurvey
+git config core.autocrlf false
+git config core.longpaths true
+
+# 2. a branch with the fix
+git switch -c fix/short-name
+git apply "C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper5\stages\3N-nacrt\upstream\NNNN-short-name\fix.patch"
+git diff --stat            # must list only the files the PR names
 git commit -am "<the PR title>"
-git push -u origin fix/<short-name>
-gh pr create --repo cepelabs/cSurvey --base master --head LovelK7:fix/<short-name> \
-  --title "<the PR title>" --body-file ../SurveyScraper5/stages/3N-nacrt/upstream/NNNN-short-name/PR.md
+
+# 3. upload the branch to your fork and open the PR to the author
+git push https://github.com/LovelK7/cSurvey.git fix/short-name
+gh pr create --repo cepelabs/cSurvey --base master --head LovelK7:fix/short-name `
+  --title "<the PR title>" `
+  --body-file "C:\Users\Lovel.IZRK-LK-NB\Programming\SurveyScraper5\stages\3N-nacrt\upstream\NNNN-short-name\PR.md"
 ```
 
-If `git apply` refuses (line endings), make the change by hand: every patch here is a few lines and the
-PR text quotes them. Afterwards `git switch` back to the branch you were on; the clone is reference
-material for the agents and should stay on upstream code.
+`gh pr create` prints the PR's link: put it in the table above. Afterwards `C:\pr` can be deleted. If
+`git apply` refuses, tell the agent: the patch is regenerated against the author's current code. We
+can't build cSurvey here (it needs the paid DevExpress 24.2), so "Tested" says what was checked
+instead and the author builds it.

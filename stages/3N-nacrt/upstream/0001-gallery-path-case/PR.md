@@ -1,8 +1,5 @@
-<!-- Paste below the line into the pull request (title = the first heading). Patch: fix.patch -->
-
----
-
-# Keep the case of file paths (crash / file not found on case-sensitive file systems)
+<!-- PR title: Keep the case of file paths (crash / file not found on case-sensitive file systems) -->
+<!-- This file is the PR body as it is (gh pr create --body-file). Patch: fix.patch -->
 
 ## Problem
 
@@ -78,5 +75,6 @@ copy are not affected: they never load the sign gallery.
 ## Tested
 
 - Path case on `G:`: only the shared folder's name is case-sensitive (checked one path part at a time).
-- *(fill in after building)* started from the Drive copy, opened a survey with signs, imported a
-  TopoDroid file, double-clicked a `.csx` in the shared folder: no error, signs drawn.
+- The patch applies cleanly to `master`. I could not build it (no DevExpress 24.2 here), so the change
+  is reasoned from the code: I checked every reader of `cClipartPlaceholder.Filename` and of the
+  command-line keys. Until a build with it is out, our members run cSurvey from a local copy.
