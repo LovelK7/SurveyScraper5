@@ -41,7 +41,7 @@ dated "state at session end" blocks of earlier sessions are in [§3.9](#39-sessi
 |---|---|---|---|
 | 1 | Answer two r13 questions: was the stalagmite comment about its outline? Should the blocks/debris area tiles take the drawing's lighter grey (#C9C9C8)? | user | [r13 RUNLOG](runs/2026-10-10-r13-ss5/RUNLOG.md) |
 | 2 | Next tuning round on ss5 | both | this section |
-| 3 | **The cave area from every wall kind plus the pit-entrance rings** (accepted in principle, not built) | agent, with the user | [findings/walls-and-clipping.md §4](findings/walls-and-clipping.md#4-open-the-cave-area-from-every-wall-kind-and-the-pit-rings) |
+| 3 | **The cave area from every wall kind plus the pit-entrance rings** (cave area built 2026-10-12, r14; the visible-walls split for the wall:presumed dash is not) | agent, with the user | [findings/walls-and-clipping.md §4](findings/walls-and-clipping.md#4-the-cave-area-from-every-wall-kind-and-the-pit-rings) |
 | 4 | Teach `theme_round.py` the ss5 survey (crop sheets, focus); today `ss5_round.py` prints whole pages | agent | this section |
 | 5 | B/W: the dotted shot line stayed orange-brown on SB 1103 (not seen on ss5, where it prints black); debris maybe too heavy in B/W at small scale | agent | [§3.9](#39-session-history) |
 | 6 | Sign-off on ss5 in both themes (T6), then `/publish` csx kit v1.8 (carries the KORAK 2 rules above), then close-out (§4, §5) | user, then agent | §3.6 T6, §4 |

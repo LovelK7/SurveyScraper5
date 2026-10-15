@@ -48,8 +48,9 @@ the cave has earned its katastarski broj, so it rides with
 [6P-predaja](../6P-predaja/README.md) at M6. Today that move is manual and
 routinely forgotten, which is exactly why `check-flag` exists.
 
-HEIC sources are **reported, not converted** — `pillow-heif` is deliberately not
-a dependency.
+HEIC/HEIF sources (iPhone photos) are converted like any other photo through
+`pillow-heif`, part of the `[photos]` extra since 2026-10-15. On a machine
+without it they are **reported, not converted** — never silently dropped.
 
 ## Where things are
 

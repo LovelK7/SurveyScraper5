@@ -9,7 +9,7 @@ walls — special wall kinds, borders outside the cave, the rim of a pit entranc
 - [1. How cSurvey clips](#1-how-csurvey-clips)
 - [2. What goes wrong today](#2-what-goes-wrong-today)
 - [3. Done (KORAK 2, 2026-10-10/12)](#3-done-korak-2-2026-10-1012)
-- [4. Open: the cave area from every wall kind and the pit rings](#4-open-the-cave-area-from-every-wall-kind-and-the-pit-rings)
+- [4. The cave area from every wall kind and the pit rings (built 2026-10-12)](#4-the-cave-area-from-every-wall-kind-and-the-pit-rings)
 
 ## 1. How cSurvey clips
 
@@ -54,18 +54,33 @@ already has a `clippingtype` (set by the operator in cSurvey) is left alone.
 Not fixed by these: floor items inside a passage walled only by special walls, items on a pit ledge, and the lost
 `wall:presumed` dash.
 
-## 4. Open: the cave area from every wall kind and the pit rings
+## 4. The cave area from every wall kind and the pit rings
 
-Accepted in principle by the user (2026-10-10 and 12), **not built**.
+Accepted by the user 2026-10-10/12, **built 2026-10-12 (round r14,
+[runs/2026-10-12-r14-cave-area](../runs/2026-10-12-r14-cave-area/RUNLOG.md))** as KORAK 2 switch `cave_area`
+(default on; `cave_area_walls: ["wall"]`, `cave_area_rings: ["abyss-entrance"]`; `wall_orient.build_cave_area`).
 
-- **The cave area** = a hidden outline (pen style none, no fill) that KORAK 2 builds from **every** wall kind (wall,
-  presumed, underlying, blocks, debris, ice), merged and oriented as today, **plus the inside of every closed
-  `abyss-entrance` ring** (a second cave-border item, merge mode Add, so cSurvey unions them).
-- **The visible walls** stay separate lines, each with its own pen, so the theme gives every wall kind its own look
-  (fixes the wall:presumed dash too). They need clipping none.
-- **Why it fits the field practice:** surveyors draw a pit as an entrance ring plus the bottom's walls, never extra
-  lines for the mouth.
-- **Cost:** two items describe one wall. When the operator edits walls in cSurvey after KORAK 2, the hidden outline is
-  stale until **KORAK 3 rebuilds it**; the on-screen preview in between can be slightly off.
-- To settle when building: an `abyss-entrance` that is not closed (drawn as an arc); how the hidden item is marked
-  so a re-run of KORAK 2/3 replaces it instead of adding another; whether operators may see it (locked layer?).
+- **Hidden items.** A cave-border item (type 4) with pen None still gives cSurvey's clip its outline but draws nothing
+  (`cPen.Render`, `cPen.vb:1014-1015`: type None → `AddBorder(path, Nothing, wireframe)`, and the clip takes the
+  wireframe-outlined paths). Merge mode Add, so cSurvey unions them with the visible outline. They are marked
+  `name="obris spilje (KORAK 2)"` and `locked="1"` (cSurvey saves both, `cItem.vb:552,563`).
+- **All wall kinds.** Only in a design that has special walls (a recovered name `wall` or `wall:*` on a line): on a
+  throw-away copy of the file the merged wall outline is split back into strokes, the special walls join as wall
+  strokes, and the fresh-import merge (orientation by the survey, shortest-join chain) makes one outline. A special
+  wall joins only if one of its ends lies within 1 m (`LINK_TOL`) of an end of the outline, directly or through other
+  special walls: on ss5 two debris pieces drawn round a loose wall stroke were chained in across the cave and added
+  four crossing joins.
+- **Rings.** Each `abyss-entrance` line is copied as one hidden item. An open ring is closed by cSurvey with a straight
+  chord (KORAK 2 says so). The ring itself keeps its clipping None (§3).
+- **Re-run.** KORAK 2 first removes the marked items (point joins of later items follow), then builds them again.
+  The theme step never themes them.
+- **The visible walls are unchanged.** Splitting them into separate lines with their own pens (to keep the
+  wall:presumed dash) was **not** built; the merged outline still has one pen.
+
+Still open:
+
+- **Stale after edits.** The hidden outline is built from the walls as KORAK 2 saw them. If the operator edits walls
+  in cSurvey afterwards, the cave area does not follow until KORAK 2 is re-run on the edited file. KORAK 3 does not
+  rebuild it, because it has no name recovery for the special walls.
+- Without a `_prep` or phone export beside the file there are no names, and so no hidden items (KORAK 2 says so).
+- The wall:presumed dash (the visible-walls split above).

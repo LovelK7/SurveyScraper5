@@ -209,3 +209,70 @@ def test_point_joins_follow_merged_points_and_shifted_items():
     assert (item_a, b) == (0, "5,1,1")                        # the closed item moved from 4 to 1
     _m, pts = wo.parse_points(_items(root)[0].find("points").get("data"))
     assert wo._xy(pts[pt_a]) == RIGHT[3]
+
+
+# --- the hidden cave area (project 0007, findings/walls-and-clipping.md §4) ---
+
+
+def _line(parent, stroke, pen="2"):
+    """A Borders-layer line (wall:blocks/debris/ice arrive as these, KORAK 1 mapping)."""
+    el = ET.SubElement(parent, "item", {"layer": "5", "type": "1", "category": "2", "linetype": "1"})
+    ET.SubElement(el, "pen", {"type": pen})
+    ET.SubElement(el, "points", {"data": _data([stroke])})
+    ET.SubElement(el, "datarow").text = "TopoDroid|x"
+    return el
+
+
+def _hidden(root):
+    return [i for i in _items(root) if wo.is_cave_area(i)]
+
+
+def test_the_cave_area_takes_special_walls_linked_to_the_outline_but_not_islands():
+    # the left end of the passage is walled by wall:blocks (a border line); a debris
+    # stroke far away is an island and must not be chained in across the cave
+    root = _fresh([UPPER, RIGHT, LOWER])
+    items_el = root.find("plan/layers/layer/items")
+    left = _line(items_el, LEFT)
+    island = _line(items_el, [(30, 30), (31, 30), (31, 31)])
+    wo.fix(root)
+    visible = [i for i in _items(root) if i.get("type") == "4"]
+    rows = wo.build_cave_area(root, [left, island])
+    assert rows == [dict(design="plan", cave_area=True, walls=4, special=2, linked=1, rings=0, open_rings=0)]
+    (h,) = _hidden(root)
+    assert (h.get("type"), h.get("layer"), h.get("locked"), h.get("mergemode")) == ("4", "5", "1", "0")
+    assert {p.get("type") for p in h.iter("pen")} == {"0"} and h.find("datarow") is None
+    _m, pts = wo.parse_points(h.find("points").get("data"))
+    seqs = [[wo._xy(p) for p in pts[s:e + 1]] for s, e in wo.sequence_ranges(pts)]
+    assert sorted(sorted(s) for s in seqs) == sorted(sorted(s) for s in (UPPER, RIGHT, LOWER, LEFT))
+    assert wo.fill_joins(seqs) == (0.0, 0)
+    # the visible walls and the special lines are untouched
+    assert [i for i in _items(root) if i.get("type") == "4" and not wo.is_cave_area(i)] == visible
+    assert left.get("type") == "1" and left.find("pen").get("type") == "2"
+
+
+def test_without_special_walls_the_visible_outline_is_the_cave_area():
+    root = _fresh([UPPER, RIGHT, LOWER, LEFT])
+    wo.fix(root)
+    assert wo.build_cave_area(root) == [] and _hidden(root) == []
+
+
+def test_an_entrance_ring_becomes_a_hidden_cave_area_and_a_rerun_replaces_it():
+    root = _fresh([UPPER, RIGHT, LOWER, LEFT])
+    floor = ET.SubElement(root.find("plan/layers"), "layer", {"name": "Floor", "type": "2"})
+    ring = _line(ET.SubElement(floor, "items"), [(4, -3), (7, -3), (7, 3), (4, 3), (4, -2.9)], pen="12")
+    ring.set("layer", "2")
+    ring.set("clippingtype", "1")
+    wo.fix(root)
+    rows = wo.build_cave_area(root, rings=[ring])
+    assert rows[0]["rings"] == 1 and rows[0]["open_rings"] == 1
+    (h,) = _hidden(root)
+    assert h.find("points").get("data") == ring.find("points").get("data")
+    assert h.get("clippingtype") is None and ring.get("clippingtype") == "1"
+    # a later item (drawn by the operator after KORAK 2) keeps its point joins
+    later = _line(root.find("plan/layers/layer/items"), [(0, 5), (1, 5)])
+    ET.SubElement(root.find("plan"), "pointsjoins").append(
+        ET.Element("pointsjoin", {"data": "5,2,0 5,0,1 "}))
+    assert wo.remove_cave_area(root) == 1 and _hidden(root) == []
+    assert root.find("plan/pointsjoins/pointsjoin").get("data") == "5,1,0 5,0,1 "
+    wo.build_cave_area(root, rings=[ring])
+    assert len(_hidden(root)) == 1 and later in _items(root)

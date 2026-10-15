@@ -44,6 +44,7 @@ Stdlib only - the kit runs on operators' machines.
 
 import copy
 import math
+import xml.etree.ElementTree as ET
 
 LAYER_BORDERS = "5"
 AREA_TYPE = "4"                       # cItemInvertedFreeHandArea, the cave border
@@ -68,6 +69,7 @@ MIN_MAJORITY = 0.6      # length share the item's majority side needs
 REORDER_GAIN = 0.8      # a new order is kept only if its joins are < 80 % of the old
 CLOSED_TOL = 0.05       # m; a stroke whose ends meet is a closed outline (pillar, island)
 HAND_MERGE_MIN = 0.5    # m; a border with two sequences this long was merged by the operator
+LINK_TOL = 1.0          # m; a special wall (blocks, debris, ice) this close to the outline's ends joins the cave area
 
 
 # ---------------------------------------------------------------------------
@@ -592,9 +594,14 @@ def automerge_design(root, design):
     the operator already merged walls in this design (their work is not
     redone; fix_design orients and orders it instead).
     """
+    return _automerge(root, design)[0]
+
+
+def _automerge(root, design):
+    """automerge_design -> (report or None, the merged item or None)."""
     D = root.find(design)
     if D is None or D.find("layers") is None:
-        return None
+        return None, None
     items = borders_items(D)
     loose = []
     for ii, item in items:
@@ -606,7 +613,7 @@ def automerge_design(root, design):
         if len(ranges) > 1:
             real = [r for r in ranges if _length([_xy(p) for p in pts[r[0]:r[1] + 1]]) >= HAND_MERGE_MIN]
             if len(real) > 1:
-                return None                   # merged by hand: the operator owns this design's merge
+                return None, None             # merged by hand: the operator owns this design's merge
             continue                          # a stray extra point (Tavnjak's 0.0 m sequence): left as is
         if len(pts) < 2 or pts_el.findall("pen"):
             continue
@@ -615,7 +622,7 @@ def automerge_design(root, design):
             continue                          # a closed outline is its own border
         loose.append((ii, item, meta, pts, poly))
     if len(loose) < 2:
-        return None
+        return None, None
     wgrid, sgrid = _grids(root, design, items)
 
     members, free, left_out = [], set(), []   # member: (item index, item, meta, pts, old point indices)
@@ -634,7 +641,7 @@ def automerge_design(root, design):
             free.add(len(members))            # the survey cannot tell: the chain decides
         members.append((ii, item, meta, pts, idx))
     if len(members) < 2:
-        return None
+        return None, None
     order = _best_cycle([(_xy(m[3][0]), _xy(m[3][-1])) for m in members], free)
 
     # The merged item is the first member's element (attributes, pen, brush,
@@ -690,7 +697,236 @@ def automerge_design(root, design):
         j.set("data", " ".join(parts) + " ")
     seqs = [[_xy(p) for p in new_pts[a:b + 1]] for a, b in sequence_ranges(new_pts)]
     return dict(design=design, merged=len(members), left_out=left_out, unjudged=len(free),
-                joins=fill_joins(seqs))
+                joins=fill_joins(seqs)), first
+
+
+# ---------------------------------------------------------------------------
+# the cave area (project 0007, findings/walls-and-clipping.md §4)
+#
+# cSurvey cuts floor items and Borders-layer lines to the union of the
+# cave-border items (cDesign.GetCaveClippingRegions, cDesign.vb:411-470). The
+# visible merged outline holds only the cave-pen walls, so a passage walled by
+# wall:blocks/debris/ice (border lines) and everything inside a pit's entrance
+# ring (wider than the bottom's walls) was cut. KORAK 2 adds HIDDEN cave-border
+# items: pen None still gives the clip its outline but draws nothing
+# (cPen.Render, cPen.vb:1014-1015), merge mode Add so cSurvey unions them.
+
+CAVE_AREA_NAME = "obris spilje (KORAK 2)"   # marks our items; a re-run replaces them
+NO_PEN = "0"                                # cPen.PenTypeEnum.None (cPen.vb:1162)
+
+
+def is_cave_area(item):
+    return item.get("name") == CAVE_AREA_NAME
+
+
+def _borders_parent(D):
+    layers = D.find("layers")
+    for layer in (layers.findall("layer") if layers is not None else []):
+        if layer.get("type") == LAYER_BORDERS:
+            items_el = layer.find("items")
+            return items_el if items_el is not None else layer
+    return None
+
+
+def _drop_borders_items(D, gone_items):
+    """Remove Borders-layer items; point joins follow the shifted indices and
+    lose their references to the removed items. -> how many were removed."""
+    items = borders_items(D)
+    gone = {ii for ii, it in items if any(it is g for g in gone_items)}
+    if not gone:
+        return 0
+    for ii, it in items:
+        if ii in gone:
+            parent = _parent_of(D, it)
+            if parent is not None:
+                parent.remove(it)
+    new_index, k = {}, 0
+    for ii, _it in items:
+        if ii not in gone:
+            new_index[ii] = k
+            k += 1
+    pj = D.find("pointsjoins")
+    for j in (list(pj.findall("pointsjoin")) if pj is not None else []):
+        parts = []
+        for ref in (j.get("data") or "").split():
+            bits = ref.split(",")
+            if len(bits) == 3 and bits[0] == LAYER_BORDERS and bits[1].isdigit():
+                if int(bits[1]) in gone:
+                    continue
+                bits[1] = str(new_index[int(bits[1])])
+            parts.append(",".join(bits))
+        if len(parts) < 2:
+            pj.remove(j)
+        else:
+            j.set("data", " ".join(parts) + " ")
+    return len(gone)
+
+
+def remove_cave_area(root):
+    """Drop the hidden cave-area items of an earlier KORAK 2. -> count."""
+    n = 0
+    for design in ("plan", "profile"):
+        D = root.find(design)
+        if D is not None and D.find("layers") is not None:
+            n += _drop_borders_items(D, [it for _ii, it in borders_items(D) if is_cave_area(it)])
+    return n
+
+
+def _hidden(item):
+    """`item` (a copy) made into a hidden, locked cave-border item."""
+    for k in ("clippingtype", "hiddenindesign", "hiddeninpreview"):
+        item.attrib.pop(k, None)
+    item.set("layer", LAYER_BORDERS)
+    item.set("type", AREA_TYPE)
+    item.set("category", "1")
+    item.set("mergemode", "0")               # Add (cIItemMergeableArea.MergeModeEnum)
+    item.set("name", CAVE_AREA_NAME)
+    item.set("locked", "1")
+    for child in list(item):
+        if child.tag in ("pen", "datarow"):
+            item.remove(child)
+    item.insert(0, _pen(NO_PEN))
+    pts_el = item.find("points")
+    if pts_el is not None:
+        for p in list(pts_el.findall("pen")):
+            pts_el.remove(p)
+            pts_el.append(_pen(NO_PEN))
+    return item
+
+
+def _pen(ptype):
+    return ET.Element("pen", {"type": ptype})
+
+
+def _as_stroke(item, pts, pen_type="1"):
+    """A loose cave-pen stroke item holding `pts` (for the shadow merge)."""
+    el = copy.deepcopy(item)
+    el.set("type", AREA_TYPE)
+    el.attrib.pop("clippingtype", None)
+    for child in list(el):
+        if child.tag == "pen":
+            el.remove(child)
+    el.insert(0, _pen(pen_type))
+    pts_el = el.find("points")
+    for p in list(pts_el.findall("pen")):
+        pts_el.remove(p)
+    seq = [dict(p) for p in pts]
+    seq[0].update(B=True, P=False)
+    pts_el.set("data", serialize_points("", seq))
+    return el
+
+
+def _walls_outline(root, design, special):
+    """Every wall kind merged into one outline, on a throw-away copy of the
+    file: merged cave borders are split back into strokes, the special-wall
+    lines (`special`: ids of items in `root`) join as cave-pen strokes, and
+    the fresh-import merge does the rest. -> (merged item copy or None,
+    strokes merged, special walls that linked to the outline)."""
+    shadow = copy.deepcopy(root)
+    twin = {id(a): b for a, b in zip(root.iter("item"), shadow.iter("item"))}
+    D = shadow.find(design)
+    parent = _borders_parent(D)
+    if parent is None:
+        return None, 0, 0
+    # The anchors: the strokes of the merged outline(s), or every loose wall
+    # stroke when nothing was merged (a single-stroke cave).
+    ends, loose_ends = [], []
+    for _ii, item in borders_items(D):
+        pts_el, pen = item.find("points"), item.find("pen")
+        if item.get("type") != AREA_TYPE or pts_el is None or pen is None or pen.get("type") not in SAFE_PENS:
+            continue
+        meta, pts = parse_points(pts_el.get("data") or "")
+        ranges = sequence_ranges(pts)
+        tips = [t for a, b in ranges for t in (_xy(pts[a]), _xy(pts[b]))]
+        if len(ranges) < 2:
+            loose_ends += tips
+            continue
+        ends += tips
+        host = _parent_of(D, item)
+        at = list(host).index(item)
+        host.remove(item)
+        for k, (s, e) in enumerate(ranges):
+            host.insert(at + k, _as_stroke(item, pts[s:e + 1]))
+    if not ends:
+        ends = loose_ends
+    # A special wall joins the outline only when it links to it end to end, directly or
+    # through other special walls: blocks drawn round a pillar beside the passage are
+    # an island, and chaining them in cut joins across the cave (ss5 plan, 2026-10-12).
+    cand = []
+    for key in special:
+        item = twin.get(key)
+        if item is None or not any(item is it for it in D.iter("item")):
+            continue
+        pts_el = item.find("points")
+        if pts_el is None:
+            continue
+        _m, pts = parse_points(pts_el.get("data") or "")
+        if len(pts) >= 2:
+            cand.append((item, pts))
+    joined, grew = [], True
+    while grew:
+        grew = False
+        for c in cand:
+            if any(c is j for j in joined):
+                continue
+            tips = [_xy(c[1][0]), _xy(c[1][-1])]
+            if any(math.hypot(t[0] - e[0], t[1] - e[1]) <= LINK_TOL for t in tips for e in ends):
+                joined.append(c)
+                ends += tips
+                grew = True
+    for item, pts in joined:
+        host = _parent_of(D, item)
+        if host is not None:
+            host.remove(item)
+        for s, e in sequence_ranges(pts):
+            parent.append(_as_stroke(item, pts[s:e + 1]))
+    n_special = len(joined)
+    if not n_special:
+        return None, 0, 0
+    _rep, merged = _automerge(shadow, design)
+    if merged is None:
+        return None, 0, n_special
+    return copy.deepcopy(merged), (_rep or {}).get("merged", 0), n_special
+
+
+def build_cave_area(root, special_walls=(), rings=()):
+    """Add the hidden cave-area items: one outline of every wall kind (only in
+    a design that has special walls - otherwise the visible outline already is
+    the cave area) and one item per entrance ring. `special_walls` / `rings`
+    are items of `root`. Run after fix(). -> report rows."""
+    special = {id(it) for it in special_walls}
+    rows = []
+    for design in ("plan", "profile"):
+        D = root.find(design)
+        if D is None or D.find("layers") is None:
+            continue
+        parent = _borders_parent(D)
+        if parent is None:
+            continue
+        mine = {id(it) for it in D.iter("item")}
+        row = dict(design=design, cave_area=True, walls=0, special=0, linked=0, rings=0, open_rings=0)
+        sp = [k for k in special if k in mine]
+        if sp:
+            row["special"] = len(sp)
+            outline, strokes, row["linked"] = _walls_outline(root, design, sp)
+            if outline is not None:
+                parent.append(_hidden(outline))
+                row["walls"] = strokes
+        for ring in rings:
+            if id(ring) not in mine:
+                continue
+            pts_el = ring.find("points")
+            _m, pts = parse_points(pts_el.get("data") or "") if pts_el is not None else ("", [])
+            if len(pts) < 3:
+                continue
+            a, b = _xy(pts[0]), _xy(pts[-1])
+            if math.hypot(b[0] - a[0], b[1] - a[1]) > CLOSED_TOL:
+                row["open_rings"] += 1        # cSurvey closes it with a straight chord
+            parent.append(_hidden(copy.deepcopy(ring)))
+            row["rings"] += 1
+        if row["special"] or row["rings"]:
+            rows.append(row)
+    return rows
 
 
 def fix(root, reorder=True, merge=True):
@@ -711,6 +947,18 @@ def describe(report):
     lines = []
     name = {"plan": "tlocrt", "profile": "profil"}
     for r in report:
+        if r.get("cave_area"):
+            bits = []
+            if r["special"]:
+                bits.append("obris od svih vrsta zidova (%d linija, od toga %d posebnih)" % (r["walls"], r["linked"])
+                            if r["walls"] else "posebni zidovi nisu usli u obris - nije ih bilo moguce spojiti")
+                if r["walls"] and r["special"] > r["linked"]:
+                    bits.append("%d posebnih zidova nije uz obris (otok?), ostaju izvan" % (r["special"] - r["linked"]))
+            if r["rings"]:
+                bits.append("unutrasnjost ruba ulaza u jamu: %d%s" % (
+                    r["rings"], " (%d otvoren, zatvoren ravnom crtom)" % r["open_rings"] if r["open_rings"] else ""))
+            lines.append("podrucje spilje (%s, nevidljivo, za rezanje): %s" % (name[r["design"]], "; ".join(bits)))
+            continue
         if "merged" in r:
             lines.append("zidovi (%s): spojeno %d linija u jedan obrub, spojnice %.1f m%s"
                          % (name[r["design"]], r["merged"], r["joins"][0],

@@ -326,3 +326,7 @@ Brief: [brief.md](brief.md)
   abyss-entrance → overhang sits on the floor layer and is cut to the walls-only outline; overshoots at walls are
   also trimmed, so clipping stays. KORAK 2 `unclipped_lines: ["abyss-entrance"]` via name recovery (1 on ss5; 2
   tests, 366 passed). Option 3 gains the ring rule (cave area = walls ∪ closed abyss-entrance rings).
+- **2026-10-12 r14:** option 3's cave area built (not the visible-walls split): KORAK 2 `cave_area` adds hidden
+  pen-None cave-border items – all wall kinds (special walls linked within 1 m) + each abyss-entrance ring; replaced
+  on re-run, skipped by the theme. ss5 plan: +8 % cave area, nothing printed by the hidden items, nothing lost.
+  [runs/2026-10-12-r14-cave-area](runs/2026-10-12-r14-cave-area/RUNLOG.md); 5 tests, 376 passed.

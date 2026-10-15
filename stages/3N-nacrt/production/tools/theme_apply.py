@@ -955,6 +955,8 @@ def apply_theme(root, is_csz, theme, names, targets, ltargets=None):
     labels = []
     rep["labels"] = 0
     for row in names:
+        if fixer.wall_orient.is_cave_area(row["item"]):
+            continue                    # KORAK 2's hidden cave area: pen None stays None
         if row.get("note"):
             note = "%s %s" % (row["design"], row["note"])
             if note not in rep["notes"]:

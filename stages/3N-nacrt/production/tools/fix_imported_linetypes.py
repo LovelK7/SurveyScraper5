@@ -349,25 +349,35 @@ def wrap_label(item, width):
     return True
 
 
-def unclip_named_lines(root, inp, names):
-    """Clipping None on lines whose TopoDroid name is in `names` (recovered
-    from the pre-import file beside `inp`, as the theme step does). An
-    abyss-entrance ring is wider than the bottom's walls, which alone make the
-    cave outline, so cSurvey cut it away (user, 2026-10-12). Must run on the
-    root as loaded: recovery pairs items with the file on disk.
-    -> (lines changed, pre file or None)."""
+def recover_names(root, inp):
+    """TopoDroid names of the items, recovered from the pre-import file beside
+    `inp` as the theme step does. Must run on the root as loaded: recovery
+    pairs items with the file on disk. -> (rows or None, pre file or None)."""
     import theme_apply          # lazy, like the theme step
     pre = theme_apply.find_pre(inp)
     if not pre:
-        return 0, None
+        return None, None
+    return theme_apply.recovered_names(pre, inp, root), pre
+
+
+def _named(rows, names):
+    """Lines (type 1) whose recovered name is in `names` or a subtype of one
+    (`wall` takes wall:blocks)."""
+    return [r["item"] for r in rows or ()
+            if r["tdx"] and r["item"].get("type") == "1"
+            and (r["tdx"] in names or r["tdx"].split(":")[0] in names)]
+
+
+def unclip_named_lines(rows, names):
+    """Clipping None on lines whose TopoDroid name is in `names`. An
+    abyss-entrance ring is wider than the bottom's walls, which alone make the
+    cave outline, so cSurvey cut it away (user, 2026-10-12). -> lines changed."""
     n = 0
-    for row in theme_apply.recovered_names(pre, inp, root):
-        item = row["item"]
-        if (row["tdx"] in names and item.get("type") == "1"
-                and item.get("clippingtype") is None):
+    for item in _named(rows, names):
+        if item.get("clippingtype") is None and not wall_orient.is_cave_area(item):
             item.set("clippingtype", "1")
             n += 1
-    return n, pre
+    return n
 
 
 def load_rules(inp, map_file):
@@ -375,7 +385,8 @@ def load_rules(inp, map_file):
     `postimport` of the shared mapping plus that cave's tdx-mapping-objekt.json."""
     cfg, override = tdx_mapping.effective_for(inp, map_file)
     rules = {"spline_linetypes": True, "nonstandard_water": False, "borders_unclipped": True,
-             "label_wrap": 25, "unclipped_lines": ["abyss-entrance"]}
+             "label_wrap": 25, "unclipped_lines": ["abyss-entrance"],
+             "cave_area": True, "cave_area_walls": ["wall"], "cave_area_rings": ["abyss-entrance"]}
     rules.update(cfg.get("postimport", {}))
     rules["_theme"] = cfg.get("theme")          # the cave's symbol theme, or None
 
@@ -480,17 +491,24 @@ def main(argv=None):
             rc = 1
             continue
 
+        # Names first, on the root as loaded (recovery pairs items with the
+        # file on disk); then an earlier run's hidden cave area goes.
+        rows = pre = None
         named_note = None
-        if rules.get("unclipped_lines"):
+        if rules.get("unclipped_lines") or rules.get("cave_area"):
             try:                        # fail-soft: needs the pre-import file
-                n, pre = unclip_named_lines(root, inp, set(rules["unclipped_lines"]))
-                if pre is None:
-                    named_note = ("nema izvornog TopoDroid ili _prep fajla uz ovaj: rub ulaza "
-                                  "u jamu (abyss-entrance), ako ga ima, ostaje rezan po obrisu spilje")
-                elif n:
-                    named_note = "rub ulaza u jamu (abyss-entrance) bez rezanja: %d" % n
+                rows, pre = recover_names(root, inp)
             except Exception as e:
-                named_note = "rub ulaza u jamu: preskoceno (%s)" % e
+                named_note = "imena linija: preskoceno (%s)" % e
+        if rules.get("unclipped_lines") and named_note is None:
+            if pre is None:
+                named_note = ("nema izvornog TopoDroid ili _prep fajla uz ovaj: rub ulaza "
+                              "u jamu (abyss-entrance) i posebni zidovi ostaju rezani po obrisu spilje")
+            else:
+                n = unclip_named_lines(rows, set(rules["unclipped_lines"]))
+                if n:
+                    named_note = "rub ulaza u jamu (abyss-entrance) bez rezanja: %d" % n
+        wall_orient.remove_cave_area(root)
 
         fixed_lines = fixed_water = fixed_sizes = imported_seen = unclipped = wrapped = 0
         for design in ("plan", "profile"):
@@ -565,6 +583,17 @@ def main(argv=None):
                                     merge=rules.get("wall_merge", True)))
             except Exception as e:      # fail-soft: the other fixes still land
                 wall_lines = ["zidovi: provjera smjera preskocena (%s)" % e]
+
+        # The cave area cSurvey clips to: a hidden outline of every wall kind
+        # and the inside of each pit entrance ring, so what lies inside them
+        # is no longer cut (project 0007, findings/walls-and-clipping.md §4).
+        if rules.get("cave_area") and rows is not None:
+            try:
+                wall_lines += wall_orient.describe(wall_orient.build_cave_area(
+                    root, _named(rows, set(rules.get("cave_area_walls") or ())),
+                    _named(rows, set(rules.get("cave_area_rings") or ()))))
+            except Exception as e:      # fail-soft
+                wall_lines.append("podrucje spilje: preskoceno (%s)" % e)
 
         centerline_set = (apply_centerline(root, rules.get("centerline"))
                           + apply_design_properties(root, rules.get("designproperties"))

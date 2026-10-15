@@ -27,7 +27,8 @@ Two deliberate limits (user, 2026-09-01):
   `SB_<Redni broj>` → `<Katastarski broj>` happens when the cave earns its SUE
   number, and is still a separate, later step.
 
-Needs Pillow (the ``[photos]`` extra, also pulled in by ``[karta]``) to write,
+Needs Pillow (the ``[photos]`` extra; ``[karta]`` pulls in Pillow too) to
+write, plus ``pillow-heif`` (also ``[photos]``) for iPhone ``.heic`` sources,
 and ``lxml`` (``[osz]``) to read the author. Without either, the planning half
 still works — the dry run prints the full plan and only that step degrades.
 """
@@ -71,9 +72,23 @@ _JPEG_SUFFIXES = {".jpg", ".jpeg"}
 #: through and still shrinks a 2400 px or a 4000 px camera photo.
 LONG_EDGE_TOLERANCE = 1.10
 
-#: Formats Pillow opens without an extra plugin. `.heic` needs `pillow-heif`,
-#: which is not a dependency — such a file is reported, never silently dropped.
-_UNSUPPORTED_SUFFIXES = {".heic", ".heif"}
+#: iPhone photos. Pillow opens them only through the `pillow-heif` plugin (in
+#: the ``[photos]`` extra since 2026-10-15); where it is missing, such a file is
+#: reported, never silently dropped.
+_HEIF_SUFFIXES = {".heic", ".heif"}
+
+
+def heif_supported() -> bool:
+    """Register `pillow-heif` with Pillow; ``False`` when it is not installed.
+
+    Registering is idempotent, so every caller may simply ask.
+    """
+    try:
+        from pillow_heif import register_heif_opener
+    except ImportError:
+        return False
+    register_heif_opener()
+    return True
 
 
 @dataclass(frozen=True)
@@ -223,11 +238,12 @@ def plan_photos(
     first — so a leaf's numbering does not shift when a `STATS.png` appears.
     """
     photos, ignored = source_photos(folder, serial, ignore_names)
+    heif = any(p.suffix.lower() in _HEIF_SUFFIXES for p in photos) and heif_supported()
     plans = [
         PhotoPlan(
             source=source,
             target=folder / target_name(serial, cave_name, author, index),
-            unsupported=source.suffix.lower() in _UNSUPPORTED_SUFFIXES,
+            unsupported=source.suffix.lower() in _HEIF_SUFFIXES and not heif,
         )
         for index, source in enumerate(photos, 1)
     ]
@@ -474,6 +490,10 @@ def process_photo(
         return ProcessedPhoto(
             plan, "error", "nedostaje Pillow – instaliraj extra `photos`", source_bytes
         )
+    if plan.source.suffix.lower() in _HEIF_SUFFIXES and not heif_supported():
+        return ProcessedPhoto(
+            plan, "unsupported", f"{plan.source.suffix} treba pillow-heif", source_bytes
+        )
 
     try:
         with Image.open(plan.source) as opened:
@@ -634,6 +654,7 @@ __all__ = [
     "author_filename_token",
     "build_job",
     "entrance_photo_author",
+    "heif_supported",
     "is_ignored",
     "plan_photos",
     "plan_pull",

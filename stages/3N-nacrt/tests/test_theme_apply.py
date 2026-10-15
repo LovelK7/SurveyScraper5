@@ -626,3 +626,35 @@ def test_labels_become_theme_signs_and_come_back(env):
     ta.undo(root, ta.read_state(root)[1])
     plain_root, _c, plain_style = nacrt_finish.load_root(str(csx))
     assert style.render(root) == plain_style.render(plain_root)
+
+
+def test_the_hidden_cave_area_is_never_themed(env2, monkeypatch):
+    # KORAK 2's hidden copy of the overhang ring (wall_orient.build_cave_area). Recovery
+    # gives it no name today (each pre item pairs once), but should it ever recover as
+    # overhang, a theme pen would make the clip outline visible
+    tmp, _root, _csx, _pre = env2
+    real = ta.recovered_names
+
+    def named(*a):
+        rows = real(*a)
+        for r in rows:
+            if r["item"].get("name") == "obris spilje (KORAK 2)":
+                r.update(tdx="overhang", kind="line")
+        return rows
+    monkeypatch.setattr(ta, "recovered_names", named)
+    src = tmp / "area.csx"
+    src.write_text(CSX2.replace("    </layers>\n  </plan>", """      <layer type="5">
+        <items>
+          <item layer="5" type="4" category="1" linetype="1" mergemode="0" name="obris spilje (KORAK 2)" locked="1">
+            <pen type="0" />
+            <points data="0.00 0.00 B 3.00 0.00 S 3.00 3.00 S " />
+            <datarow>TopoDroid|x</datarow>
+          </item>
+        </items>
+      </layer>
+    </layers>
+  </plan>"""), encoding="utf-8")
+    out, rep = _run(env2, src, "c", "o.csx")
+    hidden = [it for it in ET.parse(out).getroot().iter("item") if it.get("name") == "obris spilje (KORAK 2)"]
+    assert [h.find("pen").attrib for h in hidden] == [{"type": "0"}]
+    assert _items(out)[0][0].find("pen").get("type") != "12"     # the visible ring is still themed

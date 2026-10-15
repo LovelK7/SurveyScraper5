@@ -281,6 +281,42 @@ def test_a_heic_source_is_reported_not_silently_dropped(leaf: Path) -> None:
     assert not plan.target.exists()
 
 
+def test_a_heic_source_is_converted_to_a_downsized_jpeg(leaf: Path) -> None:
+    pillow_heif = pytest.importorskip("pillow_heif")
+    pillow_heif.register_heif_opener()
+    import numpy as np
+
+    noise = np.random.default_rng(7).integers(0, 256, size=(1800, 2400, 3), dtype="uint8")
+    source = leaf / "IMG_0001.HEIC"
+    Image.fromarray(noise, "RGB").save(source, "HEIF", quality=90)
+    plans, _ = process_mod.plan_photos(leaf, 1220, "Hrđava špilja", None)
+    plan = next(p for p in plans if p.source == source)
+    assert not plan.unsupported
+
+    outcome = process_mod.process_photo(plan, long_edge_px=1920, max_bytes=1_500_000)
+
+    assert outcome.status == "written"
+    assert outcome.target_px == (1920, 1440)
+    with Image.open(plan.target) as written:
+        assert written.format == "JPEG"
+
+
+def test_a_heic_source_is_reported_when_pillow_heif_is_missing(
+    leaf: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(process_mod, "heif_supported", lambda: False)
+    source = leaf / "IMG_0001.heic"
+    source.write_bytes(b"not really heic")
+
+    plans, _ = process_mod.plan_photos(leaf, 1220, "Hrđava špilja", None)
+    plan = next(p for p in plans if p.source == source)
+    outcome = process_mod.process_photo(plan, long_edge_px=1920, max_bytes=1_500_000)
+
+    assert plan.unsupported
+    assert outcome.status == "unsupported"
+    assert not plan.target.exists()
+
+
 # ── the whole job ─────────────────────────────────────────────────────
 
 

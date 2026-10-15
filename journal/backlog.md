@@ -236,8 +236,8 @@ when an idea's time comes. Nothing here is a commitment.
   leaf holds unprocessed photos, and every cave with something still in the za-istražit
   queue. Today it is one Redni broj at a time; the queue check already knows how to spot
   the second group.
-- 2026-09-01 — **HEIC support** (`pillow-heif`): `.heic` sources are reported and skipped
-  today. Not a dependency on purpose — add it if phone photos start arriving that way.
+- ~~2026-09-01 — **HEIC support** (`pillow-heif`)~~ — done 2026-10-15: `.heic`/`.heif`
+  are converted; `pillow-heif` is in the `[photos]` extra.
 - 2026-09-01 — `locate_filled_osz` says "nema (jednoznačan) OSZ .docx" even when the leaf
   has NO .docx at all (seen on SB 811). Harmless but reads oddly next to the ambiguity
   note — split the two messages.

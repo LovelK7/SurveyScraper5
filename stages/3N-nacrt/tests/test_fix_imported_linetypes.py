@@ -204,3 +204,20 @@ def test_the_shipped_viewoptions_show_splays_as_rays_in_combined_style():
     for view in ("design.plan", "design.profile"):
         assert vo[view] == {"drawsplay": 1, "splaystyle": 2, "designstyle": 2}
     assert all(k in fixer.VIEW_NAMES for k in vo if not k.startswith("_"))
+
+
+def test_the_abyss_ring_becomes_the_hidden_cave_area_once_even_when_re_run(tmp_path, capsys):
+    # findings/walls-and-clipping.md §4: what lies inside a pit's entrance ring is cave
+    post = ABYSS_POST.replace('</items></layer></layers></plan>',
+                              '</items></layer><layer name="Borders" type="5"><items /></layer></layers></plan>')
+    (tmp_path / "cave.csx").write_text(post, encoding="utf-8")
+    (tmp_path / "cave_prep.csx").write_text(ABYSS_PRE, encoding="utf-8")
+    assert fixer.main([str(tmp_path / "cave.csx"), "-o", str(tmp_path / "a.csx"), "--no-theme"]) == 0
+    assert "unutrasnjost ruba ulaza u jamu: 1" in capsys.readouterr().out
+    assert fixer.main([str(tmp_path / "a.csx"), "-o", str(tmp_path / "b.csx"), "--no-theme"]) == 0
+    root = ET.parse(str(tmp_path / "b.csx")).getroot()
+    hidden = [i for i in root.iter("item") if fixer.wall_orient.is_cave_area(i)]
+    assert len(hidden) == 1 and hidden[0].find("pen").get("type") == "0"
+    assert hidden[0].find("points").get("data").startswith("0.00 0.00 B 3.00 0.00")
+    ring = root.find("plan/layers/layer/items/item")
+    assert (ring.get("type"), ring.get("clippingtype")) == ("1", "1")

@@ -28,7 +28,7 @@ from cave_dossier.core.matching import (
 
 #: ``.jfif`` is a plain JPEG under an older extension — Windows and some phone
 #: exports still write it, and four staged entrance photos use it.
-_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".jfif", ".png", ".heic", ".tif", ".tiff", ".webp"}
+_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".jfif", ".png", ".heic", ".heif", ".tif", ".tiff", ".webp"}
 #: Windows writes these into synced folders; never a cave artefact.
 _SYSTEM_FILENAMES = {"desktop.ini", "thumbs.db", ".ds_store"}
 
