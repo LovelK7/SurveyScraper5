@@ -1825,6 +1825,12 @@ Record: [project 0007](../stages/3N-nacrt/projects/0007-symbol-themes/brief.md).
   sets none, so a cave without a choice keeps cSurvey's look. The page previews the theme from its own SVGs
   (a sketch, not cSurvey's rendering); line sides come from `theme_apply.side_for`, so page and print agree.
   The theme step that reads it is T5.
+- **Boja is the shared default, picked in KORAK 2 (user, 2026-10-22).** `tdx-mapping.json` now sets
+  `"theme": "boja"`, so a cave without a choice gets the colour theme; "bez teme" in a cave writes
+  `"theme": null`. The picker moved off Mapiranje simbola into the 3N page's KORAK 2 card, where the theme is
+  applied ("put theme selection … at the step when it is being decided for survey, and let this subtab be just
+  for custom selection of symbols"). It saves at once, only the theme, from the saved mapping. Mapiranje keeps
+  the theme's previews and links back.
 - **The theme step is KORAK 2's last step, inside `fix_imported_linetypes.py` (T5, 2026-10-07)**, not a
   separate launcher. So the double-click, the drag-and-drop and a dashboard KORAK 2 all theme the `_postp`
   the operator then draws in, with no new step to learn. The pre-import file for name recovery is found beside

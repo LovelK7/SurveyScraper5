@@ -118,7 +118,11 @@ function renderMapping() {
   if (M.loading || M.broj !== S.broj) { out.push(h("div", { class: "empty" }, "Učitavam mapiranje…")); return out; }
   if (M.error) { out.push(h("div", { class: "card note" }, M.error)); return out; }
   out.push(statusCard());
-  out.push(h("h3", { class: "group-title" }, "Tema – izgled znakova, linija i površina", helpBtn("map-theme")), themeCard());
+  // the theme is picked on the 3N page, in KORAK 2 (themePicker); the rows
+  // below only show its artwork (user, 2026-10-22)
+  out.push(h("div", { class: "help", style: "margin:4px 0 0" }, "Tema: ", h("b", {}, M.edit.theme ? themeName(M.edit.theme) : "bez teme"),
+    " – sličice ispod pokazuju njezin izgled. Bira se na stranici 3N, u KORAKU 2. ",
+    h("a", { href: "#", onclick: e => { e.preventDefault(); setTab("3N"); } }, "Na 3N →")));
   // in working order: KORAK 1 (before the import) first, then KORAK 2
   out.push(h("h3", { class: "group-title" }, "Simboli, linije i površine – KORAK 1", helpBtn("map-symbols")), symbolsCard());
   out.push(h("h3", { class: "group-title" }, "Poligon – KORAK 2", helpBtn("map-centerline")), centerlineCard());
@@ -177,36 +181,49 @@ function themeName(id) {
   return t ? t.name : id;
 }
 
-function themeCard() {
+// The theme picker in the 3N page's KORAK 2 card (theme_apply is KORAK 2's last
+// step). It saves at once: only the theme changes, from the SAVED mapping, so
+// unsaved edits on the Mapiranje page stay unsaved there.
+function themePicker() {
+  const box = h("div", { class: "theme-pick" });
+  if (S.broj === null) return null;
+  if (M.broj !== S.broj || (!M.data && !M.loading && !M.error)) queueMicrotask(() => loadMapping());
+  if (M.error) { box.append(h("div", { class: "help warnline" }, M.error)); return box; }
+  if (!M.data || M.broj !== S.broj) { box.append(h("div", { class: "help" }, "Učitavam temu…")); return box; }
   const themes = M.data.themes || [];
-  const cur = M.edit.theme || "", def = M.data.default.theme || "";
+  const cur = M.data.effective.theme || "", def = M.data.default.theme || "";
   const own = cur !== def;
   const state = cur ? M.themes[cur] : null;
-  const count = t => ["signs", "lines", "areas"].map(k => Object.keys(t[k] || {}).length);
-  const set = v => {
-    if (v) { M.edit.theme = v; ensureTheme(v); } else delete M.edit.theme;
+  if (cur) ensureTheme(cur);
+  const set = async v => {
+    const eff = clone(M.data.effective);
+    if (v) eff.theme = v; else delete eff.theme;
+    try {
+      const dirty = isDirty();
+      const data = await api("mapping/" + M.broj, { effective: prune(eff) });
+      M.data = data;
+      if (dirty) { if (data.effective.theme) M.edit.theme = data.effective.theme; else delete M.edit.theme; }
+      else M.edit = clone(data.effective);
+      if (v) ensureTheme(v);
+      toast(`Tema za SB ${M.broj}: ${v ? themeName(v) : "bez teme"}.`);
+    } catch (e) { toast(e.message, true); }
     render();
   };
   let info;
   if (!themes.length) info = "Nema tema uz 3N alate (production/themes).";
   else if (!cur) info = "Bez teme: cSurveyevi ugrađeni znakovi, linije i ispune.";
-  else if (!state || state.loading) info = "Učitavam temu…";
+  else if (!state || state.loading) info = "";
   else if (state.error) info = state.error;
-  else {
-    const [s, l, a] = count(state);
-    info = `${state.name}: ${s} znakova, ${l} linija, ${a} površina s vlastitim crtežom` +
-      (state.monochrome ? " – sve u crnoj boji." : ".") + " Sličice u popisu ispod pokazuju izgled teme.";
-  }
-  return h("div", { class: "card" + (own ? " hl" : "") },
-    h("div", { class: "row" },
-      h("label", { class: "row", style: "gap:8px" }, h("b", {}, "Tema"),
-        h("select", { id: "theme-select", onchange: e => set(e.target.value) },
-          h("option", { value: "", selected: !cur }, "bez teme (izgled cSurveya)"),
-          ...themes.map(t => h("option", { value: t.id, selected: cur === t.id }, t.name)))),
-      own ? h("span", { class: "tag own" }, "ovaj objekt") : cur ? h("span", { class: "tag def" }, "zadano") : null,
-      own ? h("button", { class: "btn small ghost", title: "Vrati na zadano", onclick: () => set(def) }, "↺") : null),
-    h("div", { class: "help" }, info),
-    h("div", { class: "help" }, "Tema se primjenjuje na nacrt nakon KORAKA 2 (theme_apply). Mapiranje ispod i dalje određuje koji element nastaje; tema mu daje crtež i boju. Tekstne oznake (!, +, -, +/-) tema pretvara u svoj znak; oznaka f (sidrište) ostaje tekst."));
+  else info = state.monochrome ? "Sve u crnoj boji." : "";
+  box.append(h("div", { class: "row", style: "gap:8px" },
+    h("label", { class: "opt-inline" }, h("b", {}, "Tema"), helpBtn("map-theme"),
+      h("select", { id: "theme-select", onchange: e => set(e.target.value) },
+        h("option", { value: "", selected: !cur }, "bez teme (izgled cSurveya)"),
+        ...themes.map(t => h("option", { value: t.id, selected: cur === t.id }, t.name)))),
+    own ? h("span", { class: "tag own" }, "ovaj objekt") : cur ? h("span", { class: "tag def" }, "zadano") : null,
+    own ? h("button", { class: "btn small ghost", title: "Vrati na zadanu temu", onclick: () => set(def) }, "↺") : null),
+    h("div", { class: "help" }, (info ? info + " " : "") + "Primjenjuje se na kraju KORAKA 2; nakon promjene ponovi KORAK 2."));
+  return box;
 }
 
 // The theme's picture for a row, resolved like themes.resolve: the TopoDroid

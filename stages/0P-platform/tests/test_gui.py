@@ -620,7 +620,8 @@ def test_mapping_page_theme_round_trips_and_draws_previews(server):
     base, _, leaf = server
     _, view = _call(base, "/api/mapping/1220")
     ids = [t["id"] for t in view["themes"]]
-    assert "boja" in ids and "crno-bijelo" in ids and "theme" not in view["effective"]
+    # boja is the shared default (user, 2026-10-22)
+    assert "boja" in ids and "crno-bijelo" in ids and view["effective"]["theme"] == "boja"
 
     eff = view["effective"]
     eff["theme"] = "crno-bijelo"
@@ -630,6 +631,12 @@ def test_mapping_page_theme_round_trips_and_draws_previews(server):
     assert {k: v for k, v in written.items() if not k.startswith("_")} == {"theme": "crno-bijelo"}
     _, again = _call(base, "/api/mapping/1220")
     assert again["effective"]["theme"] == "crno-bijelo"
+
+    del eff["theme"]                                   # bez teme: an explicit null
+    status, saved = _call(base, "/api/mapping/1220", {"effective": eff})
+    assert status == 200 and saved["changed"] == ["theme"] and "theme" not in saved["effective"]
+    written = json.loads((leaf / "tdx-mapping-objekt.json").read_text(encoding="utf-8"))
+    assert {k: v for k, v in written.items() if not k.startswith("_")} == {"theme": None}
 
     eff["theme"] = "nema-takve"
     status, data = _call(base, "/api/mapping/1220", {"effective": eff})
@@ -647,7 +654,7 @@ def test_mapping_page_theme_round_trips_and_draws_previews(server):
     assert status == 400
 
     status, back = _call(base, "/api/mapping/1220/reset", {})
-    assert status == 200 and "theme" not in back["effective"]
+    assert status == 200 and back["effective"]["theme"] == "boja"
     assert not (leaf / "tdx-mapping-objekt.json").exists()
 
 

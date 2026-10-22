@@ -422,6 +422,7 @@ h1 .qhelp { width: 22px; height: 22px; font-size: 13px; }
 }
 .console.collapsed { height: 40px; }
 .console.collapsed .console-body { display: none; }
+.console.collapsed .console-close { display: none; }
 .console.tall { height: 60vh; }
 .console-bar { display: flex; align-items: center; gap: 10px; padding: 5px 10px; border-bottom: 1px solid #2c281c; }
 .console-title { background: none; border: 0; color: inherit; cursor: pointer; font-weight: 650; display: inline-flex; gap: 6px; align-items: center; }

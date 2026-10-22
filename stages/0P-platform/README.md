@@ -52,7 +52,8 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   fails when a `?` has no text or a stage or ★ recipe has none.
 - **Pokreni** runs a command. Output streams into the **Ispis** panel at the
   bottom; when a tool asks something (the 3N file menu, the layout menu) you
-  answer in the box under the output. Every run is logged to `runs/gui/`.
+  answer in the box under the output. Every run is logged to `runs/gui/`. The
+  arrow steps the panel closed → open → tall; **✕** closes it in one click.
 - **3N › KORAK 3a** draws the layout menu as A4 sheets: the title block, and
   each proposal's plan and profile boxes with the cave's walls in them,
   computed by a dry run of `nacrt_finish.py --layouts-json` on the chosen
@@ -81,9 +82,10 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   `tdx-mapping.json` into the cave's folder as `tdx-mapping-objekt.json`, so
   KORAK 1 and 2 apply it to that cave alone. **Vrati na zadano** deletes that
   file. When `_prep`/`_postp` are older than the saved override, the page says
-  which KORAK to redo. The **Tema** card picks the cave's symbol theme (`boja`,
-  `crno-bijelo`, or none = cSurvey's own look; project 0007 T4). It is saved as
-  `"theme"` in the same override. With a theme chosen, each row shows the theme's
+  which KORAK to redo. The cave's symbol theme (`boja` by default, `crno-bijelo`,
+  or none = cSurvey's own look; project 0007 T4) is picked on the 3N page in the
+  **KORAK 2** card, where it is applied, and saved at once as `"theme"` in the
+  same override. With a theme in force, each Mapiranje row shows the theme's
   own picture (`GET /api/mapping-theme/<id>`: the sign tinted, a line as a strip of
   its units on the side the print uses, an area as a 2 × 1.4 m sample). See
   [csurvey-settings.md](../3N-nacrt/production/csurvey-settings.md#per-cave-mapping-the-dashboards-mapiranje-page).

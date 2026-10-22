@@ -1216,6 +1216,7 @@ function actionCard(a, st) {
     card.append(opts);
   }
   if (sheets) { card.append(sheets.el); sheets.load(); }
+  if (a.id === "3n-k2") { const tp = themePicker(); if (tp) card.append(tp); }   // mapping.js
   const copyBtn = h("button", { class: "btn small ghost", title: "Kopiraj naredbu za terminal",
     onclick: () => copy(cmdTextFor(a, ctx)) }, icon("copy"), "Kopiraj");
   card.append(h("div", { class: "cmd-row" }, preview, copyBtn));
@@ -1405,6 +1406,14 @@ function openConsole() {
   $("#console-arrow").textContent = "▾";
 }
 
+// one click from either height (user, 2026-10-22); the arrow still steps
+// collapsed → open → tall → collapsed
+function closeConsole() {
+  const c = $("#console");
+  c.classList.remove("tall"); c.classList.add("collapsed");
+  $("#console-arrow").textContent = "▸";
+}
+
 // ── wiring ───────────────────────────────────────────────────────────
 function parseCave(text) {
   const m = String(text).trim().match(/^(?:SB_?)?(\d{1,4})\b/i);
@@ -1466,8 +1475,9 @@ function wire() {
     const c = $("#console");
     if (c.classList.contains("collapsed")) openConsole();
     else if (!c.classList.contains("tall")) c.classList.add("tall");
-    else { c.classList.remove("tall"); c.classList.add("collapsed"); $("#console-arrow").textContent = "▸"; }
+    else closeConsole();
   });
+  $("#console-close").addEventListener("click", closeConsole);
   $("#job-kill").addEventListener("click", async () => {
     try { await api(`job/${S.activeJob}/kill`, {}); } catch (e) { toast(e.message, true); }
   });
