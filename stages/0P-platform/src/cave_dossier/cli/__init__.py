@@ -17,7 +17,7 @@ from pathlib import Path
 
 from cave_dossier.core.config import ConfigError, Settings, load_settings
 from cave_dossier.core.matching import SB_PREFIX, duplicate_serials
-from cave_dossier.dossier import GateLevel, assemble, render
+from cave_dossier.dossier import assemble, render
 from cave_dossier.photos import (
     apply_renames,
     build_candidates,
@@ -182,14 +182,14 @@ def _resolve_one_cave(settings: Settings, query: str | None, serial: int | None)
 
 
 def cmd_report(
-    settings: Settings, query: str | None, as_json: bool, gate: str, serial: int | None = None
+    settings: Settings, query: str | None, as_json: bool, serial: int | None = None
 ) -> int:
-    """Per-cave dossier report (M2).
+    """Per-cave dossier report (M2) — the CroSpeleo gate.
 
     The cave comes from ``--cave`` (name / SUE / plaque, must resolve to one
-    row) or ``--broj`` (Redni broj). Both gates are always printed; ``--gate``
-    only picks which one the exit code reports on. Exit codes are the user's
-    convention (2026-08-26): ``1`` ready, ``0`` not ready, ``99`` error.
+    row) or ``--broj`` (Redni broj). Exit codes are the user's convention
+    (2026-08-26): ``1`` ready for CroSpeleo, ``0`` not ready, ``99`` error.
+    The society's katastarski broj is 6P's gate (``deliver``), not this one.
     """
     cave = _resolve_one_cave(settings, query, serial)
     if cave is None:
@@ -204,8 +204,7 @@ def cmd_report(
     else:
         print(render(dossier))
 
-    level = GateLevel.CROSPELEO if gate == "crospeleo" else GateLevel.SUE
-    return EXIT_READY if report.ready_for(level) else EXIT_NOT_READY
+    return EXIT_READY if report.ready else EXIT_NOT_READY
 
 
 def cmd_sb_audit_authors(settings: Settings, limit: int) -> int:
@@ -449,6 +448,18 @@ def cmd_photos_process(settings: Settings, serial: int, dry_run: bool,
     for path in job.ignored:
         print(f"  – preskačem {path.name} (nije fotografija ulaza — "
               "photos.ignore_filenames)")
+    if job.renames:
+        # Copies made before the OSZ named the author gain it now.
+        print(f"Dopuna autora u ranije obrađenim fotografijama: {len(job.renames)}"
+              + ("   (probni run)" if dry_run else ""))
+        if dry_run:
+            for rename in job.renames:
+                print(f"    {rename.source.name}\n      → {rename.target.name}")
+        else:
+            for result in process_mod.apply_author_renames(job):
+                mark = "✓" if result.status == "renamed" else result.status + ":"
+                print(f"  {mark} {result.rename.source.name} → {result.rename.target.name}"
+                      + (f"  ({result.detail})" if result.detail else ""))
     if not job.plans:
         print("Nema neobrađenih fotografija u mapi "
               f"(datoteke koje već počinju s SB_{serial}_ su rezultat prijašnjeg "
@@ -1521,9 +1532,9 @@ def cmd_people_check_cave(settings: Settings, serial: int) -> int:
     (``Source.STATEMENTS``): only the statement rules carry it, so nothing
     else (SB fields, files, queue notes) leaks in.
 
-    Exit: ``1`` every gate-1-relevant person is covered (izjave dir scanned
-    and no statement blocker at gate 1) · ``0`` not, or the dir could not be
-    scanned · ``99`` error / no such Redni broj.
+    Exit: ``1`` every author is covered (izjave dir scanned and no statement
+    blocker — a CroSpeleo requirement, never a SUE one) · ``0`` not, or the dir
+    could not be scanned · ``99`` error / no such Redni broj.
     """
     from cave_dossier.dossier import Source
     from cave_dossier.dossier.report import people_entries, person_line
@@ -1551,31 +1562,19 @@ def cmd_people_check_cave(settings: Settings, serial: int) -> int:
     else:
         print("Objekt ne imenuje nijednu osobu (autori nacrta / fotografija, ekipa).")
 
-    def statement_issues(gate: GateLevel):
-        own = [i for i in report.issues_for(gate) if i.source is Source.STATEMENTS]
-        if gate is GateLevel.CROSPELEO:
-            # Gate 2 repeats gate 1's findings; show only what it adds.
-            own = [i for i in own if i.level is GateLevel.CROSPELEO]
-        return own
-
-    gate1 = statement_issues(GateLevel.SUE)
-    gate2 = statement_issues(GateLevel.CROSPELEO)
-    for ordinal, label, issues in (
-        ("1", "katastarski broj SUE", gate1),
-        ("2", "CroSpeleo (dodatno uz gate 1)", gate2),
-    ):
-        print()
-        print(f"Gate {ordinal} — {label}:")
-        if not issues:
-            print("  (bez nalaza za izjave)")
-        for issue in issues:
-            tag = "BLOCKER" if issue.blocking else "warning"
-            print(f"  {tag:<8} {issue.message}")
-
-    covered = not any(issue.blocking for issue in gate1)
+    issues = [i for i in report.issues if i.source is Source.STATEMENTS]
     print()
-    print("✓ Sve osobe bitne za gate 1 imaju izjavu koja pokriva ovaj objekt."
-          if covered else "✗ Nedostaju izjave za gate 1 (vidi BLOCKER gore).")
+    print("CroSpeleo — izjave (katastarski broj SUE ih ne traži):")
+    if not issues:
+        print("  (bez nalaza za izjave)")
+    for issue in issues:
+        tag = "BLOCKER" if issue.blocking else "warning"
+        print(f"  {tag:<8} {issue.message}")
+
+    covered = not any(issue.blocking for issue in issues)
+    print()
+    print("✓ Svi autori imaju izjavu koja pokriva ovaj objekt."
+          if covered else "✗ Nedostaju izjave autora za CroSpeleo (vidi BLOCKER gore).")
     return EXIT_READY if covered else EXIT_NOT_READY
 
 
@@ -1719,6 +1718,84 @@ def cmd_people_check(settings: Settings, limit: int, serial: int | None = None) 
 # ── Entry point ────────────────────────────────────────────────────
 
 
+def cmd_deliver(settings: Settings, serial: int, apply: bool, override: int | None,
+                as_json: bool) -> int:
+    """6P — the last gate: the archivist's review list, then (``--apply``) the
+    katastarski broj into the Nacrt + OSZ + SB and every file into the archive."""
+    import json as json_mod
+
+    from cave_dossier.predaja import apply as apply_mod
+    from cave_dossier.predaja.plan import build_plan
+    from cave_dossier.predaja.stamp import number_text
+
+    plan = build_plan(settings, serial, override=override)
+    if as_json:
+        print(json_mod.dumps(plan.to_json(), ensure_ascii=False, indent=2, default=str))
+        return EXIT_READY if plan.ready else EXIT_NOT_READY
+    print(f"Objekt: SB {serial} — {plan.name or '?'}"
+          + (f"  (Excel red {plan.sb_row})" if plan.sb_row else ""))
+    if plan.state == "delivered":
+        for note in plan.notes:
+            print(note)
+        m = plan.material
+        for label, key in (("OSZ", "osz"), ("Nacrt", "nacrt")):
+            item = m.get(key)
+            print(f"  {label:<6} {item['path'] if item else 'NEMA u arhivi'}")
+        print(f"  Foto   {len(m.get('photos') or [])} u !!Fotografije ulaza")
+        print(f"  Mapa   {m.get('leaf') or 'nema u Arhivi'}")
+        return EXIT_READY
+    seq = plan.sequence
+    if plan.sue:
+        print(f"Katastarski broj SUE: {number_text(plan.sue)}   ({plan.sue_source}; SB max "
+              f"{seq.get('max')}, {seq.get('count')} brojeva, "
+              + ("niz bez rupa)" if not seq.get('gaps') and not seq.get('duplicates') else "niz NIJE uredan)"))
+    print()
+    if plan.moves:
+        print("Datoteke:")
+        for move in plan.moves:
+            mark = " ✓" if move.done else ""
+            stamp_tag = "  [+ broj]" if move.stamp else ""
+            print(f"  {move.kind:<6} {Path(move.src).name}\n         -> {move.dst}{stamp_tag}{mark}")
+    if plan.sb_changes:
+        print(f"SB ({settings.sb_sheet_name}, red Rednog broja {serial}):")
+        for change in plan.sb_changes:
+            before = "(prazno)" if change.before in (None, "") else repr(change.before)
+            print(f"  {change.column:<22} {before} -> {change.after!r}   # {change.why}")
+    for note in plan.notes:
+        print(f"  · {note}")
+    print()
+    for text in plan.blockers:
+        print(f"  BLOKIRA     {text}")
+    for text in plan.warnings:
+        print(f"  UPOZORENJE  {text}")
+    if not plan.ready:
+        print("\n✗ Nije spremno za predaju.")
+        return EXIT_NOT_READY
+    if not apply:
+        print("\n✓ Spremno. Ništa nije promijenjeno – pregledaj sve gore i pokreni s --apply "
+              f"--katastarski-broj {plan.sue} za predaju.")
+        return EXIT_READY
+    if override is None:
+        print("ERROR: --apply traži --katastarski-broj <broj koji si pregledao>, da se ne predaje "
+              "pod brojem koji nisi vidio.", file=sys.stderr)
+        return EXIT_ERROR
+    try:
+        outcome = apply_mod.apply_plan(settings, plan, expected_sue=override)
+    except apply_mod.DeliveryError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    print()
+    for step in outcome.steps:
+        detail = step.get("dst") or step.get("reason") or ""
+        print(f"  ✓ {step['step']:<9} {detail}")
+    if outcome.sb_backup:
+        print(f"  SB kopija prije upisa: {outcome.sb_backup}")
+    for note in outcome.notes:
+        print(f"  ! {note}")
+    print(f"\n✓ Predano pod katastarskim brojem {number_text(outcome.sue)}. Zapis: {outcome.manifest}")
+    return EXIT_READY
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="cavedossier",
@@ -1772,13 +1849,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         dest="as_json",
         help="Emit the dossier as JSON (raw SB row omitted) instead of the text report",
-    )
-    report.add_argument(
-        "--gate",
-        choices=["sue", "crospeleo"],
-        default="sue",
-        help="Which gate the EXIT CODE reports on (both are always printed): "
-             "sue = society katastarski broj (default), crospeleo = national cadastre",
     )
 
     intake = subparsers.add_parser(
@@ -1899,6 +1969,20 @@ def build_parser() -> argparse.ArgumentParser:
                      help="First port to try (the next free one up to +19 is used)")
     gui.add_argument("--no-browser", action="store_true", dest="no_browser",
                      help="Do not open the page in the default browser")
+
+    deliver = subparsers.add_parser(
+        "deliver",
+        help="6P — the last gate: review list (dry run), then --apply writes the "
+             "katastarski broj into the Nacrt + OSZ + SB and files everything into the archive",
+    )
+    deliver.add_argument("redni_broj", type=int, help="SB Redni broj of the cave")
+    deliver.add_argument("--apply", action="store_true",
+                         help="Deliver (needs --katastarski-broj = the number you reviewed)")
+    deliver.add_argument("--katastarski-broj", type=int, dest="katastarski_broj",
+                         help="The number to deliver under: confirms the proposal, or "
+                              "assigns a free one by hand")
+    deliver.add_argument("--json", action="store_true", dest="as_json",
+                         help="The plan as JSON (what the dashboard's 6P page draws)")
 
     nacrt = subparsers.add_parser(
         "nacrt",
@@ -2294,8 +2378,11 @@ def main(argv: list[str] | None = None) -> int:
                 return cmd_osz_provjera(settings, args.redni_broj, args.as_json)
             if args.osz_command == "dopune":
                 return cmd_osz_dopune(settings, args.redni_broj, args.osz_path, args.osz_dir)
+        if args.command == "deliver":
+            return cmd_deliver(settings, args.redni_broj, args.apply,
+                               args.katastarski_broj, args.as_json)
         if args.command == "report":
-            return cmd_report(settings, args.cave, args.as_json, args.gate, args.broj)
+            return cmd_report(settings, args.cave, args.as_json, args.broj)
         return EXIT_ERROR
     except (ConfigError, SBWorkbookUnreachable) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

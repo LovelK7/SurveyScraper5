@@ -11,7 +11,9 @@ downsized to screen size. The author comes from the cave's filled OSZ cell
 **Autor fotografije ulaza**, converted to the archive's filename spelling
 ("Lovel Kukuljan" → `LKukuljan`, matching `MDevcic` / `TMarkanjević` /
 `SClashin` in `!!Fotografije ulaza`); the component is simply left out when the
-OSZ has no author, rather than guessed from anywhere else.
+OSZ has no author, rather than guessed from anywhere else. When a later run
+finds the author filled in, those earlier author-less copies are renamed to
+carry it (`plan_author_renames`).
 
 Two deliberate limits (user, 2026-09-01):
 
@@ -134,7 +136,25 @@ class PhotoJob:
     ignored: tuple[Path, ...] = ()
     #: this cave's photos still sitting in the `…za istražit` staging queue
     staged: tuple[Path, ...] = ()
+    #: earlier copies made before the OSZ named an author, to gain it now
+    renames: tuple[AuthorRename, ...] = ()
     notes: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class AuthorRename:
+    """An earlier author-less copy and the name it gets now the author is known."""
+
+    source: Path
+    target: Path
+
+
+@dataclass(frozen=True)
+class RenameOutcome:
+    rename: AuthorRename
+    #: ``renamed`` | ``exists`` | ``error``
+    status: str
+    detail: str | None = None
 
 
 # ── the author, out of the OSZ ───────────────────────────────────────
@@ -250,6 +270,51 @@ def plan_photos(
     return plans, ignored
 
 
+def plan_author_renames(
+    folder: Path, serial: int, cave_name: str | None, author: str | None
+) -> list[AuthorRename]:
+    """Earlier copies named without an author, renamed to carry it.
+
+    A cave is often processed before its OSZ has **Autor fotografije ulaza**
+    filled in — the author is simply not known yet — so its copies come out as
+    ``SB_<broj>_<Ime objekta>_<n>.jpg``. Once the OSZ names the author, the
+    next run appends it: ``…_<Ime objekta>_<Autor>_<n>.jpg``, index kept. Only
+    names that are exactly the author-less form are touched, and an existing
+    target is never overwritten.
+    """
+    if not author:
+        return []
+    stem = sanitize_for_filename(cave_name)
+    middle = rf"_{re.escape(stem)}" if stem else ""
+    pattern = re.compile(
+        rf"^{re.escape(SB_PREFIX)}0*{serial}{middle}_(\d+){re.escape(OUTPUT_SUFFIX)}$",
+        re.IGNORECASE,
+    )
+    renames = []
+    for path in sorted(folder.iterdir()):
+        match = pattern.match(path.name) if path.is_file() else None
+        if match:
+            target = folder / target_name(serial, cave_name, author, int(match.group(1)))
+            renames.append(AuthorRename(source=path, target=target))
+    return renames
+
+
+def apply_author_renames(job: PhotoJob) -> list[RenameOutcome]:
+    """Rename the earlier copies in place. Never overwrites."""
+    outcomes = []
+    for rename in job.renames:
+        if rename.target.exists():
+            outcomes.append(RenameOutcome(rename, "exists", "postoji – preskočeno"))
+            continue
+        try:
+            rename.source.rename(rename.target)
+        except OSError as exc:
+            outcomes.append(RenameOutcome(rename, "error", str(exc)))
+            continue
+        outcomes.append(RenameOutcome(rename, "renamed"))
+    return outcomes
+
+
 def build_job(
     settings: Settings,
     serial: int,
@@ -305,6 +370,7 @@ def build_job(
         osz_path=osz_path,
         ignored=tuple(ignored),
         staged=tuple(staged_for_cave(settings, serial)),
+        renames=tuple(plan_author_renames(folder, serial, cave_name, author)),
         notes=tuple(notes),
     )
 
@@ -644,18 +710,22 @@ __all__ = [
     "DEFAULT_LONG_EDGE_PX",
     "DEFAULT_MAX_BYTES",
     "OUTPUT_SUFFIX",
+    "AuthorRename",
     "PhotoJob",
     "PhotoPlan",
     "ProcessedPhoto",
     "PullMove",
     "PullOutcome",
     "PullPlan",
+    "RenameOutcome",
+    "apply_author_renames",
     "apply_pull",
     "author_filename_token",
     "build_job",
     "entrance_photo_author",
     "heif_supported",
     "is_ignored",
+    "plan_author_renames",
     "plan_photos",
     "plan_pull",
     "process_job",

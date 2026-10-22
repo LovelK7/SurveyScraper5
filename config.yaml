@@ -72,6 +72,12 @@ archive:
   # Leaf folders here get an SB_<Redni broj> prefix — see cave_dossier/intake/.
   intake_dir: "!!!Digitalizacija/!Za digitalizirat"
 
+  # 6P delivery (`cavedossier deliver`): a delivered cave's whole intake leaf
+  # moves here as <katastarski broj>_<Ime objekta>/ once its Nacrt, OSZ and
+  # photos are filed under the number. The 451 loose entries already there
+  # (2026-09-02) predate the convention and are left alone.
+  arhiva_dir: "!!!Digitalizacija/Arhiva"
+
   # Part 2.1c — shared collection folder for georef.hr map excerpts
   # (Drive folder 1vGy0XN6wFsnwdhiGFpMEVK7jV_CUMMvo, created 2026-08-29).
   # Holds SB_<zero-padded Redni broj>.png per cave plus !georef_zapisi.csv, the

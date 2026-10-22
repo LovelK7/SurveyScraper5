@@ -1,9 +1,10 @@
-"""People registry + statement linkage + the two statement gates.
+"""People registry + statement linkage + the statement rules of the CroSpeleo gate.
 
 The registry design is the crospeleo port (docs/PORTING.md): aliases derived
 at load with collision detection, curated overrides win, resolution is exact
-key lookup only. The gates: gate 1 blocks per AUTHOR (scope-aware), gate 2
-warns per PERSON (registry-wide view of who is missing an izjava).
+key lookup only. The rules (CroSpeleo only — the katastarski broj SUE needs
+no izjava, user 2026-10-22): a BLOCKER per AUTHOR (scope-aware), a warning per
+PERSON (registry-wide view of who is missing an izjava).
 """
 
 from __future__ import annotations
@@ -15,7 +16,6 @@ from cave_dossier.dossier import (
     ArchiveFile,
     CaveDossier,
     FileRole,
-    GateLevel,
     IssueCode,
     PersonRole,
     Severity,
@@ -275,7 +275,7 @@ def test_link_skips_finder_shaped_names_in_the_author_cell() -> None:
 # ── The gates ─────────────────────────────────────────────────────────
 
 
-def test_gate1_blocks_author_whose_izjava_covers_another_locality() -> None:
+def test_blocks_author_whose_izjava_covers_another_locality() -> None:
     dossier = _dossier(
         locality="Učka",
         drawing_authors=["A.Ciceran"],
@@ -284,14 +284,14 @@ def test_gate1_blocks_author_whose_izjava_covers_another_locality() -> None:
     report = evaluate(dossier)
     scoped = [
         issue
-        for issue in report.blockers_for(GateLevel.SUE)
+        for issue in report.blockers
         if issue.code is IssueCode.MISSING_STATEMENT
     ]
     assert len(scoped) == 1
     assert "scope" in scoped[0].message
 
 
-def test_gate2_warns_per_person_missing_statement_but_never_blocks() -> None:
+def test_warns_per_person_missing_statement_but_never_blocks() -> None:
     """The user's G2 (2026-08-30): a named person with no izjava on file warns."""
     dossier = _dossier(
         recorder="L.Kukuljan",
@@ -301,29 +301,28 @@ def test_gate2_warns_per_person_missing_statement_but_never_blocks() -> None:
     report = evaluate(dossier)
     warnings = [
         issue
-        for issue in report.warnings_for(GateLevel.CROSPELEO)
+        for issue in report.warnings
         if issue.code is IssueCode.MISSING_STATEMENT
     ]
     assert len(warnings) == 1
     assert "Ivo Ivić" in warnings[0].message
-    assert warnings[0].level is GateLevel.CROSPELEO
     assert warnings[0].severity is Severity.WARNING
-    # Gate 1 must not see it, and it must not block anything.
+    # It must not block anything.
     assert not [
         issue
-        for issue in report.issues_for(GateLevel.SUE)
+        for issue in report.blockers
         if issue.code is IssueCode.MISSING_STATEMENT
     ]
 
 
-def test_gate2_does_not_repeat_an_author_already_blocked_at_gate1() -> None:
+def test_does_not_repeat_an_author_already_blocked() -> None:
     dossier = _dossier(drawing_authors=["I.Ivić"], team_members=["I.Ivić"])
     report = evaluate(dossier)
     statement_issues = [i for i in report.issues if i.code is IssueCode.MISSING_STATEMENT]
     assert [issue.severity for issue in statement_issues] == [Severity.BLOCKER]
 
 
-def test_gate2_warns_when_a_person_is_not_in_the_registry() -> None:
+def test_warns_when_a_person_is_not_in_the_registry() -> None:
     registry = _registry(Person(name="Lovel Kukuljan"))
     dossier = _dossier(team_members=["Netko Nov"])
     dossier.person_statements = link_person_statements(dossier, registry=registry)

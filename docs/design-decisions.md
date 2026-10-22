@@ -60,6 +60,8 @@ keeps the chronology.
 - [Dashboard help: a "?" on every part of the page (2026-10-08)](#dashboard-help-a--on-every-part-of-the-page-2026-10-08)
 - [Registar udruga: CroSpeleo is the ground truth (2026-10-04)](#registar-udruga-crospeleo-is-the-ground-truth-2026-10-04)
 - [3N entrance dimensions: a drawn pit rim beats the splays (2026-10-22)](#3n-entrance-dimensions-a-drawn-pit-rim-beats-the-splays-2026-10-22)
+- [6P predaja: the archivist's last gate, one click (2026-10-22)](#6p-predaja-the-archivists-last-gate-one-click-2026-10-22)
+- [The SUE gate moves to 6P; 5D judges CroSpeleo only; izjave are CroSpeleo's (2026-10-22)](#the-sue-gate-moves-to-6p-5d-judges-crospeleo-only-izjave-are-crospeleos-2026-10-22)
 
 ---
 
@@ -80,6 +82,11 @@ has no entrance photo" and "nobody has looked in the photo folder yet", and the
 whole gating design hangs on it.
 
 ## The workflow this encodes (two gates)
+
+> **Amended 2026-10-22** — see [The SUE gate moves to 6P](#the-sue-gate-moves-to-6p-5d-judges-crospeleo-only-izjave-are-crospeleos-2026-10-22).
+> The two gates stand, but **izjave are not part of gate 1**, and gate 1 is no
+> longer a 5D rule level: it is 6P's last gate (`predaja/gate.py`). 5D judges
+> only gate 2, CroSpeleo. The text below is the 2026-08-26 record as written.
 
 A cave moves through SB in a handful of states, and there are **two gates**, not one.
 
@@ -1894,3 +1901,138 @@ Validated on every `_postp` on the Drive (4). SB 968 → rim 7.0 × 14.3 m. lida
 archived) → rim 4.0 × 7.8 m, in line with its walls (3.7 × 6.9 m); it was 6.7 × 20.4 m from the
 splays, and the geometry had guessed horizontal. The other two have no rim and are unchanged.
 A fresh KORAK 2 of SB 968 writes the new name and measures the same.
+
+## 6P predaja: the archivist's last gate, one click (2026-10-22)
+
+**The spec (user, 2026-10-22).** Someone else does everything upstream. The
+last step is viewed by the society's archivist, so it carries **all the material
+to check once more**: the Nacrt, the OSZ, the photos. If the archivist is
+satisfied, **one click**:
+
+- fills the Nacrt PDF and the OSZ with the Katastarski broj;
+- reflects the change in SB;
+- moves the files on the Drive.
+
+Built as `cavedossier deliver` + the dashboard's 6P page
+([README](../stages/6P-predaja/README.md),
+[design](../stages/6P-predaja/docs/m6-delivery-design.md)).
+
+What was settled building it, and why:
+
+- **The review is a page, the confirmation is the click.** No stored "reviewed"
+  state: it would be shared state that rots, and the plan recomputes in ~3 s.
+  The tick box plus a dialog that is always shown (even with "ne pitaj više")
+  is the archivist's signature.
+- **`--apply` requires `--katastarski-broj`.** The click carries the number the
+  archivist saw. If SB moved on in between, the run refuses instead of
+  delivering under an unseen number.
+- **The guard re-reads SB inside the Excel session.** The row is found again by
+  Redni broj, and the number must still be free and still `max + 1`. Napomena,
+  Fotografija ulaza, Duljina and Dubina must still hold what the review showed.
+  A refusal closes the workbook unsaved.
+- **Documents are staged before SB is written** (a change from the 2026-09-02
+  order). Every cheap failure — a locked OSZ, a PDF whose cell cannot be found —
+  now happens before the number is reserved.
+- **The Nacrt is edited, not recomposed.** The archivist approved this PDF; a
+  recompose could pull in a later OSZ edit. The `0000` span is redacted
+  (middle half only, so the label survives) and the number is set at its
+  centre, baseline and size. This works on both routes.
+  - An Illustrator PDF loses `/PieceInfo`, `/Thumb` and the XMP in the stamped
+    copy (the 2026-09-19 trap).
+  - The leaf keeps the editable unstamped original; only `!!Nacrti` gets the
+    number.
+- **The number is written as 3 digits** (`007`), as the archive does. Measured:
+  `!!Nacrti/884…889.pdf` title blocks and `!!Osnovni zapisnici/886…889.docx`
+  cells read the bare number.
+- **`Link Nacrt`, `Link Zapisnik` and `Godina zadnjeg istraživanja` are never
+  written.** On the live SB they are table formulas over the number
+  (`HYPERLINK(".\!!Nacrti\"&B…)`, `RIGHT(O…,4)`). The 2026-09-02 design had
+  planned to write the links. The row writer now refuses any formula cell.
+- **Napomena: the queue flag becomes `ok`.** The 2026-09-02 design said only
+  "clear the flag". The live SB shows what numbered rows say instead: 768 of
+  901 are `ok`, and most others are `ok, <note>`. So:
+  - `za istražit, [n,] <note>` → `ok, <note>`;
+  - empty → `ok`;
+  - anything else stays, with a warning.
+- **SB still wins.** Duljina and Dubina are filled from the zapisnik only when
+  empty; a disagreement is a warning. A gate-1 *Missing 'Dubina'* that the
+  delivery itself fills is lifted. Found on SB 968, whose OSZ said 13 m.
+- **The checkbox-group manifest stopped being a prerequisite.** `osz provjera`
+  (2026-10-04) already answers "is Vrsta objekta ticked" per group, with SUE
+  marked, so delivery asks it.
+- **The five 2026-09-02 open questions** were taken as that note proposed:
+  - the photo index stays;
+  - the Nacrt is `<broj>.pdf` only (with several, the newest goes, plus a
+    warning);
+  - the leaf goes to `Arhiva/<broj>_<Ime>/`;
+  - dev-only first;
+  - the SB write is the number + Napomena + Fotografija ulaza + empty
+    Duljina/Dubina.
+
+  All revisitable.
+- **Resume, not rollback.** A failure after the SB write leaves the number
+  reserved. A re-run plans a *resume* under it and skips what the manifest's
+  `done_dst` says is filed. `--rollback` stays in the backlog until a real
+  failure shows which half breaks.
+
+**Validated** on 2026-10-22:
+
+- 22 unit tests;
+- a live dry run (SB 968 → 902, blocked by one missing izjava);
+- the stamp on SB 968's real Nacrt and OSZ, checked visually and opened in Word;
+- the [rehearsal protocol](../stages/6P-predaja/docs/sb-write-back-design.md)
+  on a **copy** of the sandbox with real Excel:
+  - formulas, the 3 data validations and all 18 VBA modules survived;
+  - a second run was refused;
+- a full `--apply` on a scratch Drive tree with real Excel.
+
+**Nothing was written to the live SB or moved on the live Drive.** The first
+live delivery is the archivist's.
+
+## The SUE gate moves to 6P; 5D judges CroSpeleo only; izjave are CroSpeleo's (2026-10-22)
+
+**The correction (user, 2026-10-22).** "Izjava is not a gate for SUE katastar,
+but for CroSpeleo it is. Refactor 5D so that it deals with gating for CroSpeleo
+only, while keeping 6P for SUE katastar." It amends
+[the two-gate workflow](#the-workflow-this-encodes-two-gates) of 2026-08-26,
+which had put *izjave* among the things that earn the katastarski broj.
+
+What changed:
+
+- **5D has one gate: CroSpeleo.** `GateLevel` and the per-rule `level` are
+  gone. `ReadinessReport` carries one verdict (`ready`, `blockers`, `warnings`,
+  `unchecked`), and `report` prints it. `report --gate` is removed (the exit
+  code is CroSpeleo's), and `to_view` has `gate` instead of `gates`.
+  - The rule table is unchanged in substance: it is the full Protokol v6 bar,
+    including the per-author izjava **blocker** and the per-person warnings.
+  - CroSpeleo needs the SUE number, so 5D comes **after** delivery. The
+    dashboard's workflow lists *Izjave* and *Dosje – prag CroSpeleo* after
+    *Predaja*.
+- **6P owns the SUE gate.** `predaja/gate.py` holds the old gate-1 SB rules
+  **without the izjava**:
+  - Ime objekta, Lokalitet, Najbliže mjesto, Razdoblje istraživanja, Autori
+    nacrta ili izvor;
+  - a Dubina in SB **or** the zapisnik (delivery fills SB from it);
+  - §5.1 coordinates + pločica (blockers from 2015, warnings before; a kaverna
+    needs no pločica, read from SB or the zapisnik's ticks).
+
+  The rest of the SUE gate is the leaf checks 6P already had: `osz provjera`'s
+  SUE fields, the Nacrt, a processed photo.
+- **On the 6P page the CroSpeleo verdict is information, not a blocker**: one
+  note — "CroSpeleo (5D, idući prag, ne priječi predaju)" — and the people card
+  still shows who lacks an izjava, so the archivist can chase it for the next
+  step.
+- **Why not keep the SUE rules as a 5D level that 6P reads?** Because the user
+  asked for one owner per gate, and a level flag inside one rule table is how
+  the izjava ended up in the wrong gate: nothing showed which requirement
+  belonged to whom. 6P's rules are short, explicit and live beside the action
+  they guard. 5D's table is the CroSpeleo manifest and nothing else.
+
+**Validated.**
+
+- The test suites of 5D, 5O, 0P and 6P are rewritten to the one-gate model,
+  with three new 6P tests. One of them asserts that a cave whose author has no
+  izjava passes the SUE gate.
+- Live: `deliver 968` went from blocked (*Missing 'Izjava za katastar' for
+  F.Karabaić*) to **ready, 902**, with "CroSpeleo: 3 blokera" as the note.
+- Live: `report --broj 968` prints the single CroSpeleo verdict.

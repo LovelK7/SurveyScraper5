@@ -135,7 +135,7 @@ def derive_lifecycle(
 ) -> LifecycleState:
     """Resolve SB's overlapping views into one state.
 
-    Precedence: SUE number (gate 1 already passed) → queue flag → outstanding
+    Precedence: SUE number (delivered, 6P) → queue flag → outstanding
     work → provenance. Nesređeni deliberately outranks sudjelovanje: a cave we
     only took part in that still says "fali nacrt" belongs on the worklist.
     """

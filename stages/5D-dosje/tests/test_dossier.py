@@ -14,7 +14,6 @@ from cave_dossier.dossier import (
     ArchiveFile,
     CaveDossier,
     FileRole,
-    GateLevel,
     Georeference,
     IssueCode,
     LifecycleState,
@@ -161,10 +160,10 @@ def test_ungathered_sources_are_unchecked_not_failed(
     dossier = _dossier(reader, settings, "Špilja Testovka")
     report = evaluate(dossier)
 
-    # SB-fed gate-1 rules all pass for this row; nothing SB-related may fail.
-    assert [i.message for i in report.blockers_for(GateLevel.SUE)] == []
+    # SB-fed rules all pass for this row; nothing SB-related may fail.
+    assert [i.message for i in report.blockers] == []
     # …but it is not ready: rules for the ungathered sources are pending.
-    assert report.ready_sue is False
+    assert report.ready is False
     # A rule reports the FIRST source it is missing, so the 2.1d photo rule
     # (ARCHIVE + PHOTOS) shows up under ARCHIVE — fix the archive first and it
     # re-reports as PHOTOS.
@@ -177,19 +176,15 @@ def test_ungathered_sources_are_unchecked_not_failed(
     }
 
 
-def test_sue_number_is_gate_2_only_never_gate_1(reader: SBReader, settings: Settings) -> None:
-    """Gate 1 PRODUCES the SUE number, so requiring it there would be circular."""
+def test_crospeleo_needs_the_sue_number(reader: SBReader, settings: Settings) -> None:
+    """CroSpeleo comes after delivery (6P gives the number), so it requires it."""
     report = evaluate(_dossier(reader, settings, "Đulin ponor mali"))  # queue row, no SUE
-
-    gate1 = {issue.label for issue in report.blockers_for(GateLevel.SUE)}
-    gate2 = {issue.label for issue in report.blockers_for(GateLevel.CROSPELEO)}
-    assert "Interni katastarski broj (SUE)" not in gate1
-    assert "Interni katastarski broj (SUE)" in gate2
+    assert "Interni katastarski broj (SUE)" in {issue.label for issue in report.blockers}
 
 
-def test_missing_sb_mandatories_block_gate_1(reader: SBReader, settings: Settings) -> None:
+def test_missing_sb_mandatories_block(reader: SBReader, settings: Settings) -> None:
     report = evaluate(_dossier(reader, settings, "Đulin ponor mali"))
-    labels = {issue.label for issue in report.blockers_for(GateLevel.SUE)}
+    labels = {issue.label for issue in report.blockers}
     assert "Dubina" in labels
     assert "Autori nacrta ili izvor" in labels  # renamed in the live workbook 2026-08-26
     assert "Lokalitet" in labels
@@ -201,8 +196,7 @@ def test_plaque_rule_is_year_conditional(reader: SBReader, settings: Settings) -
     plaque = [i for i in modern.issues if i.code is IssueCode.MISSING_PLAQUE]
     assert [i.severity for i in plaque] == [Severity.BLOCKER]
 
-    # Unknown year and no plaque → warning: an old cave can still earn a SUE
-    # number without one.
+    # Unknown year and no plaque → warning: an old cave never had one.
     old = evaluate(_dossier(reader, settings, "Đulin ponor mali"))
     plaque = [i for i in old.issues if i.code is IssueCode.MISSING_PLAQUE]
     assert [i.severity for i in plaque] == [Severity.WARNING]
@@ -217,27 +211,21 @@ def test_coordinates_rule_is_year_conditional(reader: SBReader, settings: Settin
     assert [i.severity for i in coordinates] == [Severity.WARNING]  # unknown year
 
 
-def test_a_fully_gathered_dossier_passes_both_gates() -> None:
+def test_a_fully_gathered_dossier_passes() -> None:
     """The rule table must be satisfiable — otherwise nothing ever ships."""
     report = evaluate(_complete_dossier())
     assert report.unchecked == []
     assert [i.message for i in report.blockers] == []
-    assert report.ready_sue is True
-    assert report.ready_crospeleo is True
+    assert report.ready is True
 
 
-def test_gate_1_can_pass_while_gate_2_still_fails() -> None:
-    """The everyday case: society-ready, not yet CroSpeleo-ready."""
+def test_map_excerpt_and_georef_block_crospeleo() -> None:
     dossier = _complete_dossier()
-    dossier.map_excerpt = None                      # isječak karte is CroSpeleo-only
+    dossier.map_excerpt = None
     dossier.georeference.georef_record = None
     report = evaluate(dossier)
-    assert report.ready_sue is True
-    assert report.ready_crospeleo is False
-    assert {i.label for i in report.blockers_for(GateLevel.CROSPELEO)} == {
-        "Isječak karte",
-        "Georef zapis",
-    }
+    assert report.ready is False
+    assert {i.label for i in report.blockers} == {"Isječak karte", "Georef zapis"}
 
 
 def test_missing_izjava_blocks_per_author() -> None:
@@ -248,7 +236,7 @@ def test_missing_izjava_blocks_per_author() -> None:
                   and i.severity is Severity.BLOCKER]
     assert len(statements) == 1
     assert "I.Ivić" in statements[0].message
-    assert report.ready_sue is False
+    assert report.ready is False   # a CroSpeleo blocker; 6P (SUE) never asks for izjave
 
 
 def test_finders_in_the_author_cell_need_no_izjava() -> None:
@@ -259,7 +247,7 @@ def test_finders_in_the_author_cell_need_no_izjava() -> None:
     report = evaluate(dossier)
     assert not [i for i in report.issues if i.code is IssueCode.MISSING_STATEMENT
                 and i.severity is Severity.BLOCKER]
-    assert report.ready_sue is True
+    assert report.ready is True
 
 
 def test_unprocessed_entrance_photos_are_flagged_for_2_1d() -> None:
@@ -277,7 +265,7 @@ def test_unprocessed_entrance_photos_are_flagged_for_2_1d() -> None:
     assert "budget" in photo_notes[0].message
     assert "not renamed" in photo_notes[0].message
     assert photo_notes[0].severity is Severity.WARNING  # hygiene, not a gate
-    assert report.ready_sue is True
+    assert report.ready is True
 
 
 def test_survey_dimensions_win_over_sb() -> None:
@@ -301,7 +289,7 @@ def test_negative_dimension_is_treated_as_invalid() -> None:
 # ── Report renderer ───────────────────────────────────────────────────
 
 
-def test_render_shows_identity_lifecycle_and_both_gates(
+def test_render_shows_identity_lifecycle_and_the_gate(
     reader: SBReader, settings: Settings
 ) -> None:
     dossier = _dossier(reader, settings, "Špilja Testovka")
@@ -310,8 +298,8 @@ def test_render_shows_identity_lifecycle_and_both_gates(
 
     assert "Špilja Testovka (SUE 001)" in text
     assert "SB status: istraženi" in text
-    assert "Gate 1 – katastarski broj (SUE): NOT READY" in text
-    assert "Gate 2 – CroSpeleo: NOT READY" in text
+    assert "CroSpeleo: NOT READY" in text
+    assert "Gate 1" not in text and "katastarski broj (SUE):" not in text
     assert "not gathered yet" in text
     # 7-digit HTRS96 northings must not degrade to scientific notation.
     assert "5023456" in text
@@ -391,7 +379,7 @@ def test_assemble_is_fail_soft_without_drive(settings: Settings, tmp_path) -> No
     assert dossier.readiness is not None
     assert not dossier.has(Source.STATEMENTS)
     assert any(
-        rule.source is Source.STATEMENTS for rule in dossier.readiness.unchecked_for(GateLevel.SUE)
+        rule.source is Source.STATEMENTS for rule in dossier.readiness.unchecked
     )
 
 
@@ -405,7 +393,7 @@ def test_to_view_schema(settings: Settings, tmp_path) -> None:
     json.dumps(view)  # JSON-serialisable as is
     assert set(view) == {
         "name", "serial", "working_id", "sue", "excel_row", "lifecycle", "lifecycle_hint",
-        "sources", "sb", "survey", "files", "people", "gates",
+        "sources", "sb", "survey", "files", "people", "gate",
     }
     assert view["name"] == "Špilja Testovka (SUE 001)"
     assert view["serial"] == 1 and view["sue"] == "001" and view["excel_row"] == 3
@@ -414,14 +402,11 @@ def test_to_view_schema(settings: Settings, tmp_path) -> None:
     assert all(set(s) == {"key", "label", "gathered"} for s in view["sources"])
     assert ["SUE broj", "001"] in view["sb"]
     assert view["survey"] is None and view["files"] == [] and view["people"] == []
-    assert [(g["gate"], g["ordinal"]) for g in view["gates"]] == [("sue", 1), ("crospeleo", 2)]
-    for gate in view["gates"]:
-        assert set(gate) == {"gate", "ordinal", "label", "ready", "blockers", "warnings", "unchecked"}
-        assert all(set(u) == {"label", "source_label", "severity"} for u in gate["unchecked"])
-        assert all(u["severity"] in ("blocker", "warning") for u in gate["unchecked"])
-    # Gate 2 lists only what it adds: gate 1's unchecked rules are not repeated.
-    gate1 = {u["label"] for u in view["gates"][0]["unchecked"]}
-    assert not gate1 & {u["label"] for u in view["gates"][1]["unchecked"]}
+    gate = view["gate"]
+    assert gate["gate"] == "crospeleo" and gate["label"] == "CroSpeleo"
+    assert set(gate) == {"gate", "label", "ready", "blockers", "warnings", "unchecked"}
+    assert all(set(u) == {"label", "source_label", "severity"} for u in gate["unchecked"])
+    assert all(u["severity"] in ("blocker", "warning") for u in gate["unchecked"])
 
     # The complete dossier carries survey, files and a person.
     from cave_dossier.people.statements import link_person_statements
@@ -449,11 +434,11 @@ def test_view_for_serial_unknown_is_none(settings: Settings, tmp_path) -> None:
 def test_report_broj_resolves_by_redni_broj(settings: Settings, tmp_path, capsys) -> None:
     from cave_dossier.cli import EXIT_ERROR, EXIT_NOT_READY, cmd_report
 
-    code = cmd_report(_isolated(settings, tmp_path), None, False, "sue", serial=2)
+    code = cmd_report(_isolated(settings, tmp_path), None, False, serial=2)
     assert code == EXIT_NOT_READY
     assert "Jama Čavlić (SUE 002)" in capsys.readouterr().out
 
-    assert cmd_report(_isolated(settings, tmp_path), None, False, "sue", serial=999) == EXIT_ERROR
+    assert cmd_report(_isolated(settings, tmp_path), None, False, serial=999) == EXIT_ERROR
     assert "Redni broj 999" in capsys.readouterr().err
 
 

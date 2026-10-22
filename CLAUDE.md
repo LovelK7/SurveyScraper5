@@ -35,8 +35,8 @@ STATUS, session logs and conversation — `4O` always means the OSZ builder.
 | **4F** | [stages/4F-fotografije/](stages/4F-fotografije/README.md) | Entrance-photo processing | 2.1d |
 | **4S** | [stages/4S-sastavnica/](stages/4S-sastavnica/README.md) | Nacrt title block for the Illustrator route | 2.1e |
 | **5O** | [stages/5O-osobe/](stages/5O-osobe/README.md) | Registar osoba + izjave linkage | part of 2.1 |
-| **5D** | [stages/5D-dosje/](stages/5D-dosje/README.md) | Dossier model, the two gates, `report` | 2.1 |
-| **6P** | [stages/6P-predaja/](stages/6P-predaja/README.md) | Delivery + SB write-back (designed only) | M6 |
+| **5D** | [stages/5D-dosje/](stages/5D-dosje/README.md) | Dossier model, the CroSpeleo gate, `report` | 2.1 |
+| **6P** | [stages/6P-predaja/](stages/6P-predaja/README.md) | The SUE gate: the archivist's review, then delivery + SB write-back (`deliver`) | M6 |
 
 **Historical documents keep the old numbers.** `journal/SESSIONS.md`,
 `docs/design-decisions.md` and `stages/3N-nacrt/decisions/` were written when

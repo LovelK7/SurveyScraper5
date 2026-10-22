@@ -9,12 +9,11 @@ from cave_dossier.dossier.gating import RULES, evaluate, start_year
 from cave_dossier.dossier.assemble import assemble, view_for_serial
 from cave_dossier.dossier.model import (
     AUTHOR_ROLES,
-    GATE_LABELS,
+    GATE_LABEL,
     ArchiveFile,
     CaveDossier,
     DossierIssue,
     FileRole,
-    GateLevel,
     Georeference,
     IssueCode,
     LifecycleState,
@@ -41,8 +40,7 @@ __all__ = [
     "CaveDossier",
     "DossierIssue",
     "FileRole",
-    "GATE_LABELS",
-    "GateLevel",
+    "GATE_LABEL",
     "Georeference",
     "IssueCode",
     "LifecycleState",

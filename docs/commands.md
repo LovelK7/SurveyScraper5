@@ -57,10 +57,11 @@ of rules: *is anything mandatory still missing?* That answer is what
 `cavedossier report` prints — and the same object is what later stages use to
 prefill the OSZ and (at M6) update SB.
 
-There are **two gates**: gate 1 is the society's own acceptance step (Nacrt +
-OSZ + foto + pločica + izjave), and passing it *earns* the cave its SUE number;
-gate 2 is the stricter CroSpeleo/Protokol-v6 bar that crospeleo-automation
-submits against. Everything that is not *Istraženi* is the queue. A verdict is
+There are **two gates, in two stages**: the society's own acceptance step
+(Nacrt + OSZ + foto + pločica — **no izjava**) *earns* the cave its SUE number,
+and is 6P's `deliver` with the archivist's review; the stricter
+CroSpeleo/Protokol-v6 bar that crospeleo-automation submits against is what
+`report` (5D) judges, after delivery. Everything that is not *Istraženi* is the queue. A verdict is
 three-tier — blocker / warning / *not checked yet* — so "missing" is never
 confused with "nobody looked". The full design (state derivation from SB's own
 Power Query, the rule table, §5.1 year exemptions, identity numbering) is in
@@ -69,9 +70,9 @@ Power Query, the rule table, §5.1 year exemptions, identity numbering) is in
 People go through the **registar osoba** (`data/people/registry.json`): one
 entry per author, aliases derived automatically, so SB's `L.Kukuljan`, an
 OSZ's `Lovel Kukuljan` and the file `Izjava_LKukuljan.pdf` count as one
-person. At gate 1 a missing (or wrongly scoped) izjava **per author** blocks;
-at gate 2 any named person without an izjava on file — recorder and team
-members included — gets a warning. `cavedossier people check` runs the same
+person. For CroSpeleo a missing (or wrongly scoped) izjava **per author**
+blocks; any other named person without an izjava on file — recorder and team
+members included — gets a warning. The katastarski broj SUE needs no izjava. `cavedossier people check` runs the same
 audit over the whole registry and workbook.
 
 ## Milestones — what M1-M6 mean
@@ -100,8 +101,7 @@ here to there?"*, start from the pipeline's bridge maps instead —
 [ARCHITECTURE §Bridges](../ARCHITECTURE.md#bridges--the-scripts-between-the-nodes)
 — and come back here for the flags.
 
-Exit codes: **1** = ready, **0** = not ready, **99** = error. `--gate` only
-chooses which gate the exit code reports on — both are always printed.
+Exit codes: **1** = ready, **0** = not ready, **99** = error.
 First time on a machine? [Setup](#setup-once) below.
 
 ```powershell
@@ -119,10 +119,19 @@ cavedossier sb inspect --broj 1438         # ... or by SB Redni broj (exactly on
 cavedossier sb stats                       # sheets, row counts, fill counts of key columns
 
 # ── Per-cave dossier report (part 2.1) ─────────────────────────────────
-cavedossier report --cave "Konglomeratača"      # both gates, text
+cavedossier report --cave "Konglomeratača"      # the CroSpeleo gate, text
 cavedossier report --cave 570 --json            # the dossier as data
-cavedossier report --cave 570 --gate crospeleo  # exit code follows gate 2 instead
 cavedossier report --broj 1438                  # by SB Redni broj (exactly one of --cave/--broj)
+
+# ── The last gate + delivery (6P) ──────────────────────────────────────
+cavedossier deliver 968                    # DRY RUN: the archivist's review list – blockers,
+                                           # the proposed katastarski broj, every file move, every SB cell
+cavedossier deliver 968 --json             # the same plan as data (the dashboard's 6P page)
+cavedossier deliver 968 --apply --katastarski-broj 902
+                                           # deliver under the number you reviewed: stamp Nacrt + OSZ,
+                                           # write SB (Excel COM, backup first), file the copies, move
+                                           # the leaf to Arhiva. Refuses if SB moved on since the review.
+# Details: stages/6P-predaja/README.md
 
 # ── Workbook-wide audits (read-only worklists for an Excel cleanup pass) ─
 cavedossier sb audit-authors --limit 40    # author cells the splitter cannot read
@@ -144,8 +153,8 @@ cavedossier people check                   # audit: people without an izjava · 
                                            #   the registry cannot resolve; also writes the
                                            #   person↔izjava JSON to runs/people/
 cavedossier people check --broj 1438       # ONE cave: each person ✓/~/✗/? + the statement
-                                           #   blockers (gate 1) / warnings (gate 2);
-                                           #   exit 1 = gate 1's people all covered, 0 = not
+                                           #   blockers (authors) / warnings (others), CroSpeleo;
+                                           #   exit 1 = every author covered, 0 = not
 # Author vs finder: in `Autori nacrta ili izvor` only names written N.Prezime
 # (L.Kukuljan) are survey authors and get statement-checked; everything else
 # (bare first names, full names) is a cave finder/source — no izjava needed,
@@ -406,7 +415,7 @@ cavedossier osz dopune 1234 --osz FILE       # point at an exact filled v10 DOCX
 
 ```powershell
 cavedossier sb columns                      # what the tool sees in the workbook
-cavedossier report --cave "Konglomeratača"  # one cave, end to end, both gates
+cavedossier report --cave "Konglomeratača"  # one cave, end to end, the CroSpeleo gate
 cavedossier report --cave 570 --json        # the same dossier as data
 cavedossier geo locate 570                  # the locality finders vs the SB row
 cavedossier geo kota 570                    # DMV elevation vs the SB row's Z

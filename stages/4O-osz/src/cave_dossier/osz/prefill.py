@@ -377,8 +377,10 @@ def _is_lidar_derived(cave: CaveRow, settings: Settings) -> bool:
 
 def _resolve_kota(settings: Settings, cave: CaveRow, result: PrefillResult,
                   kota_finding, lidar: bool) -> None:
-    sb_z = _sb_float(cave, _field_column(settings, "entrance_elevation_m"))
-    computed = kota_finding.elevation_m if kota_finding is not None else None
+    # The OSZ states the kota in whole metres (user, 2026-10-21, SB 0357:
+    # "671,149" → "671"); a sub-metre Z is false precision for an entrance.
+    sb_z = _round_kota(_sb_float(cave, _field_column(settings, "entrance_elevation_m")))
+    computed = _round_kota(kota_finding.elevation_m if kota_finding is not None else None)
 
     label = settings.geo_elevation_source_label
 
@@ -1092,6 +1094,11 @@ def _sb_float(cave: CaveRow, column: str | None) -> float | None:
 
 def _sb_prefix(serial: int) -> str:
     return f"{SB_PREFIX}{georef.padded_serial(serial)}"
+
+
+def _round_kota(value: float | None) -> float | None:
+    """Whole metres, half rounding up (671.5 → 672, not banker's 672/670)."""
+    return None if value is None else float(math.floor(value + 0.5))
 
 
 def _format_number(value: float) -> str:

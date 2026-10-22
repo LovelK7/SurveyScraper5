@@ -66,9 +66,9 @@ continuity (SUE-prefixed filenames, OSZ labels its parser recognizes).
                                     ▼
                ┌─────────────────────────────────────────────┐
                │ <a href="#stage-5d">5D</a> DOSJE — one verdict per cave       [<a href="#b9">B9</a>]  │
-               │   gate 1 SUE  ·  gate 2 CroSpeleo           │
+               │   the CroSpeleo gate (izjave included)      │
                └─────────────────────┬───────────────────────┘
-                                     │  gate 1 passes
+                                     │  the SUE gate is 6P's own
                                      ▼
                ┌─────────────────────────────────────────────┐
                │ <a href="#stage-6p">6P</a> PREDAJA — katastarski broj, file every   │ ──→ SB write-back
@@ -106,8 +106,8 @@ historical logs, which were migrated verbatim.
 | <a name="stage-4f"></a>**4F** | 2.1d | [fotografije](stages/4F-fotografije/README.md) — entrance photos |
 | <a name="stage-4s"></a>**4S** | 2.1e | [sastavnica](stages/4S-sastavnica/README.md) — the Nacrt title block |
 | <a name="stage-5o"></a>**5O** | part of 2.1 | [osobe](stages/5O-osobe/README.md) — registar osoba + izjave |
-| <a name="stage-5d"></a>**5D** | 2.1 | [dosje](stages/5D-dosje/README.md) — the dossier model and the two gates |
-| <a name="stage-6p"></a>**6P** | M6 | [predaja](stages/6P-predaja/README.md) — delivery + SB write-back |
+| <a name="stage-5d"></a>**5D** | 2.1 | [dosje](stages/5D-dosje/README.md) — the dossier model and the CroSpeleo gate (the SUE gate is 6P's, since 2026-10-22) |
+| <a name="stage-6p"></a>**6P** | M6 | [predaja](stages/6P-predaja/README.md) — the last gate: the archivist's review, then one click stamps the katastarski broj into Nacrt + OSZ + SB and files everything (built 2026-10-22, not yet run live) |
 
 Note what the renumbering fixed: the dossier builder used to be **2.1**, the
 umbrella number the whole feature was named after, with everything else nested
@@ -184,22 +184,24 @@ bridge, not from the command list.
 
 | Stage | Its bridges |
 |---|---|
-| [**2B**](#stage-2b) SB master | destination of [**H1**](#h1); source of [B3](#b3)/[B6](#b6)/[B9](#b9); [**B11**](#b11) (M6) will write it |
+| [**2B**](#stage-2b) SB master | destination of [**H1**](#h1); source of [B3](#b3)/[B6](#b6)/[B9](#b9); [**B11**](#b11) (M6, `deliver --apply`) writes one row's delivery cells via Excel COM |
 | [**2B**](#stage-2b) satellites | [**B1**](#b1) → [**H1**](#h1) |
 | [**3N**](#stage-3n) nacrt | [**B10**](#b10) (M5, planned) — until then its own stage's pipeline |
 | [**4G**](#stage-4g) geo | [**B4**](#b4) (once per machine); [**B5**](#b5) to check what the finders say |
 | [**4I**](#stage-4i) isječak karte | [**B3**](#b3) (standalone; B6 runs it for you) |
 | [**4O**](#stage-4o) osz | [**B6**](#b6) (prefill) → [**H2**](#h2) (field) → [**B7**](#b7) (fetch) → [**H1**](#h1); [**B5**](#b5) to verify the finders |
-| [**4F**](#stage-4f) fotografije ulaza | [**B8**](#b8) (downsize + rename, done); the *mover* into `!!Fotografije ulaza` rides with [**B11**](#b11) (M6) |
+| [**4F**](#stage-4f) fotografije ulaza | [**B8**](#b8) (downsize + rename, done); the *mover* into `!!Fotografije ulaza` is part of [**B11**](#b11) (built 2026-10-22) |
 | [**4S**](#stage-4s) sastavnica | [**B13**](#b13) — reads what [**B6**](#b6)/[**B7**](#b7) already know |
 | [**5O**](#stage-5o) osobe | [**B12**](#b12) — never writes anything |
 | [**5D**](#stage-5d) dosje | [**B9**](#b9) (report); intake tail of M2 pending |
 
 ### Map 1 — everything that flows INTO SB
 
-Nothing writes to SB automatically before M6 — every inbound edge converges on
+Nothing writes to SB automatically — every inbound edge converges on
 [**H1**](#h1), a person pasting a review list into Excel. That is the design,
-not a gap ([key facts](#key-facts-that-shape-the-design)).
+not a gap ([key facts](#key-facts-that-shape-the-design)). The one tool write is
+[**B11**](#b11) `deliver --apply`: one row, the cells delivery owns, after the
+archivist confirms (M6, 2026-10-22).
 
 <pre>
   Liburnija LIDAR sheet          filled OSZ zapisnik            empty SB cells a geo
@@ -279,8 +281,8 @@ The bridges that keep names/numbers straight and say when a cave is done.
                                          ulaza" cell; match-queued named the queue
                                          once in 2026-08, and is not run any more)
 
-  everything gathered so far       ───[<a href="#b9">B9</a>] report ──────► gate 1 (SUE) / gate 2
-                                        (per-cave verdict:                (CroSpeleo)
+  everything gathered so far       ───[<a href="#b9">B9</a>] report ──────► the CroSpeleo gate
+                                        (per-cave verdict:                (after 6P)
                                          blocker · warning · not-checked-yet)
 
   registar osoba + izjave dir      ◄──[<a href="#b12">B12</a>] people ─────► SB author cells
@@ -296,7 +298,7 @@ The bridges that keep names/numbers straight and say when a cave is done.
                                          for <a href="#two-routes-to-the-nacrt--csurvey-and-illustrator">route B</a>)
 
   <a href="#stage-3n">3N</a> survey artifacts              ···[<a href="#b10">B10</a>] (M5, planned)···► dossier (Nacrt + dims)
-  finished dossier                 ···[<a href="#b11">B11</a>] (M6, planned)···► SB write-back + archive
+  finished dossier                 ···[<a href="#b11">B11</a>] (M6, built)·····► SB write-back + archive
                                         delivery; the <a href="#stage-4f">4F</a> mover rides along
 </pre>
 
@@ -318,7 +320,7 @@ What each label actually runs. One line here; flags and details in the
 | <a name="b9"></a>**B9** | `cavedossier report --cave <x>` | gathered sources → gate verdicts | any time — it never changes anything |
 | <a name="b10"></a>**B10** | *(M5, planned)* | 3N Nacrt + dimensions → dossier | — |
 | <a name="b12"></a>**B12** | `cavedossier osz backfill <broj>` (3N KORAK 4) | `<ime>_dimenzije.json` → the measured cells of the existing OSZ (Duljina/Dubina/…, Broj/Širina/Visina ulaza) | right after KORAK 3b; the dashboard's 3N page and the kit's `csurvey_4_upisi_osz.bat` |
-| <a name="b11"></a>**B11** | *(M6, planned)* `cavedossier deliver <broj>` | dossier → katastarski broj + every file filed under it + SB write-back | gate 1 passes; designed in [m6-delivery-design.md](stages/6P-predaja/docs/m6-delivery-design.md) |
+| <a name="b11"></a>**B11** | *(M6)* `cavedossier deliver <broj> [--apply --katastarski-broj N]` — the dashboard's 6P page | dossier → the archivist's review → katastarski broj stamped into the Nacrt + OSZ + SB, Nacrt/OSZ/photos filed under it, the leaf moved to `Arhiva` | the SUE gate passes (6P `gate.py` SB fields + `osz provjera` + files; no izjava) and the archivist confirms; [6P README](stages/6P-predaja/README.md), design in [m6-delivery-design.md](stages/6P-predaja/docs/m6-delivery-design.md). Built 2026-10-22, rehearsed on a SB copy, not yet run live |
 | <a name="b12"></a>**B12** | `cavedossier people list/check` | people registry ↔ izjave dir ↔ SB author cells → audit + `statements-index.json` | a new izjava or author appeared, or periodically — it never changes anything |
 | <a name="b13"></a>**B13** | `cavedossier sastavnica <broj>` | SB + the leaf's filled OSZ + geo → `SB_<padded>_sastavnica.pdf` in the cave's intake leaf | a cave is about to be drafted in Illustrator ([route B](#two-routes-to-the-nacrt--csurvey-and-illustrator)); best after the zapisnik is filled, but useful before it |
 | <a name="b14"></a>**B14** | `cavedossier nacrt <broj>` | KORAK 3's printed plan + profile + dimensions → `SB_<padded>_nacrt.pdf` in the cave's intake leaf | a cave's sketch has been corrected and printed ([route A](#two-routes-to-the-nacrt--csurvey-and-illustrator)); it composes both drawings onto the 4S title block at true scale |
@@ -337,7 +339,7 @@ The map answers "how do I get from A to B" as a bridge sequence:
   [**H2**](#h2).
 - **After the exploration:** [**H2**](#h2) (zapisnik filed) → [**B7**](#b7) →
   [**H1**](#h1) (SB backfilled) → [**B8**](#b8) (photos) → [**B9**](#b9)
-  (is gate 1 met?) → *(M6: [B11](#b11) delivers and writes back)*.
+  (is CroSpeleo met?) — while [B11](#b11) `deliver` is the SUE gate: the archivist reviews, one click delivers and writes back.
 - **Draft a cave in Illustrator ([route B](#two-routes-to-the-nacrt--csurvey-and-illustrator)):**
   TopoDroid DXF/PDF export → the drafter's `.ai` → [**B13**](#b13) puts
   `SB_<broj>_sastavnica.pdf` in the same intake leaf → the drafter places it →
@@ -363,14 +365,15 @@ The map answers "how do I get from A to B" as a bridge sequence:
   canonical name per person with aliases derived automatically, so SB's
   `L.Kukuljan`, an OSZ's `Lovel Kukuljan` and `Izjava_LKukuljan.pdf` are one
   person, and a locality-scoped izjava no longer satisfies a cave elsewhere. A
-  missing/wrong-scope author izjava blocks gate 1; any other named person
-  (recorder, team) without an izjava — or absent from the registry — warns at
-  gate 2.
-- **Two gates, not one** (user, 2026-08-26). Gate 1 is the society's own step:
-  Nacrt + OSZ + fotografije ulaza + pločica + izjave earn the cave its
-  **katastarski broj SUE**, which is what moves its SB row into *Istraženi*.
-  Gate 2 is the stricter CroSpeleo bar (Protokol v6) — a superset, and holding a
-  SUE number makes it "almost a certain go". A cave's SB lifecycle is therefore
+  missing/wrong-scope author izjava blocks **CroSpeleo** (never the SUE
+  number — user, 2026-10-22); any other named person (recorder, team) without
+  an izjava — or absent from the registry — warns.
+- **Two gates, in two stages** (user, 2026-08-26; split 2026-10-22). The
+  society's own step — Nacrt + OSZ + fotografije ulaza + pločica, **no izjava** —
+  earns the cave its **katastarski broj SUE**, which moves its SB row into
+  *Istraženi*; it is [6P](#stage-6p)'s last gate, the archivist's review. The
+  stricter CroSpeleo bar (Protokol v6, izjave of every author included) is
+  [5D](#stage-5d)'s, and comes after: it needs the SUE number. A cave's SB lifecycle is therefore
   *Za istražit* → *Nesređeni* → *Istraženi*, and everything short of Istraženi is
   a queue item.
 - **Croatian terms are domain identity** (OSZ, Nacrt, SB, SUE, izjava, isječak karte) —
@@ -474,4 +477,4 @@ state lives in [STATUS.md](STATUS.md) — this table only says what each one IS.
 | **M3** | Isječak karte | The georef.hr flow ported: `karta <broj>` → excerpt PNG + georef zapis delivered to `!!Isječci karte` | 4I |
 | **M4** | OSZ builder | Both directions over the v10 template: **prefill** (SB + geo finders → `SB_<broj>_OSZ.docx`) and **backfill** (filled zapisnik → SB backfill review list); the CroSpeleo-field reader (checkbox groups, narratives, Docs variant) is its tail | 4O |
 | **M5** | 3N artifact handoff | Consume the survey pipeline's products (Nacrt PDF + dimensions) into the dossier — integration via files, never imports | 3N↔5D |
-| **M6** | SB write-back + delivery | The only WRITE milestone: xlwings/COM write-back of gathered data into SB, delivery of finished dossiers into the archive dirs; the [4F](#stage-4f) **mover** rides along — downsizing and the `SB_<broj>_…` naming are done (2026-09-01), but the move into `!!Fotografije ulaza` under the katastarski broj can only happen once that number exists | 2B, 4F |
+| **M6** | SB write-back + delivery | The only WRITE milestone: xlwings/COM write-back of gathered data into SB, delivery of finished dossiers into the archive dirs; the [4F](#stage-4f) **mover** rides along — downsizing and the `SB_<broj>_…` naming are done (2026-09-01), but the move into `!!Fotografije ulaza` under the katastarski broj can only happen once that number exists. **Built 2026-10-22** as `deliver` ([6P](#stage-6p)) — not yet run against the live SB | 2B, 4F, 6P |

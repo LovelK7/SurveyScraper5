@@ -92,6 +92,7 @@ packages = [
     "cave_dossier.people",
     "cave_dossier.archive",
     "cave_dossier.dossier",
+    "cave_dossier.predaja",
 ]
 
 [tool.setuptools.package-dir]
@@ -109,6 +110,7 @@ packages = [
 "cave_dossier.people"     = "stages/5O-osobe/src/cave_dossier/people"
 "cave_dossier.archive"    = "stages/5O-osobe/src/cave_dossier/archive"
 "cave_dossier.dossier"    = "stages/5D-dosje/src/cave_dossier/dossier"
+"cave_dossier.predaja"    = "stages/6P-predaja/src/cave_dossier/predaja"
 
 # Runtime inputs that travel with their code. A no-op for the editable
 # install prod actually uses, but set so a real wheel is never silently

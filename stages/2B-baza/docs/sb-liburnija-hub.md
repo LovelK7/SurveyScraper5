@@ -60,7 +60,7 @@ them**. That grouping is the whole design.
 | `Naziv_novi`, `Naziv_stari` | shared → SB | the name it got |
 | `Br.pl` | shared → SB | **Broj pločice — the join key** |
 | `Komentar` | field-owned | free text |
-| `Zapisnik`, `Nacrt`, `Foto ulaza` | SB-owned | TRUE/FALSE — the exact three deliverables gate 1 checks |
+| `Zapisnik`, `Nacrt`, `Foto ulaza` | SB-owned | TRUE/FALSE — the exact three deliverables the SUE gate (6P) checks |
 
 **A trap in the last three.** SB's `Link Nacrt` / `Link Zapisnik` record only
 whether a **digital** copy is on file; every *Istraženi* object has both, analog
@@ -71,7 +71,7 @@ broj SUE is the real signal: hold one, and both documents exist by definition.
 both directions and the sheet's own TRUE is worth acting on.
 
 The last three columns are the interesting discovery: **the field sheet already
-tries to track gate-1 deliverables**, by hand, and drifts. SB (plus the dossier)
+tries to track SUE-gate deliverables**, by hand, and drifts. SB (plus the dossier)
 knows the truth for all of them. That is the ready-made payload for the SB→sheet
 direction.
 

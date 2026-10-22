@@ -12,6 +12,67 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-22 — 6P predaja: the archivist's last gate and one-click delivery; the SUE gate leaves 5D (agent) ◐
+
+- **Did:** Built M6's delivery as `cavedossier deliver <Redni broj>` (new subpackage `cave_dossier.predaja` in
+  `stages/6P-predaja/src/`).
+  - `plan.py` — the read-only last gate + plan + review material.
+  - `stamp.py` — the katastarski broj over the Nacrt's `0000`: a redaction tight to the span's middle, the
+    number set at the same centre/baseline/size, the Illustrator `/PieceInfo` stripped. Also into the OSZ's v10
+    cell.
+  - `apply.py` — stage the stamped docs → SB → copies into the archive dirs → stamped copies into the leaf →
+    leaf to `Arhiva/<broj>_<Ime>/` → manifest after every step, resume under a reserved number.
+  - `gate.py` — the SUE rules.
+  - 2B `safe_io.write_row_via_excel_com`: one Excel session, the row re-found by Redni broj, a guard callback,
+    formula cells refused, closed unsaved on refusal.
+  - Dashboard: the **6P page**, which replaces the mockup:
+    - the verdict and the proposed number;
+    - the Nacrt rendered inline (`media.thumbnail` now renders PDFs; `THUMB_SIZES` gained 800);
+    - OSZ, photos, karta, people, SB row and leaf, all openable;
+    - every file move and SB cell before→after;
+    - a tick box and an always-asked confirm that runs the `deliver-apply` catalog action pinned to the reviewed
+      number.
+
+  Workflow step "predaja" opens 6P. Config `archive.arhiva_dir`.
+
+  **Then, on the user's correction ("izjava is not a gate for SUE, for CroSpeleo it is"):**
+  - 5D refactored to **one gate, CroSpeleo**: `GateLevel`, `applies_at` and the per-rule `level` removed;
+    `ReadinessReport.ready`; `to_view` has `gate`; `report --gate` removed; `people check --broj` reports
+    CroSpeleo.
+  - 6P's `gate.py` holds the old gate-1 SB rules without izjave.
+  - Workflow lists izjave + CroSpeleo after Predaja.
+
+  Docs: 6P README + `m6-delivery-design.md` rewritten (the user asked for the latter), the 5D README rewritten,
+  two design-decisions entries, ARCHITECTURE / STATUS / commands / drive-layout / glossary / 5O / 0P / CLAUDE.md.
+- **Result:** 1031 tests green (25 in 6P), doctor 0 fail.
+  - Validated: a live dry run of the intake; the stamp on SB 968's real Nacrt + OSZ (visual + Word COM: Arial
+    18 bold, 81 controls intact).
+  - SB rehearsal on a **copy** of the sandbox with real Excel: cells written; `Link …` / `Godina …` formulas,
+    3 data validations and all 18 VBA modules intact; a second run refused by the guard.
+  - A full `--apply` on a scratch Drive tree with real Excel.
+  - SB 968 went from blocked (F.Karabaić's izjava) to **ready, 902**.
+  - **Not run live** — no live SB write, no live Drive move.
+  - The first rehearsal run hung once after Excel's save (not reproduced).
+  - Not built: the `/` filler, `--rollback`.
+  - The running dashboard could not be reinstalled over (exe locked) — the editable install still works;
+    `olefile` added to the venv for the VBA check.
+  - This commit also carries other uncommitted 2026-10-21/22 work found in the tree: 4F author-rename of
+    processed photos, a 4O prefill tweak, the nav dots in `app.js`.
+- **Learned:**
+  - In the live SB, `Link Nacrt`, `Link Zapisnik` (`HYPERLINK(".\!!Nacrti\"&B…)`) and `Godina zadnjeg
+    istraživanja` (`RIGHT(O…,4)`) are **formulas** — delivery must never write them (the 2026-09-02 design
+    planned to).
+  - Numbered rows say `ok` in Napomena (768/901), so the queue flag becomes `ok[, note]`.
+  - The SUE column is dense 1…901 (16 caves numbered by hand since September).
+  - The archive writes the number bare/3-digit (`886` in 886.pdf's title block and 886.docx's cell).
+  - Excel's save shrinks `vbaProject.bin` (the `__SRP_*` compiled cache) and drops empty styled cells in the PQ
+    view sheets — benign.
+  - Bash heredocs with long Python bodies containing `'''` broke the Bash tool — write scripts to the scratchpad
+    instead.
+- **Next:** the user restarts the dashboard and the archivist does the first live delivery (SB 968 → 902;
+  maybe re-run 3N KORAK 3c first — its Nacrt predates the OSZ). Then: the `/` filler, a stored sign-off, prod
+  launcher.
+
 ### 2026-10-10…12 — 3N symbol themes on the ss5 reference survey; clipping rules in KORAK 2 (agent) ✅
 
 - **Did:**

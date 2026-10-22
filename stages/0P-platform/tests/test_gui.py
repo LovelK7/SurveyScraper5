@@ -85,8 +85,6 @@ def test_build_args_validation():
     with pytest.raises(catalog.ActionError):
         catalog.build_args(by["sb-audit-authors"], selected={"--limit": "abc"})
     with pytest.raises(catalog.ActionError):
-        catalog.build_args(by["report"], query="x", selected={"--gate": "nope"})
-    with pytest.raises(catalog.ActionError):
         catalog.build_args(by["3n-k1"], broj=1)  # no file
     assert catalog.build_args(by["3n-k3a"], file="a b.csx",
                               selected={"--layout": "2", "--force": True}) == \

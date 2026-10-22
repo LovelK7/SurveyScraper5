@@ -869,3 +869,10 @@ def test_the_old_osz_type_picks_the_pit_reading(intake_settings, geo_stubs, run_
     assert fields["sirina_ulaza"].value == "1,5"
     assert fields["visina_duljina_ulaza"].value == "4,0"
     assert any("Vrsta ulaza po OSZ-u (pit)" in note for note in second.result.notes)
+
+
+def test_kota_is_whole_metres():
+    # SB 0357: Z 671,149 in SB → "671" in the OSZ (user, 2026-10-21).
+    assert prefill._format_number(prefill._round_kota(671.149)) == "671"
+    assert prefill._format_number(prefill._round_kota(671.5)) == "672"
+    assert prefill._round_kota(None) is None

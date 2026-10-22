@@ -107,7 +107,7 @@ for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4
   project docs (prod upute, ARCHITECTURE, STATUS, commands, decisions) in an
   in-page viewer; links between docs stay inside it. Dev only: prod has no
   repo, and the viewer says so.
-- **5D Dosje** draws `report` as the two gates: blockers, warnings, and the
+- **5D Dosje** draws `report` as the CroSpeleo gate: blockers, warnings, and the
   rules still waiting on a source (folded). **5O** shows the cave's people and
   their izjave from the same data; `people check --broj` is the command form.
 - A Word/Excel owner file (`~$…`) in the cave's folder is reported as "open

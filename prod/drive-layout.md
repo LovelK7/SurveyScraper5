@@ -26,14 +26,15 @@ launcher itself sits, so nobody has to type it.
 
 | Drive dir | `config.yaml` key | Who writes it | Stage |
 |---|---|---|---|
-| `!Speleo_baza_SUE_v3.0.xlsm` | `sb.workbook_filename` | a person, in Excel (write-back at M6) | [2B](../stages/2B-baza/README.md) |
+| `!Speleo_baza_SUE_v3.0.xlsm` | `sb.workbook_filename` | a person, in Excel; `cavedossier deliver --apply` writes one row's delivery cells via Excel COM | [2B](../stages/2B-baza/README.md) |
 | `!!!Digitalizacija/!Za digitalizirat` | `intake_dir` | the field, then the tools | [1T](../stages/1T-teren/README.md) |
 | `!!Isječci karte` | `map_excerpts_dir` | `cavedossier karta` | [4I](../stages/4I-isjecak/README.md) |
-| `!!Fotografije ulaza` | `entry_photos_dir` | the M6 mover (manual today) | [4F](../stages/4F-fotografije/README.md) |
+| `!!Fotografije ulaza` | `entry_photos_dir` | `cavedossier deliver --apply` (6P) | [4F](../stages/4F-fotografije/README.md) |
 | `!!Fotografije ulaza/!!Fotografije ulaza za istražit` | `queued_photos_dir` | the field | [4F](../stages/4F-fotografije/README.md) |
 | `!!Izjave za katastar RH` | `statements_dir` | a person, filing signed izjave | [5O](../stages/5O-osobe/README.md) |
-| `!!Osnovni zapisnici` | `osz_dir` | the M6 delivery | [6P](../stages/6P-predaja/README.md) |
-| `!!Nacrti` | `drawings_dir` | the M6 delivery | [6P](../stages/6P-predaja/README.md) |
+| `!!Osnovni zapisnici` | `osz_dir` | `cavedossier deliver --apply` (6P) | [6P](../stages/6P-predaja/README.md) |
+| `!!Nacrti` | `drawings_dir` | `cavedossier deliver --apply` (6P) | [6P](../stages/6P-predaja/README.md) |
+| `!!!Digitalizacija/Arhiva` | `arhiva_dir` | `cavedossier deliver --apply` moves a delivered cave's whole leaf here | [6P](../stages/6P-predaja/README.md) |
 | `!!!Digitalizacija/SurveyScraper5` | `build_prod.TARGET_REL` | `build_prod.py --publish` | [prod](README.md) |
 | `!!!Digitalizacija/SurveyScraper5` (the `csurvey_*` kit + `csurvey_alati/`) | `build_csx_kit.TARGET_REL` | `build_csx_kit.py --publish` | [3N](../stages/3N-nacrt/README.md) |
 
@@ -67,7 +68,9 @@ This superseded an earlier flat "Osnovni speleološki zapisnik" folder
 | Sastavnica | `SB_<padded broj>_sastavnica.pdf` in the cave's intake leaf |
 | Nacrt (cSurvey route) | `SB_<padded broj>_nacrt.pdf` in the cave's intake leaf, beside the `_postp_resolved` survey, the two printed `_plan.pdf` / `_profile.pdf` and `<name>_dimenzije.json` (3N KORAK 3) |
 | Processed entrance photo | `SB_<broj>_<Ime>_<Autor>_<n>.jpg` in the leaf |
-| Archived entrance photo | `<padded SUE>_<ime>_…_<autor>.jpg` in `!!Fotografije ulaza` (M6) |
+| Archived entrance photo | `<SUE, 3 digits>_<Ime>_<Autor>_<n>.jpg` in `!!Fotografije ulaza` (6P `deliver`) |
+| Archived Nacrt / OSZ | `<SUE, 3 digits>.pdf` in `!!Nacrti`, `<SUE, 3 digits>.docx` in `!!Osnovni zapisnici`, the number written into both (6P `deliver`) |
+| Archived leaf | `<SUE, 3 digits>_<Ime objekta>/` in `!!!Digitalizacija/Arhiva` (6P `deliver`) |
 | Izjava | `Izjava_<Ime>.<ext>`, optionally scope-suffixed |
 
 ## The two rules that govern everything written here
@@ -84,7 +87,9 @@ reformats dates and adds blank rows). So:
 **2. Nothing writes to a live shared source automatically.** SB is macro-heavy
 and the satellite sheets are typed into in the field. Tools emit review lists
 (`dopune-sb.csv`, the four `sat sync` lists) and a person carries them out.
-The single exception will be M6 delivery, via Excel COM, deliberately.
+The single exception is 6P delivery (`cavedossier deliver --apply`), via Excel
+COM, deliberately: one row, the cells delivery owns, after the archivist's
+review, with a backup first and a guard that re-reads the row inside Excel.
 
 ## Downstream
 

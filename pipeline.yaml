@@ -142,7 +142,7 @@ stages:
   - id: dosje
     label: "5D"
     dir: stages/5D-dosje
-    name: "Dosje — the dossier model, the two gates and report"
+    name: "Dosje — the dossier model, the CroSpeleo gate and report"
     was: "2.1"
     status: partial
     modules: [dossier]
@@ -151,8 +151,8 @@ stages:
   - id: predaja
     label: "6P"
     dir: stages/6P-predaja
-    name: "Predaja — delivery and SB write-back"
+    name: "Predaja — the last gate, delivery and SB write-back"
     was: "M6"
-    status: planned
-    modules: []
-    commands: []
+    status: partial
+    modules: [predaja]
+    commands: [deliver]

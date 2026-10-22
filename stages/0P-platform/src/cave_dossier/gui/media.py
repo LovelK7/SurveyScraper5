@@ -18,7 +18,7 @@ import hashlib
 import os
 from pathlib import Path
 
-THUMB_SIZES = (240, 480)
+THUMB_SIZES = (240, 480, 800)
 
 
 def thumbnail(source: Path, cache_dir: Path | None, width: int) -> tuple[bytes, str]:
@@ -29,6 +29,21 @@ def thumbnail(source: Path, cache_dir: Path | None, width: int) -> tuple[bytes, 
     cached = cache_dir / f"{key}.jpg" if cache_dir else None
     if cached is not None and cached.is_file():
         return cached.read_bytes(), "image/jpeg"
+    if source.suffix.lower() == ".pdf":
+        # The Nacrt on the archivist's page (6P): its first page, rendered.
+        import pymupdf
+
+        with pymupdf.open(source) as doc:
+            page = doc[0]
+            zoom = width * 2 / page.rect.width
+            data = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom)).tobytes("jpeg", jpg_quality=85)
+        if cached is not None:
+            try:
+                cached.parent.mkdir(parents=True, exist_ok=True)
+                cached.write_bytes(data)
+            except OSError:
+                pass
+        return data, "image/jpeg"
     try:
         from io import BytesIO
 

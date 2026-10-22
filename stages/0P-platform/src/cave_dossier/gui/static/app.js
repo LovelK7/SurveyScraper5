@@ -11,6 +11,7 @@ const S = {
   menuIdx: -1,
   broj: null, cave: null, tab: "home",
   dossier: null,              // {broj, data, error, loading}
+  predaja: null,              // {broj, data, error, loading} — 6P's plan
   jobs: new Map(), activeJob: null, noConfirm: false, polling: false,
 };
 
@@ -198,19 +199,20 @@ async function loadAll(refresh) {
   ]);
   S.summary = summary; S.catalog = catalog;
   S.caves = caves.caves; S.unprefixed = caves.unprefixed; S.queue = caves.queue || {};
-  if (refresh) { S.dossier = null; S.sbIndex = null; }
+  if (refresh) { S.dossier = null; S.predaja = null; S.sbIndex = null; }
   renderTopbar();
   renderNav();
   if (S.broj !== null) await loadCave(); else render();
 }
 
 async function loadCave() {
-  if (S.broj === null) { S.cave = null; render(); return; }
+  if (S.broj === null) { S.cave = null; renderNav(); render(); return; }
   try {
     S.cave = await api("cave/" + S.broj);
   } catch (e) {
     S.cave = null; toast(e.message, true);
   }
+  renderNav();
   render();
 }
 
@@ -232,6 +234,7 @@ async function loadDossier(force) {
 function setCave(broj) {
   S.broj = broj;
   S.dossier = null;
+  S.predaja = null;
   store("cd.broj", broj === null ? null : String(broj));
   $("#cave-input").value = caveLabel(broj);
   loadCave();
@@ -361,19 +364,32 @@ function renderTopbar() {
 
 }
 
+// The sidebar dot of a stage. With an object open it is that object's progress
+// in the stage – green only once every step is done (user, 2026-10-21) –
+// otherwise the stage's development status from pipeline.yaml.
+function navDot(stage) {
+  const steps = S.cave && S.cave.workflow ? S.cave.workflow.steps.filter(st => st.stage === stage.label) : [];
+  const counted = steps.filter(st => !["optional", "planned"].includes(st.status));
+  if (!counted.length) return { cls: stage.status, title: stage.status };
+  const done = counted.filter(st => st.status === "done").length;
+  const title = `${done}/${counted.length} koraka gotovo`;
+  if (counted.some(st => st.status === "stale")) return { cls: "stale", title: title + " – nešto je zastarjelo" };
+  return done === counted.length ? { cls: "done", title } : { cls: "todo", title };
+}
+
 function renderNav() {
-  const item = (id, label, title, status, sub) => h("button", {
+  const item = (id, label, title, dot, sub) => h("button", {
     class: "nav-item" + (S.tab === id ? " active" : "") + (sub ? " sub" : ""), onclick: () => setTab(id), title: label ? `${label} · ${title}` : title,
   }, icon(STAGE_ICON[id] || "dot"), title,
-     label ? h("span", { class: "nav-label", style: status ? "" : "margin-left:auto" }, label) : null,
-     status ? h("span", { class: "dot " + status, title: status, style: "margin-left:6px" }) : null);
+     label ? h("span", { class: "nav-label", style: dot ? "" : "margin-left:auto" }, label) : null,
+     dot ? h("span", { class: "dot " + dot.cls, title: dot.title, style: "margin-left:6px" }) : null);
   const kids = [item("home", "", "Pregled"), item("fast", "", "Brze radnje")];
   let group = null;
   const stages = S.catalog ? S.catalog.stages : [];
   for (const s of stages) {
     if (s.parent) continue;                       // listed under its parent below
     if (s.group !== group) { group = s.group; kids.push(h("div", { class: "nav-group" }, group)); }
-    kids.push(item(s.label, s.label, s.title, s.status));
+    kids.push(item(s.label, s.label, s.title, navDot(s)));
     // the registar udruga sits beside the registar osoba (user, 2026-10-04);
     // the data lives in 0P (core/societies.py), so it is not a stage of its own
     if (s.label === "5O") kids.push(item("udruge", "0P", "Udruge"));
@@ -589,8 +605,9 @@ function flowStep(st) {
   const meta = STATUS[st.status] || STATUS.unknown;
   const a = st.action ? S.catalog.actions.find(x => x.id === st.action) : null;
   let btn = null;
-  if (st.id === "dosje") {
-    btn = h("button", { class: "btn small", onclick: () => setTab("5D") }, "Otvori");
+  if (st.id === "dosje" || st.id === "predaja") {
+    const tab = st.id === "dosje" ? "5D" : "6P";
+    btn = h("button", { class: "btn small" + (st.current ? " primary" : ""), onclick: () => setTab(tab) }, "Otvori");
   } else if (st.open && !a) {
     btn = h("button", { class: "btn small" + (st.current ? " primary" : ""), title: fileName(st.open),
       onclick: () => openTarget({ what: "path", path: st.open }) }, icon("open"), "Otvori");
@@ -711,7 +728,7 @@ function renderStage(stage) {
     h("button", { class: "btn ghost", onclick: () => setTab("doc:" + stage.readme) }, icon("book"), "README"))];
   for (const note of stage.notes) out.push(h("div", { class: "card note", style: "margin-bottom:14px" }, note));
 
-  if (stage.label === "6P") { out.push(...renderPredajaMockup()); return out; }
+  if (stage.label === "6P") { out.push(...renderPredaja()); return out; }
   if (stage.label === "2B") { const c = sbCard(); if (c) out.push(h("div", { class: "grid", style: "margin-bottom:14px" }, c)); }
   if (stage.label === "5D") out.push(...renderDossier());
   if (stage.label === "5O") out.push(...renderPeopleOfCave());
@@ -796,14 +813,191 @@ function kartaView(k) {
         h("button", { class: "btn ghost", onclick: () => openTarget({ what: "path", path: k.path, reveal: true }) }, icon("folder"), "Mapa"))));
 }
 
-function renderPredajaMockup() {
-  const tile = (title, text) => h("div", { class: "card" }, h("h3", {}, title),
-    h("p", { class: "help" }, text), h("button", { class: "btn", disabled: true }, "Uskoro (M6)"));
-  return [h("div", { class: "grid" },
-    tile("Provjera praga SUE", "Dosje mora biti spreman (5D): Nacrt, OSZ, fotografija, pločica, izjave."),
-    tile("Upis dopuna u SB", "Skupljeni dopune-*.csv upisuju se u SB preko Excel COM-a, uz pregled svake promjene."),
-    tile("Isporuka u arhivu", "Nacrt → !!Nacrti, OSZ → !!Osnovni zapisnici, fotografije → !!Fotografije ulaza, preimenovano na SUE broj."),
-    tile("Predaja CroSpeleu", "Paket za crospeleo-automation (prag 2)."))];
+// ── 6P predaja: the archivist's last look, then one click ───────────
+// Everything on this page comes from /api/predaja/<broj> (predaja/plan.py);
+// the click runs the `deliver-apply` catalog action as a job, pinned to the
+// number shown here – if SB has moved on, the delivery refuses.
+async function loadPredaja(force) {
+  if (S.broj === null) return;
+  if (!force && S.predaja && S.predaja.broj === S.broj && (S.predaja.data || S.predaja.loading)) return;
+  const broj = S.broj;
+  S.predaja = { broj, loading: true };
+  render();
+  try {
+    const data = await api("predaja/" + broj);
+    if (S.broj === broj) S.predaja = { broj, data };
+  } catch (e) {
+    if (S.broj === broj) S.predaja = { broj, error: e.message };
+  }
+  render();
+}
+
+const MOVE_LABEL = { osz: "OSZ", nacrt: "Nacrt", foto: "Foto", leaf: "Mapa" };
+
+function renderPredaja() {
+  if (S.broj === null) return [h("div", { class: "card note" }, "Odaberi objekt gore desno.")];
+  if (!S.predaja || S.predaja.broj !== S.broj) { loadPredaja(false); return [h("div", { class: "loading" }, "Provjeravam predaju (SB, dosje, mapa objekta)…")]; }
+  if (S.predaja.loading) return [h("div", { class: "loading" }, "Provjeravam predaju (SB, dosje, mapa objekta)…")];
+  if (S.predaja.error) return [h("div", { class: "card note" }, "Pregled se ne može složiti: " + S.predaja.error, " ",
+    h("button", { class: "btn small", onclick: () => loadPredaja(true) }, "Pokušaj ponovno"))];
+  const p = S.predaja.data;
+  const out = [h("div", { class: "page-head", style: "margin-bottom:10px" },
+    h("div", {}, h("h2", { style: "margin:0" }, `SB ${p.serial} · ${p.name || "?"}`),
+      h("div", { class: "muted" }, (p.sb_row ? `Excel red ${p.sb_row} · ` : "") + `SB: ${p.sb_mode}`)),
+    h("div", { class: "spacer" }),
+    h("button", { class: "btn", onclick: () => loadPredaja(true) }, icon("refresh"), "Osvježi pregled"))];
+  if (p.state === "delivered") { out.push(...predajaDelivered(p)); return out; }
+  out.push(predajaVerdict(p));
+  if (p.leaf) {
+    out.push(h("h3", { class: "group-title" }, "Za pregled – otvori i provjeri"));
+    out.push(predajaMaterial(p));
+  }
+  if (p.moves.length || p.sb_changes.length) {
+    out.push(h("h3", { class: "group-title" }, "Što će potvrda napraviti"));
+    out.push(predajaChanges(p));
+  }
+  out.push(predajaConfirm(p));
+  return out;
+}
+
+function predajaVerdict(p) {
+  const ready = p.ready;
+  const seq = p.sequence || {};
+  return h("div", { class: "card gate " + (ready ? "ready" : "not") },
+    h("div", { class: "verdict" }, h("span", { class: "big" }, icon(ready ? "check" : "lock", "lg")),
+      h("div", {}, ready ? (p.state === "resume" ? "SPREMNO – NASTAVAK PREKINUTE PREDAJE" : "SPREMNO ZA PREDAJU") : "NIJE SPREMNO",
+        h("div", { class: "muted", style: "font-weight:400;font-size:12.5px" },
+          ready ? "Pregledaj materijal ispod; potvrda je na dnu stranice." : "Riješi stavke označene BLOKIRA, pa osvježi pregled."))),
+    p.sue ? h("div", { class: "sue-number" },
+      h("span", { class: "muted" }, "Katastarski broj SUE"),
+      h("span", { class: "num" }, p.sue_text),
+      h("span", { class: "muted" }, p.sue_source === "existing" ? "već upisan u SB"
+        : `SB max ${seq.max}, ${seq.count} brojeva` + (seq.gaps && seq.gaps.length ? ", niz NIJE uredan" : ", niz bez rupa")
+          + (p.sue_source === "override" ? " · zadan ručno" : ""))) : null,
+    h("ul", { class: "issues" },
+      ...p.blockers.map(m => h("li", {}, h("span", { class: "sev blocker" }, "BLOKIRA"), hrDash(m))),
+      ...p.warnings.map(m => h("li", {}, h("span", { class: "sev warning" }, "UPOZORENJE"), hrDash(m)))),
+    p.notes.length ? h("ul", { class: "muted", style: "margin:6px 0 0;padding-left:18px" }, ...p.notes.map(n => h("li", {}, hrDash(n)))) : null,
+    !p.blockers.length && !p.warnings.length ? h("p", { class: "muted" }, "Nema nalaza.") : null);
+}
+
+function openBtns(path, label) {
+  return h("div", { class: "row" },
+    h("button", { class: "btn small", onclick: () => openTarget({ what: "path", path }) }, icon("open"), label || "Otvori"),
+    h("button", { class: "btn small ghost", onclick: () => openTarget({ what: "path", path, reveal: true }) }, icon("folder"), "Mapa"));
+}
+
+function predajaMaterial(p) {
+  const m = p.material || {};
+  const cards = [];
+  if (m.nacrt) {
+    const st = m.nacrt.stamp || {};
+    cards.push(h("div", { class: "card review" },
+      h("h2", {}, icon("nacrt", "lg"), "Nacrt"),
+      h("div", { class: "preview", onclick: () => lightboxSrc(thumbUrl(m.nacrt, 1600), m.nacrt.name) },
+        h("img", { src: thumbUrl(m.nacrt, 800), loading: "lazy", alt: m.nacrt.name })),
+      h("div", { class: "mono muted" }, m.nacrt.name, " · ", fmtTime(m.nacrt.modified)),
+      st.status === "placeholder" ? h("p", { class: "help" }, `Polje Katastarski broj sada piše 0000 – potvrda upisuje ${p.sue_text || "broj"}.`) : null,
+      st.illustrator ? h("p", { class: "help" }, "Illustratorov PDF: u mapi ostaje izvornik za uređivanje, broj ide u kopiju u !!Nacrti.") : null,
+      m.nacrt_others ? h("p", { class: "warnline" }, "Još nacrta u mapi: " + m.nacrt_others.join(", ")) : null,
+      openBtns(m.nacrt.path, "Otvori PDF")));
+  } else cards.push(h("div", { class: "card review" }, h("h2", {}, icon("nacrt", "lg"), "Nacrt"), h("p", { class: "warnline" }, "Nema nacrta u mapi.")));
+  if (m.osz) {
+    const c = m.osz.check || {};
+    cards.push(h("div", { class: "card review" },
+      h("h2", {}, icon("osz", "lg"), "Osnovni zapisnik"),
+      h("div", { class: "mono muted" }, m.osz.name, " · ", fmtTime(m.osz.modified)),
+      c.total ? h("p", {}, `${c.filled}/${c.total} obveznih polja popunjeno`) : null,
+      c.missing && c.missing.length ? h("ul", { class: "warns" }, ...c.missing.map(g => h("li", {}, `${g.label} – treba ${g.needed_by.join(", ")}`))) : null,
+      h("p", { class: "help" }, `Potvrda upisuje ${p.sue_text || "broj"} u polje Katastarski broj.`),
+      openBtns(m.osz.path, "Otvori u Wordu")));
+  } else cards.push(h("div", { class: "card review" }, h("h2", {}, icon("osz", "lg"), "Osnovni zapisnik"), h("p", { class: "warnline" }, "Nema OSZ-a u mapi.")));
+  const photos = m.photos || [];
+  cards.push(h("div", { class: "card review" },
+    h("h2", {}, icon("foto", "lg"), `Fotografije ulaza (${photos.length})`),
+    photos.length ? h("div", { class: "thumbs" }, ...photos.map(f => h("figure", {},
+      h("img", { src: thumbUrl(f, 240), loading: "lazy", alt: f.name, onclick: () => lightboxSrc(thumbUrl(f, 1600), f.name) }),
+      h("figcaption", { class: "mono" }, f.name))))
+      : h("p", { class: "warnline" }, "Nema obrađenih fotografija (4F)."),
+    (m.originals || []).length ? h("p", { class: "muted" }, `+ ${m.originals.length} originala ostaje samo u Arhivi.`) : null,
+    (m.queued || []).length ? h("p", { class: "warnline" }, `${m.queued.length} fotografija čeka u redu čekanja.`) : null,
+    h("button", { class: "btn small ghost", onclick: () => setTab("4F") }, "Kartica 4F →")));
+  if (m.karta) cards.push(h("div", { class: "card review" },
+    h("h2", {}, icon("karta", "lg"), "Isječak karte"),
+    h("div", { class: "preview", onclick: () => lightboxSrc(thumbUrl(m.karta, 1600), m.karta.name) },
+      h("img", { src: thumbUrl(m.karta, 480), loading: "lazy", alt: m.karta.name })),
+    openBtns(m.karta.path, "Otvori PNG")));
+  if (p.dossier) cards.push(peopleCard(p.dossier));
+  if (p.dossier && p.dossier.sb.length) cards.push(h("div", { class: "card review" },
+    h("h2", {}, icon("baza", "lg"), "SB red"),
+    h("dl", { class: "kv" }, ...p.dossier.sb.flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, hrDash(v))])),
+    h("button", { class: "btn small", onclick: () => openTarget({ what: "sb" }) }, icon("open"), "Otvori SB")));
+  cards.push(h("div", { class: "card review" },
+    h("h2", {}, icon("folder", "lg"), "Mapa objekta"),
+    h("div", { class: "mono muted" }, m.leaf_name || ""),
+    h("ul", { class: "mono leaf-files" }, ...(m.files || []).map(n => h("li", {}, n))),
+    h("p", { class: "help" }, "Cijela mapa ide u !!!Digitalizacija/Arhiva pod novim brojem."),
+    h("button", { class: "btn small", onclick: () => openTarget({ what: "path", path: m.leaf }) }, icon("folder"), "Otvori mapu")));
+  return h("div", { class: "grid review-grid" }, ...cards);
+}
+
+function predajaChanges(p) {
+  const tail = path => (path || "").split(/[\\/]/).slice(-2).join("\\");
+  return h("div", { class: "grid" },
+    p.moves.length ? h("div", { class: "card" }, h("h2", {}, icon("folder", "lg"), "Datoteke"),
+      h("table", { class: "files" }, ...p.moves.map(mv => h("tr", {},
+        h("td", { class: "kind" }, MOVE_LABEL[mv.kind] || mv.kind),
+        h("td", { class: "name" }, fileName(mv.src), h("div", { class: "muted" }, "→ " + tail(mv.dst))),
+        h("td", { class: "kind" }, mv.done ? "✓ već" : mv.stamp ? "+ broj" : mv.kind === "leaf" ? "premješta" : "kopija"))))) : null,
+    p.sb_changes.length ? h("div", { class: "card" }, h("h2", {}, icon("baza", "lg"), "Upis u SB"),
+      h("table", { class: "files" }, ...p.sb_changes.map(c => h("tr", {},
+        h("td", { class: "name" }, c.column, h("div", { class: "muted" }, c.why)),
+        h("td", { class: "kind" }, c.before === null || c.before === "" ? "(prazno)" : String(c.before)),
+        h("td", {}, "→ ", h("b", {}, String(c.after)))))),
+      h("p", { class: "help" }, "Preko Excela (COM), uz dnevnu kopiju SB-a prije upisa. Link Nacrt, Link Zapisnik i Godina zadnjeg istraživanja su formule – slijede broj sami.")) : null);
+}
+
+function predajaConfirm(p) {
+  const action = S.catalog.actions.find(x => x.id === "deliver-apply");
+  const check = h("input", { type: "checkbox", disabled: !p.ready });
+  const go = h("button", { class: "btn primary big-go", disabled: true }, icon("check"),
+    p.sue ? `Potvrđujem – predaj pod brojem ${p.sue_text}` : "Potvrđujem – predaj");
+  check.addEventListener("change", () => { go.disabled = !(p.ready && check.checked); });
+  go.addEventListener("click", async () => {
+    const text = `SB ${p.serial} · ${p.name} dobiva katastarski broj ${p.sue_text}.\n\n`
+      + `• u Nacrt i OSZ upisuje se ${p.sue_text}\n`
+      + `• SB: ${p.sb_changes.map(c => `${c.column} → ${c.after}`).join(", ") || "bez promjena"}\n`
+      + `• ${p.moves.filter(m => m.kind !== "leaf").length} datoteka u arhivske mape, mapa objekta u Arhivu\n\n`
+      + "Broj se ne može vratiti jednim klikom (zapis koraka ostaje u runs/predaja).";
+    // Always asked, whatever "ne pitaj više" says elsewhere: this is the one
+    // step that hands out a number.
+    const ok = await confirmDialog({ title: "Predaja u arhivu", text, cmd: `cavedossier deliver ${p.serial} --apply --katastarski-broj ${p.sue}`, okLabel: "Predaj" });
+    if (!ok) return;
+    try {
+      addJob(await api("run", { action: action.id, broj: p.serial, options: { "--katastarski-broj": String(p.sue) }, confirmed: true }));
+    } catch (e) { toast(e.message, true); }
+  });
+  const dry = S.catalog.actions.find(x => x.id === "deliver");
+  return h("div", { class: "card confirm-bar" + (p.ready ? " ready" : "") },
+    h("label", { class: "check" }, check, " Pregledao/la sam nacrt, zapisnik i fotografije i slažem se s predajom."),
+    h("div", { class: "row", style: "margin-top:10px" }, go,
+      dry ? h("button", { class: "btn ghost", onclick: () => quickRun(dry) }, icon("terminal"), "Ispis provjere") : null,
+      !p.ready ? h("span", { class: "muted" }, "Potvrda se otključava kad nema stavki BLOKIRA.") : null));
+}
+
+function predajaDelivered(p) {
+  const m = p.material || {};
+  const row = (label, item) => h("tr", {}, h("td", { class: "kind" }, label),
+    h("td", { class: "name" }, item ? fileName(item.path) : h("span", { class: "warnline" }, "nema u arhivi")),
+    h("td", { class: "act" }, item ? h("button", { class: "btn small", onclick: () => openTarget({ what: "path", path: item.path }) }, icon("open"), "Otvori") : null));
+  return [h("div", { class: "card gate ready" },
+    h("div", { class: "verdict" }, h("span", { class: "big" }, icon("check", "lg")),
+      h("div", {}, `PREDANO – katastarski broj ${p.sue_text}`)),
+    ...p.notes.map(n => h("p", { class: "muted" }, n)),
+    h("table", { class: "files" }, row("Nacrt", m.nacrt), row("OSZ", m.osz),
+      ...(m.photos || []).map(f => row("Foto", f)),
+      h("tr", {}, h("td", { class: "kind" }, "Mapa"), h("td", { class: "name" }, m.leaf ? fileName(m.leaf) : h("span", { class: "muted" }, "nije u Arhivi")),
+        h("td", { class: "act" }, m.leaf ? h("button", { class: "btn small", onclick: () => openTarget({ what: "path", path: m.leaf }) }, icon("folder"), "Otvori") : null))))];
 }
 
 // ── 5D dosje + 5O osobe (one /api/dossier call feeds both) ───────────
@@ -825,10 +1019,11 @@ function renderDossier() {
       h("div", { class: "muted" }, `${d.lifecycle} – ${d.lifecycle_hint}` + (d.excel_row ? ` · Excel red ${d.excel_row}` : ""))),
     h("div", { class: "spacer" }),
     h("button", { class: "btn", onclick: () => loadDossier(true) }, icon("refresh"), "Osvježi dosje"))];
-  out.push(h("div", { class: "grid" }, ...d.gates.map(g => h("div", { class: "card gate " + (g.ready ? "ready" : "not") },
+  // 5D judges CroSpeleo only; the katastarski broj SUE is 6P's gate (user, 2026-10-22).
+  out.push(h("div", { class: "grid" }, ...[d.gate].map(g => h("div", { class: "card gate " + (g.ready ? "ready" : "not") },
     h("div", { class: "verdict" }, h("span", { class: "big" }, icon(g.ready ? "check" : "lock", "lg")),
-      h("div", {}, `Prag ${g.ordinal} – ${g.label}`, h("div", { class: "muted", style: "font-weight:400;font-size:12.5px" },
-        g.ready ? "SPREMAN" : "NIJE SPREMAN" + (g.ordinal === 2 ? " (uz sve iz praga 1)" : "")))),
+      h("div", {}, `Prag ${g.label}`, h("div", { class: "muted", style: "font-weight:400;font-size:12.5px" },
+        g.ready ? "SPREMAN" : "NIJE SPREMAN"))),
     h("ul", { class: "issues" },
       ...g.blockers.map(m => h("li", {}, h("span", { class: "sev blocker" }, "BLOKIRA"), m)),
       ...g.warnings.map(m => h("li", {}, h("span", { class: "sev warning" }, "UPOZORENJE"), m))),
@@ -839,7 +1034,9 @@ function renderDossier() {
       h("ul", { class: "issues" }, ...g.unchecked.map(u => h("li", {},
         h("span", { class: "sev unchecked" }, u.severity === "blocker" ? "BLOKIRA AKO NEDOSTAJE" : "UPOZORENJE"),
         `${u.label} – treba ${u.source_label}`)))) : null,
-    !g.blockers.length && !g.warnings.length && !g.unchecked.length ? h("p", { class: "muted" }, "Nema nalaza.") : null))));
+    !g.blockers.length && !g.warnings.length && !g.unchecked.length ? h("p", { class: "muted" }, "Nema nalaza.") : null)),
+    h("div", { class: "card note" }, "Katastarski broj SUE ima svoj prag – pregled arhivara na kartici 6P (izjave ga ne priječe).",
+      " ", h("button", { class: "btn small", onclick: () => setTab("6P") }, "Predaja →"))));
   out.push(h("div", { class: "grid", style: "margin-top:14px" },
     h("div", { class: "card" }, h("h2", {}, icon("dosje", "lg"), "Izvori", helpBtn("dosje-sources")),
       h("div", { class: "chips" }, ...d.sources.map(s => h("span", { class: "chip" + (s.gathered ? " on" : ""), title: s.gathered ? "prikupljeno" : "još nije prikupljeno" }, (s.gathered ? "✓ " : "· ") + s.label))),
@@ -1380,7 +1577,7 @@ async function poll() {
 
 function onJobDone(j) {
   toast(`${j.title}: ${j.returncode === 0 || j.returncode === 1 ? "gotovo" : "završilo s kodom " + j.returncode}`, ![0, 1].includes(j.returncode));
-  if (S.broj !== null) { S.dossier = null; loadCave(); }
+  if (S.broj !== null) { S.dossier = null; S.predaja = null; loadCave(); }
 }
 
 function renderJobs() {

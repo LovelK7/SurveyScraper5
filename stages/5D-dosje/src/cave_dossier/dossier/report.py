@@ -2,16 +2,15 @@
 
 Deliberately plain text on stdout (no GUI yet, function over form). The layout
 follows crospeleo-automation's ``cli/dossier_report.py``: identity first, then
-the data by source, then the two gate verdicts last so they read as the
+the data by source, then the CroSpeleo verdict last so it reads as the
 conclusion.
 """
 
 from __future__ import annotations
 
 from cave_dossier.dossier.model import (
-    GATE_LABELS,
+    GATE_LABEL,
     CaveDossier,
-    GateLevel,
     LifecycleState,
     Severity,
     Source,
@@ -30,7 +29,7 @@ _SOURCE_LABELS: dict[Source, str] = {
 }
 
 _LIFECYCLE_HINT: dict[LifecycleState, str] = {
-    LifecycleState.ISTRAZENI: "has a SUE number – gate 1 already passed",
+    LifecycleState.ISTRAZENI: "has a SUE number – delivered (6P)",
     LifecycleState.ZA_ISTRAZIT: "queue: not explored yet",
     LifecycleState.NESREDENI: "queue: explored, not finished",
     LifecycleState.SUDJELOVANJE: "another society's cave, SUE took part",
@@ -86,40 +85,25 @@ def render(dossier: CaveDossier) -> str:
         for line in people:
             add(f"    {line}")
 
-    for gate in (GateLevel.SUE, GateLevel.CROSPELEO):
-        add("")
-        _render_gate(dossier, gate, add)
+    add("")
+    _render_gate(dossier, add)
 
     add("")
     return "\n".join(lines)
 
 
-def _render_gate(dossier: CaveDossier, gate: GateLevel, add) -> None:
+def _render_gate(dossier: CaveDossier, add) -> None:
     report = dossier.readiness
-    ready = report.ready_for(gate)
-    ordinal = "1" if gate is GateLevel.SUE else "2"
-    add(f"  Gate {ordinal} – {GATE_LABELS[gate]}: {'READY' if ready else 'NOT READY'}")
-
-    blockers = report.blockers_for(gate)
-    warnings = report.warnings_for(gate)
-    unchecked = report.unchecked_for(gate)
-
-    if gate is GateLevel.CROSPELEO:
-        # Gate 2 repeats every gate-1 finding; show only what it adds on top.
-        blockers = [i for i in blockers if i.level is GateLevel.CROSPELEO]
-        warnings = [i for i in warnings if i.level is GateLevel.CROSPELEO]
-        unchecked = [u for u in unchecked if u.level is GateLevel.CROSPELEO]
-        add("    (everything gate 1 needs, plus:)")
-
-    for issue in blockers:
+    add(f"  {GATE_LABEL}: {'READY' if report.ready else 'NOT READY'}")
+    for issue in report.blockers:
         add(f"    BLOCKER  {issue.message}")
-    for issue in warnings:
+    for issue in report.warnings:
         add(f"    warning  {issue.message}")
-    if not blockers and not warnings:
+    if not report.blockers and not report.warnings:
         add("    (no issues among the checks that could run)")
-    if unchecked:
-        add(f"    Not checked yet ({len(unchecked)} rules – source not gathered):")
-        for rule in unchecked:
+    if report.unchecked:
+        add(f"    Not checked yet ({len(report.unchecked)} rules – source not gathered):")
+        for rule in report.unchecked:
             tier = "blocker" if rule.severity is Severity.BLOCKER else "warning"
             add(f"      · {rule.label:<38} needs {_SOURCE_LABELS[rule.source]}  [{tier}]")
 
@@ -252,7 +236,6 @@ def to_view(dossier: CaveDossier) -> dict:
 
     The local dashboard renders this; the key set is a contract with its
     front end. ``dossier`` must already be evaluated (``readiness`` set).
-    Gate 2 lists only what it adds on top of gate 1, exactly like the text.
     """
     survey = dossier.survey
     return {
@@ -280,33 +263,25 @@ def to_view(dossier: CaveDossier) -> dict:
         else None,
         "files": _file_lines(dossier),
         "people": people_entries(dossier),
-        "gates": [_gate_view(dossier, gate) for gate in (GateLevel.SUE, GateLevel.CROSPELEO)],
+        "gate": _gate_view(dossier),
     }
 
 
-def _gate_view(dossier: CaveDossier, gate: GateLevel) -> dict:
+def _gate_view(dossier: CaveDossier) -> dict:
     report = dossier.readiness
-    blockers = report.blockers_for(gate)
-    warnings = report.warnings_for(gate)
-    unchecked = report.unchecked_for(gate)
-    if gate is GateLevel.CROSPELEO:
-        blockers = [i for i in blockers if i.level is GateLevel.CROSPELEO]
-        warnings = [i for i in warnings if i.level is GateLevel.CROSPELEO]
-        unchecked = [u for u in unchecked if u.level is GateLevel.CROSPELEO]
     return {
-        "gate": "sue" if gate is GateLevel.SUE else "crospeleo",
-        "ordinal": 1 if gate is GateLevel.SUE else 2,
-        "label": GATE_LABELS[gate],
-        "ready": report.ready_for(gate),
-        "blockers": [issue.message for issue in blockers],
-        "warnings": [issue.message for issue in warnings],
+        "gate": "crospeleo",
+        "label": GATE_LABEL,
+        "ready": report.ready,
+        "blockers": [issue.message for issue in report.blockers],
+        "warnings": [issue.message for issue in report.warnings],
         "unchecked": [
             {
                 "label": rule.label,
                 "source_label": _SOURCE_LABELS[rule.source],
                 "severity": "blocker" if rule.severity is Severity.BLOCKER else "warning",
             }
-            for rule in unchecked
+            for rule in report.unchecked
         ],
     }
 

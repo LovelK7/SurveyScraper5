@@ -319,12 +319,21 @@ def build(detail: dict, osz_fields: dict | None = None, osz_note: str = "",
                  f"{len(originals)} originala čeka obradu" if originals
                  else "Nema fotografija u mapi – ubaci ih ili povuci iz reda čekanja.",
                  action="photos-process" if originals else "photos-pull"))
-    add(Step("izjave", "zavrsno", "Izjave autora", "5O", "unknown",
-             "Provjeri za ovaj objekt.", action="people-check-cave"))
-    add(Step("dosje", "zavrsno", "Dosje – prag SUE i CroSpeleo", "5D", "unknown",
-             "Otvori Dosje za oba praga.", action="report"))
-    add(Step("predaja", "zavrsno", "Predaja u arhivu i upis u SB", "6P", "planned",
-             "M6 – još nije izgrađeno."))
+    # The last gate is the archivist's review (6P): its verdict needs SB and
+    # the dossier, which this file-only graph does not read – so "provjeri",
+    # and the page itself answers. Nacrt + OSZ + a processed photo is when
+    # it is worth opening.
+    ready_files = bool(nacrt and osz and processed)
+    add(Step("predaja", "zavrsno", "Predaja u arhivu i upis u SB", "6P",
+             "unknown" if ready_files else "blocked",
+             "Arhivar pregleda nacrt, OSZ i fotografije i jednim klikom predaje (kartica 6P)."
+             if ready_files else "Treba nacrt, OSZ i obrađenu fotografiju ulaza."))
+    # After the katastarski broj: CroSpeleo needs it, and it is the only gate
+    # that needs izjave (user, 2026-10-22).
+    add(Step("izjave", "zavrsno", "Izjave autora (za CroSpeleo)", "5O", "unknown",
+             "Provjeri za ovaj objekt – predaju (SUE) ne priječe.", action="people-check-cave"))
+    add(Step("dosje", "zavrsno", "Dosje – prag CroSpeleo", "5D", "unknown",
+             "Otvori Dosje: nacionalni katastar, nakon predaje.", action="report"))
 
     for step in steps:
         if step.status in ("todo", "stale"):

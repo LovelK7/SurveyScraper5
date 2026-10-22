@@ -168,6 +168,10 @@ a { color: var(--brand-text); }
 .dot.operational { background: var(--ok); }
 .dot.partial { background: var(--stale); }
 .dot.parked, .dot.planned { background: var(--neutral); }
+/* an open object's progress in the stage (navDot in app.js) */
+.dot.done { background: var(--ok); }
+.dot.stale { background: var(--stale); }
+.dot.todo { background: transparent; box-shadow: inset 0 0 0 1.5px var(--neutral); }
 
 .main { flex: 1; min-width: 0; padding: 22px 26px 280px; overflow-y: auto; }
 
@@ -549,3 +553,20 @@ table.sizes tr.changed td:first-child { box-shadow: inset 3px 0 0 var(--brand); 
 .societies td.aliases { font-size: 12.5px; }
 .societies td.name { min-width: 150px; }
 .societies tr.auto td.short { font-weight: 500; }
+
+/* ── 6P predaja: the archivist's review page ─────────────────────── */
+.sue-number { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 4px 0 10px; }
+.sue-number .num { font: 700 34px var(--mono); letter-spacing: 1px; color: var(--brand-text); }
+.review-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.review .preview { cursor: zoom-in; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  background: #fff; margin: 6px 0 8px; }
+.review .preview img { display: block; width: 100%; height: auto; }
+.review .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin: 6px 0; }
+.review .thumbs figure { margin: 0; }
+.review .thumbs img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; cursor: zoom-in; display: block; }
+.review .thumbs figcaption { font-size: 10.5px; color: var(--muted); overflow-wrap: anywhere; margin-top: 2px; }
+.review .leaf-files { max-height: 180px; overflow-y: auto; font-size: 11.5px; padding-left: 16px; margin: 6px 0; }
+.confirm-bar { margin-top: 18px; border-width: 2px; }
+.confirm-bar.ready { border-color: var(--ok); }
+.btn.big-go { font-size: 15px; padding: 9px 18px; }
+.btn.big-go:disabled { opacity: .45; cursor: not-allowed; }

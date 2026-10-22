@@ -1,7 +1,7 @@
 # 5O — Osobe
 
 **The registar osoba**: one canonical identity per person, and the link to their
-*Izjava za katastar*. This is what gate 1 checks authorship against.
+*Izjava za katastar*. This is what the CroSpeleo gate (5D) checks authorship against.
 
 ## What it does
 
@@ -24,10 +24,10 @@ Both are read-only. They change nothing, ever.
 assembles the cave's dossier exactly like `cavedossier report` and prints only
 the izjave part: one line per person (`✓` an izjava covers this cave · `~` izjave
 exist but for another locality/cave · `✗` none on file · `?` not in the
-registry), then the statement findings of gate 1 (per-author blockers) and gate 2
-(per-person warnings, only what it adds). The findings are picked out by
+registry), then the statement findings: per-author blockers and per-person
+warnings, both CroSpeleo's. The findings are picked out by
 `Source.STATEMENTS` — only the two statement rules carry it, so SB-field and
-file rules never leak in. Exit codes: `1` every person gate 1 needs is covered ·
+file rules never leak in. Exit codes: `1` every author is covered ·
 `0` not, or the izjave dir could not be read (Drive) · `99` error / no row with
 that Redni broj. It writes no snapshot.
 
@@ -44,10 +44,11 @@ covers.
 
 ## Why it gates
 
-A missing or wrong-scope **author** izjava is a hard **blocker** on gate 1 —
-the cave cannot earn its katastarski broj without it. Any other named person
-(recorder, team member) without an izjava, or absent from the registry
-altogether, is a **warning** at gate 2. Drawing authors and photo authors are
+A missing or wrong-scope **author** izjava is a hard **blocker** for
+CroSpeleo — the cave cannot go to the national cadastre without it. It does
+**not** hold back the society's katastarski broj (user, 2026-10-22): 6P
+delivers without it. Any other named person (recorder, team member) without an
+izjava, or absent from the registry altogether, is a **warning**. Drawing authors and photo authors are
 checked separately.
 
 Before the registry existed (2026-08-30) this check compared raw strings, which

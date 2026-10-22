@@ -202,7 +202,7 @@ class App:
 
     def thumb(self, query: dict) -> tuple[bytes, str]:
         item = self.ws.cave_file(_int(query.get("broj")), str(query.get("path", "")),
-                                 self.PHOTO_KINDS | {"karta"})
+                                 self.PHOTO_KINDS | {"karta", "nacrt"})
         if item is None:
             raise ApiError("Nije fotografija ovog objekta.", HTTPStatus.NOT_FOUND)
         cache = None
@@ -251,6 +251,19 @@ class App:
         if view is None:
             raise ApiError(f"Nijedan SB red nema Redni broj {broj}.", HTTPStatus.NOT_FOUND)
         return view
+
+    def predaja(self, broj: int) -> dict:
+        """6P: the last gate's plan — what the archivist reviews before the
+        one click (predaja/plan.py). Read-only; the click itself is the
+        ``deliver-apply`` catalog action, run as a job like every other."""
+        s = self.ws.settings
+        if s is None:
+            raise ApiError("Postavke nisu učitane.")
+        try:
+            from cave_dossier.predaja.plan import build_plan
+        except ImportError as exc:
+            raise ApiError(f"Predaja nije dostupna ({exc}).") from exc
+        return build_plan(s, broj).to_json()
 
     def open(self, body: dict) -> dict:
         what = body.get("what")
@@ -410,6 +423,8 @@ def make_handler(app: App):
                     return app.doc(str(query.get("path", "")))
                 if head == "dossier" and len(parts) == 2:
                     return app.dossier(_int(parts[1]))
+                if head == "predaja" and len(parts) == 2:
+                    return json.loads(json.dumps(app.predaja(_int(parts[1])), default=str))
                 if head == "files":
                     return {"files": app.ws.candidate_files(_int(query.get("broj")),
                                                             query.get("kind", ""))}

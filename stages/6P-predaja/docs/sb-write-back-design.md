@@ -36,7 +36,24 @@ Requires `pip install -e ".[sb-write]"` (xlwings; Windows + Excel only).
 3. Only then unset `SB_WORKBOOK_PATH` and write live — with the automatic backup
    as rollback.
 
-## Open until M6
+## Settled 2026-10-22 (built as `cavedossier deliver`)
+
+- Write-back happens **at delivery**, after the archivist's explicit
+  confirmation on the 6P page, which shows every cell before → after first.
+- It is multi-cell, in one session: `safe_io.write_row_via_excel_com`. The row
+  is re-found by Redni broj inside Excel, a guard callback runs before the
+  write, and formula cells are refused. See
+  [m6-delivery-design.md](m6-delivery-design.md#step-6--apply).
+- Dimensions are plain numbers, decimals allowed (live SB: `18.5`, `21.5`), and
+  are filled only when the SB cell is empty.
+- `Link Nacrt`, `Link Zapisnik` and `Godina zadnjeg istraživanja` are formulas
+  and are never written.
+- Rehearsed on a sandbox **copy** 2026-10-22:
+  - cells written;
+  - formulas, the 3 data validations and all 18 VBA modules intact;
+  - a second run refused.
+
+## Open until M6 (as written 2026-08-16)
 
 - Exact dimension column names + formats (integer meters? decimal?).
 - Whether write-back happens automatically at delivery or as an explicit

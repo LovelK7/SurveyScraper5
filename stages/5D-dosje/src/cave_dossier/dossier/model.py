@@ -50,32 +50,11 @@ class Source(StrEnum):
     PHOTOS = "photos"
 
 
-class GateLevel(StrEnum):
-    """The two gates a cave passes, in order (confirmed by the user 2026-08-26).
-
-    ``SUE`` — the society's own acceptance step: a readable Nacrt, an OSZ with
-    its mandatory fields filled, entrance photos, a pločica, and an izjava per
-    author. Passing it is what earns the cave its **katastarski broj SUE**,
-    which is what moves it into the *Istraženi* view of SB.
-
-    ``CROSPELEO`` — the stricter national-cadastre bar (Protokol v6), a
-    superset of ``SUE``. A cave holding a SUE number is "almost a certain go";
-    the submission itself stays crospeleo-automation's job downstream.
-    """
-
-    SUE = "sue"
-    CROSPELEO = "crospeleo"
-
-
-GATE_LABELS: dict[GateLevel, str] = {
-    GateLevel.SUE: "katastarski broj (SUE)",
-    GateLevel.CROSPELEO: "CroSpeleo",
-}
-
-
-def applies_at(rule_level: GateLevel, gate: GateLevel) -> bool:
-    """CroSpeleo includes every SUE rule; the SUE gate ignores CroSpeleo-only ones."""
-    return gate is GateLevel.CROSPELEO or rule_level is GateLevel.SUE
+#: The one gate 5D judges (user, 2026-10-22): the national CroSpeleo cadastre,
+#: Protokol v6. The society's own step — the katastarski broj SUE, which needs
+#: no izjava — is 6P's last gate (``predaja/gate.py``), not a 5D rule. Until
+#: that date 5D carried both, as two gate levels (SUE, CROSPELEO).
+GATE_LABEL = "CroSpeleo"
 
 
 class LifecycleState(StrEnum):
@@ -92,7 +71,7 @@ class LifecycleState(StrEnum):
 
     SB's views overlap (29 caves have a SUE number *and* say "ponoviti"); this
     enum resolves to a single state, SUE number first, because holding one
-    means gate 1 is already passed.
+    means the cave has been delivered (6P).
 
     ``SUDJELOVANJE`` has no SB view yet: 78 rows say *sudjelovanje* in Napomena
     — caves another society explored and SUE only took part in. The user
@@ -223,9 +202,10 @@ class QueueFlag(BaseModel):
 class PersonRole(StrEnum):
     """Where in the dossier a person's name appears.
 
-    Only the two author roles carry the hard izjava requirement (gate 1);
-    recorder and team members are named on the OSZ / in CroSpeleo but a missing
-    izjava for them is advisory (gate 2 warning) — see ``gating``.
+    Only the two author roles carry the hard izjava requirement (a CroSpeleo
+    blocker); recorder and team members are named on the OSZ / in CroSpeleo but a missing
+    izjava for them is advisory (a warning) — see ``gating``. No izjava is needed
+    for the katastarski broj SUE (user, 2026-10-22).
     """
 
     DRAWING_AUTHOR = "nacrt"
@@ -234,7 +214,7 @@ class PersonRole(StrEnum):
     TEAM_MEMBER = "ekipa"
 
 
-#: Roles whose missing izjava is a gate-1 BLOCKER rather than a gate-2 warning.
+#: Roles whose missing izjava is a CroSpeleo BLOCKER rather than a warning.
 AUTHOR_ROLES: frozenset[PersonRole] = frozenset(
     {PersonRole.DRAWING_AUTHOR, PersonRole.PHOTO_AUTHOR}
 )
@@ -262,7 +242,6 @@ class DossierIssue(BaseModel):
     code: IssueCode
     severity: Severity
     message: str
-    level: GateLevel = GateLevel.SUE
     label: str | None = None
     source: Source | None = None
 
@@ -282,48 +261,30 @@ class UncheckedRule(BaseModel):
     label: str
     source: Source
     severity: Severity
-    level: GateLevel = GateLevel.SUE
 
 
 class ReadinessReport(BaseModel):
-    """Verdict of ``cave_dossier.dossier.gating.evaluate`` — one verdict per gate.
+    """Verdict of ``cave_dossier.dossier.gating.evaluate`` — the CroSpeleo gate.
 
-    Findings live in one flat list, each tagged with the gate it belongs to;
-    the ``*_for`` helpers slice it. ``ready_sue`` / ``ready_crospeleo`` are
-    stored rather than computed so they survive ``model_dump_json``.
+    ``ready`` is stored rather than computed so it survives ``model_dump_json``:
+    no blocker, and no rule left unchecked that could block.
     """
 
-    ready_sue: bool = False
-    ready_crospeleo: bool = False
+    ready: bool = False
     issues: list[DossierIssue] = Field(default_factory=list)
     unchecked: list[UncheckedRule] = Field(default_factory=list)
 
-    def issues_for(self, gate: GateLevel) -> list[DossierIssue]:
-        return [issue for issue in self.issues if applies_at(issue.level, gate)]
-
-    def blockers_for(self, gate: GateLevel) -> list[DossierIssue]:
-        return [i for i in self.issues_for(gate) if i.severity is Severity.BLOCKER]
-
-    def warnings_for(self, gate: GateLevel) -> list[DossierIssue]:
-        return [i for i in self.issues_for(gate) if i.severity is Severity.WARNING]
-
-    def unchecked_for(self, gate: GateLevel) -> list[UncheckedRule]:
-        return [rule for rule in self.unchecked if applies_at(rule.level, gate)]
-
-    def ready_for(self, gate: GateLevel) -> bool:
-        """No blockers at this gate, and nothing left unchecked that could block."""
-        return not self.blockers_for(gate) and not [
-            rule for rule in self.unchecked_for(gate) if rule.severity is Severity.BLOCKER
-        ]
-
     @property
     def blockers(self) -> list[DossierIssue]:
-        """Every blocker, both gates — for callers that do not care which."""
         return [issue for issue in self.issues if issue.severity is Severity.BLOCKER]
 
     @property
     def warnings(self) -> list[DossierIssue]:
         return [issue for issue in self.issues if issue.severity is Severity.WARNING]
+
+    def compute_ready(self) -> bool:
+        return not self.blockers and not any(
+            rule.severity is Severity.BLOCKER for rule in self.unchecked)
 
 
 class CaveDossier(BaseModel):
@@ -422,7 +383,7 @@ class CaveDossier(BaseModel):
 
     @property
     def is_queued(self) -> bool:
-        """Anything that has not passed gate 1 is work still waiting to be done.
+        """Anything without a katastarski broj is work still waiting to be done.
 
         Per the user (2026-08-26) the worklist is "everything not in Istraženi" —
         za istražit, nesređeni and the unclassified rows alike.

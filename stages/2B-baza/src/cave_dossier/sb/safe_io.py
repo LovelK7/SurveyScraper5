@@ -322,3 +322,139 @@ def write_cell_via_excel_com(
         app.quit()
 
     return backup_path
+
+
+# ── Row write (M6 delivery): several cells of one row, one Excel session ──
+
+
+class SBWriteRefused(RuntimeError):
+    """A pre-write guard said no; nothing was written. Message is CLI-ready."""
+
+
+class RowSession:
+    """What a guard sees of the open workbook, right before the write.
+
+    The row is found **again inside the session** by its key (Redni broj): SB
+    is a shared workbook, so the Excel row the plan was made from may have
+    moved, and the value the plan proposed may have been taken, in the minutes
+    between the archivist's review and the click.
+    """
+
+    def __init__(self, sheet, header_row: int, last_row: int,
+                 columns: dict[str, int], row: int) -> None:
+        self._sheet = sheet
+        self.header_row = header_row
+        self.last_row = last_row
+        self.columns = columns
+        self.row = row
+
+    def column_index(self, header: str) -> int:
+        from cave_dossier.core.normalization import normalize_lookup_key
+
+        index = self.columns.get(normalize_lookup_key(header))
+        if index is None:
+            raise SBWriteRefused(f"Stupac '{header}' nije u zaglavlju SB-a.")
+        return index
+
+    def column(self, header: str) -> list[Any]:
+        """Every data value of a column (cached values, as Excel shows them)."""
+        col = self.column_index(header)
+        if self.last_row <= self.header_row:
+            return []
+        values = self._sheet.range((self.header_row + 1, col), (self.last_row, col)).value
+        return values if isinstance(values, list) else [values]
+
+    def get(self, header: str) -> Any:
+        return self._sheet.range((self.row, self.column_index(header))).value
+
+    def formula(self, header: str) -> str:
+        return str(self._sheet.range((self.row, self.column_index(header))).formula or "")
+
+
+def write_row_via_excel_com(
+    workbook_path: Path,
+    sheet_name: str,
+    *,
+    header_row_1based: int,
+    key_header: str,
+    key_value: int,
+    cells: dict[str, Any],
+    guard=None,
+    backup: bool = True,
+) -> tuple[int, dict[str, Any], Path | None]:
+    """Write ``cells`` (header -> value) into the one row whose ``key_header``
+    equals ``key_value``, in a single Excel session. Returns
+    ``(excel row, before values, backup path)``.
+
+    Same safety contract as :func:`write_cell_via_excel_com` (preflight, daily
+    backup, Excel saves), plus: the row is located inside the session; a
+    formula cell is never overwritten (SB's ``Link Nacrt`` / ``Link Zapisnik``
+    / ``Godina zadnjeg istraživanja`` are calculated columns); and
+    ``guard(session)`` runs after the row is found and before anything is
+    written — raising :class:`SBWriteRefused` there leaves the workbook
+    untouched (it is closed without saving).
+    """
+    from cave_dossier.core.normalization import normalize_lookup_key
+
+    check_workbook_present(workbook_path)
+    check_excel_not_open(workbook_path)
+
+    try:
+        import xlwings as xw  # lazy import — Windows + Excel only
+    except ImportError as exc:
+        raise RuntimeError(
+            "xlwings is required for safe writes to the SB workbook.\n"
+            "  Install via:  pip install -e \".[sb-write]\"\n"
+            "  Reads work without xlwings; writes do not."
+        ) from exc
+
+    backup_path = create_backup(workbook_path) if backup else None
+    app = xw.App(visible=False, add_book=False)
+    wb = None
+    try:
+        app.display_alerts = False
+        wb = app.books.open(str(workbook_path), update_links=False)
+        wanted = normalize_lookup_key(sheet_name)
+        sheet = next((s for s in wb.sheets if normalize_lookup_key(s.name) == wanted), None)
+        if sheet is None:
+            raise SBWriteRefused(f"List '{sheet_name}' nije u SB-u.")
+        last_cell = sheet.used_range.last_cell
+        headers = sheet.range((header_row_1based, 1),
+                              (header_row_1based, last_cell.column)).value
+        columns = {normalize_lookup_key(str(h)): i + 1
+                   for i, h in enumerate(headers or []) if h not in (None, "")}
+        probe = RowSession(sheet, header_row_1based, last_cell.row, columns, 0)
+        keys = probe.column(key_header)
+        matches = [header_row_1based + 1 + i for i, v in enumerate(keys)
+                   if _as_int(v) == key_value]
+        if len(matches) != 1:
+            raise SBWriteRefused(
+                f"{key_header} {key_value}: {len(matches)} redaka u SB-u (treba točno 1).")
+        session = RowSession(sheet, header_row_1based, last_cell.row, columns, matches[0])
+        for header in cells:
+            if session.formula(header).startswith("="):
+                raise SBWriteRefused(f"'{header}' je formula u SB-u – alat je ne prepisuje.")
+        if guard is not None:
+            guard(session)
+        before = {header: session.get(header) for header in cells}
+        for header, value in cells.items():
+            sheet.range((session.row, session.column_index(header))).value = value
+        wb.save()
+        LOGGER.info("Wrote SB %s row %d: %r (backup: %s)", sheet.name, session.row, cells,
+                    backup_path.name if backup_path else "<none>")
+        return session.row, before, backup_path
+    finally:
+        if wb is not None:
+            try:
+                wb.close()
+            except Exception:
+                pass
+        app.quit()
+
+
+def _as_int(value: Any) -> int | None:
+    try:
+        number = float(str(value).strip().replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+    return int(number) if number.is_integer() else None

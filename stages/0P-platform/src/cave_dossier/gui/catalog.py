@@ -316,11 +316,21 @@ ACTIONS: tuple[Action, ...] = (
     Action("report", "5D", "Dosje kao tekst",
            "Isti dosje kao gore, ispisan kao tekst ili JSON.",
            "cli", ("report", "--broj", "{broj}"),
-           options=(
-               Option("--json", "Kao JSON (--json)"),
-               Option("--gate", "Izlazni kod prati prag", kind="choice",
-                      default="sue", choices=("sue", "crospeleo")),
-           )),
+           options=(Option("--json", "Kao JSON (--json)"),)),
+    # ── 6P — predaja (the archivist's page draws these as its own buttons) ──
+    Action("deliver", "6P", "Provjera predaje (ispis)",
+           "Zadnji prag kao tekst: što nedostaje, koji bi broj objekt dobio, "
+           "kamo ide svaka datoteka i što se mijenja u SB-u. Ništa ne mijenja.",
+           "cli", ("deliver", "{broj}")),
+    Action("deliver-apply", "6P", "Predaj objekt",
+           "Upisuje katastarski broj u Nacrt, OSZ i SB, kopira ih i fotografije u "
+           "arhivske mape i premješta mapu objekta u Arhivu.",
+           "cli", ("deliver", "{broj}", "--apply"),
+           options=(Option("--katastarski-broj", "Katastarski broj", kind="int",
+                           help="Broj koji je arhivar pregledao – predaja pod drugim brojem se odbija."),),
+           writes="upisuje katastarski broj u Nacrt, OSZ i SB (Excel), kopira ih u "
+                  "!!Nacrti / !!Osnovni zapisnici / !!Fotografije ulaza i premješta mapu "
+                  "objekta u !!!Digitalizacija/Arhiva"),
 )
 
 BY_ID: dict[str, Action] = {a.id: a for a in ACTIONS}
@@ -482,12 +492,10 @@ STAGES: tuple[Stage, ...] = (
           "stages/4F-fotografije/README.md", "partial", group="Objekt – redom rada"),
     Stage("5O", "Osobe", "Registar osoba i izjave",
           "stages/5O-osobe/README.md", "operational", group="Provjera i predaja"),
-    Stage("5D", "Dosje", "Dosje objekta i dva praga",
+    Stage("5D", "Dosje", "Dosje objekta i prag CroSpeleo",
           "stages/5D-dosje/README.md", "partial", group="Provjera i predaja"),
-    Stage("6P", "Predaja", "Isporuka u arhivu i upis u SB",
-          "stages/6P-predaja/README.md", "planned", group="Provjera i predaja",
-          notes=("Samo dizajn (M6): upis u SB preko Excel COM-a i premještanje "
-                 "u arhivske mape. Gumbi ispod su maketa budućeg sučelja.",)),
+    Stage("6P", "Predaja", "Prag SUE: pregled arhivara, katastarski broj, arhiva i SB",
+          "stages/6P-predaja/README.md", "partial", group="Provjera i predaja"),
 )
 
 

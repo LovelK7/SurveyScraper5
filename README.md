@@ -35,7 +35,7 @@ stages/
   4F-fotografije/   entrance-photo processing
   4S-sastavnica/    the Nacrt title block (route B, Illustrator)
   5O-osobe/         registar osoba + izjave
-  5D-dosje/         the dossier model, the two gates, report
+  5D-dosje/         the dossier model, the CroSpeleo gate, report
   6P-predaja/       delivery + SB write-back (designed only)
 ```
 

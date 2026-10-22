@@ -371,6 +371,33 @@ def test_author_override_skips_the_osz_entirely(drive_settings: Settings) -> Non
     assert job.plans[0].target.name == "SB_1220_Hrđava špilja_LKukuljan_1.jpg"
 
 
+def test_copies_made_before_the_author_was_known_gain_it(
+    drive_settings: Settings, leaf: Path
+) -> None:
+    """SB 968 (2026-10-22): processed while the OSZ had no author; once it
+    did, the earlier copies must pick the author up rather than stay bare."""
+    _write_photo(leaf / "SB_1220_Hrđava špilja_1.jpg", (900, 700))
+    _write_photo(leaf / "SB_1220_Hrđava špilja_3.jpg", (900, 700))
+    _write_photo(leaf / "SB_1220_Hrđava špilja_DReš_2.jpg", (900, 700))  # has one
+
+    assert process_mod.build_job(drive_settings, 1220, "Hrđava špilja").renames == ()
+
+    job = process_mod.build_job(
+        drive_settings, 1220, "Hrđava špilja", author_override="Lovel Kukuljan"
+    )
+    assert [(r.source.name, r.target.name) for r in job.renames] == [
+        ("SB_1220_Hrđava špilja_1.jpg", "SB_1220_Hrđava špilja_LKukuljan_1.jpg"),
+        ("SB_1220_Hrđava špilja_3.jpg", "SB_1220_Hrđava špilja_LKukuljan_3.jpg"),
+    ]
+    _write_photo(leaf / "SB_1220_Hrđava špilja_LKukuljan_3.jpg", (900, 700))
+
+    outcomes = process_mod.apply_author_renames(job)
+
+    assert [o.status for o in outcomes] == ["renamed", "exists"]
+    assert (leaf / "SB_1220_Hrđava špilja_LKukuljan_1.jpg").exists()
+    assert (leaf / "SB_1220_Hrđava špilja_3.jpg").exists()      # never overwrites
+
+
 def test_an_unresolvable_cave_folder_is_a_note_not_a_crash(
     drive_settings: Settings,
 ) -> None:
