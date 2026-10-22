@@ -59,6 +59,7 @@ keeps the chronology.
 - [3N symbol themes: applied after import, keyed by TopoDroid name (2026-10-07)](#3n-symbol-themes-applied-after-import-keyed-by-topodroid-name-2026-10-07)
 - [Dashboard help: a "?" on every part of the page (2026-10-08)](#dashboard-help-a--on-every-part-of-the-page-2026-10-08)
 - [Registar udruga: CroSpeleo is the ground truth (2026-10-04)](#registar-udruga-crospeleo-is-the-ground-truth-2026-10-04)
+- [3N entrance dimensions: a drawn pit rim beats the splays (2026-10-22)](#3n-entrance-dimensions-a-drawn-pit-rim-beats-the-splays-2026-10-22)
 
 ---
 
@@ -1863,3 +1864,33 @@ seen the software understands what the step does and what to do next.
 - **Survives a reload.** A cave or job finishing in the background re-renders the page; the open popover
   follows its **?** onto the new page instead of vanishing. Checked in the running dashboard (Chromium,
   cave 651: Pregled, 3N, Brze radnje, 5D, Ispis).
+
+## 3N entrance dimensions: a drawn pit rim beats the splays (2026-10-22)
+
+Extends [the 2026-10-02 rules](#3n-entrance-dimensions-splays-first-walls-as-fallback-2026-10-02).
+SB 968 (Češki turist) came out of KORAK 3a with no entrance size. The survey starts at the pit's
+bottom, and its rim station 4 has only two flat splays (13.3 and 14.0 m, 95° apart). That was
+under the three-splay minimum, and the walls fallback missed too, because the station stands 2 m
+outside the drawing. The opening itself is drawn as three TopoDroid `abyss-entrance` strokes. The
+rim gives 7.0 × 14.3 m, and the two splays with the station would give 9.3 × 20.1 m. The user:
+"the rim one is correct and should be considered".
+
+- **The pit reading takes the drawn rim first**, then the splays, then the wall footprint. The
+  rim is the strokes that chain into one opening (ends within 2 m), the one nearest the entrance
+  station if within 5 m. Its min/max extent gives Širina × Visina/duljina, as before.
+- **A drawn rim at the entrance makes the geometric guess a pit.** It still only matters when the
+  zapisnik's *Vrsta objekta* says nothing.
+- **Two splays are enough for the splay fallback**: with the station they span an opening.
+- **Rim and splays more than 25 % apart is a warning** (`uzet rub; provjeri crtez ili splayeve`):
+  either the sketch is undersized or the splays overshot the rim.
+- **KORAK 2 names its hidden ring copies `rub ulaza u jamu (KORAK 2)`.** KORAK 3a reads a `_postp`
+  that cSurvey has saved, which keeps no TopoDroid names. KORAK 2's hidden cave-area copies of the
+  rings keep their name through the save. Copies from an earlier KORAK 2 are all named
+  `obris spilje (KORAK 2)`. They count as rings when they are one sequence and ≥ 80 % of their
+  points lie on visible lines. An exact match fails on SB 968, whose rims were merged and trimmed
+  later. The walls outline is built from area borders in several sequences.
+
+Validated on every `_postp` on the Drive (4). SB 968 → rim 7.0 × 14.3 m. lidar_158 (SB 1465,
+archived) → rim 4.0 × 7.8 m, in line with its walls (3.7 × 6.9 m); it was 6.7 × 20.4 m from the
+splays, and the geometry had guessed horizontal. The other two have no rim and are unchanged.
+A fresh KORAK 2 of SB 968 writes the new name and measures the same.

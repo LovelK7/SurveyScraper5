@@ -712,11 +712,15 @@ def _automerge(root, design):
 # (cPen.Render, cPen.vb:1014-1015), merge mode Add so cSurvey unions them.
 
 CAVE_AREA_NAME = "obris spilje (KORAK 2)"   # marks our items; a re-run replaces them
+# A ring's copy has its own name so KORAK 3a can measure the pit opening from it
+# (entrance_dims.rim_rings, user 2026-10-22). KORAK 2 before that day named the
+# rings CAVE_AREA_NAME too; rim_rings recognises those by their points.
+RING_NAME = "rub ulaza u jamu (KORAK 2)"
 NO_PEN = "0"                                # cPen.PenTypeEnum.None (cPen.vb:1162)
 
 
 def is_cave_area(item):
-    return item.get("name") == CAVE_AREA_NAME
+    return item.get("name") in (CAVE_AREA_NAME, RING_NAME)
 
 
 def _borders_parent(D):
@@ -772,7 +776,7 @@ def remove_cave_area(root):
     return n
 
 
-def _hidden(item):
+def _hidden(item, name=CAVE_AREA_NAME):
     """`item` (a copy) made into a hidden, locked cave-border item."""
     for k in ("clippingtype", "hiddenindesign", "hiddeninpreview"):
         item.attrib.pop(k, None)
@@ -780,7 +784,7 @@ def _hidden(item):
     item.set("type", AREA_TYPE)
     item.set("category", "1")
     item.set("mergemode", "0")               # Add (cIItemMergeableArea.MergeModeEnum)
-    item.set("name", CAVE_AREA_NAME)
+    item.set("name", name)
     item.set("locked", "1")
     for child in list(item):
         if child.tag in ("pen", "datarow"):
@@ -922,7 +926,7 @@ def build_cave_area(root, special_walls=(), rings=()):
             a, b = _xy(pts[0]), _xy(pts[-1])
             if math.hypot(b[0] - a[0], b[1] - a[1]) > CLOSED_TOL:
                 row["open_rings"] += 1        # cSurvey closes it with a straight chord
-            parent.append(_hidden(copy.deepcopy(ring)))
+            parent.append(_hidden(copy.deepcopy(ring), RING_NAME))
             row["rings"] += 1
         if row["special"] or row["rings"]:
             rows.append(row)

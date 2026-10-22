@@ -267,6 +267,7 @@ def test_an_entrance_ring_becomes_a_hidden_cave_area_and_a_rerun_replaces_it():
     assert rows[0]["rings"] == 1 and rows[0]["open_rings"] == 1
     (h,) = _hidden(root)
     assert h.find("points").get("data") == ring.find("points").get("data")
+    assert h.get("name") == wo.RING_NAME              # KORAK 3a measures the pit from it
     assert h.get("clippingtype") is None and ring.get("clippingtype") == "1"
     # a later item (drawn by the operator after KORAK 2) keeps its point joins
     later = _line(root.find("plan/layers/layer/items"), [(0, 5), (1, 5)])

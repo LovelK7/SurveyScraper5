@@ -22,8 +22,13 @@ settled the rules with the user, 2026-10-02/03:
      sequences (cItemFreeHandArea.vb:193-195), so an undrawn wall shows on the
      map as such a join - used only when shorter than BRIDGE_MAX_M.
   3. A pit's opening is a hole in the plan: the min and max extents of the
-     splay cloud from the rim station, the wall footprint as fallback; Sirina
-     is the smaller number, Visina/duljina the larger.
+     drawn entrance rim (TopoDroid `abyss-entrance`, the rings KORAK 2 keeps
+     as hidden cave-area copies) when one is drawn at the entrance station
+     (user 2026-10-22: the rim is right where the splays disagree, SB 968),
+     else of the splay cloud from the rim station (two splays and the station
+     will do), the wall footprint as the last fallback; Sirina is the smaller
+     number, Visina/duljina the larger. A drawn rim also makes the geometric
+     guess a pit.
   4. One decimal - done by the OSZ prefill, this module keeps two.
   5. No size without a witnessed entrance (the drawn sign, a surface leg, the
      finisher's flag): a station chosen only because it is the highest is a
@@ -49,6 +54,11 @@ MAX_REACH_M = 15.0        # a wall further than this is not this entrance's wall
 BRIDGE_MAX_M = 5.0        # a fill join longer than this is a drawing-order artifact (SB 1220: 15 m)
 PIT_RAYS = 24             # directions for the wall-based pit footprint
 RAW_WALL_NAMES = ("wall", "wall:presumed")   # a raw TopoDroid export's walls
+RAW_RIM_NAMES = ("abyss-entrance",)          # a raw TopoDroid export's pit rims
+RIM_REACH_M = 5.0         # a rim further from the entrance station is another opening (SB 968: 2.1 m)
+RIM_JOIN_M = 2.0          # rim strokes this close are one opening - TopoDroid draws a ring in pieces
+LEGACY_RING_SHARE = 0.8   # see rim_rings
+RIM_SPLAY_DISAGREE = 0.25  # rim and splay extents further apart than this share are worth a warning
 
 
 def _nf():
@@ -222,6 +232,91 @@ def narrowest(origin, axis, across, walls, window=NARROW_WINDOW_M, step=SCAN_STE
 
 
 # ---------------------------------------------------------------------------
+# the drawn pit rim
+
+
+def rim_rings(root, design_name="plan"):
+    """The drawn entrance rims of one design, each a list of (x, y).
+
+    cSurvey file: KORAK 2's hidden ring copies on the Borders layer - named
+    wall_orient.RING_NAME, or, from a KORAK 2 before 2026-10-22, a
+    one-sequence CAVE_AREA_NAME copy whose points are mostly
+    (LEGACY_RING_SHARE) points of visible lines - not equal to one: SB 968's
+    rims were later merged and trimmed, 89-100 % of each copy's points left.
+    The walls outline is built from area borders and has several sequences.
+    Raw TopoDroid export: the `abyss-entrance` lines.
+    """
+    import wall_orient
+    nf = _nf()
+    design = root.find(design_name)
+    if design is None:
+        return []
+
+    def pts_of(it):
+        return [(round(x, 2), round(y, 2)) for x, y, _f in nf.item_points(it)]
+
+    def one_sequence(it):
+        return sum(1 for _x, _y, flags in nf.item_points(it) if flags.startswith("B")) <= 1
+
+    if design.find("layers") is None:
+        rings = [pts_of(it) for it in design.findall("item")
+                 if it.get("type") == "line" and (it.get("name") or "") in RAW_RIM_NAMES]
+        return [r for r in rings if len(r) >= 2]
+    items = list(nf.iter_items(design))
+    line_pts = {p for it in items if it.get("type") == "1" and not wall_orient.is_cave_area(it)
+                for p in pts_of(it)}
+    rings = []
+    for it in items:
+        name, pts = it.get("name"), pts_of(it)
+        if len(pts) < 2:
+            continue
+        if name == wall_orient.RING_NAME or (
+                name == wall_orient.CAVE_AREA_NAME and one_sequence(it)
+                and sum(p in line_pts for p in pts) >= LEGACY_RING_SHARE * len(pts)):
+            rings.append(pts)
+    return rings
+
+
+def _seg_dist(p, a, b):
+    ex, ey = b[0] - a[0], b[1] - a[1]
+    l2 = ex * ex + ey * ey
+    t = 0.0 if l2 == 0 else max(0.0, min(1.0, ((p[0] - a[0]) * ex + (p[1] - a[1]) * ey) / l2))
+    return math.hypot(p[0] - a[0] - t * ex, p[1] - a[1] - t * ey)
+
+
+def _path_dist(p, path):
+    if len(path) == 1:
+        return math.hypot(p[0] - path[0][0], p[1] - path[0][1])
+    return min(_seg_dist(p, a, b) for a, b in zip(path, path[1:]))
+
+
+def rim_opening(rings, origin, reach=RIM_REACH_M, join=RIM_JOIN_M):
+    """The pit opening the rim strokes around `origin` draw: the strokes that
+    chain together (within `join`) into the opening nearest `origin`, if that
+    is within `reach`. -> dict(min_m, min_deg, max_m, max_deg, rings,
+    station_m) or None."""
+    if not rings:
+        return None
+    near = [_path_dist(origin, r) for r in rings]
+    first = min(range(len(rings)), key=near.__getitem__)
+    if near[first] > reach:
+        return None
+    group, todo = [first], [k for k in range(len(rings)) if k != first]
+    grew = True
+    while grew:
+        grew = False
+        for k in list(todo):
+            if any(min(_path_dist(p, rings[g]) for p in rings[k]) <= join for g in group):
+                group.append(k)
+                todo.remove(k)
+                grew = True
+    pts = [p for g in group for p in rings[g]]
+    wmin, amin, wmax, amax = feret(pts)
+    return dict(min_m=round(wmin, 2), min_deg=amin, max_m=round(wmax, 2), max_deg=amax,
+                rings=len(group), station_m=round(near[first], 2))
+
+
+# ---------------------------------------------------------------------------
 # splays
 
 
@@ -336,8 +431,10 @@ def measure(root, stations, entrance, witnessed, count, warn=None):
     steep_up = sum(1 for sp in sps if sp["inc"] >= UD_INC_DEG)
     pit_by_shot = abs(shot["inc"]) >= STEEP_DEG
     pit_by_splays = len(sps) >= 4 and steep_down >= PIT_SPLAY_SHARE * len(sps) and steep_up == 0
-    block["kind_geo"] = "pit" if (pit_by_shot or pit_by_splays) else "horizontal"
-    block["kind_why"] = ("vlak %.0f stupnjeva" % abs(shot["inc"]) if pit_by_shot else
+    rim_ext = rim_opening(rim_rings(root, "plan"), (E.x, E.y))
+    block["kind_geo"] = "pit" if (rim_ext or pit_by_shot or pit_by_splays) else "horizontal"
+    block["kind_why"] = ("nacrtan rub ulaza u jamu" if rim_ext else
+                         "vlak %.0f stupnjeva" % abs(shot["inc"]) if pit_by_shot else
                          "%d od %d splayeva strmo dolje" % (steep_down, len(sps)) if pit_by_splays else
                          "vlak %.0f stupnjeva, %d od %d splayeva strmo dolje"
                          % (abs(shot["inc"]), steep_down, len(sps)))
@@ -375,7 +472,7 @@ def measure(root, stations, entrance, witnessed, count, warn=None):
     # ---- pit candidate: the hole in the plan, small x large
     cloud = [(sp["dx"], sp["dy"]) for sp in sps] + [(0.0, 0.0)]
     splay_ext = None
-    if len(sps) >= 3:
+    if len(sps) >= 2:                      # with the station, two splays span an opening (SB 968)
         wmin, amin, wmax, amax = feret(cloud)
         splay_ext = dict(min_m=round(wmin, 2), min_deg=amin, max_m=round(wmax, 2), max_deg=amax,
                          splays=len(sps))
@@ -390,8 +487,14 @@ def measure(root, stations, entrance, witnessed, count, warn=None):
         wmin, amin, wmax, amax = feret(hits)
         wall_ext = dict(min_m=round(wmin, 2), min_deg=amin, max_m=round(wmax, 2), max_deg=amax,
                         rays_hit=len(hits))
-    chosen = splay_ext or wall_ext
-    if block["kind_geo"] == "pit":
+    chosen = rim_ext or splay_ext or wall_ext
+    if rim_ext and splay_ext and (
+            abs(rim_ext["max_m"] - splay_ext["max_m"]) > RIM_SPLAY_DISAGREE * rim_ext["max_m"]
+            or abs(rim_ext["min_m"] - splay_ext["min_m"]) > RIM_SPLAY_DISAGREE * rim_ext["min_m"]):
+        say("jama: nacrtani rub ulaza %.1f x %.1f m, splayevi sa stanice %s %.1f x %.1f m - uzet rub; "
+            "provjeri crtez ili splayeve" % (rim_ext["min_m"], rim_ext["max_m"], entrance,
+                                             splay_ext["min_m"], splay_ext["max_m"]))
+    if block["kind_geo"] == "pit" and rim_ext is None:
         if splay_ext is None:
             note("jama: samo %d splayeva na ulaznoj stanici - otvor iz zidova" % len(sps))
         if wall_ext is None and len(hits) < PIT_RAYS // 2:
@@ -400,8 +503,8 @@ def measure(root, stations, entrance, witnessed, count, warn=None):
     block["pit"] = dict(
         width_m=None if chosen is None else chosen["min_m"],
         length_m=None if chosen is None else chosen["max_m"],
-        source="splays" if splay_ext else ("walls" if wall_ext else None),
-        splay_cloud=splay_ext, wall_footprint=wall_ext)
+        source="rim" if rim_ext else "splays" if splay_ext else ("walls" if wall_ext else None),
+        rim=rim_ext, splay_cloud=splay_ext, wall_footprint=wall_ext)
     return block
 
 

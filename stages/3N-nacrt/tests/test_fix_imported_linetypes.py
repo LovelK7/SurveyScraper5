@@ -218,6 +218,7 @@ def test_the_abyss_ring_becomes_the_hidden_cave_area_once_even_when_re_run(tmp_p
     root = ET.parse(str(tmp_path / "b.csx")).getroot()
     hidden = [i for i in root.iter("item") if fixer.wall_orient.is_cave_area(i)]
     assert len(hidden) == 1 and hidden[0].find("pen").get("type") == "0"
+    assert hidden[0].get("name") == fixer.wall_orient.RING_NAME
     assert hidden[0].find("points").get("data").startswith("0.00 0.00 B 3.00 0.00")
     ring = root.find("plan/layers/layer/items/item")
     assert (ring.get("type"), ring.get("clippingtype")) == ("1", "1")

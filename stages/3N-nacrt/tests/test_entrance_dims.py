@@ -15,6 +15,7 @@ sys.path.insert(0, str(TOOLS))
 
 import entrance_dims  # noqa: E402
 import nacrt_finish  # noqa: E402
+import wall_orient  # noqa: E402
 
 from test_nacrt_finish import (DEFAULT_STATIONS, finish_to, make_csx,  # noqa: E402
                                sidecar_of, warned)
@@ -32,10 +33,23 @@ TWO_WALLS = "0.00 -1.00 4.00 -1.00 0.00 1.00 B 4.00 1.00 "   # y = -1 and y = +1
 
 
 def measured(tmp_path, *, stations, plan_sign=(3.1, 0.1), plan_borders=TWO_WALLS,
-             profile_borders="-1.00 -2.00 7.00 3.00 "):
+             profile_borders="-1.00 -2.00 7.00 3.00 ", plan_items=()):
+    """`plan_items`: (layer type, type, name or None, points data) added to the plan."""
     path = make_csx(tmp_path / "cave_postp.csx", stations=stations, plan_sign=plan_sign,
                     plan_borders=plan_borders, profile_borders=profile_borders)
     root = ET.parse(path).getroot()
+    layers = root.find("plan/layers")
+    for layer_type, item_type, name, data in plan_items:
+        layer = next((l for l in layers.findall("layer") if l.get("type") == layer_type), None)
+        if layer is None:
+            layer = ET.SubElement(layers, "layer", {"type": layer_type})
+        items = layer.find("items")
+        if items is None:
+            items = ET.SubElement(layer, "items")
+        item = ET.SubElement(items, "item", {"layer": layer_type, "type": item_type})
+        if name:
+            item.set("name", name)
+        ET.SubElement(item, "points", {"data": data})
     sts = nacrt_finish.read_stations(root)
     warnings = []
     entrance, witnesses = nacrt_finish.decide_entrance(root, sts, warnings.append)
@@ -113,6 +127,49 @@ def test_the_pit_reading_is_the_splay_cloud_small_by_large(tmp_path):
     assert pit["source"] == "splays"
     assert pit["width_m"] <= pit["length_m"]
     assert pit["splay_cloud"]["splays"] == 5
+
+
+# A pit rim around B (3, 0) drawn in two pieces 0.5 m apart: x 2..6, y -2..1.
+RIM_A = "2.00 -2.00 B 6.00 -2.00 6.00 0.50 "
+RIM_B = "6.00 1.00 B 2.00 1.00 2.00 -1.50 "
+
+
+def test_the_drawn_rim_is_the_pit_opening_and_wins_over_the_splays(tmp_path):
+    # SB 968 (user, 2026-10-22): the rim is right, two flat splays overshoot it
+    block, warnings = measured(
+        tmp_path, stations=DEFAULT_STATIONS + B_SPLAYS_DIVING,
+        plan_items=[("5", "4", wall_orient.RING_NAME, RIM_A), ("5", "4", wall_orient.RING_NAME, RIM_B)])
+    pit = block["pit"]
+    assert pit["source"] == "rim" and pit["rim"]["rings"] == 2
+    assert pit["width_m"] == 3.0 and 4.9 <= pit["length_m"] <= 5.0      # 4 x 3, the extent is the diagonal
+    assert block["kind_geo"] == "pit" and block["kind_why"] == "nacrtan rub ulaza u jamu"
+    assert pit["splay_cloud"] is not None                                # still reported beside it
+    assert any("uzet rub" in w for w in warnings)                        # they disagree
+
+
+def test_a_rim_from_an_earlier_korak2_is_found_by_its_points(tmp_path):
+    # before 2026-10-22 the ring copies were named like the walls outline
+    block, _ = measured(
+        tmp_path, stations=DEFAULT_STATIONS + B_SPLAYS_LATERAL,
+        plan_items=[("2", "1", None, RIM_A), ("5", "4", wall_orient.CAVE_AREA_NAME, RIM_A),
+                    ("5", "4", wall_orient.CAVE_AREA_NAME, "0.00 -1.00 4.00 -1.00 B 4.00 1.00 B 0.00 1.00 ")])
+    assert block["pit"]["source"] == "rim" and block["pit"]["rim"]["rings"] == 1   # not the walls outline
+
+
+def test_a_rim_far_from_the_entrance_is_another_opening(tmp_path):
+    far = "40.00 0.00 B 44.00 0.00 44.00 3.00 40.00 3.00 "
+    block, _ = measured(tmp_path, stations=DEFAULT_STATIONS + B_SPLAYS_LATERAL,
+                        plan_items=[("5", "4", wall_orient.RING_NAME, far)])
+    assert block["pit"]["rim"] is None and block["pit"]["source"] == "splays"
+    assert block["kind_geo"] == "horizontal"
+
+
+def test_two_splays_and_the_station_span_a_pit_opening(tmp_path):
+    two = [("B(1)", 7.0, 0.0, -5.0, 3.0), ("B(2)", 3.0, 3.0, -5.0, 3.0)]   # 4 m and 3 m, at right angles
+    block, _ = measured(tmp_path, stations=DEFAULT_STATIONS + two)
+    pit = block["pit"]
+    assert pit["source"] == "splays" and pit["splay_cloud"]["splays"] == 2
+    assert pit["length_m"] == 5.0
 
 
 def test_both_readings_travel_whatever_the_geometry_says(tmp_path):
