@@ -595,7 +595,10 @@ def _open_with_os(target: Path, app: Path | None = None, reveal: bool = False) -
         return
     if os.name == "nt":
         if reveal:
-            subprocess.Popen(["explorer", f"/select,{target}"])
+            # A list argv would quote the whole "/select,G:\My Drive\…" token,
+            # which explorer can't parse – it falls back to Documents. Only the
+            # path may be quoted, so the command line is built by hand.
+            subprocess.Popen(f'explorer /select,"{os.path.normpath(target)}"')
         else:
             os.startfile(str(target))  # noqa: S606 — the whole point: open in its app
         return

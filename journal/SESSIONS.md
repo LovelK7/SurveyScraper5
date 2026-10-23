@@ -12,6 +12,31 @@ numbers through the mapping in
 
 ---
 
+### 2026-10-22…23 — The dashboard on the Drive: prod v2.0, one launcher, every .bat retired (agent) ◐
+
+- **Did:** The user asked how the dashboard should run for others: "a priming script, then open an HTML file?" The answer: no. The page needs its server, because of the token and the runs. So **one launcher primes and serves**.
+  - User decisions: retire every `.bat`; hidden server that stops itself; 6P visible to everyone.
+  - 0P `gui/server.py`: `--state-file` writes `{url, port, pid, token, root, started}` and removes only its own file on exit. `--idle-minutes` runs a watchdog that stops after N idle minutes, but never during a job.
+  - New API calls: `POST /api/ping` (every authorized call counts as activity) and `POST /api/shutdown` (409 while a job runs, unless `force`).
+  - The page pings every minute, has a **Zatvori** button, and shows a red banner once the server has stopped.
+  - Catalog: `3n-k9` (zip rescue, new `zip` file kind), `3n-k0-settings`, `3n-k0-local`.
+  - `tools_dir()` finds `<workspace>/csx-alati`. 3N `csurvey_driver.drive_csurvey_dir()` falls back to `LOCAL_DRIVE_ROOT/!!!Digitalizacija/Software/csurvey64`.
+  - `prod/build_prod.py`: one `SurveyScraper5.bat` (no version in the name); the bundle carries the kit's `TOOLS`, `inspect_survey.py` and the themes as `csx-alati/`; `_archive_old` sweeps every `cavedossier_*`/`csurvey_*` file and `csurvey_alati/`.
+  - `bootstrap.ps1`: the install as before plus `[sb-write]`, then KORAK 0 once per install (after the `.env`). Then the dashboard: reuse it, stop an older version, or start it hidden (`Start-Process -WindowStyle Hidden`, logs `gui_*.log`) and open the browser.
+  - `build_csx_kit.py --publish` refuses; `theme_files()` is shared with the prod builder.
+  - The Croatian guide was rewritten. Docs updated: prod/README, drive-layout, 0P README, commands, ARCHITECTURE, decision record, the `/publish` skill (now single-kit) and the 3N docs.
+  - **Published prod v2.0** (commit f2824a7). It also carried the work since v1.10, including another session's uncommitted 6P Z/Zagađenost/Ledenica fills (complete, documented and tested).
+- **Result:** 1044 tests green, 11 of them new. Doctor 0 fail.
+  - Live on the dev venv: a hidden server outlived its closed console, a second run reused it, a 1-minute idle setting stopped it 70 s after the last ping and cleaned up, and a "newer version" run stopped the old one.
+  - On the Drive: only `SurveyScraper5.bat`, `PROCITAJ_ME.txt`, `VERZIJE.txt`, `v2.0/`, `podaci/`, `_arhiva/` remain. 14 items were archived. The bundled 3N tools start from the published zip.
+  - **Not run anywhere yet:** a full first-run install (pip, Chromium, geodata, KORAK 0) on an operator machine.
+- **Learned:**
+  - `cavedossier.exe` and the venv's `python.exe` both hand over to a child process, so the launcher can't recognise its server by pid. It uses the `started` time in the state file instead.
+  - The 3N tools found the shared cSurvey by their own position on the Drive (`csurvey_alati/../../Software`). Moved into `%LOCALAPPDATA%`, they need `LOCAL_DRIVE_ROOT`, which is why KORAK 0 must run after the `.env` is written.
+  - "6P for everyone" silently needed the `[sb-write]` extra, which the old prod install never had.
+  - `git check-ignore data sb-sync` prints nothing by design: only their contents are ignored, so their READMEs and `data/people/` stay tracked. The `/publish` guard is satisfied in substance.
+- **Next:** tell the operators. Watch one operator machine's first double-click end to end. Rewrite `tdx-processing-protocol.md` around the dashboard's 3N page once operators have switched.
+
 ### 2026-10-22 — 6P predaja: the archivist's last gate and one-click delivery; the SUE gate leaves 5D (agent) ◐
 
 - **Did:** Built M6's delivery as `cavedossier deliver <Redni broj>` (new subpackage `cave_dossier.predaja` in
