@@ -449,3 +449,10 @@ when an idea's time comes. Nothing here is a commitment.
 - 2026-10-22 — 6P: `deliver` for an Illustrator-route cave whose Nacrt was saved under a name other than `SB_<broj>_nacrt.pdf` finds no Nacrt; a picker on the 6P page would let the archivist point at the right PDF.
 - 2026-10-22 — 6P → prod: a `cavedossier_predaja_v<X>.bat` launcher (or the dashboard in prod) once the first live deliveries have run from dev; needs the `[sb-write]` extra on the archivist's machine.
 - 2026-10-22 — 0P dashboard: lightbox images now come at 800 px (`THUMB_SIZES` gained 800 for the 6P Nacrt preview; a 1600 request used to snap to 480).
+- 2026-10-22 — prod dashboard: show the running prod version (PROD_VERSION.txt) on the page, and say when a newer `v<X>` sits on the Drive — today only the next double-click notices.
+- 2026-10-22 — prod dashboard: the launcher could offer a desktop shortcut to `SurveyScraper5.bat` on first run (KORAK 0 already makes one for cSurvey).
+- 2026-10-22 — prod dashboard: a stopped server leaves an open tab with a red banner; a tray icon (pystray) would make "is it running" visible, if operators find the banner confusing.
+- 2026-10-22 — prod: `tdx-processing-protocol.md` still walks the retired `.bat` kit step by step; rewrite it around the dashboard's 3N page once operators have switched.
+
+- 2026-10-23 — 6P: a delivered cave can't be topped up. `deliver` returns "već predan" before planning any SB fill, so a fill rule added later (Z/Zagađenost/Ledenica, after 902) doesn't reach caves already delivered. A `deliver --dopuni <broj>` could run `osz_fills` over the archived `<broj>.docx` and write only the empty cells.
+- 2026-10-23 — SB 897: Zagađenost `DA`, but the OSZ ticks no pollution box and its narrative says *Nema*; one of them is wrong.

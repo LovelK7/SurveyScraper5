@@ -1,4 +1,9 @@
-r"""Build the csurvey TDX drag-and-drop kit — the 3N-nacrt operator surface.
+r"""Build the csurvey TDX drag-and-drop kit — RETIRED from the Drive 2026-10-22.
+
+The dashboard (`SurveyScraper5.bat`, prod/build_prod.py) now runs every KORAK
+and its bundle carries these same tools (TOOLS + theme_files() below are its
+source of truth). `--publish` refuses; `--publish-to DIR` still builds a private
+drag-and-drop copy. What follows describes the kit as it was published until v1.7.
 
     python prod/build_csx_kit.py                     # stage into prod/dist/csx-kit
     python prod/build_csx_kit.py --publish           # + copy to the Drive
@@ -238,26 +243,33 @@ def build(out: Path) -> int:
     return n + 1
 
 
-def copy_themes(dest: Path) -> int:
-    """Every theme folder (one holding a theme.json): theme.json + its artwork."""
-    n = 0
+def theme_files() -> list[tuple[Path, str]]:
+    """(source, path inside teme/) for every theme folder holding a theme.json:
+    theme.json + its artwork. Shared with build_prod.py, whose bundle carries
+    the same themes for the dashboard (csx-alati/teme/)."""
+    out: list[tuple[Path, str]] = []
     for folder in sorted(p for p in THEMES_SRC.iterdir() if (p / "theme.json").is_file()):
-        out = dest / folder.name
-        out.mkdir(parents=True)
-        shutil.copy2(folder / "theme.json", out / "theme.json")
-        n += 1
+        out.append((folder / "theme.json", f"{folder.name}/theme.json"))
         for kind in THEME_KINDS:
             src = folder / kind
             if not src.is_dir():
                 continue
-            (out / kind).mkdir()
             for f in sorted(src.iterdir()):
                 if f.suffix.lower() == ".svg" or f.name == "index.json":
-                    shutil.copy2(f, out / kind / f.name)
-                    n += 1
-    if n == 0:
+                    out.append((f, f"{folder.name}/{kind}/{f.name}"))
+    if not out:
         raise SystemExit(f"kit input missing: no themes under {THEMES_SRC}")
-    return n
+    return out
+
+
+def copy_themes(dest: Path) -> int:
+    """Every theme folder (one holding a theme.json): theme.json + its artwork."""
+    files = theme_files()
+    for src, rel in files:
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, target)
+    return len(files)
 
 
 def drive_root() -> Path:
@@ -295,6 +307,14 @@ def main(argv: list[str] | None = None) -> int:
                     help="publish into this folder instead of the Drive location")
     args = ap.parse_args(argv)
 
+    if args.publish:
+        # Retired 2026-10-22 (user): the dashboard runs every KORAK, its tools
+        # ship in the prod bundle, and build_prod.py --publish sweeps the old
+        # csurvey_* kit off the Drive into _arhiva/. --publish-to still makes
+        # a private drag-and-drop copy.
+        raise SystemExit("The csurvey kit is no longer published to the Drive: the "
+                         "dashboard (prod/build_prod.py) carries its tools. Use "
+                         "--publish-to DIR for a private copy.")
     count = build(DIST)
     print(f"staged {DIST}  ({count} files)")
 

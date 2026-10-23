@@ -23,6 +23,9 @@ from cave_dossier.intake.scanner import find_leaf_folders
 SB_VERSION_RE = re.compile(r"^!?Speleo_baza_SUE_v(\d+)[._](\d+)\.xls[mx]$", re.IGNORECASE)
 
 DEFAULT_CSURVEY_DIR = r"C:\csurvey64"
+
+#: Where prod/build_prod.py puts the 3N tools (and their teme/) in the bundle.
+BUNDLED_TOOLS = "csx-alati"
 #: The shared cSurvey copy on the Drive (an unzipped folder needs no install —
 #: 2026-10-02), relative to LOCAL_DRIVE_ROOT. Same place csurvey_driver.py looks.
 KIT_CSURVEY_REL = "!!!Digitalizacija/Software/csurvey64"
@@ -72,6 +75,7 @@ FILE_KINDS = {
     "postp": {"postp"},
     "resolved": {"resolved"},
     "survey": {"raw", "prep", "postp", "resolved"},
+    "zip": {"zip"},
 }
 
 
@@ -101,6 +105,8 @@ def classify(path: Path, broj: int) -> str:
         return "photo_processed" if name.startswith("sb_") else "photo"
     if ext == ".pdf":
         return "pdf"
+    if ext == ".zip":
+        return "zip"  # a TopoDroid project export, KORAK 9's input
     return "other"
 
 
@@ -147,10 +153,14 @@ def sb_versions(drive_root: Path | None) -> list[dict]:
 
 
 def tools_dir() -> Path | None:
-    """The 3N script folder: the repo's in dev, ``CSX_TOOLS`` otherwise."""
+    """The 3N script folder: ``CSX_TOOLS``, then the prod bundle's own copy
+    (``<workspace>/csx-alati``, build_prod.py), then the repo's in dev."""
     override = os.environ.get("CSX_TOOLS")
     if override and Path(override, "nacrt_finish.py").is_file():
         return Path(override)
+    bundled = _safe(lambda: workspace_root() / BUNDLED_TOOLS)
+    if bundled and (bundled / "nacrt_finish.py").is_file():
+        return bundled
     root = repo_root()
     if root is not None:
         candidate = root / "stages" / "3N-nacrt" / "production" / "tools"
@@ -184,7 +194,7 @@ def local_csurvey_dir() -> Path:
 
 
 def csurvey_exe(drive_root: Path | None = None) -> Path | None:
-    """CSURVEY_DIR, then KORAK 0's local copy, then the Drive copy beside the
+    r"""CSURVEY_DIR, then KORAK 0's local copy, then the Drive copy beside the
     kit, then C:\csurvey64."""
     candidates = []
     if _env_value("CSURVEY_DIR"):

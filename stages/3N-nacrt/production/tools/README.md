@@ -16,7 +16,8 @@ python production/tools/tdx_zip_to_csx.py <project.zip | folder> [more.zip ...] 
   manifest+survey.sql sniff); `--sb` narrows that scan to the named caves' `SB_<broj>_…` leaves
   ([`sb_select.py`](sb_select.py), shared with the pre-processor). Outputs land next to each zip: `<survey>_recovered.csx` and — via an
   automatic `preprocess_tdx_csx.py` pass — `<survey>_recovered_prep.csx`, the one to import.
-- **No-typing path:** `csurvey_9_oporavi_iz_zipa.bat` (published to
+- **No-typing path:** the dashboard's 3N › *Popravak › Oporavi .csx iz TopoDroid zipa* (since
+  2026-10-22; the `.bat` kit below is retired from the Drive). Formerly `csurvey_9_oporavi_iz_zipa.bat` (published to
   `!!!Digitalizacija/SurveyScraper5/` by [`prod/build_csx_kit.py`](../../../../prod/build_csx_kit.py))
   — double-click, type the Redni broj of the caves to recover (or `SVE`), or drag zips onto it. Its
   sibling **`csurvey_1_pripremi_csx.bat`** does the same for the normal (non-recovery) flow:

@@ -45,8 +45,8 @@ def local_dir():
 
 
 def drive_dir():
-    """The shared copy on the Drive, two levels above the kit's tools."""
-    return csurvey_driver.KIT_CSURVEY_DIR
+    """The shared copy on the Drive (beside the kit, or under LOCAL_DRIVE_ROOT)."""
+    return csurvey_driver.drive_csurvey_dir()
 
 
 def exe_stamp(folder):

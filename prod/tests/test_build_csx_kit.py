@@ -115,14 +115,11 @@ def test_guide_is_utf8_croatian_and_follows_the_same_numbers(staged):
     assert text.index("KORAK 3 - DOVRŠI NACRT") < text.index("KORAK 9 - POPRAVAK")
 
 
-def test_nacrt_is_a_published_prod_command():
-    # The kit's third step calls cavedossier_nacrt_v<X>.bat; without both of
-    # these edits build_prod.py never publishes that launcher.
-    assert build_prod.PROD_COMMANDS["nacrt"] == ("nacrt",)
-    bootstrap = (PROD_ROOT / "prod_templates"
-                 / "bootstrap.ps1.template").read_text(encoding="utf-8")
-    assert "'nacrt' {" in bootstrap
-    assert "$cliVerb = @('nacrt')" in bootstrap
+def test_the_kit_is_no_longer_published_to_the_drive():
+    # Retired 2026-10-22: the dashboard runs every KORAK; its tools ship in
+    # the prod bundle (build_prod.py), and publishing sweeps the old kit away.
+    with pytest.raises(SystemExit):
+        build_csx_kit.main(["--publish"])
 
 
 def test_missing_tool_fails_the_build(tmp_path, monkeypatch):

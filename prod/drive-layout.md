@@ -35,14 +35,13 @@ launcher itself sits, so nobody has to type it.
 | `!!Osnovni zapisnici` | `osz_dir` | `cavedossier deliver --apply` (6P) | [6P](../stages/6P-predaja/README.md) |
 | `!!Nacrti` | `drawings_dir` | `cavedossier deliver --apply` (6P) | [6P](../stages/6P-predaja/README.md) |
 | `!!!Digitalizacija/Arhiva` | `arhiva_dir` | `cavedossier deliver --apply` moves a delivered cave's whole leaf here | [6P](../stages/6P-predaja/README.md) |
-| `!!!Digitalizacija/SurveyScraper5` | `build_prod.TARGET_REL` | `build_prod.py --publish` | [prod](README.md) |
-| `!!!Digitalizacija/SurveyScraper5` (the `csurvey_*` kit + `csurvey_alati/`) | `build_csx_kit.TARGET_REL` | `build_csx_kit.py --publish` | [3N](../stages/3N-nacrt/README.md) |
+| `!!!Digitalizacija/SurveyScraper5` | `build_prod.TARGET_REL` | `build_prod.py --publish`: `SurveyScraper5.bat` (the dashboard launcher), `v<X>/`, `podaci/geo/`; it sweeps every retired `.bat` into `_arhiva/` | [prod](README.md) |
+| `!!!Digitalizacija/Software/csurvey64` | — (fixed path; `csurvey_driver.drive_csurvey_dir()`) | a person, replacing cSurvey | [3N](../stages/3N-nacrt/README.md) |
 
-The last two rows are the same folder on purpose: the csurvey kit's KORAK 3
-launcher (`csurvey_3_dovrsi_nacrt.bat`) finishes by calling the
-`cavedossier_nacrt_v<X>.bat` that `build_prod.py` publishes there. Publishing one
-kit without the other leaves that step with nothing to call — it says so and
-stops with the printed PDFs in the leaf.
+Until 2026-10-22 the SurveyScraper5 folder also held the `csurvey_*` kit and
+`csurvey_alati/` (`build_csx_kit.py --publish`) and one `cavedossier_*_v<X>.bat`
+per command. The dashboard replaced them all; the next publish moves them to
+`_arhiva/`.
 
 
 The `!` prefixes are the society's own convention for sorting these to the top

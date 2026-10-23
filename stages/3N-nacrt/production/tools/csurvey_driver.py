@@ -227,6 +227,18 @@ def local_csurvey_dir():
     return os.path.join(base, "CaveDossier", "csurvey64")
 
 
+def drive_csurvey_dir():
+    """The shared cSurvey on the Drive: beside the kit (tools on the Drive), or
+    under LOCAL_DRIVE_ROOT when the tools ship inside the prod bundle and sit
+    in %LOCALAPPDATA% (the dashboard launcher, 2026-10-22)."""
+    if os.path.exists(os.path.join(KIT_CSURVEY_DIR, "cSurveyPC.exe")):
+        return KIT_CSURVEY_DIR
+    root = setting("LOCAL_DRIVE_ROOT", None)
+    if root:
+        return os.path.join(root, "!!!Digitalizacija", "Software", "csurvey64")
+    return KIT_CSURVEY_DIR
+
+
 def find_csurvey_dir(override=None):
     """Where cSurvey is: --csurvey-dir, then CSURVEY_DIR (env, .env), then
     KORAK 0's local copy, then the kit's own cSurvey/ folder on the Drive,
@@ -236,8 +248,9 @@ def find_csurvey_dir(override=None):
         return explicit
     if os.path.exists(os.path.join(local_csurvey_dir(), "cSurveyPC.exe")):
         return local_csurvey_dir()
-    if os.path.exists(os.path.join(KIT_CSURVEY_DIR, "cSurveyPC.exe")):
-        return KIT_CSURVEY_DIR
+    drive = drive_csurvey_dir()
+    if os.path.exists(os.path.join(drive, "cSurveyPC.exe")):
+        return drive
     return DEFAULT_CSURVEY_DIR
 
 
@@ -254,7 +267,7 @@ def run(command, survey, out=None, design="Both", timeout=DEFAULT_TIMEOUT,
         raise DriverError(
             "cSurvey is not installed in %s (nor beside the kit in %s) – set "
             "CSURVEY_DIR in .env, pass --csurvey-dir, or copy the cSurvey folder there"
-            % (directory, KIT_CSURVEY_DIR))
+            % (directory, drive_csurvey_dir()))
 
     argv = [_powershell(), "-STA", "-NoProfile", "-ExecutionPolicy", "Bypass",
             "-File", SCRIPT,

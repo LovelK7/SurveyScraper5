@@ -3,48 +3,75 @@
 **Everything here reaches someone who is not a developer.** Everything outside
 this folder is internal. That is the whole rule.
 
-If you are looking for "what do the society's people actually touch", it is the
-two kits below and the Drive dirs in [`drive-layout.md`](drive-layout.md).
+If you are looking for "what do the society's people actually touch", it is
+**one file**, `SurveyScraper5.bat`, in `!!!Digitalizacija/SurveyScraper5/`, and
+the Drive dirs in [`drive-layout.md`](drive-layout.md).
 
-**Publishing either kit goes through `/publish`**
+**Publishing goes through `/publish`**
 ([`.claude/skills/publish/SKILL.md`](../.claude/skills/publish/SKILL.md)):
 doctor and tests first, then the version bump and a commit, so the stamped
-commit matches what ships. The kit is built and deployed after that, and the
-Drive copy is checked. The builder commands below are what that skill runs.
+commit matches what ships. The bundle is built and deployed after that, and
+the Drive copy is checked. The builder command below is what that skill runs.
 
-## The two kits
+## The dashboard launcher — for everyone
 
-### 1. `cavedossier` launchers — for recorders and drafters
+One double-clickable `.bat` on the Drive opens the dashboard
+([`cavedossier gui`](../stages/0P-platform/README.md#the-dashboard--cavedossier-gui))
+in the browser. Every operator command is a button there: OSZ, karta, the 3N
+KORAK 0–4 and 9, sastavnica, photos, people, dossier, predaja. That replaced
+the per-command `cavedossier_*_v<X>.bat` launchers and the `csurvey_*`
+drag-and-drop kit (user, 2026-10-22). The rationale is
+[The dashboard on the Drive](../docs/design-decisions.md#the-dashboard-on-the-drive-one-launcher-every-bat-retired-2026-10-22).
 
-Double-clickable `.bat` files that live **on the Google Drive**, not in this
-repo, at `!!!Digitalizacija/SurveyScraper5/`. Four commands ship today:
-`osz prefill`, `photos process`, `sastavnica` and `nacrt`. The last one is also
-called by the csurvey kit's KORAK 3 launcher (below), which is why it has to be
-published into that folder and not only run from a repo clone.
+```text
+!!!Digitalizacija/SurveyScraper5/
+├─ SurveyScraper5.bat      ← the one thing operators double-click (no version in the name)
+├─ PROCITAJ_ME.txt         ← the Croatian operator guide
+├─ VERZIJE.txt             ← publish log, one line per release
+├─ v<X>/                   ← bootstrap.ps1 + bundle.zip
+├─ podaci/geo/             ← cloud copy of data/geo (~280 MB)
+└─ _arhiva/                ← superseded v-dirs + every retired .bat and csurvey_alati/
+```
 
 | File | Role |
 |---|---|
 | [`build_prod.py`](build_prod.py) | Generates and publishes a version |
-| [`prod_templates/launcher.bat.template`](prod_templates/launcher.bat.template) | The 14-line `.bat` stub the operator double-clicks |
-| [`prod_templates/bootstrap.ps1.template`](prod_templates/bootstrap.ps1.template) | The real installer/runner (~380 lines) |
-| [`prod_templates/PROCITAJ_ME.txt.template`](prod_templates/PROCITAJ_ME.txt.template) | The Croatian operator guide, ASCII-enforced at build time |
+| [`prod_templates/launcher.bat.template`](prod_templates/launcher.bat.template) | The `.bat` stub the operator double-clicks |
+| [`prod_templates/bootstrap.ps1.template`](prod_templates/bootstrap.ps1.template) | The real installer and server starter |
+| [`prod_templates/PROCITAJ_ME.txt.template`](prod_templates/PROCITAJ_ME.txt.template) | The Croatian operator guide (UTF-8 with BOM, real diacritics) |
 | `dist/` | Local staging of published versions (gitignored) |
 
 ```powershell
-python prod\build_prod.py --version 1.5             # stage locally, no Drive writes
-python prod\build_prod.py --version 1.5 --publish   # copy to the Drive
+python prod\build_prod.py --version 2.0             # stage locally, no Drive writes
+python prod\build_prod.py --version 2.0 --publish   # copy to the Drive (via /publish)
 ```
 
-**What happens on the operator's machine.** The `.bat` calls `bootstrap.ps1`,
-which probes upward from its own location for `!Speleo_baza_SUE_*.xlsm` to find
-the Drive root, checks for Python 3.11+, extracts `bundle.zip` to
-`%LOCALAPPDATA%\CaveDossier\v<X>`, creates a venv, `pip install -e .`,
-installs Playwright Chromium, copies `podaci\geo` locally, and writes an `.env`
-with `LOCAL_DRIVE_ROOT` derived from where the launcher itself sits. Every run
-logs to `%LOCALAPPDATA%\CaveDossier\logs\` for remote debugging.
+**What a double-click does.** The `.bat` calls `v<X>\bootstrap.ps1`, which:
 
-**Adding a command to prod is two edits**: `PROD_COMMANDS` in `build_prod.py`,
-and a `switch ($Command)` branch in `bootstrap.ps1.template`.
+1. probes upward from its own location for `!Speleo_baza_SUE_*.xlsm` to find
+   the Drive root;
+2. on the first run, or when `bundle.zip` is newer than the install, installs to
+   `%LOCALAPPDATA%\CaveDossier\v<X>`. That means: a Python 3.11+ check (with
+   install instructions when it is missing), extract, venv, `pip install -e
+   .[osz,photos,geo,karta,sastavnica,sb-write]`, Playwright Chromium, a local copy of
+   `podaci\geo`, and an `.env` with `LOCAL_DRIVE_ROOT` derived from the
+   launcher's location plus the shared georef.hr login. Then **3N KORAK 0**
+   runs: cSurvey's app settings into the registry, and a local cSurvey copy
+   with a desktop shortcut. It is fail-soft: a cSurvey left open only leaves
+   a warning;
+3. reads `%LOCALAPPDATA%\CaveDossier\gui.json`. If this version's dashboard
+   is already running, it opens the browser on it and the window closes. An
+   older version's dashboard is asked to stop first, unless a job is
+   running, in which case it is left and opened instead;
+4. otherwise starts `cavedossier gui --no-browser --state-file … --idle-minutes 10`
+   **with no window** (output to `logs\gui_v<X>_*.log`), waits until it
+   answers, and opens the browser.
+
+The dashboard stops itself 10 minutes after its last page closes (the page
+pings every minute). It never stops while a job runs, and its **Zatvori**
+button stops it at once. The setup steps log to
+`%LOCALAPPDATA%\CaveDossier\logs\nadzorna_ploca_*.log`, the server to
+`gui_*.log`, and each job to the install's `runs/gui/`.
 
 **The bundle is flattened.** In the repo each stage owns its own
 `src/cave_dossier/<sub>/`; `build_prod.py` rewrites them all into a single
@@ -54,76 +81,43 @@ machine with no developer present, with whatever setuptools pip downloads that
 day. The repo's multi-root `package-dir` map works, but it has no business
 being on that path.
 
-### 2. The `csurvey` TDX kit — for people processing TopoDroid surveys
+**The 3N tools ride in the bundle** as `csx-alati/`. They are the kit's
+`TOOLS` list from [`build_csx_kit.py`](build_csx_kit.py), plus the tools only
+the dashboard calls (`DASHBOARD_ONLY_TOOLS`), plus the symbol themes as
+`csx-alati/teme/`. A test fails when a catalog action names a tool the bundle
+lacks. Edit them in
+[`stages/3N-nacrt/production/tools/`](../stages/3N-nacrt/production/tools/),
+never on the Drive.
 
-Drag-and-drop `.bat` files plus the Python tools they drive, published together
-into `!!!Digitalizacija/SurveyScraper5/` — the same prod folder as the
-`cavedossier_*` launchers, so everything an operator double-clicks is in one
-place (user decision 2026-09-20; before that they sat in a `Share/TDX` handoff
-folder). The `csurvey_` prefix is what keeps the two kits apart in that listing,
-and `_archive_old()` in `build_prod.py` only ever sweeps `cavedossier_*`.
+**Adding a command to prod** is adding it to the dashboard's catalog
+(`gui/catalog.py`). The launcher has no per-command code anymore.
 
-The **digit in each filename is the running order** — named after their tools
-they sorted alphabetically into the wrong sequence (user, 2026-09-20). The
-launchers, the guide and the protocol all speak the same KORAK numbers. The
-order is **1 → 2 → 3**; the zip rescue carries **9** because it is a repair and
-not a step (user, 2026-09-20, settling the clash with the finisher's KORAK 3),
-so it sorts to the bottom of the listing and of the guide.
+**Publishing sweeps the old surface away.** `_archive_old()` moves superseded
+`v<X>/` dirs, every `cavedossier_*_v*.bat`, every `csurvey_*.bat|.txt` and
+`csurvey_alati/` into `_arhiva/`. An archived launcher still works from there,
+because its v-dir moves with it.
 
-| File | KORAK |
-|---|---|
-| [`csx_templates/csurvey_0_PROCITAJ_ME.txt.template`](csx_templates/csurvey_0_PROCITAJ_ME.txt.template) | 0 — the Croatian operator guide (diacritics, UTF-8 BOM) |
-| [`csx_templates/csurvey_1_pripremi_csx.bat.template`](csx_templates/csurvey_1_pripremi_csx.bat.template) | 1 — raw `.csx` → import-ready `_prep.csx` |
-| [`csx_templates/csurvey_2_dovrsi_uvoz.bat.template`](csx_templates/csurvey_2_dovrsi_uvoz.bat.template) | 2 — after cSurvey "Save As", before drawing |
-| [`csx_templates/csurvey_3_dovrsi_nacrt.bat.template`](csx_templates/csurvey_3_dovrsi_nacrt.bat.template) | 3 — corrected `_postp` → the finished `SB_<broj>_nacrt.pdf` |
-| [`csx_templates/csurvey_4_upisi_osz.bat.template`](csx_templates/csurvey_4_upisi_osz.bat.template) | 4 — the nacrt's lengths, depth and entrance size into the existing `SB_<broj>_OSZ.docx` (calls the `cavedossier_osz_backfill_v*.bat` launcher beside it) |
-| [`csx_templates/csurvey_9_oporavi_iz_zipa.bat.template`](csx_templates/csurvey_9_oporavi_iz_zipa.bat.template) | 9 — rescue: rebuild a broken `.csx` from the TopoDroid project `.zip` |
-| [`build_csx_kit.py`](build_csx_kit.py) | Generates and publishes the kit (`--publish`); `csurvey_alati/` carries the Python tools |
+### The retired `csurvey` TDX kit
 
-**Operator-facing text is Croatian.** The `.txt` guide keeps real diacritics and
-is written UTF-8 with a BOM; the `.bat` consoles are Croatian *without* them,
-because a cp852 console cannot print them. `build_csx_kit.py` enforces both.
-
-```powershell
-python prod\build_csx_kit.py                  # stage into prod/dist/csx-kit
-python prod\build_csx_kit.py --publish        # + copy to the prod folder
-```
-
-A double-click **asks which caves to process** — Redni broj (SB), several at a
-time, `SVE` for everything, Enter to cancel — and resolves each number to that
-cave's `SB_<broj>_…` leaf under `..\!Za digitalizirat` (the intake tree one level
-up, derived at build time from `config.yaml`'s `intake_dir` and kept relative).
-Sweeping the whole tree is now opt-in, not the default (user, 2026-09-20).
-KORAK 2 and KORAK 3 go one step further and ask *which file* in that cave's
-folder to work on, annotating each with how far through the chain it is.
-Dragging files onto a launcher skips both prompts and works from anywhere. The
-two manual steps between the launchers are cSurvey's own: open the `_prep.csx` and
-Save As (between 1 and 2), then correct the sketch in the `_postp` file (between 2
-and 3).
-
-**KORAK 3 spans both kits.** Its first two steps are kit tools (`nacrt_finish.py`
-then `csurvey_driver.py finish`, both in `csurvey_alati/`); its third is
-`cavedossier nacrt`, a prod-bundle command. The launcher finds
-`cavedossier_nacrt_v*.bat` beside itself in this same folder and, when it is
-missing or fails, says so and stops with the PDFs already delivered. The one
-step that needs cSurvey installed is the headless print; without it the launcher
-stops cleanly and prints the two-click manual recipe instead of a traceback. The
-protocol is
-[`stages/3N-nacrt/production/tdx-processing-protocol.md`](../stages/3N-nacrt/production/tdx-processing-protocol.md);
-the Python tools live in
-[`stages/3N-nacrt/production/tools/`](../stages/3N-nacrt/production/tools/) and
-are copied into `csurvey_alati/` at publish time — edit them in the repo, never
-on the Drive.
+Until 2026-10-22 the 3N steps were drag-and-drop `csurvey_<n>_*.bat` files
+(KORAK 0–4, 9) plus `csurvey_alati/`, published beside the `cavedossier_*`
+launchers by [`build_csx_kit.py`](build_csx_kit.py) from
+[`csx_templates/`](csx_templates/). The dashboard runs every one of those
+steps, so `build_csx_kit.py --publish` now refuses. `--publish-to DIR` still
+builds a private drag-and-drop copy for someone who wants one, and the
+builder's `TOOLS` list and `theme_files()` remain the source of truth for what
+the bundle's `csx-alati/` carries. The step-by-step protocol is
+[`stages/3N-nacrt/production/tdx-processing-protocol.md`](../stages/3N-nacrt/production/tdx-processing-protocol.md).
 
 ## Why these are templates and not just files
 
-Both kits are **generated**, never hand-edited in place, because both used to
-carry a hardcoded absolute path to one developer's machine. The TDX `.bat` files
-were the worse case: their own headers said they were copies handed to
-operators, and every such copy was inert on any machine but that one. Generating
-them makes the developer path a build-time value and the *last* fallback rung —
-the launchers find their tools in `csurvey_alati/` beside themselves first, so a
-published kit works anywhere.
+Everything on the Drive is **generated**, never hand-edited in place. The
+first launchers carried a hardcoded absolute path to one developer's
+machine. The TDX `.bat` files were the worse case: their own headers said they
+were copies handed to operators, and every such copy was inert on any machine
+but that one. Generating them made the developer path a build-time value. Now
+nothing on the operator's side refers to a developer path at all: the
+launcher finds the Drive by probing upward, and the tools ride in the bundle.
 
 ## The standing portability rules
 
@@ -141,6 +135,7 @@ These are what make productionization cheap, and they apply to every new tool:
 
 ## Still open
 
-A fully bundled runtime (no Python install step), prod coverage for more
-commands as they stabilize, and update notification beyond "a newer launcher
-appeared in the folder". Tracked in [`journal/backlog.md`](../journal/backlog.md).
+A fully bundled runtime (no Python install step), and the prod version shown
+on the dashboard itself. A newer version is picked up by the next
+double-click, but an open dashboard does not say one exists. Tracked in
+[`journal/backlog.md`](../journal/backlog.md).

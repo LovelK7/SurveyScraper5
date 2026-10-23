@@ -142,7 +142,8 @@ Doc updates are part of the work, not a follow-up request.
 
 **Publishing to prod goes only through `/publish`** (`.claude/skills/publish/SKILL.md`):
 doctor and tests as gates, version bump, commit, build + deploy, verify on the
-Drive. Never run `build_prod.py --publish` / `build_csx_kit.py --publish` outside it.
+Drive. Never run `build_prod.py --publish` outside it (`build_csx_kit.py --publish`
+is retired: the dashboard launcher's bundle carries the 3N tools).
 
 **Changing a shared cSurvey default goes through `/csurvey-defaults`**
 (`.claude/skills/csurvey-defaults/SKILL.md`): symbol mapping, centerline,

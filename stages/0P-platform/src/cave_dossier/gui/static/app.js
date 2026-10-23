@@ -18,13 +18,14 @@ const S = {
 // Which intake-leaf file kinds a catalog `file_kind` accepts (mirrors state.FILE_KINDS).
 const FILE_KINDS = {
   raw: ["raw"], prep: ["prep"], postp: ["postp"], resolved: ["resolved"], survey: ["raw", "prep", "postp", "resolved"],
+  zip: ["zip"],
 };
 const SURVEY_KINDS = new Set(["raw", "prep", "postp", "resolved", "backup"]);
 const PHOTO_KINDS = new Set(["photo", "photo_processed"]);
 
 // Files each stage tab lists for the current cave (4F draws a gallery instead).
 const STAGE_FILES = {
-  "3N": ["raw", "prep", "postp", "resolved", "plan", "profile", "dimenzije", "nacrt"],
+  "3N": ["raw", "prep", "postp", "resolved", "plan", "profile", "dimenzije", "nacrt", "zip"],
   "4O": ["osz", "doc"],
   "4S": ["sastavnica"],
 };
@@ -34,7 +35,7 @@ const KIND_LABEL = {
 
   plan: "tlocrt", profile: "profil", dimenzije: "dimenzije", nacrt: "NACRT",
   sastavnica: "sastavnica", osz: "OSZ", doc: "dokument", photo: "foto",
-  photo_processed: "foto SB_", pdf: "pdf", other: "",
+  photo_processed: "foto SB_", pdf: "pdf", zip: "TopoDroid zip", other: "",
 };
 
 const STAGE_ICON = {
@@ -1532,6 +1533,37 @@ function confirmDialog({ title, text, cmd, okLabel, remember }) {
   });
 }
 
+// ── server lifetime ──────────────────────────────────────────────────
+// The prod launcher starts the server without a window and it stops itself
+// ~10 min after the last page goes quiet; this ping is how an open page says
+// it is still here (every API call counts, the ping covers an idle page).
+function showStopped() {
+  $("#stopped").hidden = false;
+  document.body.classList.add("is-stopped");
+}
+
+function heartbeat() {
+  setInterval(() => {
+    if (!$("#stopped").hidden) return;
+    api("ping", {}).catch(e => { if (e.status === undefined || e.status >= 500) showStopped(); });
+  }, 60000);
+}
+
+async function quitServer() {
+  const busy = [...S.jobs.values()].some(j => j.running);
+  const ok = await confirmDialog({
+    title: "Zatvori nadzornu ploču",
+    text: busy ? "Jedan posao još traje i bit će prekinut. Zatvoriti svejedno?"
+               : "Zaustavlja nadzornu ploču na ovom računalu. Ponovno je pokreni s SurveyScraper5.bat.",
+    okLabel: "Zatvori",
+  });
+  if (!ok) return;
+  try {
+    await api("shutdown", { force: busy });
+    showStopped();
+  } catch (e) { toast(e.message, true); }
+}
+
 async function runAction(a, ctx) {
   if (ctx.writes && !S.noConfirm) {
     const ok = await confirmDialog({ title: a.title, text: "Ova radnja " + ctx.writes + ".", cmd: ctx.cmd, okLabel: "Pokreni", remember: true });
@@ -1666,6 +1698,7 @@ function wire() {
     else toast("Objekt nema mapu pod !Za digitalizirat.", true);
   });
   $("#btn-open-sb").addEventListener("click", () => openTarget({ what: "sb" }));
+  $("#btn-quit").addEventListener("click", quitServer);
   $("#btn-refresh").addEventListener("click", () => loadAll(true).then(() => toast("Osvježeno.")).catch(e => toast(e.message, true)));
 
   $("#console-toggle").addEventListener("click", () => {
@@ -1714,6 +1747,7 @@ function wire() {
     }
     renderJobs();
     poll();
+    heartbeat();
   } catch (e) {
     $("#main").replaceChildren(h("div", { class: "card note" }, "Ne mogu dohvatiti podatke sa servera: " + e.message));
   }

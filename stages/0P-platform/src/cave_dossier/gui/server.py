@@ -9,6 +9,13 @@ Safety: it binds to localhost only, and every API call must carry the random
 token baked into the page it served — so another web page open in the same
 browser cannot drive it. Only catalog actions run (``catalog.py``), with argv
 built from validated inputs and no shell.
+
+Lifetime (prod, 2026-10-22): the Drive launcher starts the server without a
+window, so it must also know when to stop. ``serve(state_file=…)`` records
+``{url, port, pid, token, root}`` for the launcher to find a running server
+(and reuse it instead of starting a second one); the page pings every minute,
+and ``idle_minutes`` stops the server once no page has spoken for that long and
+no job is running. ``POST /api/shutdown`` is the page's "Zatvori" button.
 """
 
 from __future__ import annotations
@@ -18,6 +25,8 @@ import os
 import secrets
 import subprocess
 import sys
+import threading
+import time
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -75,6 +84,25 @@ class App:
         self.token = token or secrets.token_urlsafe(16)
         self.opener = opener or _open_with_os
         self.deleter = deleter or media.recycle
+        self.last_seen = time.monotonic()
+        self.stop_requested = threading.Event()
+
+    # ── lifetime ────────────────────────────────────────────────────
+    def touch(self) -> None:
+        """Every authorized API call: a page is still open."""
+        self.last_seen = time.monotonic()
+
+    def busy(self) -> bool:
+        return any(job.running for job in self.jobs.list())
+
+    def shutdown(self, body: dict) -> dict:
+        """The page's "Zatvori". A running job would die with the server, so
+        that needs ``force`` (the page asks first)."""
+        if self.busy() and not body.get("force"):
+            raise ApiError("Posao još traje – zaustavi ga ili potvrdi zatvaranje.",
+                           HTTPStatus.CONFLICT)
+        self.stop_requested.set()
+        return {"ok": True}
 
     # ── actions ─────────────────────────────────────────────────────
     def run(self, body: dict) -> dict:
@@ -391,6 +419,7 @@ def make_handler(app: App):
         def _api(self, verb: str, url) -> None:
             if not self._authorized():
                 return self._json({"error": "Nedostaje token."}, HTTPStatus.FORBIDDEN)
+            app.touch()
             query = {k: v[-1] for k, v in parse_qs(url.query).items()}
             parts = [p for p in url.path.split("/") if p][1:]  # drop "api"
             try:
@@ -442,6 +471,10 @@ def make_handler(app: App):
                     return job.to_json(since=_int(query.get("since", "0")))
             if verb == "POST":
                 body = self._body()
+                if head == "ping":
+                    return {"ok": True, "busy": app.busy()}
+                if head == "shutdown":
+                    return app.shutdown(body)
                 if head == "run":
                     return app.run(body)
                 if head == "recipe":
@@ -478,7 +511,8 @@ def make_handler(app: App):
     return Handler
 
 
-def serve(port: int = DEFAULT_PORT, open_browser: bool = True) -> int:
+def serve(port: int = DEFAULT_PORT, open_browser: bool = True,
+          state_file: Path | None = None, idle_minutes: float | None = None) -> int:
     app = App()
     server = None
     for candidate in range(port, port + 20):
@@ -493,6 +527,11 @@ def serve(port: int = DEFAULT_PORT, open_browser: bool = True) -> int:
     url = f"http://127.0.0.1:{server.server_address[1]}/"
     print(f"Nadzorna ploča: {url}")
     print("Zaustavi s Ctrl+C.")
+    if state_file is not None:
+        write_state(state_file, app, url)
+    idle_seconds = idle_minutes * 60 if idle_minutes else None
+    threading.Thread(target=watchdog, args=(server, app, idle_seconds),
+                     daemon=True, name="gui-watchdog").start()
     if open_browser:
         webbrowser.open(url)
     try:
@@ -501,7 +540,47 @@ def serve(port: int = DEFAULT_PORT, open_browser: bool = True) -> int:
         print("\nZaustavljeno.")
     finally:
         server.server_close()
+        if state_file is not None:
+            clear_state(state_file)
     return 0
+
+
+def watchdog(server, app: App, idle_seconds: float | None, tick: float = 15.0) -> str:
+    """Stop ``server`` on the page's request, or after ``idle_seconds`` with no
+    page and no running job. Returns why (for the log and the tests)."""
+    while True:
+        if app.stop_requested.wait(tick):
+            reason = "zatvoreno sa stranice"
+            break
+        if (idle_seconds is not None and not app.busy()
+                and time.monotonic() - app.last_seen >= idle_seconds):
+            reason = f"nijedna stranica nije otvorena {idle_seconds / 60:g} min"
+            break
+    print(f"Zaustavljam: {reason}.")
+    server.shutdown()
+    return reason
+
+
+def write_state(state_file: Path, app: App, url: str) -> None:
+    """What the launcher needs to reuse this server, or to stop it (the token)
+    when a newer version is installed. Per-user file, beside the install."""
+    data = {"url": url, "port": int(url.rsplit(":", 1)[1].strip("/")), "pid": os.getpid(),
+            "token": app.token, "root": str(_safe_root()), "started": time.time()}
+    try:
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError as exc:  # the server still works; the launcher just starts another
+        print(f"UPOZORENJE: ne mogu zapisati {state_file}: {exc}", file=sys.stderr)
+
+
+def clear_state(state_file: Path) -> None:
+    """Remove the state file, but only our own: a newer server may own it now."""
+    try:
+        data = json.loads(state_file.read_text(encoding="utf-8"))
+        if data.get("pid") == os.getpid():
+            state_file.unlink()
+    except (OSError, ValueError):
+        pass
 
 
 # ── helpers ─────────────────────────────────────────────────────────
@@ -547,4 +626,5 @@ def _safe_root() -> Path:
         return Path.cwd()
 
 
-__all__ = ["App", "make_handler", "serve", "DEFAULT_PORT"]
+__all__ = ["App", "make_handler", "serve", "watchdog", "write_state", "clear_state",
+           "DEFAULT_PORT"]

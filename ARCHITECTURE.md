@@ -439,6 +439,15 @@ for remote debugging. **v1.4 (2026-09-19)** added the
 [Illustrator route](#two-routes-to-the-nacrt--csurvey-and-illustrator)'s
 drafters rather than at recorders.
 
+**v2.0 (published 2026-10-23) collapses all of that into one
+launcher.** `SurveyScraper5.bat` installs as before, then starts the 0P
+dashboard (`cavedossier gui`) with no window, or reuses the running one, and
+opens it in the browser. Every per-command launcher and the whole `csurvey_*`
+kit retire into `_arhiva/`. The 3N tools ship inside the bundle as
+`csx-alati/`, so prod has no Drive-side tool folder left. See
+[prod/README.md](prod/README.md#the-dashboard-launcher--for-everyone) and
+[the decision](docs/design-decisions.md#the-dashboard-on-the-drive-one-launcher-every-bat-retired-2026-10-22).
+
 The standing portability rules remain in force for every new tool — they are
 what made the slice cheap:
 

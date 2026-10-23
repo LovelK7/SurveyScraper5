@@ -21,7 +21,21 @@
 cavedossier gui                 # starts http://127.0.0.1:8765/ and opens it in the browser
 cavedossier gui --port 8800     # another port (the next free one up to +19 is taken)
 cavedossier gui --no-browser    # just serve; open the URL yourself
+cavedossier gui --state-file X  # write {url, port, pid, token, root, started} to X while serving
+cavedossier gui --idle-minutes 10   # stop after 10 min with no open page and no running job
 ```
+
+**In prod** nobody types this. Operators double-click `SurveyScraper5.bat` on
+the Drive, which installs or updates, starts the dashboard **with no window**
+(`--no-browser --state-file %LOCALAPPDATA%\CaveDossier\gui.json --idle-minutes 10`)
+and opens the browser. A second double-click reuses the running dashboard
+([prod/README.md](../../prod/README.md#the-dashboard-launcher--for-everyone)).
+The page pings `POST /api/ping` every minute and any API call counts as
+activity, so an open tab keeps the server alive. **Zatvori** in the top bar is
+`POST /api/shutdown`, which needs `force` while a job runs. When the server is
+gone, a red banner says to start it again. The 3N tools are found at
+`<workspace>/csx-alati` in prod (shipped in the bundle) and at
+`stages/3N-nacrt/production/tools` in dev.
 
 One page, in Croatian, with a tab per stage. The tabs follow the **working order
 for one cave** rather than the label digits: Baza (1T, 2B) → Objekt (4G, 4I, 4O,

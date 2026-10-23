@@ -26,8 +26,9 @@ Checks (each a blocker unless marked as a warning):
 - no archive target exists already: a taken ``<broj>.pdf`` means the number is
   wrong, which is a stop, never a merge.
 
-SB precedence holds even here: the plan only FILLS empty cells (Duljina,
-Dubina from the zapisnik) and changes exactly the three cells delivery owns
+SB precedence holds even here: the plan only FILLS empty cells from the
+zapisnik (Duljina, Dubina, Z, and the Zagađenost / Ledenica DA/NE flags read
+off its checkboxes — ``osz_fills``) and changes exactly the three cells delivery owns
 (Katastarski broj SUE, Napomena, Fotografija ulaza). ``Link Nacrt``, ``Link
 Zapisnik`` and ``Godina zadnjeg istraživanja`` are formulas over the number
 (measured on the live SB 2026-10-22) and are never written.
@@ -42,12 +43,21 @@ from pathlib import Path
 
 from cave_dossier.core.config import Settings
 from cave_dossier.core.matching import SB_SERIAL_RE, sanitize_for_filename
+from cave_dossier.core.normalization import normalize_lookup_key
+from cave_dossier.core.people import is_placeholder
 from cave_dossier.predaja.stamp import number_text
 
 #: The numbered rows' Napomena convention (live SB 2026-10-22: 768 of 901
 #: numbered rows read "ok", most of the rest "ok, <note>").
 NAPOMENA_DONE = "ok"
 FOTO_YES = "DA"
+#: SB's Zagađenost / Ledenica values (live SB 2026-10-23: only DA, NE or empty).
+FLAG_YES, FLAG_NO = "DA", "NE"
+
+#: v10 OSZ checkboxes behind SB's flags. Zagađenost is the section's own
+#: group; Ledenica is snow or ice from Mikroklima plus the Opasnosti "led".
+ZAGADENOST_TICKS = ("onečišćenje otpadom", "minsko-eksplozivna sredstva")
+LEDENICA_TICKS = ("prisutnost snijega", "prisutnost leda", "led")
 
 #: config.yaml ``archive`` key of the archived-leaf folder, and its default.
 ARHIVA_KEY = "arhiva_dir"
@@ -373,7 +383,7 @@ def build_plan(settings: Settings, serial: int, *, override: int | None = None,
 
     # ── where everything goes ───────────────────────────────────────
     _plan_moves(settings, plan, leaf, material)
-    _plan_sb(settings, plan, cave, recorded, queue, bool(photos))
+    _plan_sb(settings, plan, cave, recorded, ticked, queue, bool(photos))
     if plan.sue_source == "existing":
         plan.state = "resume"
         plan.notes.append(f"SB već ima broj {number_text(plan.sue)} – nastavljam prekinutu predaju "
@@ -449,7 +459,7 @@ def _plan_moves(settings: Settings, plan: DeliveryPlan, leaf: Path, material: di
         plan.moves.append(FileMove("leaf", str(leaf), str(dst)))
 
 
-def _plan_sb(settings: Settings, plan: DeliveryPlan, cave, recorded: dict, queue,
+def _plan_sb(settings: Settings, plan: DeliveryPlan, cave, recorded: dict, ticked, queue,
              has_photo: bool) -> None:
     cols = settings.sb_field_columns
     sue_col = settings.sb_archive_reference_column or "Katastarski broj SUE"
@@ -468,20 +478,68 @@ def _plan_sb(settings: Settings, plan: DeliveryPlan, cave, recorded: dict, queue
     before_foto = _cell(cave, foto_col)
     if has_photo and (before_foto or "").strip().upper() != FOTO_YES:
         plan.sb_changes.append(CellChange(foto_col, before_foto, FOTO_YES, "fotografija ulaza predana"))
-    # SB wins: the zapisnik's numbers only FILL an empty cell.
-    for key, osz_key in (("length_m", "duljina"), ("depth_m", "dubina")):
+    wanted = [cols.get(key) for key in ("length_m", "depth_m", "entrance_elevation_m",
+                                        "pollution_flag", "ice_cave_flag")]
+    sb_values = {column: _cell(cave, column) for column in wanted if column}
+    changes, warnings = osz_fills(cols, sb_values, recorded, ticked)
+    plan.sb_changes.extend(changes)
+    for warning in warnings:
+        plan.warn(warning)
+
+
+def _ticked_any(ticked, labels) -> bool:
+    keys = {normalize_lookup_key(label) for label in labels}
+    return any(normalize_lookup_key(label) in keys for label in ticked)
+
+
+def osz_fills(cols: dict, sb_values: dict, recorded: dict, ticked) -> tuple[list[CellChange], list[str]]:
+    """The SB cells the zapisnik answers: (fills of EMPTY cells, warnings).
+
+    SB wins: a value already in SB stays, a disagreement is a warning. Duljina,
+    Dubina and Z (the kota ulaza, whole metres in the OSZ) are numbers;
+    Zagađenost and Ledenica are SB's DA/NE flags, read off the zapisnik's
+    checkboxes (user, 2026-10-23, after 902 Češki turist was delivered with
+    all three empty). An unticked Zagađenost group whose narrative still
+    describes pollution is a warning, not a NE.
+    """
+    changes: list[CellChange] = []
+    warnings: list[str] = []
+
+    # Numbers: (config key, OSZ cell, tolerance — the OSZ rounds the kota).
+    for key, osz_key, tolerance in (("length_m", "duljina", 0.05), ("depth_m", "dubina", 0.05),
+                                    ("entrance_elevation_m", "kota_ulaza", 1.0)):
+        column = cols.get(key)
+        osz_value = _number(recorded.get(osz_key))
+        if not column or osz_value is None:
+            continue
+        sb_value = _number(sb_values.get(column))
+        if sb_value is None:
+            changes.append(CellChange(column, None, _excel_number(osz_value), "iz OSZ-a (prazno u SB-u)"))
+        elif abs(sb_value - osz_value) >= tolerance:
+            warnings.append(f"{column}: SB {_excel_number(sb_value)}, OSZ {_excel_number(osz_value)} – SB "
+                            "ostaje (SB ima prednost); uskladi ručno ako je izmjera točnija.")
+
+    # Flags: (config key, the zapisnik's checkboxes, why, narrative that may contradict NE).
+    for key, labels, why, narrative in (
+            ("pollution_flag", ZAGADENOST_TICKS, "zagađenost", "zagadenost"),
+            ("ice_cave_flag", LEDENICA_TICKS, "snijeg/led", None)):
         column = cols.get(key)
         if not column:
             continue
-        sb_value = _number(_cell(cave, column))
-        osz_value = _number(recorded.get(osz_key))
-        if osz_value is None:
-            continue
-        if sb_value is None:
-            plan.sb_changes.append(CellChange(column, None, _excel_number(osz_value), "iz OSZ-a (prazno u SB-u)"))
-        elif round(sb_value, 1) != round(osz_value, 1):
-            plan.warn(f"{column}: SB {_excel_number(sb_value)}, OSZ {_excel_number(osz_value)} – SB ostaje "
-                      "(SB ima prednost); uskladi ručno ako je izmjera točnija.")
+        flag = FLAG_YES if _ticked_any(ticked, labels) else FLAG_NO
+        sb_flag = (sb_values.get(column) or "").strip().upper()
+        if not sb_flag:
+            text = (recorded.get(narrative) or "") if narrative else ""
+            if flag == FLAG_NO and not is_placeholder(text):
+                warnings.append(f"{column}: u OSZ-u nije označena nijedna kategorija, a opis glasi "
+                                f"'{text.strip()[:60]}…' – SB ostaje prazan, upiši DA/NE ručno.")
+                continue
+            reason = f"OSZ: {why} označen" if flag == FLAG_YES else f"OSZ: {why} nije označen"
+            changes.append(CellChange(column, sb_values.get(column), flag, reason))
+        elif sb_flag != flag:
+            warnings.append(f"{column}: SB {sb_flag}, OSZ {flag} – SB ostaje (SB ima prednost); "
+                            "uskladi ručno.")
+    return changes, warnings
 
 
 # ── files ───────────────────────────────────────────────────────────

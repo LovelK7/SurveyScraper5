@@ -1969,6 +1969,12 @@ def build_parser() -> argparse.ArgumentParser:
                      help="First port to try (the next free one up to +19 is used)")
     gui.add_argument("--no-browser", action="store_true", dest="no_browser",
                      help="Do not open the page in the default browser")
+    gui.add_argument("--state-file", type=Path, default=None, dest="state_file",
+                     help="Write {url, port, pid, token, root} here while serving "
+                          "(the prod launcher reuses a running dashboard through it)")
+    gui.add_argument("--idle-minutes", type=float, default=None, dest="idle_minutes",
+                     help="Stop after this many minutes with no open page and no "
+                          "running job (the prod launcher passes 10)")
 
     deliver = subparsers.add_parser(
         "deliver",
@@ -2294,7 +2300,8 @@ def main(argv: list[str] | None = None) -> int:
         # refusing to start, and loads settings itself (and again on refresh).
         from cave_dossier.gui.server import serve
 
-        return serve(port=args.port, open_browser=not args.no_browser)
+        return serve(port=args.port, open_browser=not args.no_browser,
+                     state_file=args.state_file, idle_minutes=args.idle_minutes)
 
     if args.command == "societies":
         # Registry data only — no settings, no SB, no Drive.

@@ -23,6 +23,7 @@ from cave_dossier.predaja.plan import (
     FileMove,
     allocate,
     napomena_after,
+    osz_fills,
     photo_target,
     sequence_stats,
 )
@@ -75,6 +76,44 @@ def test_napomena_queue_flag_becomes_ok():
     assert napomena_after("ok, sudjelovanje", None, False) == (None, None)
     after, warning = napomena_after("skica", None, False)
     assert after is None and "skica" in warning
+
+
+_COLS = {"length_m": "Duljina", "depth_m": "Dubina", "entrance_elevation_m": "Z",
+         "pollution_flag": "Zagađenost", "ice_cave_flag": "Ledenica"}
+
+
+def test_osz_fills_empty_sb_like_902():
+    # 902 Češki turist: SB had Z, Zagađenost and Ledenica empty; the OSZ ticked
+    # only "onečišćenje otpadom".
+    recorded = {"kota_ulaza": "696", "duljina": "22", "dubina": "13",
+                "zagadenost": "Otpad na dnu jame…"}
+    ticked = ("jama", "nema", "onecišćenje otpadom")
+    changes, warnings = osz_fills(_COLS, {"Duljina": "22", "Dubina": "13"}, recorded, ticked)
+    assert {c.column: c.after for c in changes} == {"Z": 696, "Zagađenost": "DA", "Ledenica": "NE"}
+    assert warnings == []
+
+
+def test_osz_fills_ice_from_any_snow_or_ice_tick():
+    for tick in ("prisutnost snijega", "prisutnost leda", "led"):
+        changes, _ = osz_fills(_COLS, {}, {}, (tick,))
+        assert {c.column: c.after for c in changes}["Ledenica"] == "DA"
+
+
+def test_osz_fills_sb_wins_and_warns():
+    sb = {"Z": "695.6", "Zagađenost": "NE", "Ledenica": "DA"}
+    changes, warnings = osz_fills(_COLS, sb, {"kota_ulaza": "696"}, ("minsko-eksplozivna sredstva",))
+    assert changes == []                      # 695.6 vs 696 is rounding, not a conflict
+    assert len(warnings) == 2 and all("SB ostaje" in w for w in warnings)
+    _changes, warnings = osz_fills(_COLS, {"Z": "650"}, {"kota_ulaza": "696"}, ())
+    assert any(w.startswith("Z:") for w in warnings)
+
+
+def test_osz_fills_untick_with_pollution_narrative_is_not_ne():
+    changes, warnings = osz_fills(_COLS, {}, {"zagadenost": "Na dnu stara guma."}, ())
+    assert "Zagađenost" not in {c.column for c in changes}
+    assert any("Zagađenost" in w for w in warnings)
+    changes, _ = osz_fills(_COLS, {}, {"zagadenost": "/"}, ())
+    assert {c.column: c.after for c in changes}["Zagađenost"] == "NE"
 
 
 def test_photo_target_swaps_prefix():

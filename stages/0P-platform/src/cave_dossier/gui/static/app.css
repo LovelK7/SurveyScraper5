@@ -570,3 +570,8 @@ table.sizes tr.changed td:first-child { box-shadow: inset 3px 0 0 var(--brand); 
 .confirm-bar.ready { border-color: var(--ok); }
 .btn.big-go { font-size: 15px; padding: 9px 18px; }
 .btn.big-go:disabled { opacity: .45; cursor: not-allowed; }
+
+/* The server stopped (Zatvori, idle stop, or the window was closed). */
+.stopped { position: sticky; top: 0; z-index: 50; padding: 10px 16px; background: var(--danger); color: #fff; font-weight: 500; }
+.stopped code { color: inherit; }
+body.is-stopped main, body.is-stopped .topbar { opacity: .55; pointer-events: none; }

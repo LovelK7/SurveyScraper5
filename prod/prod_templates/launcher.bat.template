@@ -1,11 +1,12 @@
 @echo off
-rem cavedossier @COMMAND_ID@ v@VERSION@ - PROD launcher, generirano alatom
-rem SurveyScraper5/features/cave-dossier/tools/build_prod.py. NE UREDJIVATI RUCNO -
-rem promjene idu u repo i objavljuju se novom verzijom.
-rem Dvoklik pokrece naredbu; prozor ostaje otvoren do Enter.
+rem SurveyScraper5 - nadzorna ploca v@VERSION@ - PROD launcher, generirano alatom
+rem SurveyScraper5/prod/build_prod.py. NE UREDJIVATI RUCNO - promjene idu u
+rem repo i objavljuju se novom verzijom.
+rem Dvoklik: prva priprema (jednom po racunalu i verziji), pa otvara
+rem nadzornu plocu u pregledniku. Ponovni dvoklik otvara istu plocu.
 setlocal
 chcp 65001 >nul
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0v@VERSION@\bootstrap.ps1" -Version "@VERSION@" -Command "@COMMAND_ID@" -ExtraArgs "%*"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0v@VERSION@\bootstrap.ps1" -Version "@VERSION@"
 if errorlevel 1 (
     echo.
     echo Pokretanje nije uspjelo. Ako poruke iznad ne pomazu, javi se razvijatelju.

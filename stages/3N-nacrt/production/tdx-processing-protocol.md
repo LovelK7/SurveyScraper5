@@ -12,7 +12,7 @@
 | Mapping workbench | `production/tools/make_signs_catalog.py` → `tdx-mapping-workbench.html` + `cs-targets.html` | visual editor: every TDX tool (icons rendered from TopoDroid's own symbol files, all 9 sets + system tools) → numbered cSurvey targets; exports the json |
 | Post-import fixer | `production/tools/fix_imported_linetypes.py` | fixes what import cannot express: spline linetypes (decoration rendering), non-standard water brush, per-sign/label sizes |
 | Wall merge + orientation | `production/tools/wall_orient.py` | called by the post-import fixer: merges a fresh import's wall strokes into one cave border, and in merged borders reverses the strokes that run against the rest and orders the sequences, deciding the cave's side from the survey (project 0006) |
-| Operator kit | `prod/build_csx_kit.py` → `csurvey_<n>_*.bat` + `csurvey_alati\` on the Drive | the drag-and-drop surface: the three numbered launchers plus the KORAK 9 rescue, the Croatian guide, and the Python tools they drive, generated and published together (v1.2, 2026-09-20) |
+| Operator kit | **retired 2026-10-22** — the dashboard (`SurveyScraper5.bat`) runs every KORAK; `prod/build_csx_kit.py` still defines the tool list the prod bundle carries as `csx-alati/` | was the drag-and-drop surface: the three numbered launchers plus the KORAK 9 rescue, the Croatian guide, and the Python tools they drive, generated and published together (v1.2, 2026-09-20) |
 | Cave selector | `production/tools/sb_select.py` | resolves the Redni broj an operator types into that cave's `SB_<broj>_…` intake leaf; behind `--sb` on the pre-processor, the post-import fixer, the zip recovery, the finisher and the driver |
 | Nacrt finishing | `production/tools/nacrt_finish.py` · `csurvey_headless.ps1` · `csurvey_driver.py` (+ `nacrt_layout.py`, `nacrt_finish_compass.xml`) | KORAK 3: the XML finisher, and the headless cSurvey driver that recalculates, prints both designs to PDF and reads the speleometrics (project 0004) |
 | Signs pack | `production/tools/signs-pack/*.svg` | 8 glyphs for mapped-but-artwork-less signs; installed into `C:\csurvey64\Objects\Cliparts\Signs\` |
@@ -26,6 +26,14 @@
 - Winding of a whole wall item is irrelevant to fill rendering, but the strokes **inside one merged item** must agree: the fill joins each sequence's end to the next one's start, and every cSurvey Merge (`ReorderSequences`, `cPoints.vb:1084-1145`) reverses strokes by endpoint proximity — a coin flip at an entrance mouth. KORAK 2 now does the merge itself and repairs hand-merged items ([project 0006](../projects/0006-wall-orientation/brief.md)); orienting strokes before a cSurvey merge would not survive it.
 
 ## Where the kit lives
+
+> **Retired from the Drive 2026-10-22.** Operators now double-click
+> `SurveyScraper5.bat` and run every KORAK (0–4 and 9) from the dashboard's 3N
+> page; the next publish moves the `csurvey_*` files and `csurvey_alati\` into
+> `_arhiva\`. `build_csx_kit.py --publish` refuses; `--publish-to DIR` still
+> builds a private drag-and-drop copy. The steps below are unchanged — the
+> buttons run the same tools — and this section describes the kit as it was.
+> Why: [design-decisions](../../../docs/design-decisions.md#the-dashboard-on-the-drive-one-launcher-every-bat-retired-2026-10-22).
 
 **`<LOCAL_DRIVE_ROOT>\!!!Digitalizacija\SurveyScraper5\`** — the prod folder,
 beside the `cavedossier_*` launchers, so everything an operator double-clicks is
@@ -93,7 +101,7 @@ in [`production/tools/`](tools/) and re-publish; never edit the Drive copy.
 
 1. **Phone:** draw in TopoDroid preferring green-verdict tools (see workbench); export **one** csx (it contains both plan and profile) into that cave's folder under `!!!Digitalizacija\!Za digitalizirat\SB_<broj>_<Ime>\` (anywhere else works too — then drag the file onto the launcher instead of double-clicking it). **Also export the project ZIP archive every time** (Survey window → menu → Archive) — since TopoDroid 6.4.99 the zip is the durable artifact: it always carries the full sketch and survives app-version churn (see the rescue step below).
 
-   **Rescue (KORAK 9), if the csx is missing/0-byte or the sketch vanished (TopoDroid ≥6.4.98 bugs):** regenerate the csx from the project zip — double-click `csurvey_9_oporavi_iz_zipa.bat` and give it the SB number(s), or drag specific zips onto it; equivalently `python stages\3N-nacrt\production\tools\tdx_zip_to_csx.py <zip|folder> [--sb 811 908]`. It writes `<survey>_recovered.csx` **and already runs KORAK 1** (`<survey>_recovered_prep.csx` → continue at step 3). Background + validation: [projects/0003-tdx-zip-recovery](../projects/0003-tdx-zip-recovery/brief.md). Export-bundle zips (csx/dxf/csv collections) are not project archives and are skipped.
+   **Rescue (KORAK 9), if the csx is missing/0-byte or the sketch vanished (TopoDroid ≥6.4.98 bugs):** regenerate the csx from the project zip — on the dashboard's 3N page, *Popravak › Oporavi .csx iz TopoDroid zipa* with the cave's zip (until 2026-10-22: `csurvey_9_oporavi_iz_zipa.bat`); equivalently `python stages\3N-nacrt\production\tools\tdx_zip_to_csx.py <zip|folder> [--sb 811 908]`. It writes `<survey>_recovered.csx` **and already runs KORAK 1** (`<survey>_recovered_prep.csx` → continue at step 3). Background + validation: [projects/0003-tdx-zip-recovery](../projects/0003-tdx-zip-recovery/brief.md). Export-bundle zips (csx/dxf/csv collections) are not project archives and are skipped.
 2. **Pre-process (KORAK 1):** double-click **`csurvey_1_pripremi_csx.bat`** and type the Redni broj of
    each cave to prepare (`811 908`, or `SVE` for the whole intake tree); `_prep` outputs and post-import
    saves are skipped automatically. Or drag specific `.csx` files onto it. Terminal equivalent (takes

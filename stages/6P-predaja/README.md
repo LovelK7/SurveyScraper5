@@ -102,7 +102,8 @@ A delivered cave shows *PREDANO – katastarski broj N* and links to its archive
 - photo originals that only go to Arhiva;
 - photos still in the queue;
 - a Napomena that is neither the queue flag nor `ok`;
-- SB and the OSZ disagreeing on Duljina/Dubina (SB wins).
+- SB and the OSZ disagreeing on Duljina, Dubina, Z, Zagađenost or Ledenica (SB wins);
+- no Zagađenost box ticked but a narrative describing pollution (the cell stays empty).
 
 ## What is written, and in which order
 
@@ -144,7 +145,8 @@ The number is written as 3 digits (`007`), as the archive does.
 | Katastarski broj SUE | the number | the delivery itself; moves the row into *Istraženi* |
 | Napomena | `za istražit, [n,] <note>` → `ok[, <note>]`; empty → `ok` | otherwise the row is in *Za istražit* AND *Istraženi*; `ok` is what 768 of 901 numbered rows say |
 | Fotografija ulaza | `DA` | a photo was filed |
-| Duljina, Dubina | from the zapisnik, **only when empty** | SB wins; a disagreement is a warning |
+| Duljina, Dubina, Z | from the zapisnik (Z ← Kota ulaza), **only when empty** | SB wins; a disagreement is a warning (Z: 1 m or more) |
+| Zagađenost, Ledenica | `DA`/`NE` from the zapisnik's checkboxes, **only when empty** | Zagađenost = a box of its group ticked; Ledenica = snijeg, led or *led* under Opasnosti ticked. [Why](../../docs/design-decisions.md#6p-fills-z-zagađenost-and-ledenica-from-the-osz-2026-10-23) |
 | Link Nacrt, Link Zapisnik, Godina zadnjeg istraživanja | **never** | formulas over the number (live SB, 2026-10-22); they follow by themselves |
 
 A formula cell is never overwritten even if asked (`sb/safe_io.write_row_via_excel_com`).

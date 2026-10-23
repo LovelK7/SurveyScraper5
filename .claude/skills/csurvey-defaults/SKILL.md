@@ -107,7 +107,7 @@ Cite the `path:line` in the entry's `source`, or in the commit message for file 
 6. Tell the user, briefly:
    - **what** changed and **where it takes effect** (the table in §1),
    - that operators get it only after **`/publish`** (the csx kit ships these files),
-   - for an app setting: each computer must close cSurvey and re-run KORAK 0 (`csurvey_0_postavi_csurvey.bat`); KORAK 2 will warn until it does. Offer to run `python stages/3N-nacrt/production/tools/csurvey_app_settings.py apply` here (refuses while cSurvey is open),
+   - for an app setting: each computer must close cSurvey and re-run KORAK 0. The next published version does that by itself on each computer's first double-click of `SurveyScraper5.bat`; until then it is the dashboard's 3N › *cSurvey na ovom računalu* › *Postavi cSurvey na ovom računalu* (the `csurvey_0_*.bat` was retired 2026-10-22). KORAK 2 will warn until it runs. Offer to run `python stages/3N-nacrt/production/tools/csurvey_app_settings.py apply` here (refuses while cSurvey is open),
    - for a symbol mapping: existing `_prep` files keep the old result; only a fresh KORAK 1 + import uses it.
 
 Batch several changes into one commit when the user lists several. Never run `/publish` on your own.

@@ -229,6 +229,30 @@ ACTIONS: tuple[Action, ...] = (
            "cSurvey bez dijaloga: duljina, dubina i dimenzije ulaza.",
            "csurvey_driver.py", ("dimensions", "{file}"), file_kind="survey",
            group="Dijagnostika"),
+    # The former csurvey_9 / csurvey_0 .bat files (retired from the Drive with
+    # the dashboard launcher, user 2026-10-22). KORAK 0 also runs once by
+    # itself in the launcher's first-run setup; these buttons are the re-run.
+    Action("3n-k9", "3N", "Oporavi .csx iz TopoDroid zipa",
+           "Kad TopoDroid izvoz .csx pukne (prazna datoteka, nestale skice): iz "
+           "projektnog .zip-a u mapi objekta složi <ime>_recovered.csx i "
+           "<ime>_recovered_prep.csx. Dalje: otvori _recovered_prep u cSurveyu, "
+           "Save As, pa KORAK 2.",
+           "tdx_zip_to_csx.py", ("{file}",), file_kind="zip",
+           writes="zapisuje _recovered.csx i _recovered_prep.csx u mapu objekta",
+           group="Popravak"),
+    Action("3n-k0-settings", "3N", "Postavi cSurvey na ovom računalu",
+           "Upisuje postavke programa koje 3N traži (npr. bez zaglađivanja olovkom) "
+           "– u Windowse, za ovog korisnika. Zatvori cSurvey prije pokretanja.",
+           "csurvey_app_settings.py", ("apply",),
+           writes="mijenja postavke cSurveya u Windowsima (ovaj korisnik)",
+           group="cSurvey na ovom računalu"),
+    Action("3n-k0-local", "3N", "Kopiraj cSurvey na ovo računalo",
+           "Kopija cSurveya s Drivea u %LOCALAPPDATA% i prečac „cSurvey” na radnoj "
+           "površini: otvoren ručno s Drivea cSurvey se sruši. Ponovi kad netko "
+           "zamijeni cSurvey na Driveu.",
+           "csurvey_local.py", ("install",),
+           writes="kopira cSurvey na ovo računalo i stavlja prečac na radnu površinu",
+           group="cSurvey na ovom računalu"),
     # ── 4G — geo ─────────────────────────────────────────────────────
     Action("geo-locate", "4G", "Lokalitet iz koordinata",
            "Županija, grad/općina, najbliže mjesto i lokalitet iz X/Y reda, "

@@ -62,6 +62,8 @@ keeps the chronology.
 - [3N entrance dimensions: a drawn pit rim beats the splays (2026-10-22)](#3n-entrance-dimensions-a-drawn-pit-rim-beats-the-splays-2026-10-22)
 - [6P predaja: the archivist's last gate, one click (2026-10-22)](#6p-predaja-the-archivists-last-gate-one-click-2026-10-22)
 - [The SUE gate moves to 6P; 5D judges CroSpeleo only; izjave are CroSpeleo's (2026-10-22)](#the-sue-gate-moves-to-6p-5d-judges-crospeleo-only-izjave-are-crospeleos-2026-10-22)
+- [The dashboard on the Drive: one launcher, every .bat retired (2026-10-22)](#the-dashboard-on-the-drive-one-launcher-every-bat-retired-2026-10-22)
+- [6P fills Z, Zagađenost and Ledenica from the OSZ (2026-10-23)](#6p-fills-z-zagađenost-and-ledenica-from-the-osz-2026-10-23)
 
 ---
 
@@ -2036,3 +2038,107 @@ What changed:
 - Live: `deliver 968` went from blocked (*Missing 'Izjava za katastar' for
   F.Karabaić*) to **ready, 902**, with "CroSpeleo: 3 blokera" as the note.
 - Live: `report --broj 968` prints the single CroSpeleo verdict.
+
+## The dashboard on the Drive: one launcher, every .bat retired (2026-10-22)
+
+The user asked to publish the dashboard to the Drive's `SurveyScraper5` folder
+so others can use it, and to retire the many `.bat` files there. They also
+asked whether it should be a priming script followed by opening an HTML file.
+Settled the same session:
+
+- **Not a static HTML file.** That was settled on 2026-09-24
+  ([The dashboard](#the-dashboard--cavedossier-gui-2026-09-24)): the page runs
+  tools and opens files through its server, and every API call carries a
+  token baked into the served page. A file opened from the Drive would be a
+  dead page. The answer is **one launcher that primes and then serves**: the
+  existing bootstrap installs or updates, then starts `cavedossier gui`
+  and opens the browser on it.
+- **One launcher, `SurveyScraper5.bat`, with no version in its name.** A desktop
+  shortcut to it survives every release. The version it starts is baked
+  into it (`v<X>\bootstrap.ps1`) and logged in `VERZIJE.txt`.
+- **Every `.bat` retired (user).** The five `cavedossier_*_v1.10.bat` launchers and
+  the whole `csurvey_*` kit (KORAK 0–4, 9, its guide and `csurvey_alati/`)
+  move to `_arhiva/` on the first publish. The dashboard already ran KORAK
+  1–4 and every `cavedossier_*` command. **KORAK 0** (cSurvey app settings
+  plus the local cSurvey copy) now runs once per install inside the
+  launcher's first-run setup, fail-soft. **KORAK 9** (zip rescue) and both
+  KORAK 0 halves are dashboard buttons on the 3N page (`3n-k9`,
+  `3n-k0-settings`, `3n-k0-local`). A zip in a cave's folder is now its own
+  file kind (`zip`). `build_csx_kit.py --publish` refuses; `--publish-to DIR`
+  still makes a private drag-and-drop copy.
+- **The 3N tools ship inside the bundle** as `csx-alati/` (the kit's
+  `TOOLS` list plus `inspect_survey.py`, and the themes as `teme/`), so the
+  dashboard no longer depends on a Drive folder. `gui/state.py tools_dir()`
+  finds them at `<workspace>/csx-alati`. The tools found the shared cSurvey by
+  their own position on the Drive. From `%LOCALAPPDATA%` they now fall back to
+  `LOCAL_DRIVE_ROOT/!!!Digitalizacija/Software/csurvey64`
+  (`csurvey_driver.drive_csurvey_dir()`). That is also why KORAK 0 runs
+  after the `.env` is written.
+- **Hidden, and it stops itself (user).** The server starts with no window
+  (`Start-Process -WindowStyle Hidden`, output to
+  `logs\gui_v<X>_<stamp>.log`). It stops **10 minutes after the last page
+  went quiet** (`--idle-minutes 10`). The page pings every minute, and any
+  API call counts. It never stops while a job is running. The page's
+  **Zatvori** button is `POST /api/shutdown`, which asks first when a job is
+  running. When the server is gone, the page shows a banner saying to
+  double-click the launcher again. Rejected: a visible console window
+  (closed by accident too easily).
+- **Reuse, never a second server.** `cavedossier gui --state-file` writes
+  `%LOCALAPPDATA%\CaveDossier\gui.json` (`url, port, pid, token, root,
+  started`) and removes it on exit, but only if it is still its own. The
+  launcher pings that server. If it is this version's (`root` = the install
+  dir), the launcher only opens the browser. If it is an older version's,
+  the launcher asks it to stop. A 409 (a job running) leaves it alone and
+  opens it instead. A new server is recognised by `started`, not by pid:
+  `cavedossier.exe` and the venv's `python.exe` both hand over to a child
+  process.
+- **6P is visible to everyone (user).** The prod dashboard is the dev one.
+  `deliver --apply` keeps its confirm dialog, and SB is protected by the
+  Excel-COM guard and backup. The suggested `ARHIVAR=1` gate was declined. So
+  the prod install now adds the `[sb-write]` extra (xlwings), without which
+  the apply button could not write SB.
+
+Validated: 1040 tests green, 11 of them new (watchdog idle/job/stop,
+ping/shutdown over HTTP, state-file ownership, the bundle carries every tool
+the catalog names, the retirement sweep, the bootstrap's start/reuse/KORAK 0
+shape). The generated `bootstrap.ps1` passes PowerShell's parser. The
+dashboard section of the generated bootstrap was run live against the dev
+venv from a `cmd` window that then exited:
+- a hidden server came up on 8766 and outlived the console;
+- a second run reused it;
+- with a 1-minute idle setting, it stopped itself 70 s after the last ping and
+  removed its state file;
+- a run with a different install root asked it to stop, and it did.
+
+The full first-run install (pip, Chromium, geodata, KORAK 0) was not run here.
+It is the first `/publish` of v2.0.
+
+## 6P fills Z, Zagađenost and Ledenica from the OSZ (2026-10-23)
+
+902 Češki turist was delivered with SB's `Z`, `Zagađenost` and `Ledenica`
+empty. Its OSZ had the kota (696, DMV), the *onečišćenje otpadom* box ticked
+and no snow or ice boxes ticked (user). Delivery had filled only Duljina and
+Dubina. It now fills all five from the zapisnik through
+`predaja/plan.osz_fills`, under the same rule:
+
+- **SB wins.** A cell is filled only when it is empty. A disagreement is a
+  warning and SB keeps its value.
+- **Z ← Kota ulaza.** The OSZ gives the kota in whole metres, so a gap
+  under 1 m (SB 695.6 vs OSZ 696) is rounding, not a conflict.
+- **Zagađenost:** `DA` when any box in the zapisnik's Zagađenost group is
+  ticked (*onečišćenje otpadom*, *minsko-eksplozivna sredstva*), otherwise
+  `NE`. With nothing ticked and a narrative that still describes pollution
+  (not empty, not a placeholder like `/` or `nema`), the cell is left empty
+  and a warning asks for DA/NE by hand. A NE that contradicts the text would
+  be worse than an empty cell.
+- **Ledenica:** `DA` when *prisutnost snijega* or *prisutnost leda*
+  (Mikroklima) or *led* (Opasnosti) is ticked, otherwise `NE`. The entrance's
+  *zatrpan otpadom* closure does not count as Zagađenost.
+- SB's values are only `DA`, `NE` or empty (live SB, 2026-10-23: 117 / 997
+  Zagađenost, 73 / 1041 Ledenica).
+
+Validated against every readable v10 OSZ in `!!Osnovni zapisnici` (886–901,
+16 caves). All 16 match SB on all five cells, with one exception. On 897,
+SB has Zagađenost `DA` while the OSZ ticks nothing and its narrative reads
+*Nema*. That is a real SB/OSZ disagreement, and delivery would report it as
+a warning. On 902 the rule yields exactly Z 696, Zagađenost DA, Ledenica NE.

@@ -1,46 +1,47 @@
-"""Build + publish the PROD launchers for operator-facing cavedossier commands.
+r"""Build + publish the PROD dashboard launcher and its code bundle.
 
 Part of the dev/prod duality (ARCHITECTURE.md §Dev vs prod): operators work on
-the registry Drive and never see this repo. This tool renders **versioned,
-double-clickable launchers** and a self-contained code bundle, and publishes
-them into the shared folder
+the registry Drive and never see this repo. This tool renders ONE
+double-clickable launcher and a self-contained code bundle, and publishes them
+into the shared folder
 
     <LOCAL_DRIVE_ROOT>/!!!Digitalizacija/SurveyScraper5/
 
 Drive-side layout (all generated here, nothing hand-edited on the Drive):
 
     SurveyScraper5/
-    ├─ cavedossier_osz_prefill_v<X>.bat      ← operators double-click these
-    ├─ cavedossier_photos_process_v<X>.bat
-    ├─ cavedossier_sastavnica_v<X>.bat
+    ├─ SurveyScraper5.bat                     ← the one thing operators double-click
     ├─ PROCITAJ_ME.txt                        ← operator guide (Croatian)
     ├─ VERZIJE.txt                            ← publish log, one line per release
     ├─ v<X>/                                  ← support for the current version
-    │  ├─ bootstrap.ps1                       ← all setup/run logic (shared)
-    │  └─ bundle.zip                          ← feature tree subset (see below)
+    │  ├─ bootstrap.ps1                       ← all setup/run logic
+    │  └─ bundle.zip                          ← code + config + the 3N tools (csx-alati/)
     ├─ podaci/geo/                            ← cloud copy of data/geo runtime
-    └─ _arhiva/                               ← superseded launchers + v-dirs
+    └─ _arhiva/                               ← superseded v-dirs + every retired .bat
 
-First double-click on a machine installs to %LOCALAPPDATA%\\CaveDossier\\v<X>
-(bundle extracted, venv + pip install of [osz,photos,geo,sastavnica], .env generated with
-LOCAL_DRIVE_ROOT derived from the launcher's own location, podaci/geo copied
-locally). The [karta] extra is deliberately NOT installed: georef.hr excerpt
-collection (browser + shared credentials + server-side saves) stays a dev
-step; prefill embeds already-collected excerpts and degrades with a note
-otherwise.
+The launcher installs (first run, or a newer bundle) to
+%LOCALAPPDATA%\CaveDossier\v<X> — bundle extracted, venv + pip install, KORAK 0
+(cSurvey settings + local copy), .env with LOCAL_DRIVE_ROOT derived from the
+launcher's own location, podaci/geo copied locally — then starts the dashboard
+(`cavedossier gui`) without a window, or reuses the one already running, and
+opens it in the browser. The dashboard stops itself 10 min after its last page
+closes. User decisions 2026-10-22; see design-decisions "The dashboard on the
+Drive".
 
-Usage (dev machine, repo venv):
+Until v1.10 this published one `cavedossier_<cmd>_v<X>.bat` per command, and
+build_csx_kit.py published the `csurvey_*` drag-and-drop kit beside them. The
+dashboard runs all of them, so publishing sweeps every such .bat (and
+csurvey_alati/) into _arhiva/.
 
-    python tools/build_prod.py --version 1.0             # stage dist/prod/v1.0
-    python tools/build_prod.py --version 1.0 --publish   # + copy to the Drive
-    python tools/build_prod.py --version 1.1 --publish --skip-geo
+Usage (dev machine, repo venv) — normally through /publish:
 
-Bump the version for every regeneration that operators should pick up — the
-launcher filename IS the version indicator; same-version republishes are for
-dev iteration only (bootstrap detects the newer bundle.zip and reinstalls).
+    python prod/build_prod.py --version 2.0             # stage dist/prod/v2.0
+    python prod/build_prod.py --version 2.0 --publish   # + copy to the Drive
+    python prod/build_prod.py --version 2.1 --publish --skip-geo
 
-Adding a prod command later: add it to PROD_COMMANDS below AND give it a
-branch in the `switch ($Command)` of prod_templates/bootstrap.ps1.template.
+Bump the version for every regeneration that operators should pick up; a
+same-version republish is for dev iteration only (bootstrap detects the newer
+bundle.zip and reinstalls).
 """
 
 from __future__ import annotations
@@ -64,20 +65,21 @@ DIST_ROOT = REPO_ROOT / "prod" / "dist" / "prod"
 # 2026-09-02: a dedicated SurveyScraper5 folder inside !!!Digitalizacija.
 TARGET_REL = Path("!!!Digitalizacija") / "SurveyScraper5"
 
-# command id (launcher filename + bootstrap -Command) -> cavedossier argv.
-# The Croatian label lives in bootstrap.ps1.template's switch.
-PROD_COMMANDS = {
-    "osz_prefill": ("osz", "prefill"),
-    "photos_process": ("photos", "process"),
-    "sastavnica": ("sastavnica",),
-    # 3N KORAK 3's last step. The csurvey kit's csurvey_3_dovrsi_nacrt.bat
-    # calls this launcher by name from the same Drive folder, so it must be
-    # published there for the kit's third step to finish.
-    "nacrt": ("nacrt",),
-    # 3N KORAK 4 (project 0005, 2026-10-04): the kit's csurvey_4_upisi_osz.bat
-    # calls this launcher by name from the same Drive folder.
-    "osz_backfill": ("osz", "backfill"),
-}
+# The one launcher. No version in the name (user, 2026-10-22): a desktop
+# shortcut to it keeps working across releases; the version it starts is
+# baked into it and recorded in VERZIJE.txt.
+LAUNCHER = "SurveyScraper5.bat"
+
+# Swept into _arhiva/ on publish: the per-command launchers (v1.0..v1.10), the
+# csurvey_* kit and its tool folder — retired by the dashboard (2026-10-22).
+RETIRED_FILE_RE = re.compile(r"cavedossier_\w+_v[\d.]+\.bat|csurvey_\w+\.(bat|txt)", re.IGNORECASE)
+RETIRED_DIRS = ("csurvey_alati",)
+
+# The 3N tools the dashboard runs, shipped in the bundle as csx-alati/ (found
+# there by gui/state.py tools_dir()): the csurvey kit's list plus the tools
+# only the dashboard calls.
+TOOLS_ARC = "csx-alati"
+DASHBOARD_ONLY_TOOLS = ["inspect_survey.py"]
 
 # What the code bundle carries: everything the prod commands stand on at
 # runtime. After extraction the bundle root IS the workspace root --
@@ -265,13 +267,33 @@ def build_bundle(zip_path: Path, version: str) -> int:
                     continue
                 zf.write(path, path.relative_to(REPO_ROOT).as_posix())
                 members += 1
+        members += _bundle_tools(zf)
         zf.writestr("PROD_VERSION.txt", stamp)
         members += 1
     return members
 
 
-def launcher_name(command_id: str, version: str) -> str:
-    return f"cavedossier_{command_id}_v{version}.bat"
+def bundle_tools() -> list[tuple[Path, str]]:
+    """(source, arcname) of the 3N tools + themes the bundle carries."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests load us by path
+    import build_csx_kit as kit
+
+    out = []
+    for name in [*kit.TOOLS, *DASHBOARD_ONLY_TOOLS]:
+        src = kit.TOOLS_DIR / name
+        if not src.is_file():
+            raise SystemExit(f"bundle input missing: {src}")
+        out.append((src, f"{TOOLS_ARC}/{name}"))
+    for src, rel in kit.theme_files():
+        out.append((src, f"{TOOLS_ARC}/{kit.THEMES_DIR}/{rel}"))
+    return out
+
+
+def _bundle_tools(zf: zipfile.ZipFile) -> int:
+    files = bundle_tools()
+    for src, arc in files:
+        zf.write(src, arc)
+    return len(files)
 
 
 def stage(version: str) -> Path:
@@ -286,10 +308,9 @@ def stage(version: str) -> Path:
     # so write ASCII and let any future non-ASCII edit fail loudly here.
     (out / f"v{version}" / "bootstrap.ps1").write_text(bootstrap, encoding="ascii")
 
-    for command_id in PROD_COMMANDS:
-        bat = _render("launcher.bat.template", version=version, command_id=command_id)
-        # cmd.exe reads .bat in the OEM codepage; keep launchers pure ASCII.
-        (out / launcher_name(command_id, version)).write_text(bat, encoding="ascii", newline="\r\n")
+    bat = _render("launcher.bat.template", version=version)
+    # cmd.exe reads .bat in the OEM codepage; keep the launcher pure ASCII.
+    (out / LAUNCHER).write_text(bat, encoding="ascii", newline="\r\n")
 
     readme = _render("PROCITAJ_ME.txt.template", version=version)
     # Real Croatian diacritics (user, 2026-09-02); UTF-8 BOM so Notepad is sure.
@@ -316,13 +337,16 @@ def _drive_root() -> Path:
 
 
 def _archive_old(target: Path, version: str) -> None:
-    """Move superseded launchers and v-dirs into _arhiva/ (latest stays visible)."""
+    """Move superseded v-dirs and every retired .bat into _arhiva/, so the
+    newest is the only thing visible. A moved launcher still works from
+    _arhiva/: its v-dir moves with it."""
     arhiva = target / "_arhiva"
     stale: list[Path] = []
     for item in target.iterdir():
-        if item.is_file() and re.fullmatch(r"cavedossier_\w+_v[\d.]+\.bat", item.name):
-            if not item.name.endswith(f"_v{version}.bat"):
-                stale.append(item)
+        if item.is_file() and RETIRED_FILE_RE.fullmatch(item.name):
+            stale.append(item)
+        elif item.is_dir() and item.name in RETIRED_DIRS:
+            stale.append(item)
         elif item.is_dir() and re.fullmatch(r"v[\d.]+", item.name) and item.name != f"v{version}":
             stale.append(item)
     for item in stale:
@@ -337,8 +361,7 @@ def _archive_old(target: Path, version: str) -> None:
             shutil.move(str(item), str(dest))
             print(f"  archived {item.name} -> _arhiva/")
         except OSError as exc:
-            # Hand-managed Drive dir: a locked/open file must not kill the
-            # publish — the versioned filenames still disambiguate.
+            # Hand-managed Drive dir: a locked/open file must not kill the publish.
             print(f"  WARN: could not archive {item.name}: {exc}")
 
 
@@ -390,9 +413,7 @@ def publish(staged: Path, version: str, *, skip_geo: bool) -> None:
     vdir.mkdir(exist_ok=True)
     for name in ("bootstrap.ps1", "bundle.zip"):
         shutil.copy2(staged / f"v{version}" / name, vdir / name)
-    for command_id in PROD_COMMANDS:
-        name = launcher_name(command_id, version)
-        shutil.copy2(staged / name, target / name)
+    shutil.copy2(staged / LAUNCHER, target / LAUNCHER)
     shutil.copy2(staged / "PROCITAJ_ME.txt", target / "PROCITAJ_ME.txt")
 
     if skip_geo:
@@ -402,12 +423,12 @@ def publish(staged: Path, version: str, *, skip_geo: bool) -> None:
 
     line = (
         f"v{version}  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
-        f"  commit {_git_commit()}  ({', '.join(PROD_COMMANDS)})\n"
+        f"  commit {_git_commit()}  (nadzorna ploca: {LAUNCHER})\n"
     )
     verzije = target / "VERZIJE.txt"
     with verzije.open("a", encoding="utf-8") as fh:
         fh.write(line)
-    print(f"published v{version}: {len(PROD_COMMANDS)} launchers + bundle + bootstrap")
+    print(f"published v{version}: {LAUNCHER} + bundle + bootstrap")
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import os
 import sys
 import threading
 import time
@@ -56,7 +57,10 @@ def test_every_script_action_names_a_real_tool():
     for action in catalog.ACTIONS:
         if action.tool not in ("cli", "manual"):
             assert (tools / action.tool).is_file(), action.id
-            assert action.file_kind, f"{action.id}: a 3N script needs a file"
+            # A per-cave script picks its file; the per-machine ones (KORAK 0)
+            # take none — but a {file} token without a file_kind is unguarded.
+            if any("{file}" in a for a in action.args):
+                assert action.file_kind, f"{action.id}: {{file}} needs a file_kind"
 
 
 def test_catalog_ids_unique_and_stages_known():
@@ -114,6 +118,7 @@ def test_build_args_validation():
     ("SB_1249_Nožata jama_DGrozić_1.jpg", "photo_processed"),
     ("20250618_134630.jpg", "photo"),
     ("Nožata tlocrt.pdf", "pdf"),
+    ("Nozata_2025.zip", "zip"),
 ])
 def test_classify(name, kind):
     assert classify(Path(name), 1220) == kind
@@ -758,3 +763,82 @@ def test_workflow_lists_the_osz_gaps_before_3n():
     steps = {s.id: s for s in workflow.build(detail, osz, osz_check=check)}
     assert steps["osz-filled"].status == "done" and steps["osz-filled"].warnings
     assert steps["3n-k3c"].warnings == []
+
+
+# ── lifetime: the prod launcher's hidden server (2026-10-22) ───────────
+
+
+class _FakeServer:
+    def __init__(self):
+        self.stopped = threading.Event()
+
+    def shutdown(self):
+        self.stopped.set()
+
+
+def test_watchdog_stops_an_idle_server_but_not_while_a_job_runs(tmp_path):
+    from cave_dossier.gui.server import watchdog
+
+    app = App(ws=Workspace(None), jobs=JobManager(None), token="x")
+    job = app.jobs.start("spava", [sys.executable, "-c", "import time; time.sleep(60)"], "x", tmp_path)
+    app.last_seen -= 3600
+    fake = _FakeServer()
+    thread = threading.Thread(target=watchdog, args=(fake, app, 60, 0.05), daemon=True)
+    thread.start()
+    time.sleep(0.3)
+    assert not fake.stopped.is_set(), "a running job keeps the server up"
+    job.kill()
+    _wait(job)
+    assert fake.stopped.wait(5)
+
+
+def test_watchdog_keeps_a_server_whose_page_pings(tmp_path):
+    from cave_dossier.gui.server import watchdog
+
+    app = App(ws=Workspace(None), jobs=JobManager(None), token="x")
+    fake = _FakeServer()
+    threading.Thread(target=watchdog, args=(fake, app, 60, 0.05), daemon=True).start()
+    time.sleep(0.3)
+    assert not fake.stopped.is_set()
+    app.stop_requested.set()  # the page's "Zatvori"
+    assert fake.stopped.wait(5)
+
+
+def test_ping_and_shutdown_over_http(server):
+    base = server[0]
+    assert _call(base, "/api/ping", {}) == (200, {"ok": True, "busy": False})
+    assert _call(base, "/api/shutdown", {}, token="wrong")[0] == 403
+    assert _call(base, "/api/shutdown", {}) == (200, {"ok": True})
+
+
+def test_shutdown_asks_before_killing_a_running_job(tmp_path):
+    from cave_dossier.gui.server import ApiError
+
+    app = App(ws=Workspace(None), jobs=JobManager(None), token="x")
+    job = app.jobs.start("spava", [sys.executable, "-c", "import time; time.sleep(60)"], "x", tmp_path)
+    try:
+        with pytest.raises(ApiError) as err:
+            app.shutdown({})
+        assert err.value.status == 409 and not app.stop_requested.is_set()
+        assert app.shutdown({"force": True}) == {"ok": True}
+        assert app.stop_requested.is_set()
+    finally:
+        job.kill()
+        _wait(job)
+
+
+def test_state_file_written_and_removed_only_by_its_owner(tmp_path):
+    from cave_dossier.gui.server import clear_state, write_state
+
+    app = App(ws=Workspace(None), jobs=JobManager(None), token="tok")
+    state = tmp_path / "CaveDossier" / "gui.json"
+    write_state(state, app, "http://127.0.0.1:8770/")
+    data = json.loads(state.read_text(encoding="utf-8"))
+    assert data["port"] == 8770 and data["token"] == "tok" and data["pid"] == os.getpid()
+    data["pid"] = -1  # a newer server took the file over
+    state.write_text(json.dumps(data), encoding="utf-8")
+    clear_state(state)
+    assert state.exists()
+    write_state(state, app, "http://127.0.0.1:8770/")
+    clear_state(state)
+    assert not state.exists()

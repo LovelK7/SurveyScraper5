@@ -1,80 +1,72 @@
-SurveyScraper5 - naredbe za obradu speleoloških objekata (verzija @VERSION@)
-=============================================================================
+SurveyScraper5 – nadzorna ploča za obradu speleoloških objekata (verzija @VERSION@)
+==================================================================================
 
-Ova mapa sadrži naredbe koje se pokreću DVOKLIKOM. Svaka traži samo
-Redni broj objekta iz Speleo baze (stupac "Redni broj").
+U ovoj mapi pokrećeš samo jedno: DVOKLIK na SurveyScraper5.bat.
 
-Naredbe
--------
-cavedossier_osz_prefill_v@VERSION@.bat
-    Predispuni Osnovni speleološki zapisnik (OSZ) za objekt: podaci iz SB,
-    isječak karte (dohvaća se s georef.hr ako još nije prikupljen),
-    županija/grad-općina/najbliže mjesto, kota ulaza.
-    Gotov SB_<broj>_OSZ.docx sprema u mapu objekta pod
-    !!!Digitalizacija/!Za digitalizirat. Uz to ispiše dopune-sb.csv -
-    popis vrijednosti koje bi čovjek trebao prenijeti u SB (ništa se u SB
-    ne upisuje automatski).
+Otvori se nadzorna ploča u pregledniku (Chrome, Edge…). Na njoj biraš objekt
+(Redni broj iz Speleo baze) i sve radiš gumbima: isječak karte, OSZ, nacrt
+(cSurvey KORAK 1–4), sastavnica, fotografije ulaza, osobe i izjave, dosje i
+predaja. Uz svaki dio ploče je „?” s objašnjenjem, a lijevo su upute za svaku
+fazu.
 
-cavedossier_photos_process_v@VERSION@.bat
-    Obradi fotografije ulaza objekta: iz mape objekta (SB_<broj>_...) napravi
-    smanjene fotografije nazvane SB_<broj>_<Ime>_<Autor>_<n>.jpg (autor se
-    čita iz OSZ polja "Autor fotografije ulaza"). Obrađena fotografija
-    zamjenjuje original; original ide u smeće na Driveu (30 dana).
+Prije su ovdje bile zasebne naredbe (cavedossier_*.bat i csurvey_*.bat). Sve
+su sada na ploči; stare su premještene u _arhiva\ i više se ne koriste.
 
-cavedossier_sastavnica_v@VERSION@.bat
-    Predispuni sastavnicu (naslovni blok) nacrta za objekte koji se crtaju u
-    Adobe Illustratoru. Od 15 polja popuni sve što se zna: ime, pločica, HTRS
-    koordinate, nadmorska visina, lokacija (iz SB i geopodataka), a duljine,
-    dubinu, mjerili, ekipu i datum iz POPUNJENOG zapisnika objekta ako postoji
-    u njegovoj mapi. Gotov SB_<broj>_sastavnica.pdf sprema uz zapisnik u mapu
-    objekta pod !!!Digitalizacija/!Za digitalizirat - otvori ga ili ubaci
-    (File > Place) u svoj .ai dokument.
-    Katastarski broj namjerno ostaje 0000 (upisuje ga arhivar na kraju), a
-    Mjerilo ostaje "1:" - upisuješ ga sam pri crtanju. Sve što ostane prazno
-    naredba ispiše na kraju, da znaš što dopuniti rukom.
-    Ako u mapi već postoji sastavnica koju NIJE napravila ova naredba (npr. si
-    je uredio u Illustratoru), naredba je NEĆE prepisati nego će to javiti.
+Kako ploča radi
+---------------
+- Ploča radi u pozadini na tvom računalu (samo za tebe, ne na internetu).
+  Nema crnog prozora koji treba držati otvorenim.
+- Ponovni dvoklik na SurveyScraper5.bat ne pokreće novu ploču nego otvara
+  istu, i ako si je zatvorio u pregledniku.
+- Sama se zaustavi 10 minuta nakon što zatvoriš sve njezine kartice. Možeš
+  je zaustaviti i gumbom „Zatvori” gore desno. Ako na ploči piše da je
+  zaustavljena, samo ponovno dvoklikni SurveyScraper5.bat.
+- Dok neki posao traje (npr. ispis nacrta), ploča se ne zaustavlja sama.
+- Kad razvijatelj objavi novu verziju, sljedeći dvoklik je sam preuzme:
+  stara ploča se zaustavi i pokrene se nova.
 
 Prvo pokretanje na računalu
 ---------------------------
-1. Potreban je Python 3.11 ili noviji. Ako ga nema, naredba će to reći i
-   ispisati upute (instalira se jednom, s www.python.org - obavezno kvačica
-   "Add python.exe to PATH").
+1. Potreban je Python 3.11 ili noviji. Ako ga nema, prozor će to reći i
+   ispisati upute (instalira se jednom, s www.python.org – obavezno kvačica
+   „Add python.exe to PATH”).
 2. Prva priprema traje nekoliko minuta i treba internet (instalacija paketa,
    preglednik za isječak karte ~150 MB, kopiranje geopodataka ~280 MB). Sve
-   se sprema lokalno u %LOCALAPPDATA%\CaveDossier\ - ova mapa na Driveu se
+   se sprema lokalno u %LOCALAPPDATA%\CaveDossier\ – ova mapa na Driveu se
    ne mijenja.
-3. Svako sljedeće pokretanje kreće odmah.
+3. U istoj pripremi postavlja se i cSurvey (bivši KORAK 0): postavke programa
+   koje nacrt traži i lokalna kopija cSurveya s prečacem „cSurvey” na radnoj
+   površini. cSurvey OTVARAJ S TOG PREČACA – otvoren izravno s Drivea se sruši.
+   Ako je cSurvey tada bio otvoren, prozor to javi; zatvori ga i na ploči
+   pokreni 3N › „cSurvey na ovom računalu”.
+4. Svako sljedeće pokretanje kreće odmah.
 
 Česte situacije
 ---------------
-- "SB mode: FALLBACK" na početku ispisa: netko ima Speleo bazu otvorenu u
-  Excelu ili Drive nije dostupan; naredba čita zadnju dobru lokalnu kopiju.
-  Podaci mogu kasniti - ponovi kad SB bude slobodan.
-- "nije uspjela (PermissionError...)": ciljna datoteka je otvorena u
-  Wordu/pregledniku - zatvori je i ponovi.
-- Isječak karte se ne može dohvatiti (nema mreže, georef.hr ne radi,
-  preglednik nije preuzet): zapisnik se svejedno napravi, samo okvir karte
-  ostane prazan - ponovi prefill kasnije i karta će se ugraditi.
-- Sastavnica: "font ... nije nađen" znači da na računalu nema Illustratora
-  (odatle dolazi font Myriad Pro kojim je predložak pisan); sastavnica se
-  svejedno napravi, samo drugim fontom. Na računalu na kojem i crtaš toga
-  neće biti.
-- Prozor se odmah zatvori bez poruke: javi se razvijatelju.
+- „SB mode: FALLBACK” u ispisu: netko ima Speleo bazu otvorenu u Excelu ili
+  Drive nije dostupan; čita se zadnja dobra lokalna kopija. Podaci mogu
+  kasniti – ponovi kad SB bude slobodan.
+- „PermissionError”: ciljna datoteka je otvorena u Wordu ili pregledniku –
+  zatvori je i ponovi.
+- Isječak karte se ne može dohvatiti (nema mreže, georef.hr ne radi):
+  zapisnik se svejedno napravi, samo okvir karte ostane prazan – ponovi
+  kasnije i karta će se ugraditi.
+- Sastavnica: „font ... nije nađen” znači da na računalu nema Illustratora;
+  sastavnica se svejedno napravi, samo drugim fontom.
+- Ploča se ne otvori, a prozor javi grešku: pošalji razvijatelju zapis (dolje).
 
-Dnevnik pokretanja (za prijavu problema)
-----------------------------------------
-Svako pokretanje zapisuje sve poruke u datoteku u
-%LOCALAPPDATA%\CaveDossier\logs\ (puna putanja se ispiše na kraju svakog
-pokretanja). Ako nešto ne radi, pošalji razvijatelju NAJNOVIJU datoteku iz
-te mape - u njoj je sve što se vidjelo na ekranu, uključujući i greške
-instalacije. Čuva se zadnjih 60 zapisa, stariji se sami brišu.
+Dnevnik (za prijavu problema)
+-----------------------------
+Svako pokretanje zapisuje poruke u %LOCALAPPDATA%\CaveDossier\logs\:
+nadzorna_ploca_*.log je priprema i pokretanje, gui_*.log je sama ploča. Svaki
+posao pokrenut s ploče ima i svoj zapis (gumb „Zapis” u ispisu). Ako nešto ne
+radi, pošalji razvijatelju najnovije datoteke iz te mape. Čuva se zadnjih 60
+zapisa, stariji se sami brišu.
 
 O ovoj mapi
 -----------
-- v@VERSION@\ i podaci\ su potporne datoteke - ne mijenjati i ne brisati.
-- _arhiva\ sadrži starije verzije naredbi; koristi se uvijek najnovija
-  (broj verzije je u imenu .bat datoteke).
+- v@VERSION@\ i podaci\ su potporne datoteke – ne mijenjati i ne brisati.
+- _arhiva\ sadrži starije verzije i umirovljene naredbe.
 - Sve ovdje je GENERIRANO iz razvojnog repozitorija SurveyScraper5
-  (features/cave-dossier/tools/build_prod.py); ručne izmjene se gube kod
-  sljedeće objave. Novu verziju objavljuje razvijatelj.
+  (prod/build_prod.py); ručne izmjene se gube kod sljedeće objave. Novu
+  verziju objavljuje razvijatelj; popis objava je u VERZIJE.txt.

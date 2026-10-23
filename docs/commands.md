@@ -108,6 +108,9 @@ First time on a machine? [Setup](#setup-once) below.
 # ── The dashboard (0P) — every command below behind a button ─────────
 cavedossier gui                            # http://127.0.0.1:8765/ in the browser; Ctrl+C stops it
 cavedossier gui --port 8800 --no-browser   # another port; do not open the browser
+cavedossier gui --state-file X --idle-minutes 10   # what the prod launcher runs (hidden):
+                                           # record url/token in X, stop 10 min after the last page
+# In prod: double-click SurveyScraper5.bat on the Drive (prod/README.md).
 # Pick the cave once (top bar) and every tab's commands use it. Runs that
 # write ask first; tool questions are answered under the output. Logs: runs/gui/.
 # Details: stages/0P-platform/README.md#the-dashboard--cavedossier-gui
@@ -476,8 +479,8 @@ Every command prints the mode first — `SB mode: LIVE (...)`,
 Everything on this page assumes the developer's PC. **Prod is the registry
 Drive** (see [ARCHITECTURE.md](../ARCHITECTURE.md) §Dev vs prod): the
 people who run these tools work in the shared Drive folders, not in a repo
-clone. Since 2026-09-02 the operator-facing commands ship there as versioned
-launchers — see [Prod launchers on the Drive](#prod-launchers-on-the-drive)
+clone. Since 2026-09-02 the operator-facing commands ship there; since
+2026-10-22 as one dashboard launcher — see [Prod launchers on the Drive](#prod-launchers-on-the-drive)
 just below. The standing portability rules stay in force for every new tool:
 one subcommand per tool, per-machine facts only in `.env`, every local
 dataset regenerable by one command, outputs delivered fail-soft into the
@@ -485,78 +488,24 @@ hand-managed Drive dirs.
 
 ### Prod launchers on the Drive
 
-The four operator commands (`osz prefill`, `photos process`, `sastavnica`,
-`nacrt`) are published as **versioned, double-clickable launchers** in the
-dedicated Drive folder `!!!Digitalizacija/SurveyScraper5/`, beside the
-`csurvey_*` TDX kit:
-
-```text
-SurveyScraper5/
-├─ cavedossier_osz_prefill_v1.4.bat      ← operators double-click these
-├─ cavedossier_photos_process_v1.4.bat
-├─ cavedossier_sastavnica_v1.4.bat
-├─ cavedossier_nacrt_v1.4.bat            ← also called by csurvey_3_dovrsi_nacrt.bat
-├─ PROCITAJ_ME.txt                        ← operator setup/troubleshooting guide
-├─ VERZIJE.txt                            ← publish log, one line per release
-├─ v1.4/                                  ← bootstrap.ps1 + bundle.zip
-├─ podaci/geo/                            ← cloud copy of data/geo (~280 MB)
-├─ csurvey_0_PROCITAJ_ME.txt              ← the TDX kit (build_csx_kit.py):
-├─ csurvey_0_postavi_csurvey.bat          ←   KORAK 0 once per computer: cSurvey app settings
-├─ csurvey_1_pripremi_csx.bat             ←   KORAK 1 raw csx → _prep
-├─ csurvey_2_dovrsi_uvoz.bat              ←   KORAK 2 after Save As → _postp (+ the cave's symbol theme)
-├─ csurvey_3_dovrsi_nacrt.bat             ←   KORAK 3 corrected _postp → the Nacrt
-├─ csurvey_9_oporavi_iz_zipa.bat          ←   KORAK 9 rescue (not a step)
-├─ csurvey_alati/                         ←   the Python tools those drive; teme/ = the symbol themes
-└─ _arhiva/                               ← superseded versions
-```
-
-`cavedossier nacrt` has to be published here, not just runnable from a clone:
-the kit's KORAK 3 launcher finishes by calling `cavedossier_nacrt_v*.bat` from
-this folder. Without it that step says so and stops with the printed PDFs in
-the cave's leaf.
-
-Every run mirrors all its output (setup, pip, the command, stderr) into a
-per-run log under `%LOCALAPPDATA%\CaveDossier\logs\` and prints the path at
-the end — that file is what an operator sends when something fails on their
-machine (newest 60 kept). The bootstrap also switches its console window to
-a TrueType font (Consolas 20) so the text is readable and Croatian
-diacritics render.
-
-A launcher's first double-click installs everything to
-`%LOCALAPPDATA%\CaveDossier\v<X>` — Python 3.11+ check (with guided install
-instructions when missing), bundle extract, venv + `pip install
-.[osz,photos,geo,karta,sastavnica]` + the Playwright Chromium download
-(~150 MB), local
-copy of `podaci/geo`, and a generated `.env` whose `LOCAL_DRIVE_ROOT` is
-derived by probing upward from the launcher's own location for the SB
-workbook — plus the shared georef.hr login, injected into the bootstrap at
-build time from the dev `.env` (never committed). Every later run starts
-immediately and only asks for the Redni broj. Since v1.2 prefill collects a
-missing isječak karte itself on the operator machine (user decision
-2026-09-02); when the fetch cannot run (offline, browser missing) it
-degrades with a note and a later re-run embeds the excerpt into the already
-delivered document.
-
-Regenerate + publish from the dev machine (bump the version per release —
-the filename is the version indicator):
+Since 2026-10-22 there is **one** launcher: `SurveyScraper5.bat` in
+`!!!Digitalizacija/SurveyScraper5/`. A double-click installs or updates to
+`%LOCALAPPDATA%\CaveDossier<X>` and runs 3N KORAK 0 once, then starts the
+dashboard with no window (or reuses the running one) and opens it in the
+browser. Every operator command is a button there. The per-command
+`cavedossier_*_v<X>.bat` launchers and the `csurvey_*` kit were retired into
+`_arhiva/`.
 
 ```powershell
-python tools\build_prod.py --version 1.1 --publish    # stage + copy to Drive
-python tools\build_prod.py --version 1.1              # stage dist/prod/ only
-python tools\build_prod.py --version 1.1 --publish --skip-geo   # no geo sync
+python produild_prod.py --version 2.0              # stage dist/prod/ only
+python produild_prod.py --version 2.0 --publish    # stage + copy to Drive (only via /publish)
+python produild_prod.py --version 2.0 --publish --skip-geo   # no geo sync
 ```
 
-Adding a command to prod takes two edits: an entry in `build_prod.py`'s
-`PROD_COMMANDS` and a branch in the `switch ($Command)` of
-`prod_templates/bootstrap.ps1.template` (plus whatever runtime input it needs
-in `BUNDLE_FILES` — `sastavnica` rides on the blank PDF template; its *font*
-is found on the machine, never bundled).
-
-Launcher/bootstrap/guide templates live in `tools/prod_templates/` (ASCII
-only — the build fails loudly otherwise). Publishing moves superseded
-launchers and v-dirs into `_arhiva/`, so the newest version is the only one
-visible; a same-version republish is for dev iteration — bootstrap notices
-the newer `bundle.zip` and reinstalls on the operator's next run.
+How the launcher works, the Drive layout, the bundle and its logs are in
+[prod/README.md](../prod/README.md#the-dashboard-launcher--for-everyone). The
+why is in
+[design-decisions](design-decisions.md#the-dashboard-on-the-drive-one-launcher-every-bat-retired-2026-10-22).
 
 ### Two venvs exist
 

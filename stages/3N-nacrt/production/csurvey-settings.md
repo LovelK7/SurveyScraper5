@@ -20,7 +20,7 @@ being set, and its own file in this folder where the values live.
 | Belong to | that survey, on any computer | one Windows user on one computer |
 | Typically | Properties dialog: centerline colours and widths, text scales, line type; sign and label sizes on items | ribbon and options: pen smoothing on/off and its factor, rulers, grid, quality |
 | Values live in | [`tools/tdx-mapping.json`](tools/tdx-mapping.json), section `postimport` | [`tools/csurvey-app-settings.json`](tools/csurvey-app-settings.json) |
-| Applied by | **KORAK 2** (`fix_imported_linetypes.py`), into every `_postp` file | **KORAK 0** (`csurvey_0_postavi_csurvey.bat` → `csurvey_app_settings.py apply`), once per computer |
+| Applied by | **KORAK 2** (`fix_imported_linetypes.py`), into every `_postp` file | **KORAK 0** (`csurvey_app_settings.py apply`: the launcher's first-run setup, or the dashboard's 3N button), once per computer |
 | Checked by | — (it is in the file) | KORAK 2 prints a warning when this computer isn't primed (`… check`) |
 
 When cSurvey offers a choice, the file wins: a design property in the survey
@@ -47,7 +47,10 @@ So:
   That's why KORAK 0 refuses to run while `cSurveyPC.exe` is running.
 
 That gives one rule for operators: **before your first 3N survey on a
-computer, close cSurvey and double-click `csurvey_0_postavi_csurvey.bat`.**
+computer, close cSurvey before the first double-click of `SurveyScraper5.bat`** — its
+first-run setup applies them (the `csurvey_0_postavi_csurvey.bat` that did it was
+retired 2026-10-22). If cSurvey was open, run 3N › *cSurvey na ovom računalu* on the
+dashboard.
 After that, forget about it. Run it again only if:
 
 - you are on a new computer or a different Windows user;
