@@ -63,4 +63,7 @@ downstream depends on it.
 
 ## Status
 
-Scanner operational; the mobile app is parked with no scheduled work.
+Scanner operational; the mobile app is parked with no scheduled work. A
+wide-brush exploration of reviving it (photos + offline voice memos → leaf,
+Whisper transcripts at 4O, Kotlin stack, ten follow-on ideas) is stored as
+[project 0001-field-app](projects/0001-field-app/brief.md), status `idea`.

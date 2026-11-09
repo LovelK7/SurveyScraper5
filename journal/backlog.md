@@ -456,3 +456,4 @@ when an idea's time comes. Nothing here is a commitment.
 
 - 2026-10-23 — 6P: a delivered cave can't be topped up. `deliver` returns "već predan" before planning any SB fill, so a fill rule added later (Z/Zagađenost/Ledenica, after 902) doesn't reach caves already delivered. A `deliver --dopuni <broj>` could run `osz_fills` over the archived `<broj>.docx` and write only the empty cells.
 - 2026-10-23 — SB 897: Zagađenost `DA`, but the OSZ ticks no pollution box and its narrative says *Nema*; one of them is wrong.
+- 2026-11-09 — 1T field app revived as an idea: entrance photos + offline voice memos → the leaf, Whisper transcripts waiting at 4O, Kotlin + WorkManager, Apps Script relay to the Drive; plus ten follow-ons (entrance duplicate warning, izjava check in the field, pločica OCR, TopoDroid bridge…). Stored, not scheduled: [stages/1T-teren/projects/0001-field-app/brief.md](../stages/1T-teren/projects/0001-field-app/brief.md).
