@@ -233,7 +233,7 @@ def ink_bbox(page) -> Rect:
     as paths rather than text, which is why the text half is a safety net and
     not the main event.
     """
-    raw, page_rect = _drawn_extent(page), page.rect
+    raw, page_rect = _visible_extent(page), page.rect
     x0, y0 = max(raw.x0, page_rect.x0), max(raw.y0, page_rect.y0)
     x1, y1 = min(raw.x1, page_rect.x1), min(raw.y1, page_rect.y1)
     if x1 <= x0 or y1 <= y0:
@@ -250,6 +250,46 @@ def _drawn_extent(page) -> Rect:
         raise ComposeError("Stranica je prazna – nema što složiti.")
     return Rect(min(float(b[0]) for b in boxes), min(float(b[1]) for b in boxes),
                 max(float(b[2]) for b in boxes), max(float(b[3]) for b in boxes))
+
+
+def _visible_extent(page) -> Rect:
+    """`_drawn_extent`, but each path cut to the clip paths it is drawn under.
+
+    cSurvey hatches an area (water, sand…) with long parallel lines clipped to
+    the area's outline; the raw path boxes run far past what shows. A guest's
+    flat profile (Špilja Mot, 2026-11-25) came out 6 mm "taller" than its ink
+    that way, and every layout was refused. The clip stack follows PyMuPDF's
+    extended drawings: a clip at level n holds the items at deeper levels.
+    Not for `cut_edges` — there the paper is the clip.
+    """
+    try:
+        drawings = page.get_drawings(extended=True)
+    except TypeError:                      # an old PyMuPDF: no clip info
+        return _drawn_extent(page)
+    boxes, clips = [], []
+    for d in drawings:
+        level = d.get("level", 0)
+        while clips and clips[-1][0] >= level:
+            clips.pop()
+        kind = d.get("type")
+        if kind == "clip":
+            clips.append((level, d.get("scissor") or d["rect"]))
+            continue
+        if kind == "group":
+            continue
+        x0, y0, x1, y1 = (float(v) for v in d["rect"])
+        for _, scissor in clips:
+            x0, y0 = max(x0, float(scissor[0])), max(y0, float(scissor[1]))
+            x1, y1 = min(x1, float(scissor[2])), min(y1, float(scissor[3]))
+        # A zero-width line is still ink; only a box the clip removed is not.
+        if x1 >= x0 and y1 >= y0:
+            boxes.append((x0, y0, x1, y1))
+    for block in page.get_text("dict")["blocks"]:
+        boxes.append(block["bbox"])
+    if not boxes:
+        raise ComposeError("Stranica je prazna – nema što složiti.")
+    return Rect(min(b[0] for b in boxes), min(b[1] for b in boxes),
+                max(b[2] for b in boxes), max(b[3] for b in boxes))
 
 
 # Past this many points beyond the paper, a printed design counts as cut.

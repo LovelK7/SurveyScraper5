@@ -128,7 +128,7 @@ stages:
     was: "2.1e"
     status: operational
     modules: [sastavnica]
-    commands: [sastavnica, nacrt]
+    commands: [sastavnica, nacrt, gost]
 
   - id: osobe
     label: "5O"

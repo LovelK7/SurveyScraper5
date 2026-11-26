@@ -64,6 +64,7 @@ keeps the chronology.
 - [The SUE gate moves to 6P; 5D judges CroSpeleo only; izjave are CroSpeleo's (2026-10-22)](#the-sue-gate-moves-to-6p-5d-judges-crospeleo-only-izjave-are-crospeleos-2026-10-22)
 - [The dashboard on the Drive: one launcher, every .bat retired (2026-10-22)](#the-dashboard-on-the-drive-one-launcher-every-bat-retired-2026-10-22)
 - [6P fills Z, Zagađenost and Ledenica from the OSZ (2026-10-23)](#6p-fills-z-zagađenost-and-ledenica-from-the-osz-2026-10-23)
+- [Gost: 3N for a survey that is not in SB (2026-11-25)](#gost-3n-for-a-survey-that-is-not-in-sb-2026-11-25)
 
 ---
 
@@ -2142,3 +2143,66 @@ Validated against every readable v10 OSZ in `!!Osnovni zapisnici` (886–901,
 SB has Zagađenost `DA` while the OSZ ticks nothing and its narrative reads
 *Nema*. That is a real SB/OSZ disagreement, and delivery would report it as
 a warning. On 902 the rule yields exactly Z 696, Zagađenost DA, Ledenica NE.
+
+## Gost: 3N for a survey that is not in SB (2026-11-25)
+
+The user asked for a demo route: take any survey, for example one a caver from
+another club brings, type its data by hand without linking it to SB, and run 3N
+as normal. Settled:
+
+- **A separate page on the same dashboard, not a second app.** It is `/gost`,
+  linked from the top bar and opened directly by `cavedossier gui --gost`. The
+  main page is keyed by a Redni broj everywhere: the cave picker reads SB, and
+  the files come from the `SB_<broj>_…` Drive leaf. A "mode" of that page would
+  have touched every view. A page of its own reuses the server, the jobs, the
+  stylesheet and the catalog's 3N actions, and leaves the archive page alone.
+- **A guest project is a local folder** under `%LOCALAPPDATA%\CaveDossier\gost`.
+  That is outside the versioned prod workspace, so a bundle upgrade never takes
+  it along. It holds the survey files and `podaci.json`. There is no delivery:
+  the folder is the destination. Nothing touches SB, the Drive or an OSZ, which
+  is why the page's runs need no confirmation.
+- **Only KORAK 3c needed new code.** KORAK 1–3b already take a file path and
+  never read SB. `cavedossier gost nacrt` is the SB-free twin of `nacrt`. It
+  uses the same template, renderer, formatters and composer, so a guest sheet
+  looks like an archive one.
+- **Precedence per cell: typed > measured > geo > stub.** The typed value is the
+  guest's explicit answer, so it wins. The measured lengths, depth and Mjerilo
+  fill what was left empty, which is the normal case. Lokacija and Nadmorska
+  visina come from the typed HTRS through the 4G finders, fail-soft, because a
+  guest's cave may lie outside the Croatian data. Katastarski broj can be typed
+  here (the archive route keeps `0000`), because a guest's cave may already
+  have its number.
+- **Mapping, theme and layout sheets are the main page's own code, pointed at
+  the project.** The user asked for these after the first version (the same
+  day): per-symbol mapping, the theme, and a visual Raspored. The guest page
+  loads `mapping.js` unchanged except for one hook, `window.MAP_TARGET`, which
+  sends its calls to `gost-mapping?id=` instead of `mapping/<broj>`. Server
+  side, `gui/mapping.py` gained `view_folder`/`save_folder`/`reset_folder`,
+  which the archive's by-broj functions now call too. So there is one mapping
+  editor, not two. The override is the project folder's
+  `tdx-mapping-objekt.json`, which KORAK 1 and 2 already find beside the
+  survey file, so the 3N scripts needed no change. The KORAK 3a sheets are
+  `gui/layouts.py` on the project's `_postp`, drawn by a port of the main
+  page's picker. Checked in headless Edge against the real `_pp_lt.csx` from
+  SB 1220: the two sheets (1:200 proposal, 1:250) and the full symbol table
+  with the theme's artwork rendered.
+- **A clipped hatch is not ink (4S compose, every route).** The first real
+  guest survey (Špilja Mot) was refused on every layout with exit 99. The
+  profile measured 27.5 mm against a reserved 25.1 mm. The cause was cSurvey's
+  water hatch: long lines clipped to the area outline, whose unclipped path
+  boxes ran 6 mm past anything visible. `ink_bbox` now cuts each path to the
+  clip paths it sits under (`_visible_extent`, PyMuPDF's extended drawings),
+  which gives 21.4 mm, the same as the rasterised ink. `cut_edges` keeps the
+  raw extent, because there the paper is the clip and a page-sized clip path
+  must not hide a cut. The archive's nacrt and sastavnica share the
+  composer, so they get the fix too.
+- **The archive's logo comes off.** Another club's nacrt must not carry the
+  Estavela mark. The redaction removes only the vector art fully inside the
+  logo cell (`LOGO_BOX`), so the cell border survives. A `logo.png`/`logo.jpg`
+  in the folder goes in its place.
+
+Validated 2026-11-25 through the page's own API against real data. A raw
+`.csx` from SB 1220 went through KORAK 1. SB 1220's postprocessed file then
+went through 3a (a dry run, then `--yes`), 3b (real cSurvey, headless) and 3c.
+The result was a 1:200 sheet with the measured 18 m, 16 m and -5 m, the typed
+cells, and an empty logo cell.

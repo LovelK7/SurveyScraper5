@@ -77,11 +77,16 @@ def _leaf(ws, broj: int) -> Path | None:
 
 
 def view(ws, broj: int, tools: Path) -> dict:
+    return view_folder(_leaf(ws, broj), broj, tools)
+
+
+def view_folder(leaf: Path | None, broj, tools: Path) -> dict:
+    """The page's view of the mapping governing `leaf` (a cave's SB_ folder, or
+    a guest project folder — gui/gost.py; `broj` is then the project id)."""
     tm = _module(tools, "tdx_mapping.py")
     fixer = _module(tools, "fix_imported_linetypes.py")
     default_path = tools / "tdx-mapping.json"
     default = tm.load_json(str(default_path)) if default_path.is_file() else {}
-    leaf = _leaf(ws, broj)
     override_path = leaf / tm.OVERRIDE_NAME if leaf else None
     override, error = None, None
     if override_path and override_path.is_file():
@@ -135,27 +140,35 @@ def _check(effective, tools: Path) -> None:
 
 def save(ws, broj: int, tools: Path, effective) -> dict:
     """Write the cave's override from the page's effective mapping."""
-    _check(effective, tools)
     leaf = _leaf(ws, broj)
     if leaf is None:
         raise MappingError(f"SB {broj} nema mapu pod !Za digitalizirat – prilagodba "
                            "se sprema u mapu objekta.")
+    return save_folder(leaf, broj, tools, effective)
+
+
+def save_folder(leaf: Path, broj, tools: Path, effective) -> dict:
+    """Write `leaf`'s override: only the difference from the shared default."""
+    _check(effective, tools)
     tm = _module(tools, "tdx_mapping.py")
     default_path = tools / "tdx-mapping.json"
     default = tm.load_json(str(default_path)) if default_path.is_file() else {}
     tm.write_override(str(leaf), default, effective)
-    return view(ws, broj, tools)
+    return view_folder(leaf, broj, tools)
 
 
 def reset(ws, broj: int, tools: Path) -> dict:
     """Back to the shared default: remove the cave's override."""
-    leaf = _leaf(ws, broj)
+    return reset_folder(_leaf(ws, broj), broj, tools)
+
+
+def reset_folder(leaf: Path | None, broj, tools: Path) -> dict:
     tm = _module(tools, "tdx_mapping.py")
     if leaf is not None:
         path = leaf / tm.OVERRIDE_NAME
         if path.is_file():
             path.unlink()
-    return view(ws, broj, tools)
+    return view_folder(leaf, broj, tools)
 
 
 # ── themes (project 0007) ───────────────────────────────────────────

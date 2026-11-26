@@ -12,6 +12,27 @@ numbers through the mapping in
 
 ---
 
+### 2026-11-25…26 — Gost: 3N for a survey that is not in SB (agent) ✅
+
+- **Did:** The user asked for a demo route: a caver from another club brings a survey, the data is typed by hand with no SB link, and 3N runs as normal.
+  - 4S `sastavnica/gost.py`: guest projects (local folders under `%LOCALAPPDATA%\CaveDossier\gost`, `CAVEDOSSIER_GOST_DIR` overrides), `podaci.json`, and `run_gost_nacrt`. It uses the same template, renderer and composer as `nacrt`, with precedence typed > measured > geo from the typed HTRS > stub. A typed katastarski broj is allowed. The Estavela logo is redacted (vector art inside `LOGO_BOX` only, border kept) and a `logo.png/.jpg` in the folder replaces it.
+  - CLI: `cavedossier gost new | list | nacrt`, and `gui --gost`.
+  - 0P: a separate **/gost** page on the same server (`gui/gost.py`, `static/gost.html|js`): new project, drag-drop upload (never overwrites), the cells form with the measured values as placeholders, and the steps (catalog 3N actions by file path, every file checked against the project, plus `gost nacrt`).
+  - Round 2 (user): per-symbol mapping, the theme and a visual Raspored. `mapping.js` is reused unchanged except for one hook (`window.MAP_TARGET`). `gui/mapping.py` gained `view_folder/save_folder/reset_folder`, which the by-broj functions now call. The 3a sheet picker was ported. `/gost#mapiranje` opens the mapping view directly.
+  - Round 3 (user): Špilja Mot DEMO failed 3c on every layout (exit 99, profile 27.5 mm vs 25.1 mm reserved). 4S `compose.ink_bbox` now uses `_visible_extent`, which cuts each path to its clip stack; `cut_edges` keeps the raw extent.
+  - Also committed: the user's own pending 6P change (a Zagađenost narrative that says "Nije zagađen" agrees with NE), the matching app.js OSZ line, and the promo deck.
+- **Result:**
+  - Validated through the API on SB 1220's files: KORAK 1 on a raw `.csx`, then 3a, 3b (real cSurvey) and 3c on its postprocessed file, giving a 1:200 sheet with 18/16/-5 m.
+  - The page was screenshotted in headless Edge: the 3a sheets, the theme picker and the full Mapiranje on a guest project.
+  - Špilja Mot now composes at 1:400/1:300.
+  - 1073 passed, 1 skipped; the doctor shows 0 fail.
+  - Not run: KORAK 2 with a custom mapping on a guest survey, because it needs the manual cSurvey save first.
+- **Learned:**
+  - cSurvey hatches an area with long parallel lines clipped to its outline. `get_drawings()` reports the unclipped boxes, about 6 mm past the visible ink on a flat profile. `get_drawings(extended=True)` carries the clip stack (a clip at level n holds the deeper levels); `get_bboxlog()` does NOT clip.
+  - KORAK 1–3b already took a file path and never read SB, and `tdx_mapping.find_override` finds the override beside the survey file, so the guest route needed no 3N script change at all.
+  - Classic scripts share one global lexical scope, so loading `mapping.js` beside `gost.js` required no duplicate top-level names (the guest page's own `themePicker` had to go).
+- **Next:** `/publish`, so the page reaches prod. A guest on their own laptop still needs a launcher that does not assume the Estavela Drive (backlog). Re-run 3c on any archive cave that was refused for an oversized profile or plan.
+
 ### 2026-10-22…23 — The dashboard on the Drive: prod v2.0, one launcher, every .bat retired (agent) ◐
 
 - **Did:** The user asked how the dashboard should run for others: "a priming script, then open an HTML file?" The answer: no. The page needs its server, because of the token and the runs. So **one launcher primes and serves**.

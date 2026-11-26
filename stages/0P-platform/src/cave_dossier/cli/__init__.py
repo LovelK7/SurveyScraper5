@@ -1238,6 +1238,56 @@ def cmd_nacrt(settings: Settings, serial: int, offline: bool,
     return 0
 
 
+def cmd_gost(args) -> int:
+    """3N for a guest survey (not in SB): a local project folder, hand-typed
+    title-block cells, the same KORAK 1–3b tools by path, then this composer."""
+    from cave_dossier.sastavnica import gost
+
+    if args.gost_command == "list":
+        projects = gost.list_projects()
+        print(f"Gostujući projekti u {gost.projects_root()}:")
+        for item in projects:
+            print(f"  {item['id']}")
+        if not projects:
+            print("  (nijedan – napravi ga s: cavedossier gost new \"Ime objekta\")")
+        return 0
+    if args.gost_command == "new":
+        folder = gost.create_project(args.name)
+        print(f"Projekt: {folder}")
+        print("Stavi u tu mapu TopoDroid .csx izvoz, upiši podatke u podaci.json "
+              "(ili na stranici /gost), pa KORAK 1–3b kao inače.")
+        return 0
+
+    # nacrt
+    try:
+        folder = gost.resolve_project(args.project)
+    except gost.GostError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    settings = None
+    try:
+        settings = load_settings()
+    except Exception as exc:  # noqa: BLE001 — a guest machine may have no config
+        print(f"(postavke nisu učitane: {exc} – bez geo dopuna, zadani font)")
+    try:
+        outcome = gost.run_gost_nacrt(folder, settings, offline=args.offline,
+                                      force=args.force)
+    except (gost.GostError, gost.ComposeError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    result = outcome.result
+    print(f"Gost: {result.cave_name}  ({folder})")
+    print(f"Raspored: {result.arrangement}, mjerilo {result.mjerilo or '—'}")
+    for key, fv in result.sastavnica.fields.items():
+        if fv.source != "constant":
+            print(f"  {key:<18} {fv.value}  [{fv.source}]")
+    for note in result.notes:
+        print(f"  ! {note}")
+    print()
+    print(f"Nacrt: {outcome.pdf_path}")
+    return 0
+
+
 def cmd_osz_backfill(settings: Settings, serial: int, keep_old: bool = False) -> int:
     """3N KORAK 4: the survey's measurements into the cave's existing OSZ."""
     from cave_dossier.osz import backfill as backfill_mod
@@ -1960,6 +2010,24 @@ def build_parser() -> argparse.ArgumentParser:
              "(by default such a file is refused, so an edited one survives)",
     )
 
+    gost = subparsers.add_parser(
+        "gost",
+        help="3N for a guest survey that is not in SB: a local project folder, "
+             "hand-typed title block, the nacrt composed without SB/Drive/OSZ",
+    )
+    gost_sub = gost.add_subparsers(dest="gost_command", required=True)
+    gost_sub.add_parser("list", help="List the guest projects (%%LOCALAPPDATA%%\CaveDossier\gost)")
+    gost_new = gost_sub.add_parser("new", help="Make a new guest project folder")
+    gost_new.add_argument("name", help="The cave's name (also the folder name)")
+    gost_nacrt = gost_sub.add_parser(
+        "nacrt", help="KORAK 3c for a guest: plan + profile onto the title block "
+                      "-> <Ime>_nacrt.pdf in the project folder")
+    gost_nacrt.add_argument("project", help="Project folder name, or a path to any folder")
+    gost_nacrt.add_argument("--offline", action="store_true",
+                            help="No network for the coordinate-based fill-ins")
+    gost_nacrt.add_argument("--force", action="store_true",
+                            help="Overwrite a <Ime>_nacrt.pdf this tool did not make")
+
     gui = subparsers.add_parser(
         "gui",
         help="0P — the local dashboard: every stage's commands behind buttons, "
@@ -1975,6 +2043,9 @@ def build_parser() -> argparse.ArgumentParser:
     gui.add_argument("--idle-minutes", type=float, default=None, dest="idle_minutes",
                      help="Stop after this many minutes with no open page and no "
                           "running job (the prod launcher passes 10)")
+    gui.add_argument("--gost", action="store_true",
+                     help="Open the guest page (/gost): 3N for a survey that is not "
+                          "in SB, with the title block typed by hand")
 
     deliver = subparsers.add_parser(
         "deliver",
@@ -2295,13 +2366,17 @@ def main(argv: list[str] | None = None) -> int:
 
     args = build_parser().parse_args(argv)
 
+    if args.command == "gost":
+        return cmd_gost(args)
+
     if args.command == "gui":
         # Before load_settings: the page reports a broken config instead of
         # refusing to start, and loads settings itself (and again on refresh).
         from cave_dossier.gui.server import serve
 
         return serve(port=args.port, open_browser=not args.no_browser,
-                     state_file=args.state_file, idle_minutes=args.idle_minutes)
+                     state_file=args.state_file, idle_minutes=args.idle_minutes,
+                     page="gost" if args.gost else "")
 
     if args.command == "societies":
         # Registry data only — no settings, no SB, no Drive.

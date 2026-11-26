@@ -59,6 +59,13 @@ FLAG_YES, FLAG_NO = "DA", "NE"
 ZAGADENOST_TICKS = ("onečišćenje otpadom", "minsko-eksplozivna sredstva")
 LEDENICA_TICKS = ("prisutnost snijega", "prisutnost leda", "led")
 
+#: A Zagađenost narrative that itself says "clean" — the template asks for
+#: „Nije zagađen.” — agrees with NE; a hedged one („…, ali …”) does not.
+_CLEAN_NARRATIVE_RE = re.compile(
+    r"^\s*(nije\s+(zagađen|onečišćen)|nema\s+(zagađenja|onečišćenja|otpada)"
+    r"|bez\s+(zagađenja|onečišćenja|otpada)|čist)", re.IGNORECASE)
+_HEDGE_RE = re.compile(r"\b(ali|osim|međutim|no)\b", re.IGNORECASE)
+
 #: config.yaml ``archive`` key of the archived-leaf folder, and its default.
 ARHIVA_KEY = "arhiva_dir"
 ARHIVA_DEFAULT = "!!!Digitalizacija/Arhiva"
@@ -487,6 +494,10 @@ def _plan_sb(settings: Settings, plan: DeliveryPlan, cave, recorded: dict, ticke
         plan.warn(warning)
 
 
+def _says_clean(text: str) -> bool:
+    return bool(_CLEAN_NARRATIVE_RE.match(text)) and not _HEDGE_RE.search(text)
+
+
 def _ticked_any(ticked, labels) -> bool:
     keys = {normalize_lookup_key(label) for label in labels}
     return any(normalize_lookup_key(label) in keys for label in ticked)
@@ -530,7 +541,7 @@ def osz_fills(cols: dict, sb_values: dict, recorded: dict, ticked) -> tuple[list
         sb_flag = (sb_values.get(column) or "").strip().upper()
         if not sb_flag:
             text = (recorded.get(narrative) or "") if narrative else ""
-            if flag == FLAG_NO and not is_placeholder(text):
+            if flag == FLAG_NO and not is_placeholder(text) and not _says_clean(text):
                 warnings.append(f"{column}: u OSZ-u nije označena nijedna kategorija, a opis glasi "
                                 f"'{text.strip()[:60]}…' – SB ostaje prazan, upiši DA/NE ručno.")
                 continue

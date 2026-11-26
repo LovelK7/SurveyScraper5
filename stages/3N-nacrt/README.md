@@ -70,6 +70,11 @@ cavedossier osz backfill 1103
 cavedossier osz backfill 1103 --keep-old   # ...or keep the previous file as _stari_<datum>
 ```
 
+**A survey that is not in SB** (for example a caver's from another club): run
+the same KORAK 1–3b by file path, then `cavedossier gost nacrt <folder>` instead
+of `nacrt <broj>`. The dashboard's **Gost** page does all of it. See
+[4S `gost`](../4S-sastavnica/README.md#cavedossier-gost--the-nacrt-for-a-survey-that-is-not-in-sb).
+
 The file name tells which step a file is at: `x.csx` (raw) → `x_prep.csx`
 (preprocessing, KORAK 1) → `x_postp.csx` (postprocessing, KORAK 2) →
 `x_postp_resolved.csx` (KORAK 3a). KORAK 2 replaces a trailing `_prep` and

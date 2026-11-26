@@ -137,6 +137,27 @@ def test_ink_bbox_is_the_drawing_not_the_page(tmp_path):
     assert ink.x0 / MM == pytest.approx(70.0, abs=1.0)
 
 
+def test_a_clipped_hatch_counts_only_where_it_shows(tmp_path):
+    """cSurvey hatches an area with long lines clipped to its outline (Špilja
+    Mot's water, 2026-11-25): the hidden ends are not ink."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=A4[0], height=A4[1])
+    # the outline, where the clip below lands (PDF y runs up, the page's down)
+    page.draw_rect(pymupdf.Rect(100, A4[1] - 140, 300, A4[1] - 100), color=(0, 0, 0))
+    xref = page.get_contents()[0]
+    hatch = b" ".join(b"%d 60 m %d 200 l" % (x, x + 60) for x in range(100, 300, 10))
+    doc.update_stream(xref, doc.xref_stream(xref) +
+                      b"\nq 100 100 200 40 re W n 0 0 1 RG 0.4 w " + hatch + b" S Q\n")
+    path = tmp_path / "hatch.pdf"
+    doc.save(path)
+    doc.close()
+    with pymupdf.open(path) as opened:
+        raw = compose_mod._drawn_extent(opened[0])
+        ink = compose_mod.ink_bbox(opened[0])
+    assert raw.height > 100                      # the unclipped hatch lines
+    assert ink.height == pytest.approx(40, abs=1.5)
+
+
 def test_an_empty_page_is_refused(tmp_path):
     doc = pymupdf.open()
     doc.new_page(width=A4[0], height=A4[1])

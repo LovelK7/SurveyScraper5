@@ -114,6 +114,7 @@ cavedossier gui --state-file X --idle-minutes 10   # what the prod launcher runs
 # Pick the cave once (top bar) and every tab's commands use it. Runs that
 # write ask first; tool questions are answered under the output. Logs: runs/gui/.
 # Details: stages/0P-platform/README.md#the-dashboard--cavedossier-gui
+cavedossier gui --gost                     # the guest page (/gost): 3N for a survey not in SB
 
 # ── Read-only SB inspection (part 2.2a) ────────────────────────────────
 cavedossier sb columns                     # detected header row + all column names
@@ -394,6 +395,18 @@ cavedossier nacrt 1103 --force             # overwrite a delivered file this too
 # the paper) is named in a warning: redo KORAK 3 with the current kit.
 # Collision: the delivered nacrt carries its OWN metadata stamp, so a nacrt and
 # a sastavnica never overwrite each other, and an edited file is refused.
+
+# ── Gost (4S — the same nacrt for a survey that is NOT in SB: another club's
+#    cave, no Redni broj, no intake leaf, no OSZ) ─────────────────────────
+cavedossier gost new "Jama pod Kukom"      # a project folder under %LOCALAPPDATA%\CaveDossier\gost
+cavedossier gost list                      # the guest projects
+cavedossier gost nacrt "Jama pod Kukom"    # the folder's KORAK 3 trio + podaci.json -> <Ime>_nacrt.pdf
+cavedossier gost nacrt D:\neka\mapa       # any folder works
+cavedossier gost nacrt X --offline --force # no network for the HTRS fill-ins; overwrite an edited PDF
+# KORAK 1–3b are the 3N scripts by file path, exactly as above. podaci.json holds
+# the title-block cells typed by hand (the Gost page writes it): typed > measured
+# > geo from the typed HTRS > stub. The archive's logo is removed; a logo.png/.jpg
+# in the folder takes its place. Never touches SB, the Drive or an OSZ.
 
 # ── OSZ dopune → SB (part 2.1b — reads a FILLED zapisnik back; `osz backfill` until 2026-10-04) ──
 cavedossier osz dopune 1234                  # find the cave's SB_<broj>_… dir in the intake

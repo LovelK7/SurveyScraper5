@@ -25,6 +25,11 @@ cavedossier sastavnica 1220 --force     # overwrite a delivered file we did not 
 cavedossier nacrt 1103                  # the same block + the printed plan and
                                         # profile -> SB_<broj>_nacrt.pdf
 cavedossier nacrt 1103 --local --force  # same flags, same meanings
+
+cavedossier gost new "Jama pod Kukom"   # a guest project: a local folder, no SB row
+cavedossier gost list                   # the guest projects
+cavedossier gost nacrt "Jama pod Kukom" # KORAK 3c without SB -> <Ime>_nacrt.pdf in the folder
+cavedossier gost nacrt <folder> --offline --force
 ```
 
 **Nine cells** come from SB alone, **fourteen** once the cave's zapisnik is
@@ -74,6 +79,24 @@ rest; when a printed plan or profile runs past its page edge (SB 1220's scale
 bar lost the "0" of "10"), the run warns and says to redo KORAK 3 — compose
 cannot recover what the paper cut off.
 
+## `cavedossier gost` — the nacrt for a survey that is not in SB
+
+For a caver from another club, or any survey the archive does not hold. A
+**guest project** is a plain local folder under `%LOCALAPPDATA%\CaveDossier\gost`
+(`CAVEDOSSIER_GOST_DIR` overrides it). It holds the TopoDroid export and a
+`podaci.json` with the title-block cells typed by hand. 3N's KORAK 1–3b run on
+it unchanged, because they take a file path and never read SB. `gost nacrt` is
+the SB-free twin of `nacrt`: same template, renderer, formatters and composer,
+so the sheet looks identical. Per cell: **typed > measured (`_dimenzije.json`) >
+geo finders from the typed HTRS > stub**. The archive's logo comes off the title
+block: the vector art inside the logo cell is removed and the border stays. A
+`logo.png`/`logo.jpg` in the folder goes in its place. The symbol mapping and
+theme are the folder's own `tdx-mapping-objekt.json`, set on the Gost page. Nothing touches SB, the
+Drive or an OSZ, and there is no delivery: the folder is the destination.
+Usually run from the dashboard's **Gost** page
+([0P](../0P-platform/README.md#the-guest-page--gost)). Why it is built this way:
+[design decisions](../../docs/design-decisions.md#gost-3n-for-a-survey-that-is-not-in-sb-2026-11-25).
+
 ## Why route B gets served at all
 
 The Nacrt has two drafting routes. They diverge right after TopoDroid and
@@ -120,7 +143,8 @@ typing over a text box instead of drawing one.
 
 - Code: [`src/cave_dossier/sastavnica/`](src/cave_dossier/sastavnica/) —
   `render.py`/`compose.py` are pure geometry (no SB, no Drive),
-  `prefill.py`/`nacrt.py` orchestrate the two commands
+  `prefill.py`/`nacrt.py` orchestrate the two commands, `gost.py` the guest
+  route (projects, `podaci.json`, the SB-free nacrt, the logo swap)
 - **Runtime asset, inside the package**: `templates/sastavnica_blank_v2.pdf`
 - **[`template-workbench/`](template-workbench/README.md)** — the authored
   `!SUE_sastavnica_v2.pdf` Illustrator export plus `build_blank.py`, which generates

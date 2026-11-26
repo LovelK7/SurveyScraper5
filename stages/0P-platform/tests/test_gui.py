@@ -842,3 +842,135 @@ def test_state_file_written_and_removed_only_by_its_owner(tmp_path):
     write_state(state, app, "http://127.0.0.1:8770/")
     clear_state(state)
     assert not state.exists()
+
+
+# ── /gost — 3N for a guest survey (gui/gost.py) ─────────────────────
+
+
+@pytest.fixture()
+def gost_root(tmp_path, monkeypatch):
+    from cave_dossier.sastavnica import gost as core
+
+    root = tmp_path / "gost"
+    monkeypatch.setenv(core.GOST_DIR_ENV, str(root))
+    return root
+
+
+def _upload(base, project, name, payload, token="t0k"):
+    query = urllib.parse.urlencode({"id": project, "name": name})
+    req = urllib.request.Request(f"{base}/api/gost-upload?{query}", data=payload,
+                                 headers={"X-Token": token})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as res:
+            return res.status, json.loads(res.read())
+    except urllib.error.HTTPError as err:
+        return err.code, json.loads(err.read())
+
+
+def test_gost_page_carries_token(server, gost_root):
+    base, _, _ = server
+    with urllib.request.urlopen(base + "/gost", timeout=10) as res:
+        html = res.read().decode("utf-8")
+    assert "t0k" in html and "__TOKEN__" not in html and "/static/gost.js" in html
+
+
+def test_gost_project_round_trip(server, gost_root):
+    base, opened, _ = server
+    status, view = _call(base, "/api/gost-new", {"name": "Jama Gošća"})
+    assert status == 200 and view["id"] == "Jama Gošća"
+    status, _ = _upload(base, "Jama Gošća", "export.csx", b"<csurvey/>")
+    status, view = _upload(base, "Jama Gošća", "export.csx", b"<csurvey/>")
+    assert status == 200
+    assert sorted(f["name"] for f in view["files"] if f["kind"] == "raw") == \
+        ["export (2).csx", "export.csx"]                 # never overwritten
+    # The page sends the whole form: a save replaces, so an emptied cell is cleared.
+    status, view = _call(base, "/api/gost-save", {"id": "Jama Gošća", "data": {
+        "ime_objekta": "Jama Gošća", "crtali": "Ana Kovač", "datum": "", "x": "y"}})
+    assert view["data"] == {"ime_objekta": "Jama Gošća", "crtali": "Ana Kovač"}
+    status, page = _call(base, "/api/gost")
+    assert [p["id"] for p in page["projects"]] == ["Jama Gošća"]
+    assert {s["id"] for s in page["steps"]} >= {"k1", "k3a", "k3b", "k3c"}
+    status, _ = _call(base, "/api/gost-open", {"id": "Jama Gošća"})
+    assert status == 200 and opened[-1] == gost_root / "Jama Gošća"
+
+
+def test_gost_guards(server, gost_root, tmp_path):
+    base, opened, _ = server
+    _call(base, "/api/gost-new", {"name": "Jama"})
+    outside = tmp_path / "tajno.txt"
+    outside.write_text("x", encoding="utf-8")
+    assert _upload(base, "Jama", "evil.bat", b"x")[0] == 400
+    assert _upload(base, "Jama", "a.csx", b"x", token="krivo")[0] == 403
+    assert _upload(base, "../Jama", "a.csx", b"x")[0] == 400
+    assert _call(base, "/api/gost-open", {"id": "Jama", "path": str(outside)})[0] == 400
+    assert _call(base, "/api/gost-project?id=..")[0] == 404
+    assert opened == []
+
+
+def test_gost_steps_build_the_catalog_argv(gost_root):
+    from cave_dossier.gui import gost as gui_gost
+
+    gui_gost.create("Jama")
+    folder = gost_root / "Jama"
+    with pytest.raises(gui_gost.GostApiError, match="nema datoteke"):
+        gui_gost.step_args("Jama", "k1", None)
+    raw = folder / "jama.csx"
+    raw.write_text("x", encoding="utf-8")
+    (folder / "jama_postp.csx").write_text("x", encoding="utf-8")
+
+    action, args, _ = gui_gost.step_args("Jama", "k1", "C:/drugdje/tude.csx")
+    assert action.id == "3n-k1" and args == [str(raw), "--force"]   # foreign file ignored
+    _, args, _ = gui_gost.step_args("Jama", "k3a", None)
+    assert "--yes" in args and "--layout" not in args
+    _, args, _ = gui_gost.step_args("Jama", "k3a", None, layout="2", dry_run=True)
+    assert args[-3:] == ["--layout", "2", "--dry-run"] and "--yes" not in args
+    action, args, _ = gui_gost.step_args("Jama", "k3c", None)
+    assert action is None and args == ["gost", "nacrt", str(folder.resolve())]
+    build_parser().parse_args(args)                               # a real CLI command
+    with pytest.raises(gui_gost.GostApiError):
+        gui_gost.step_args("Jama", "m1", None)                     # manual: nothing to run
+
+
+def test_gost_mapping_is_the_folder_override_korak1_and_2_read(gost_root):
+    from cave_dossier.gui import gost as gui_gost
+    from cave_dossier.gui import mapping
+    from cave_dossier.gui.state import tools_dir
+
+    tools = tools_dir()
+    if tools is None or not mapping.theme_list(tools):
+        pytest.skip("no 3N tools / themes here")
+    gui_gost.create("Jama")
+    folder = gost_root / "Jama"
+    tm = mapping._module(tools, "tdx_mapping.py")
+    korak = lambda: tm.effective_for(str(folder / "jama_prep.csx"),  # noqa: E731
+                                     str(tools / "tdx-mapping.json"))[0]
+    view = gui_gost.mapping_api("Jama")
+    assert view["label"] == "Jama" and view["override"] is None
+    assert view["effective"] == korak()
+    other = next(t["id"] for t in view["themes"] if t["id"] != view["default"].get("theme"))
+
+    eff = dict(view["effective"], theme=other)
+    eff["points"] = dict(eff.get("points", {}), **{"nova-tocka": {"to": "stalactite"}})
+    view = gui_gost.mapping_api("Jama", eff, save=True)
+    assert korak()["theme"] == other and korak()["points"]["nova-tocka"] == {"to": "stalactite"}
+    assert any(f["kind"] == "mapiranje" for f in gui_gost.view("Jama")["files"])
+    eff = dict(view["effective"])
+    del eff["theme"]
+    gui_gost.mapping_api("Jama", eff, save=True)
+    assert "theme" not in korak()                               # "bez teme" sticks
+    gui_gost.mapping_api("Jama", reset=True)
+    assert not (folder / tm.OVERRIDE_NAME).exists()
+    with pytest.raises(gui_gost.GostApiError, match="Nepoznata tema"):
+        gui_gost.mapping_api("Jama", dict(view["effective"], theme="nema-je"), save=True)
+
+
+def test_gost_layouts_only_for_the_projects_own_postp(server, gost_root, tmp_path):
+    base, _, _ = server
+    _call(base, "/api/gost-new", {"name": "Jama"})
+    foreign = tmp_path / "tude_postp.csx"
+    foreign.write_text("x", encoding="utf-8")
+    query = urllib.parse.urlencode({"id": "Jama", "path": str(foreign)})
+    status, body = _call(base, "/api/gost-layouts?" + query)
+    assert status == 400 and "Nije _postp" in body["error"]
+    assert _call(base, "/api/gost-mapping?id=../x")[0] == 400
+    assert _call(base, "/api/gost-mapping?id=../x&reset=1", {})[0] == 400

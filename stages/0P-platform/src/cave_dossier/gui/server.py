@@ -34,7 +34,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from cave_dossier.core.paths import repo_root, workspace, workspace_root
-from cave_dossier.gui import catalog, layouts, mapping, media
+from cave_dossier.gui import catalog, gost, layouts, mapping, media
 from cave_dossier.gui.jobs import JobManager, SequenceStep, cli_argv, script_argv
 from cave_dossier.gui.state import Workspace, csurvey_exe, tools_dir
 
@@ -293,6 +293,35 @@ class App:
             raise ApiError(f"Predaja nije dostupna ({exc}).") from exc
         return build_plan(s, broj).to_json()
 
+    def gost_run(self, body: dict) -> dict:
+        """A guest step as a job: catalog script argv or `cavedossier gost nacrt`.
+        Local project folder only, so no write confirmation (gui/gost.py)."""
+        try:
+            action, args, title = gost.step_args(
+                str(body.get("id", "")), str(body.get("step", "")),
+                body.get("file") or None, body.get("layout"), bool(body.get("dry_run")))
+        except gost.GostApiError as exc:
+            raise ApiError(str(exc)) from exc
+        if action is None:
+            argv, display = cli_argv(args), "cavedossier " + _join(args)
+        else:
+            argv, display = self.argv_for(action, args)
+        job = self.jobs.start(f"Gost · {title}", argv, display, _safe_root())
+        return job.to_json()
+
+    def gost_open(self, body: dict) -> dict:
+        try:
+            target = gost.owned_path(str(body.get("id", "")), str(body.get("path") or ""))
+        except gost.GostApiError as exc:
+            raise ApiError(str(exc)) from exc
+        app = None
+        if body.get("csurvey"):
+            app = csurvey_exe(self.ws.drive_root)
+            if app is None:
+                raise ApiError("cSurvey nije pronađen (C:\\csurvey64 ili CSURVEY_DIR u .env).")
+        self.opener(target, app=app, reveal=bool(body.get("reveal")))
+        return {"opened": str(target)}
+
     def open(self, body: dict) -> dict:
         what = body.get("what")
         target: Path | None = None
@@ -379,6 +408,10 @@ def make_handler(app: App):
                 html = (STATIC / "index.html").read_text(encoding="utf-8")
                 html = html.replace("__TOKEN__", app.token)
                 return self._send(HTTPStatus.OK, html.encode("utf-8"), "text/html")
+            if url.path in ("/gost", "/gost.html"):
+                html = (STATIC / "gost.html").read_text(encoding="utf-8")
+                html = html.replace("__TOKEN__", app.token)
+                return self._send(HTTPStatus.OK, html.encode("utf-8"), "text/html")
             if url.path.startswith("/static/"):
                 name = url.path.removeprefix("/static/")
                 path = (STATIC / name).resolve()
@@ -412,9 +445,30 @@ def make_handler(app: App):
 
         def do_POST(self):  # noqa: N802
             url = urlparse(self.path)
+            if url.path == "/api/gost-upload":
+                return self._gost_upload(url)
             if url.path.startswith("/api/"):
                 return self._api("POST", url)
             return self._json({"error": "nema"}, HTTPStatus.NOT_FOUND)
+
+        def _gost_upload(self, url) -> None:
+            """One dropped file as the raw request body (not JSON)."""
+            if not self._authorized():
+                return self._json({"error": "Nedostaje token."}, HTTPStatus.FORBIDDEN)
+            app.touch()
+            query = {k: v[-1] for k, v in parse_qs(url.query).items()}
+            length = int(self.headers.get("Content-Length") or 0)
+            if length > gost.MAX_UPLOAD:
+                return self._json({"error": "Datoteka je prevelika."},
+                                  HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+            payload = self.rfile.read(length) if length else b""
+            try:
+                data = gost.upload(query.get("id", ""), query.get("name", ""), payload)
+            except gost.GostApiError as exc:
+                return self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except OSError as exc:
+                return self._json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            return self._json(data)
 
         def _api(self, verb: str, url) -> None:
             if not self._authorized():
@@ -464,6 +518,20 @@ def make_handler(app: App):
                 if head == "societies":
                     from cave_dossier.core import societies
                     return societies.registry().to_json()
+                if head == "gost":
+                    return gost.page_json()
+                if head in ("gost-mapping", "gost-layouts"):
+                    try:
+                        if head == "gost-layouts":
+                            return gost.layout_menu(query.get("id", ""), query.get("path", ""))
+                        return gost.mapping_api(query.get("id", ""))
+                    except gost.GostApiError as exc:
+                        raise ApiError(str(exc)) from exc
+                if head == "gost-project":
+                    try:
+                        return gost.view(query.get("id", ""))
+                    except gost.GostApiError as exc:
+                        raise ApiError(str(exc), HTTPStatus.NOT_FOUND) from exc
                 if head == "jobs":
                     return {"jobs": [j.to_json(since=10**9) for j in app.jobs.list()]}
                 if head == "job" and len(parts) == 2:
@@ -477,6 +545,24 @@ def make_handler(app: App):
                     return app.shutdown(body)
                 if head == "run":
                     return app.run(body)
+                if head == "gost-mapping":
+                    try:
+                        return gost.mapping_api(query.get("id", ""), body.get("effective"),
+                                                reset=query.get("reset") == "1",
+                                                save=query.get("reset") != "1")
+                    except gost.GostApiError as exc:
+                        raise ApiError(str(exc)) from exc
+                if head in ("gost-new", "gost-save"):
+                    try:
+                        if head == "gost-new":
+                            return gost.create(str(body.get("name", "")))
+                        return gost.save(str(body.get("id", "")), body.get("data") or {})
+                    except gost.GostApiError as exc:
+                        raise ApiError(str(exc)) from exc
+                if head == "gost-run":
+                    return app.gost_run(body)
+                if head == "gost-open":
+                    return app.gost_open(body)
                 if head == "recipe":
                     return app.recipe(body)
                 if head == "open":
@@ -512,7 +598,9 @@ def make_handler(app: App):
 
 
 def serve(port: int = DEFAULT_PORT, open_browser: bool = True,
-          state_file: Path | None = None, idle_minutes: float | None = None) -> int:
+          state_file: Path | None = None, idle_minutes: float | None = None,
+          page: str = "") -> int:
+    """``page="gost"`` opens the guest page (/gost) instead of the dashboard."""
     app = App()
     server = None
     for candidate in range(port, port + 20):
@@ -533,7 +621,7 @@ def serve(port: int = DEFAULT_PORT, open_browser: bool = True,
     threading.Thread(target=watchdog, args=(server, app, idle_seconds),
                      daemon=True, name="gui-watchdog").start()
     if open_browser:
-        webbrowser.open(url)
+        webbrowser.open(url + page)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

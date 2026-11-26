@@ -908,7 +908,8 @@ function predajaMaterial(p) {
     cards.push(h("div", { class: "card review" },
       h("h2", {}, icon("osz", "lg"), "Osnovni zapisnik"),
       h("div", { class: "mono muted" }, m.osz.name, " · ", fmtTime(m.osz.modified)),
-      c.total ? h("p", {}, `${c.filled}/${c.total} obveznih polja popunjeno`) : null,
+      c.total ? h("p", {}, `${c.filled}/${c.total} obveznih polja popunjeno (ručni unos)`) : null,
+      c.deferred && c.deferred.length ? h("p", { class: "warnline" }, `Još prazno, upisuje 3N KORAK 4 iz nacrta: ${c.deferred.map(g => g.label).join(", ")}`) : null,
       c.missing && c.missing.length ? h("ul", { class: "warns" }, ...c.missing.map(g => h("li", {}, `${g.label} – treba ${g.needed_by.join(", ")}`))) : null,
       h("p", { class: "help" }, `Potvrda upisuje ${p.sue_text || "broj"} u polje Katastarski broj.`),
       openBtns(m.osz.path, "Otvori u Wordu")));

@@ -23,6 +23,7 @@ cavedossier gui --port 8800     # another port (the next free one up to +19 is t
 cavedossier gui --no-browser    # just serve; open the URL yourself
 cavedossier gui --state-file X  # write {url, port, pid, token, root, started} to X while serving
 cavedossier gui --idle-minutes 10   # stop after 10 min with no open page and no running job
+cavedossier gui --gost          # open the guest page (/gost) instead of the dashboard
 ```
 
 **In prod** nobody types this. Operators double-click `SurveyScraper5.bat` on
@@ -150,6 +151,7 @@ How it is built, for whoever turns it into the real GUI:
 | `gui/state.py` | Read-only view of the machine: settings, SB versions, Drive dirs, caves in work, a cave's files classified by name, open-document locks. Fail-soft: a missing Drive is a note on the page. |
 | `gui/mapping.py` | The 3N mapping page: the shared mapping, a cave's override, the pictures (`tdx-mapping-catalog.json`). Loads 3N's pure-data `tdx_mapping.py` from the tools folder by path, so the page and KORAK 1/2 merge the same way; validates and writes the override. Runs no tool. |
 | `gui/layouts.py` | KORAK 3a's sheet thumbnails: runs `nacrt_finish.py --layouts-json` (a dry run, writes nothing) as a script, so the picture and the run read the same menu; caches per (path, mtime, size). |
+| `gui/gost.py` | The guest page (`/gost`): projects, upload, the hand-typed cells, and the steps (catalog 3N actions by file path plus `cavedossier gost nacrt`), with every file argument checked against the project's own files. |
 | `gui/media.py` | Photo thumbnails and the recoverable delete (shell "allow undo"). |
 | `gui/jobs.py` | One subprocess per run, with stdin open for answers, output polled by offset, `taskkill /T` to stop it. `start_sequence` runs a recipe's steps one after another as a single job (stop on exit 2+ unless `keep_going`; 0/1 are the CLI's "done / not ready"). |
 | `gui/server.py` | `http.server` on 127.0.0.1 with a JSON API: `/api/state`, `/caves`, `/cave/<broj>` (files + workflow), `/dossier/<broj>`, `/doc?path=` (repo Markdown), `/catalog`, `/run`, `/recipe`, `/job/<id>`, `/open`, `/delete`, `/mapping/<broj>` (GET, POST, POST `…/reset`), `/mapping-catalog`, `/societies` (the registar udruga for the Udruge page), `/layouts?broj=&path=` (KORAK 3a's sheets; only the cave's own `_postp` files), and `/thumb` for images (photos, queued photos, the map excerpt). `/caves` also carries the photo-queue counts. Every call needs the random token the page was served with (`/thumb` takes it as `?t=`, because an `<img>` cannot send a header). Opening is limited to paths under Drive, the workspace and the repo. The port is bound exclusively, so a second dashboard moves to the next port instead of silently sharing one. |
@@ -159,6 +161,39 @@ Only standard library in the base install; Pillow (the `photos` extra) makes
 the gallery faster, and lxml (the `osz` extra) lets the workflow read the OSZ.
 Why it is built this way:
 [design decisions §The dashboard](../../docs/design-decisions.md#the-dashboard--cavedossier-gui-2026-09-24).
+
+### The guest page — `/gost`
+
+3N for a survey that is **not in SB**, such as a caver's from another club.
+Open it with the top bar's **Gost** button or `cavedossier gui --gost`. The main
+page is keyed by a Redni broj and the Drive intake leaf. This page works over
+the local guest projects of
+[4S `gost`](../4S-sastavnica/README.md#cavedossier-gost--the-nacrt-for-a-survey-that-is-not-in-sb)
+instead. It has three cards:
+
+- **Datoteke**: drop the `.csx` here, or a `logo.png` for the title block. An
+  upload never replaces a file.
+- **Podaci za sastavnicu**: the cells typed by hand. An empty cell shows what
+  the survey measured.
+- **Koraci**: KORAK 1, cSurvey, 2, cSurvey, 3a, 3b and 3c, with the main
+  page's own tools for each step:
+  - KORAK 1 opens **Mapiranje simbola**, the main page's Mapiranje
+    (`static/mapping.js`, unchanged), pointed at the project. `/gost#mapiranje`
+    opens it directly.
+  - KORAK 2 has the **Tema** picker (project 0007).
+  - KORAK 3a draws the **layout sheets** (tlocrt/profil on A4, as on the main
+    page). A click on a sheet sets *Raspored br.*
+
+  The mapping and the theme go into the project folder's
+  `tdx-mapping-objekt.json`, where KORAK 1 and 2 find it beside the survey
+  file. `mapping.js` reaches the project through `window.MAP_TARGET`, which
+  `gost.js` sets, and `gui/mapping.py`'s `*_folder` functions. Re-run the
+  KORAK the page names after a change.
+
+The steps are the catalog's own 3N actions plus `cavedossier gost nacrt`.
+Every file argument is checked against the project's own files. Runs go with
+one click, because a guest project is a local folder and nothing reaches the
+Drive or SB. Code: `gui/gost.py`, `static/gost.html`, `static/gost.js`.
 
 ## Registar udruga — `cavedossier societies`
 

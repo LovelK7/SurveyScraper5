@@ -45,18 +45,24 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const argbToHex = v => "#" + ((v >>> 0) & 0xffffff).toString(16).padStart(6, "0");
 const hexToArgb = hex => (parseInt("ff" + hex.slice(1), 16) | 0);
 const norm = s => String(s || "").toLowerCase().replace(/[-_]/g, "");
+// Where a cave's mapping lives and what it is called. The main page keys it by
+// Redni broj; the guest page (gost.js) sets window.MAP_TARGET to key it by its
+// project folder instead (S.broj is then the project id).
+const mapUrl = (key, reset) => window.MAP_TARGET ? window.MAP_TARGET.url(key, reset)
+  : `mapping/${key}${reset ? "/reset" : ""}`;
+const caveHr = key => window.MAP_TARGET ? window.MAP_TARGET.label(key) : `SB ${key}`;
 
 // ── loading ──────────────────────────────────────────────────────────
 async function loadMapping(force) {
   if (S.broj === null) return;
   if (!force && M.broj === S.broj && (M.data || M.loading || M.error)) return;
-  if (M.edit && M.broj !== S.broj && isDirty()) toast(`Nespremljene izmjene za SB ${M.broj} su odbačene.`, true);
+  if (M.edit && M.broj !== S.broj && isDirty()) toast(`Nespremljene izmjene za ${caveHr(M.broj)} su odbačene.`, true);
   const broj = S.broj;
   Object.assign(M, { broj, data: null, edit: null, error: null, loading: true });
   render();
   try {
     const [data, cat] = await Promise.all([
-      api("mapping/" + broj), M.cat ? Promise.resolve(M.cat) : api("mapping-catalog")]);
+      api(mapUrl(broj)), M.cat ? Promise.resolve(M.cat) : api("mapping-catalog")]);
     if (S.broj !== broj) return;
     Object.assign(M, { data, edit: clone(data.effective), cat, loading: false });
     if (data.effective.theme) ensureTheme(data.effective.theme);
@@ -85,7 +91,7 @@ const defPost = () => (M.data.default.postimport || {});
 
 async function saveMapping() {
   try {
-    const data = await api("mapping/" + M.broj, { effective: prune(M.edit) });
+    const data = await api(mapUrl(M.broj), { effective: prune(M.edit) });
     Object.assign(M, { data, edit: clone(data.effective) });
     toast(data.override_path ? "Spremljeno za ovaj objekt." : "Isto kao zadano – prilagodba objekta uklonjena.");
   } catch (e) { toast(e.message, true); }
@@ -93,9 +99,9 @@ async function saveMapping() {
 }
 
 async function resetMapping() {
-  if (!confirm(`Vratiti SB ${M.broj} na zajedničko zadano mapiranje? Prilagodba ovog objekta se briše.`)) return;
+  if (!confirm(`Vratiti ${caveHr(M.broj)} na zajedničko zadano mapiranje? Prilagodba ovog objekta se briše.`)) return;
   try {
-    const data = await api(`mapping/${M.broj}/reset`, {});
+    const data = await api(mapUrl(M.broj, true), {});
     Object.assign(M, { data, edit: clone(data.effective) });
     toast("Vraćeno na zadano.");
   } catch (e) { toast(e.message, true); }
@@ -145,7 +151,7 @@ function statusCard() {
       h("div", { class: "spacer" }),
       dirty ? h("button", { class: "btn", onclick: () => { M.edit = clone(d.effective); render(); } }, "Odbaci izmjene") : null,
       custom ? h("button", { class: "btn danger", onclick: resetMapping }, icon("refresh"), "Vrati na zadano") : null,
-      h("button", { class: "btn primary", disabled: !dirty, onclick: saveMapping }, icon("check"), "Spremi za SB " + d.broj)),
+      h("button", { class: "btn primary", disabled: !dirty, onclick: saveMapping }, icon("check"), "Spremi za " + caveHr(d.broj))),
     // always one line, so editing below never shifts the page
     h("div", { class: "help" }, dirty ? "Nespremljeno: " + pending.map(sectionHr).join(", ") + "." : "Nema nespremljenih izmjena."),
     d.error ? h("div", { class: "help", style: "color:var(--danger)" }, d.error) : null,
@@ -200,12 +206,12 @@ function themePicker() {
     if (v) eff.theme = v; else delete eff.theme;
     try {
       const dirty = isDirty();
-      const data = await api("mapping/" + M.broj, { effective: prune(eff) });
+      const data = await api(mapUrl(M.broj), { effective: prune(eff) });
       M.data = data;
       if (dirty) { if (data.effective.theme) M.edit.theme = data.effective.theme; else delete M.edit.theme; }
       else M.edit = clone(data.effective);
       if (v) ensureTheme(v);
-      toast(`Tema za SB ${M.broj}: ${v ? themeName(v) : "bez teme"}.`);
+      toast(`Tema za ${caveHr(M.broj)}: ${v ? themeName(v) : "bez teme"}.`);
     } catch (e) { toast(e.message, true); }
     render();
   };

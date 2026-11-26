@@ -116,6 +116,17 @@ def test_osz_fills_untick_with_pollution_narrative_is_not_ne():
     assert {c.column: c.after for c in changes}["Zagađenost"] == "NE"
 
 
+def test_osz_fills_clean_narrative_is_ne():
+    # 357: the template's own „Nije zagađen.” agrees with NE — no warning.
+    for text in ("Nije zagađen.", "Nije zagađen i nema tragova ljudskog utjecaja.", "Bez otpada."):
+        changes, warnings = osz_fills(_COLS, {}, {"zagadenost": text}, ())
+        assert {c.column: c.after for c in changes}["Zagađenost"] == "NE"
+        assert not any("Zagađenost" in w for w in warnings)
+    changes, warnings = osz_fills(_COLS, {}, {"zagadenost": "Nije zagađen, ali na dnu guma."}, ())
+    assert "Zagađenost" not in {c.column for c in changes}
+    assert any("Zagađenost" in w for w in warnings)
+
+
 def test_photo_target_swaps_prefix():
     assert photo_target("SB_1234_Jama_LKukuljan_1.jpg", 1234, 7) == "007_Jama_LKukuljan_1.jpg"
     assert photo_target("SB_0968_Češki turist_NM_2.jpg", 968, 902) == "902_Češki turist_NM_2.jpg"
